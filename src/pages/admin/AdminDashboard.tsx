@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -14,20 +14,16 @@ import {
 } from 'lucide-react';
 
 interface DashboardStats {
-  // Needs Attention
   unansweredSupport: number;
   bugReportsNeedingTriage: number;
   pendingRideRequests: number;
   pendingDocRequests: number;
-  // Users
   totalUsers: number;
   totalTesters: number;
-  // Platform Data
   totalRides: number;
   totalDocuments: number;
   totalChecks: number;
   totalMaintenanceRecords: number;
-  // Test data
   testRides: number;
   testDocuments: number;
   testChecks: number;
@@ -43,20 +39,11 @@ interface PaymentSummary {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
-    unansweredSupport: 0,
-    bugReportsNeedingTriage: 0,
-    pendingRideRequests: 0,
-    pendingDocRequests: 0,
-    totalUsers: 0,
-    totalTesters: 0,
-    totalRides: 0,
-    totalDocuments: 0,
-    totalChecks: 0,
-    totalMaintenanceRecords: 0,
-    testRides: 0,
-    testDocuments: 0,
-    testChecks: 0,
-    testMaintenanceRecords: 0,
+    unansweredSupport: 0, bugReportsNeedingTriage: 0,
+    pendingRideRequests: 0, pendingDocRequests: 0,
+    totalUsers: 0, totalTesters: 0,
+    totalRides: 0, totalDocuments: 0, totalChecks: 0, totalMaintenanceRecords: 0,
+    testRides: 0, testDocuments: 0, testChecks: 0, testMaintenanceRecords: 0,
   });
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(true);
@@ -69,16 +56,10 @@ export default function AdminDashboard() {
       setLoading(true);
       try {
         const [
-          supportRes,
-          bugRes,
-          rideRequests,
-          docRequests,
-          users,
-          testers,
-          allRides, testRides,
-          allDocuments, testDocuments,
-          allChecks, testChecks,
-          allMaintenance, testMaintenance,
+          supportRes, bugRes, rideRequests, docRequests,
+          users, testers,
+          allRides, testRides, allDocuments, testDocuments,
+          allChecks, testChecks, allMaintenance, testMaintenance,
         ] = await Promise.all([
           supabase.from('support_messages').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
           (supabase as any).from('bug_reports').select('id', { count: 'exact', head: true }).in('status', ['new', 'in_progress']),
@@ -95,7 +76,6 @@ export default function AdminDashboard() {
           supabase.from('maintenance_records').select('id', { count: 'exact', head: true }),
           supabase.from('maintenance_records').select('id', { count: 'exact', head: true }).eq('is_test_data', true),
         ]);
-
         setStats({
           unansweredSupport: supportRes.count || 0,
           bugReportsNeedingTriage: bugRes.count || 0,
@@ -132,7 +112,7 @@ export default function AdminDashboard() {
           });
         }
       } catch {
-        // Payment data is optional — don't block dashboard
+        // Payment data is optional
       } finally {
         setPaymentLoading(false);
       }
@@ -152,35 +132,99 @@ export default function AdminDashboard() {
 
   const needsAttentionTotal = stats.unansweredSupport + stats.bugReportsNeedingTriage + totalPendingApprovals;
 
-  // Payment card state helper
   const paymentValue = (val: number | undefined) => {
     if (paymentLoading) return '…';
     if (paymentSummary === null) return '—';
     return val ?? 0;
   };
 
+  // Build triage items — only items with count > 0 shown as urgent
+  const triageItems = [
+    {
+      label: 'Unanswered Support Messages',
+      count: stats.unansweredSupport,
+      href: '/admin/support',
+      icon: MessageCircle,
+      accent: 'destructive' as const,
+      cta: 'Review & Respond',
+    },
+    {
+      label: 'Bug Reports Needing Triage',
+      count: stats.bugReportsNeedingTriage,
+      href: '/admin/bug-reports',
+      icon: Bug,
+      accent: 'warning' as const,
+      cta: 'Triage Bugs',
+    },
+    {
+      label: 'Pending Equipment Type Requests',
+      count: stats.pendingRideRequests,
+      href: '/admin/ride-requests',
+      icon: FolderOpen,
+      accent: 'primary' as const,
+      cta: 'Review Requests',
+    },
+    {
+      label: 'Pending Document Type Requests',
+      count: stats.pendingDocRequests,
+      href: '/admin/document-requests',
+      icon: FileText,
+      accent: 'primary' as const,
+      cta: 'Review Requests',
+    },
+  ];
+
+  const activeTriageItems = triageItems.filter(item => item.count > 0);
+  const inactiveTriageItems = triageItems.filter(item => item.count === 0);
+
+  const accentBorder = (accent: string) => {
+    switch (accent) {
+      case 'destructive': return 'border-l-destructive';
+      case 'warning': return 'border-l-warning';
+      default: return 'border-l-primary';
+    }
+  };
+
+  const accentBg = (accent: string) => {
+    switch (accent) {
+      case 'destructive': return 'bg-destructive/10';
+      case 'warning': return 'bg-warning/10';
+      default: return 'bg-primary/10';
+    }
+  };
+
+  const accentText = (accent: string) => {
+    switch (accent) {
+      case 'destructive': return 'text-destructive';
+      case 'warning': return 'text-warning-foreground';
+      default: return 'text-primary';
+    }
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header — compact */}
-        <div className="flex items-center justify-between gap-3">
+      <div className="space-y-8 max-w-5xl">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-xl md:text-2xl font-bold leading-tight">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Platform overview and triage</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Operational overview — triage open items, then check users and billing health.
+            </p>
           </div>
 
           {hasTestData && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/60 bg-muted/20 text-xs shrink-0">
               <FlaskConical className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
               <Label htmlFor="exclude-test-data" className="text-xs cursor-pointer whitespace-nowrap text-muted-foreground">
-                Production-only platform totals
+                Production only
               </Label>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-3 w-3 text-muted-foreground/50 cursor-help shrink-0" />
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                  Affects rides, documents, checks, and maintenance totals only.
+                  Excludes test rides, documents, checks, and maintenance from platform totals.
                 </TooltipContent>
               </Tooltip>
               <Switch
@@ -199,196 +243,180 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <>
-            {/* ─── 1. NEEDS ATTENTION ─── */}
+            {/* ─── 1. TRIAGE QUEUE ─── */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Needs Attention
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Triage Queue
                 </h2>
                 {needsAttentionTotal > 0 && (
                   <Badge variant="destructive" className="text-xs">
-                    {needsAttentionTotal}
+                    {needsAttentionTotal} open
                   </Badge>
                 )}
               </div>
 
               {needsAttentionTotal === 0 ? (
-                <Card className="border-success/30 bg-success/5">
-                  <CardContent className="py-6 flex items-center gap-3 justify-center">
-                    <CheckCircle className="h-5 w-5 text-success" />
-                    <p className="text-sm font-medium text-success">All clear — nothing needs attention right now</p>
-                  </CardContent>
-                </Card>
+                <div className="flex items-center gap-3 p-4 rounded-lg border border-border/40 bg-muted/10">
+                  <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                  <p className="text-sm text-muted-foreground">All clear — no items need attention right now.</p>
+                </div>
               ) : (
-                <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                  <Link to="/admin/support" className="group">
-                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${stats.unansweredSupport > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
-                      <CardContent className="pt-5 pb-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Support</p>
-                            <p className="text-3xl font-bold mt-1">{stats.unansweredSupport}</p>
-                            <p className="text-xs text-muted-foreground mt-1">unanswered messages</p>
+                <div className="space-y-2">
+                  {activeTriageItems.map(item => (
+                    <Link key={item.href} to={item.href} className="group block">
+                      <div className={`flex items-center justify-between gap-4 p-4 rounded-lg border border-l-4 ${accentBorder(item.accent)} bg-card hover:bg-accent/5 transition-colors`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`p-2 rounded-lg ${accentBg(item.accent)} shrink-0`}>
+                            <item.icon className={`h-4 w-4 ${accentText(item.accent)}`} />
                           </div>
-                          <div className="p-2 rounded-lg bg-destructive/10">
-                            <MessageCircle className="h-5 w-5 text-destructive" />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                          <span>Review</span>
-                          <ArrowRight className="h-3 w-3" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-
-                  <Link to="/admin/bug-reports" className="group">
-                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${stats.bugReportsNeedingTriage > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
-                      <CardContent className="pt-5 pb-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Bugs</p>
-                            <p className="text-3xl font-bold mt-1">{stats.bugReportsNeedingTriage}</p>
-                            <p className="text-xs text-muted-foreground mt-1">needing triage</p>
-                          </div>
-                          <div className="p-2 rounded-lg bg-warning/10">
-                            <Bug className="h-5 w-5 text-warning-foreground" />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-bold leading-none">{item.count}</span>
+                              <span className="text-sm font-medium text-foreground truncate">{item.label}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                          <span>Triage</span>
-                          <ArrowRight className="h-3 w-3" />
+                        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors shrink-0">
+                          <span className="hidden sm:inline">{item.cta}</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-
-                  <Link to="/admin/ride-requests" className="group">
-                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${totalPendingApprovals > 0 ? 'border-primary/40 bg-primary/5' : ''}`}>
-                      <CardContent className="pt-5 pb-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending Requests</p>
-                            <p className="text-3xl font-bold mt-1">{totalPendingApprovals}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {stats.pendingRideRequests > 0 && `${stats.pendingRideRequests} ride`}
-                              {stats.pendingRideRequests > 0 && stats.pendingDocRequests > 0 && ' · '}
-                              {stats.pendingDocRequests > 0 && `${stats.pendingDocRequests} doc`}
-                              {totalPendingApprovals === 0 && 'pending requests'}
-                            </p>
-                          </div>
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <Clock className="h-5 w-5 text-primary" />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                          <span>Review</span>
-                          <ArrowRight className="h-3 w-3" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                      </div>
+                    </Link>
+                  ))}
+                  {/* Show zero-state items quietly */}
+                  {inactiveTriageItems.length > 0 && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 px-1 pt-1">
+                      {inactiveTriageItems.map(item => (
+                        <Link key={item.href} to={item.href} className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-1">
+                          <item.icon className="h-3 w-3" />
+                          <span>{item.label}</span>
+                          <span className="text-muted-foreground/40">· 0</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </section>
 
-            {/* ─── 2. USERS & PAYMENTS ─── */}
+            {/* ─── 2. USERS & BILLING HEALTH ─── */}
             <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Users & Payments
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                Users & Billing Health
               </h2>
-              <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-                <Link to="/admin/users">
-                  <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stats.totalUsers}</div>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Registered Users */}
+                <Link to="/admin/users" className="group">
+                  <Card className="h-full hover:border-primary/40 transition-colors">
+                    <CardContent className="pt-5 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Registered Users</p>
+                        <Users className="h-4 w-4 text-muted-foreground/60" />
+                      </div>
+                      <p className="text-2xl font-bold">{stats.totalUsers}</p>
                       {stats.totalTesters > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {stats.totalTesters} tester{stats.totalTesters !== 1 ? 's' : ''}
+                          Including {stats.totalTesters} tester{stats.totalTesters !== 1 ? 's' : ''}
                         </p>
                       )}
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                        <span>Manage Users</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
 
-                <Link to="/admin/payments">
-                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.activeSubscriptions > 0 ? 'border-success/30' : ''}`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Active Subs</CardTitle>
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.activeSubscriptions)}</div>
+                {/* Active Subscriptions */}
+                <Link to="/admin/payments" className="group">
+                  <Card className={`h-full hover:border-primary/40 transition-colors ${paymentSummary && paymentSummary.activeSubscriptions > 0 ? 'border-green-500/20' : ''}`}>
+                    <CardContent className="pt-5 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Active Subscriptions</p>
+                        <CreditCard className="h-4 w-4 text-muted-foreground/60" />
+                      </div>
+                      <p className="text-2xl font-bold">{paymentValue(paymentSummary?.activeSubscriptions)}</p>
                       {paymentSummary && paymentSummary.trialingSubscriptions > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {paymentSummary.trialingSubscriptions} trialing
+                          + {paymentSummary.trialingSubscriptions} trialing
                         </p>
                       )}
                       {paymentSummary === null && !paymentLoading && (
-                        <p className="text-xs text-muted-foreground mt-1">Unavailable</p>
+                        <p className="text-xs text-muted-foreground mt-1">Stripe unavailable</p>
                       )}
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                        <span>View Payments</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
 
-                <Link to="/admin/payments">
-                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Past Due</CardTitle>
-                      <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'text-warning-foreground' : 'text-muted-foreground'}`} />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.pastDueSubscriptions)}</div>
-                      <p className="text-xs text-muted-foreground mt-1">subscriptions</p>
+                {/* Past Due Subscriptions */}
+                <Link to="/admin/payments" className="group">
+                  <Card className={`h-full hover:border-primary/40 transition-colors ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'border-l-4 border-l-warning bg-warning/5' : ''}`}>
+                    <CardContent className="pt-5 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Past Due Subscriptions</p>
+                        <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'text-warning-foreground' : 'text-muted-foreground/60'}`} />
+                      </div>
+                      <p className="text-2xl font-bold">{paymentValue(paymentSummary?.pastDueSubscriptions)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">need follow-up</p>
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                        <span>View Details</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
 
-                <Link to="/admin/payments">
-                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-xs sm:text-sm font-medium">Failed</CardTitle>
-                      <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.failedPaymentsCount)}</div>
-                      <p className="text-xs text-muted-foreground mt-1">payments</p>
+                {/* Failed Payments */}
+                <Link to="/admin/payments" className="group">
+                  <Card className={`h-full hover:border-primary/40 transition-colors ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'border-l-4 border-l-destructive bg-destructive/5' : ''}`}>
+                    <CardContent className="pt-5 pb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Failed Payments</p>
+                        <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground/60'}`} />
+                      </div>
+                      <p className="text-2xl font-bold">{paymentValue(paymentSummary?.failedPaymentsCount)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">in last 60 days</p>
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                        <span>Investigate</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
               </div>
             </section>
 
-            {/* ─── 4. PLATFORM DATA (low emphasis) ─── */}
-            <section className="opacity-80">
+            {/* ─── 3. PLATFORM DATA (de-emphasised) ─── */}
+            <section className="opacity-75">
               <div className="flex items-center gap-2 mb-2">
-                <BarChart3 className="h-3.5 w-3.5 text-muted-foreground/60" />
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">
-                  Platform Data
+                <BarChart3 className="h-3.5 w-3.5 text-muted-foreground/50" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Platform Totals
                 </h2>
                 {excludeTestData && hasTestData && (
                   <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-                    Excluding {stats.testRides + stats.testDocuments + stats.testChecks + stats.testMaintenanceRecords} test
+                    Excluding {stats.testRides + stats.testDocuments + stats.testChecks + stats.testMaintenanceRecords} test records
                   </Badge>
                 )}
               </div>
-              <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+              <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
                 {[
-                  { label: 'Rides', value: displayedRides, testCount: stats.testRides, icon: FolderOpen },
+                  { label: 'Equipment', value: displayedRides, testCount: stats.testRides, icon: FolderOpen },
                   { label: 'Documents', value: displayedDocuments, testCount: stats.testDocuments, icon: FileText },
                   { label: 'Checks', value: displayedChecks, testCount: stats.testChecks, icon: CheckCircle },
-                  { label: 'Maintenance', value: displayedMaintenance, testCount: stats.testMaintenanceRecords, icon: Shield },
+                  { label: 'Maintenance Records', value: displayedMaintenance, testCount: stats.testMaintenanceRecords, icon: Shield },
                 ].map(item => (
-                  <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-muted/20">
+                  <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg border border-border/30 bg-muted/10">
                     <item.icon className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-lg font-semibold text-muted-foreground leading-none">{item.value}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">
                         {item.label}
                         {excludeTestData && item.testCount > 0 && ` · ${item.testCount} test excl.`}
                       </p>
@@ -398,40 +426,31 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ─── 5. TEST DATA (collapsible) ─── */}
+            {/* ─── 4. TEST DATA (collapsible footer) ─── */}
             {hasTestData && (
               <section>
                 <button
                   onClick={() => setShowTestData(!showTestData)}
-                  className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors mb-3"
+                  className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 hover:text-muted-foreground transition-colors mb-2"
                 >
-                  <FlaskConical className="h-4 w-4" />
+                  <FlaskConical className="h-3.5 w-3.5" />
                   Test Data Summary
-                  {showTestData ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {showTestData ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
                 {showTestData && (
-                  <Card className="border-border/40 bg-muted/20">
-                    <CardContent className="pt-5">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center p-3 rounded-lg bg-background border">
-                          <div className="text-2xl font-bold text-muted-foreground">{stats.testRides}</div>
-                          <div className="text-xs text-muted-foreground">Test Rides</div>
-                        </div>
-                        <div className="text-center p-3 rounded-lg bg-background border">
-                          <div className="text-2xl font-bold text-muted-foreground">{stats.testDocuments}</div>
-                          <div className="text-xs text-muted-foreground">Test Documents</div>
-                        </div>
-                        <div className="text-center p-3 rounded-lg bg-background border">
-                          <div className="text-2xl font-bold text-muted-foreground">{stats.testChecks}</div>
-                          <div className="text-xs text-muted-foreground">Test Checks</div>
-                        </div>
-                        <div className="text-center p-3 rounded-lg bg-background border">
-                          <div className="text-2xl font-bold text-muted-foreground">{stats.testMaintenanceRecords}</div>
-                          <div className="text-xs text-muted-foreground">Test Maintenance</div>
-                        </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                    {[
+                      { label: 'Test Equipment', value: stats.testRides },
+                      { label: 'Test Documents', value: stats.testDocuments },
+                      { label: 'Test Checks', value: stats.testChecks },
+                      { label: 'Test Maintenance', value: stats.testMaintenanceRecords },
+                    ].map(item => (
+                      <div key={item.label} className="text-center p-3 rounded-lg border border-border/30 bg-muted/10">
+                        <div className="text-xl font-bold text-muted-foreground">{item.value}</div>
+                        <div className="text-[10px] text-muted-foreground/50">{item.label}</div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    ))}
+                  </div>
                 )}
               </section>
             )}

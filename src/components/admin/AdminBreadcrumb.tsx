@@ -5,17 +5,17 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 const routeLabels: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/bug-reports': 'Bug Reports',
-  '/admin/early-access': 'Early Access',
-  '/admin/check-items': 'Check Items',
-  '/admin/ride-requests': 'Ride Type Requests',
+  '/admin/early-access': 'Early Access Signups',
+  '/admin/check-items': 'Check Item Submissions',
+  '/admin/ride-requests': 'Equipment Type Requests',
   '/admin/document-requests': 'Document Type Requests',
   '/admin/support': 'Support Messages',
-  '/admin/support-access': 'Support Access',
+  '/admin/support-access': 'Support Access Grants',
   '/admin/users': 'User Management',
   '/admin/audit-logs': 'Audit Logs',
   '/admin/security': 'Rate Limits & Blocks',
-  '/admin/payments': 'Payments',
-  '/admin/risk-items': 'Risk Items',
+  '/admin/payments': 'Payments & Billing',
+  '/admin/risk-items': 'Risk Item Submissions',
 };
 
 export function AdminBreadcrumb() {

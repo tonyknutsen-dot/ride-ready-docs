@@ -154,12 +154,12 @@ export default function PaymentsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Payments Dashboard</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl md:text-2xl font-bold">Payments & Billing</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Monitor revenue, subscriptions, and payment issues
             </p>
           </div>
-          <Button onClick={fetchData} variant="outline">
+          <Button onClick={fetchData} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -199,7 +199,7 @@ export default function PaymentsDashboard() {
 
           <Card className="overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Active Subs</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium truncate">Active Subscriptions</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground shrink-0" />
             </CardHeader>
             <CardContent className="pt-0">
@@ -212,7 +212,7 @@ export default function PaymentsDashboard() {
 
           <Card className={`overflow-hidden ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Failed</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium truncate">Failed Payments</CardTitle>
               <AlertTriangle className={`h-4 w-4 shrink-0 ${summary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent className="pt-0">
@@ -270,7 +270,7 @@ export default function PaymentsDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span className="truncate">Sub Health</span>
+                <span className="truncate">Subscription Health</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
