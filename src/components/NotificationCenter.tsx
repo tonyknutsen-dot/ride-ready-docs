@@ -712,7 +712,7 @@ const NotificationCenter = () => {
       {actionItems.length > 0 && (
         <section className="space-y-2.5">
           <div className="flex items-center gap-2 px-1">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
               Action needed
             </p>
