@@ -45,6 +45,26 @@ export default function PlanBilling() {
   const [showReturnBanner, setShowReturnBanner] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncAttempt, setSyncAttempt] = useState(0);
+
+  // Poll checkSubscriptionStatus up to `maxAttempts` times with delay between each.
+  // This ensures Stripe webhook has time to propagate.
+  const pollSubscriptionSync = async (maxAttempts = 4, delayMs = 3000) => {
+    setIsSyncing(true);
+    for (let i = 1; i <= maxAttempts; i++) {
+      setSyncAttempt(i);
+      try {
+        await checkSubscriptionStatus();
+      } catch (e) {
+        console.warn(`[Billing] Sync poll attempt ${i} failed:`, e);
+      }
+      if (i < maxAttempts) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+    setSyncAttempt(0);
+    setIsSyncing(false);
+  };
 
   const hasValidAuthSession = !authLoading && !!user && !!session?.access_token && session.user.id === user.id;
 
@@ -75,6 +95,7 @@ export default function PlanBilling() {
   }, [hasValidAuthSession, isTester, checkSubscriptionStatus]);
 
   // Handle success/cancel from Stripe checkout — only after auth is valid.
+  // Uses polling to wait for Stripe webhook propagation.
   useEffect(() => {
     if (!hasValidAuthSession) return;
 
@@ -82,11 +103,11 @@ export default function PlanBilling() {
     const canceled = searchParams.get('canceled');
 
     if (success === 'true') {
-      setIsSyncing(true);
-      void checkSubscriptionStatus().finally(() => setIsSyncing(false));
+      // Poll multiple times so webhook has time to propagate
+      void pollSubscriptionSync(4, 3000);
       toast({ 
         title: "Subscription activated!", 
-        description: "Thank you for subscribing. Your plan is now active.",
+        description: "Syncing your new plan — this may take a few moments.",
       });
       nav('/billing', { replace: true });
     } else if (canceled === 'true') {
@@ -124,9 +145,10 @@ export default function PlanBilling() {
   };
 
   const handleRefreshAndDismiss = async () => {
-    await supabase.auth.refreshSession();
-    await checkSubscriptionStatus();
     setShowReturnBanner(false);
+    await supabase.auth.refreshSession();
+    // Poll a few times to catch webhook-delayed changes
+    await pollSubscriptionSync(3, 2500);
     toast({ title: "Subscription status updated", description: "Your billing information is now current." });
   };
 
@@ -260,10 +282,17 @@ export default function PlanBilling() {
 
       {/* Syncing subscription status indicator */}
       {isSyncing && !showReturnBanner && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Syncing subscription status…
-        </div>
+        <Alert className="border border-primary/30 bg-primary/5">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <AlertTitle className="text-sm font-medium">
+            {syncAttempt > 1 ? 'Syncing plan change…' : 'Checking subscription status…'}
+          </AlertTitle>
+          <AlertDescription className="text-xs text-muted-foreground">
+            {syncAttempt > 1
+              ? 'Waiting for Stripe to confirm your update. This usually takes a few seconds.'
+              : 'Verifying your current plan with Stripe.'}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Return from Stripe Banner */}
