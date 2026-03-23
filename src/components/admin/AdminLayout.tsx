@@ -62,23 +62,23 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
         { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
-        { name: 'Payments', href: '/admin/payments', icon: CreditCard, count: 0 },
+        { name: 'Payments & Billing', href: '/admin/payments', icon: CreditCard, count: 0 },
       ],
     },
     {
       label: 'Requests & Approvals',
       items: [
-        { name: 'Check Items', href: '/admin/check-items', icon: FileText, count: 0 },
-        { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
+        { name: 'Check Item Submissions', href: '/admin/check-items', icon: FileText, count: 0 },
+        { name: 'Equipment Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
         { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
-        { name: 'Risk Items', href: '/admin/risk-items', icon: Activity, count: 0 },
+        { name: 'Risk Item Submissions', href: '/admin/risk-items', icon: Activity, count: 0 },
       ],
     },
     {
       label: 'Users',
       items: [
         { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
-        { name: 'Support Access', href: '/admin/support-access', icon: Key, count: 0 },
+        { name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 },
       ],
     },
     {
@@ -91,8 +91,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     {
       label: 'Growth',
       items: [
-        { name: 'Marketing', href: '/marketing', icon: Mail, count: 0 },
-        { name: 'Early Access', href: '/admin/early-access', icon: Sparkles, count: 0 },
+        { name: 'Marketing Campaigns', href: '/marketing', icon: Mail, count: 0 },
+        { name: 'Early Access Signups', href: '/admin/early-access', icon: Sparkles, count: 0 },
       ],
     },
   ];
