@@ -1,5 +1,6 @@
-import React, { Component, Suspense, type ReactNode } from 'react';
+import { Component, Suspense, type ReactNode } from 'react';
 import { Loader2, FileText } from 'lucide-react';
+import { OfflineFallback } from '@/components/OfflineFallback';
 
 // Re-use existing page loader
 const PageLoader = () => (
@@ -9,11 +10,6 @@ const PageLoader = () => (
       <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
     </div>
   </div>
-);
-
-// Lazy-import the fallback to avoid circular issues
-const OfflineFallback = React.lazy(() =>
-  import('@/components/OfflineFallback').then(m => ({ default: m.OfflineFallback }))
 );
 
 interface Props {
@@ -62,11 +58,7 @@ class LazyErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <OfflineFallback />
-        </Suspense>
-      );
+      return <OfflineFallback />;
     }
     return this.props.children;
   }
