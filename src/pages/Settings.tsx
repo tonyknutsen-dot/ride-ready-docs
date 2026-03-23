@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Settings as SettingsIcon, User, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug,
-  Calendar, Building2, Shield, Users, CreditCard, ChevronRight, Palette, Pencil, X,
+  Calendar, Building2, Shield, Users, CreditCard, ChevronRight, FileText, Pencil, X,
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimeSettings, COUNTRY_TIMEZONES, COUNTRY_DATE_FORMATS } from '@/components/DateTimeSettings';
