@@ -29,7 +29,6 @@ import BugReportDialog from '@/components/BugReportDialog';
 import ActivityLog from '@/components/ActivityLog';
 import SupportAccessManager from '@/components/SupportAccessManager';
 import { SecuritySettingsSection } from '@/components/SecuritySettingsSection';
-import { CompanyLogoField, type CompanyLogoValue } from '@/components/profile/CompanyLogoField';
 
 /* ── Reusable section label ── */
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
