@@ -282,10 +282,17 @@ export default function PlanBilling() {
 
       {/* Syncing subscription status indicator */}
       {isSyncing && !showReturnBanner && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Syncing subscription status…
-        </div>
+        <Alert className="border border-primary/30 bg-primary/5">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <AlertTitle className="text-sm font-medium">
+            {syncAttempt > 1 ? 'Syncing plan change…' : 'Checking subscription status…'}
+          </AlertTitle>
+          <AlertDescription className="text-xs text-muted-foreground">
+            {syncAttempt > 1
+              ? 'Waiting for Stripe to confirm your update. This usually takes a few seconds.'
+              : 'Verifying your current plan with Stripe.'}
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Return from Stripe Banner */}
