@@ -680,13 +680,13 @@ const NotificationCenter = () => {
       {actionItems.length > 0 && (
         <section className="space-y-1.5">
           <div className="flex items-center gap-1.5 px-1">
-            <AlertTriangle className="h-3 w-3 text-accent-foreground" />
+            <AlertTriangle className="h-3 w-3 text-amber-500" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
               Action needed
             </p>
             <Badge variant="secondary" className="text-[9px] h-4 px-1.5 ml-auto">{actionItems.length}</Badge>
           </div>
-          <div className="space-y-1">
+          <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.02] overflow-hidden divide-y divide-amber-500/10">
             {actionItems.map(n => (
               <NotificationRow
                 key={n.id}
