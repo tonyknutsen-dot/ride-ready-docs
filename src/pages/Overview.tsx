@@ -19,7 +19,6 @@ import NeedsAttentionPanel from "@/components/NeedsAttentionPanel";
 import DefectReportDialog from "@/components/DefectReportDialog";
 import { Badge } from "@/components/ui/badge";
 import appLogo from "@/assets/app-logo.jpg";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { useActionNeededCount } from "@/hooks/useActionNeededCount";
 
 const Overview = () => {
