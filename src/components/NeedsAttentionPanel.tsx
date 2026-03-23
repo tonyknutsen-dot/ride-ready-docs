@@ -26,6 +26,7 @@ interface AttentionGroup {
   items: AttentionItem[];
   defaultOpen: boolean;
   headerStyle: { bg: string; border: string; iconColor: string; text: string };
+  tier: SeverityTier;
 }
 
 const INITIAL_VISIBLE = 5;
