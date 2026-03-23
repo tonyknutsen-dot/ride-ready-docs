@@ -145,9 +145,10 @@ export default function PlanBilling() {
   };
 
   const handleRefreshAndDismiss = async () => {
-    await supabase.auth.refreshSession();
-    await checkSubscriptionStatus();
     setShowReturnBanner(false);
+    await supabase.auth.refreshSession();
+    // Poll a few times to catch webhook-delayed changes
+    await pollSubscriptionSync(3, 2500);
     toast({ title: "Subscription status updated", description: "Your billing information is now current." });
   };
 
