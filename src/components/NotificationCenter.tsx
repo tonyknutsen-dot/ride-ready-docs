@@ -21,6 +21,10 @@ import {
   type NotificationCategory,
 } from '@/utils/notificationClassification';
 import { isDefectCritical } from '@/hooks/useDefectSummary';
+import {
+  SEVERITY_STRIP, SEVERITY_ICON_BG, SEVERITY_CARD, SEVERITY_TITLE,
+  type SeverityTier,
+} from '@/utils/severityStyles';
 
 /* ── Types ─────────────────────────────────────── */
 
