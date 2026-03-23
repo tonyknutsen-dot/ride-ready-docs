@@ -212,7 +212,7 @@ export default function PaymentsDashboard() {
 
           <Card className={`overflow-hidden ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Failed</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium truncate">Failed Payments</CardTitle>
               <AlertTriangle className={`h-4 w-4 shrink-0 ${summary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent className="pt-0">
