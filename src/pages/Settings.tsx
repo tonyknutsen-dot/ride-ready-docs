@@ -81,12 +81,6 @@ const Settings = () => {
 
   // Expand state for summary→edit cards
   const [editingProfile, setEditingProfile] = useState(false);
-  const [editingBranding, setEditingBranding] = useState(false);
-
-  // Branding logo state
-  const [logo, setLogo] = useState<CompanyLogoValue>({ file: null, previewUrl: null, remove: false });
-  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
-  const [savingLogo, setSavingLogo] = useState(false);
 
   /* ── Data fetching ── */
   const fetchProfile = async () => {
