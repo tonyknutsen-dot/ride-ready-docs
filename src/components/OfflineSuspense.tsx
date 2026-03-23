@@ -58,11 +58,7 @@ class LazyErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <Suspense fallback={<PageLoader />}>
-          <OfflineFallback />
-        </Suspense>
-      );
+      return <OfflineFallback />;
     }
     return this.props.children;
   }
