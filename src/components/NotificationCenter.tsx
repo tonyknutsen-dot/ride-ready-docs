@@ -869,7 +869,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
               <div className="flex-1 min-w-0 space-y-1">
                 <p className={cn(
                   'text-[13px] font-semibold leading-snug line-clamp-2',
-                  variant === 'urgent' ? 'text-destructive' :
+                  variant === 'urgent' ? SEVERITY_TITLE.critical :
                   n.is_read && isBrowse ? 'text-muted-foreground' : 'text-foreground'
                 )}>
                   {n.title}
