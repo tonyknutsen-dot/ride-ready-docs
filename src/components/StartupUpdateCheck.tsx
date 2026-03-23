@@ -16,7 +16,7 @@ export const StartupUpdateCheck: React.FC<StartupUpdateCheckProps> = ({ children
       try {
         // Skip update checks in dev/preview environments
         const hostname = window.location.hostname;
-        if (hostname === 'localhost' || hostname.includes('lovableproject.com')) {
+        if (hostname === 'localhost' || hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
           return;
         }
         

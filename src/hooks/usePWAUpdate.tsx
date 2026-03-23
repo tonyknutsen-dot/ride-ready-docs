@@ -9,7 +9,7 @@ interface UpdateState {
 // Check if we're in a dev/preview environment
 const isDevEnvironment = () => {
   const hostname = window.location.hostname;
-  return hostname === 'localhost' || hostname.includes('lovableproject.com');
+  return hostname === 'localhost' || hostname.includes('lovableproject.com') || hostname.includes('lovable.app');
 };
 
 export const usePWAUpdate = () => {
