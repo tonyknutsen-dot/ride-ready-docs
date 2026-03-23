@@ -389,12 +389,12 @@ const AttentionItemRow = ({
   item: AttentionItem;
   navigate: ReturnType<typeof useNavigate>;
 }) => {
-  const rowStyle =
-    item.type === 'stop_use'
-      ? 'bg-destructive/5 border-destructive/20'
-      : item.urgency === 'warning'
-      ? 'bg-amber-50/50 dark:bg-amber-950/10 border-amber-200/60 dark:border-amber-800/40'
-      : 'bg-card border-border';
+  const tierMap: SeverityTier =
+    item.type === 'stop_use' ? 'critical'
+    : item.type === 'pressure_failed' ? 'critical'
+    : item.urgency === 'warning' ? 'warning'
+    : 'info';
+  const rowStyle = SEVERITY_ROW[tierMap];
 
   return (
     <button

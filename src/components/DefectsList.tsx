@@ -129,8 +129,9 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
       {offlineBanner}
       <div className="space-y-2.5">
         {defects.map((defect) => {
-          const sev = SEVERITY_CONFIG[defect.severity];
-          const SevIcon = sev.icon;
+          const tier = getDefectTier(defect.severity);
+          const display = DEFECT_DISPLAY[defect.severity] || DEFECT_DISPLAY.non_urgent;
+          const SevIcon = SEVERITY_ICONS[defect.severity] || Clock;
           const isResolved = defect.status === 'resolved';
           const hasPhotos = photoUrls[defect.id]?.length > 0;
 
@@ -138,24 +139,19 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
             <Card
               key={defect.id}
               className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.997] rounded-xl overflow-hidden ${
-                defect.severity === 'stop_operation' && !isResolved
-                  ? 'border-destructive/30 bg-destructive/[0.03] hover:border-destructive/50'
-                  : 'hover:border-primary/20'
+                !isResolved ? SEVERITY_CARD[tier] : 'hover:border-primary/20'
               }`}
               onClick={() => openInRegister(defect)}
             >
               <CardContent className="p-0">
                 <div className="flex items-stretch">
                   {/* Severity color strip */}
-                  <div className={`w-1 shrink-0 ${
-                    defect.severity === 'stop_operation' ? 'bg-destructive' :
-                    defect.severity === 'urgent' ? 'bg-orange-500' : 'bg-yellow-500'
-                  }`} />
+                  <div className={`w-1 shrink-0 ${SEVERITY_STRIP[tier]}`} />
 
                   <div className="flex-1 p-3.5">
                     <div className="flex items-start gap-3">
                       {/* Severity icon */}
-                      <div className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${sev.operationalClass}`}>
+                      <div className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${SEVERITY_OPERATIONAL[tier]}`}>
                         <SevIcon className="h-3.5 w-3.5" />
                       </div>
 
@@ -170,9 +166,9 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
                         )}
 
                         <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                          <Badge className={`text-[10px] px-1.5 py-0 font-semibold ${sev.badgeClass}`}>{sev.label}</Badge>
+                          <Badge className={`text-[10px] px-1.5 py-0 font-semibold ${SEVERITY_BADGE[tier]}`}>{display.label}</Badge>
                           {isResolved ? (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 font-medium">Closed</Badge>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-success/10 text-success font-medium">Closed</Badge>
                           ) : (
                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0 font-medium">Open</Badge>
                           )}
@@ -189,7 +185,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
 
                         {/* Operational status for stop-use */}
                         {!isResolved && defect.severity === 'stop_operation' && (
-                          <p className="text-[11px] font-semibold text-destructive pt-0.5">⛔ Do not operate</p>
+                          <p className="text-[11px] font-semibold text-destructive pt-0.5">{display.operationalIcon} {display.operational}</p>
                         )}
 
                         {/* Resolution preview */}
