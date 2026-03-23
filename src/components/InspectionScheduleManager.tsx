@@ -243,10 +243,13 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
 
     if (isBefore(due, today)) {
       return (
-        <Badge variant="destructive" className="flex items-center gap-1 text-[10px] px-1.5 py-0">
-          <AlertTriangle className="h-2.5 w-2.5" />
-          Overdue ({Math.abs(daysUntilDue)}d)
-        </Badge>
+        <span className="inline-flex items-center gap-1">
+          <Badge variant="destructive" className="flex items-center gap-1 text-[10px] px-1.5 py-0 whitespace-nowrap">
+            <AlertTriangle className="h-2.5 w-2.5" />
+            Overdue
+          </Badge>
+          <span className="text-[10px] text-destructive font-medium">{Math.abs(daysUntilDue)}d</span>
+        </span>
       );
     } else if (daysUntilDue <= event.advance_notice_days) {
       return (
