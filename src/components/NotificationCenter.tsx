@@ -907,7 +907,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
                   <span className={cn(
                     'text-[10px] font-semibold px-2 py-0.5 rounded-md',
                     variant === 'urgent' ? 'text-destructive bg-destructive/8' :
-                    variant === 'action' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/8' :
+                    variant === 'action' ? 'text-warning bg-warning/8' :
                     'text-muted-foreground bg-muted'
                   )}>
                     {getActionLabel(n)}
