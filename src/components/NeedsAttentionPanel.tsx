@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { isDocExpired, daysUntilExpiry, getExpiryLabel } from '@/utils/documentHelpers';
 import { isOverdue, daysUntil } from '@/utils/complianceCounts';
 import { isDefectCritical } from '@/hooks/useDefectSummary';
+import { SEVERITY_HEADER, SEVERITY_ROW, type SeverityTier } from '@/utils/severityStyles';
 
 interface AttentionItem {
   id: string;
