@@ -51,6 +51,7 @@ import {
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
   getExpiryLabel,
+  getCompactExpiry,
   DOC_TYPE_LABELS as TYPE_LABELS,
 } from '@/utils/documentHelpers';
 
