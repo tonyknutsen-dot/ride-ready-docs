@@ -154,12 +154,12 @@ export default function PaymentsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Payments Dashboard</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl md:text-2xl font-bold">Payments & Billing</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Monitor revenue, subscriptions, and payment issues
             </p>
           </div>
-          <Button onClick={fetchData} variant="outline">
+          <Button onClick={fetchData} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
