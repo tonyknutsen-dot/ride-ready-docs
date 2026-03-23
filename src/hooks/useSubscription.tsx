@@ -55,6 +55,8 @@ export interface SubscriptionData {
   cancelAtPeriodEnd: boolean;
   cancelAt: string | null;
   wasPaidCustomer: boolean;
+  pendingSubscriptionPlan: string | null;
+  pendingChangeEffectiveDate: string | null;
 }
 
 export const useSubscription = () => {
@@ -84,7 +86,7 @@ export const useSubscription = () => {
       const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end, cancel_at_period_end, cancel_at, stripe_customer_id')
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end, cancel_at_period_end, cancel_at, stripe_customer_id, pending_subscription_plan, pending_change_effective_date')
           .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
@@ -144,6 +146,8 @@ export const useSubscription = () => {
             cancelAtPeriodEnd: false,
             cancelAt: null,
             wasPaidCustomer: false,
+            pendingSubscriptionPlan: null,
+            pendingChangeEffectiveDate: null,
           };
           setSubscription(testerSubscription);
           setLoading(false);
@@ -197,6 +201,8 @@ export const useSubscription = () => {
           cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
           cancelAt: data.cancel_at ?? null,
           wasPaidCustomer: !!data.stripe_customer_id,
+          pendingSubscriptionPlan: data.pending_subscription_plan ?? null,
+          pendingChangeEffectiveDate: data.pending_change_effective_date ?? null,
         };
 
         setSubscription(subscriptionData);
