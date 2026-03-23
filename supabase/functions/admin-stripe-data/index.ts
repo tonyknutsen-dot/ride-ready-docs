@@ -202,7 +202,7 @@ serve(async (req) => {
 
       return {
         user_id: profile.user_id,
-        full_name: profile.full_name,
+        controller_name: profile.controller_name,
         company_name: profile.company_name,
         app_status: appStatus,
         app_plan: appPlan,
