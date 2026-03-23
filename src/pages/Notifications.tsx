@@ -1,9 +1,9 @@
 import NotificationCenter from '@/components/NotificationCenter';
 import { Bell } from 'lucide-react';
-import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useActionNeededCount } from '@/hooks/useActionNeededCount';
 
 const Notifications = () => {
-  const unreadCount = useUnreadNotifications();
+  const actionCount = useActionNeededCount();
 
   return (
     <div className="container mx-auto py-5 pb-24 md:pb-8 max-w-2xl">
@@ -18,9 +18,9 @@ const Notifications = () => {
               Notifications
             </h1>
             <p className="text-[13px] text-muted-foreground">
-              {unreadCount > 0
-                ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
-                : 'No action needed'}
+              {actionCount > 0
+                ? `${actionCount} item${actionCount !== 1 ? 's' : ''} need${actionCount === 1 ? 's' : ''} attention`
+                : 'All clear'}
             </p>
           </div>
         </div>

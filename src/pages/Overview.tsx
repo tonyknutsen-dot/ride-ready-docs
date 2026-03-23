@@ -19,13 +19,11 @@ import NeedsAttentionPanel from "@/components/NeedsAttentionPanel";
 import DefectReportDialog from "@/components/DefectReportDialog";
 import { Badge } from "@/components/ui/badge";
 import appLogo from "@/assets/app-logo.jpg";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { useActionNeededCount } from "@/hooks/useActionNeededCount";
 
 const Overview = () => {
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useOverviewData();
-  const unreadCount = useUnreadNotifications();
   const actionNeededCount = useActionNeededCount();
   const { subscription } = useSubscription();
 
@@ -56,7 +54,7 @@ const Overview = () => {
   }
 
   const hasActionNeeded = actionNeededCount > 0;
-  const hasBadge = unreadCount > 0;
+  const hasBadge = actionNeededCount > 0;
 
   return (
     <>
@@ -106,7 +104,7 @@ const Overview = () => {
                     ? 'bg-destructive text-destructive-foreground'
                     : 'bg-primary text-primary-foreground'
                 }`}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {actionNeededCount > 99 ? '99+' : actionNeededCount}
                 </span>
               )}
             </button>

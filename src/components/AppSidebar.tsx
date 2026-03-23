@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
-import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useActionNeededCount } from '@/hooks/useActionNeededCount';
 import { useOverdueCompliance } from '@/hooks/useOverdueCompliance';
 import appLogo from '@/assets/app-logo.jpg';
 
@@ -105,7 +105,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const unreadCount = useUnreadNotifications();
+  const unreadCount = useActionNeededCount();
   const overdueCount = useOverdueCompliance();
 
   const hasFeatureAccess = (feature?: FeatureKey) => {
