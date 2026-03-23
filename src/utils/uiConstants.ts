@@ -53,31 +53,34 @@ export const getViewerType = (filePath: string): ViewerType => {
   return 'fallback';
 };
 
-/* ─── Defect severity config (shared across DefectsList, DefectRegister, notifications) ─── */
+/* ─── Defect severity config ─── */
+/* DEPRECATED: Use severityStyles.ts for new code. Kept for backward compatibility. */
+
+import { SEVERITY_BADGE, SEVERITY_OPERATIONAL, DEFECT_DISPLAY } from '@/utils/severityStyles';
 
 export const DEFECT_SEVERITY_CONFIG = {
   stop_operation: {
-    label: 'Stop Use',
-    badgeClass: 'bg-destructive text-destructive-foreground',
-    operationalClass: 'bg-destructive/10 text-destructive',
-    operational: 'Do not operate',
-    operationalIcon: '⛔',
+    label: DEFECT_DISPLAY.stop_operation.label,
+    badgeClass: SEVERITY_BADGE.critical,
+    operationalClass: SEVERITY_OPERATIONAL.critical,
+    operational: DEFECT_DISPLAY.stop_operation.operational,
+    operationalIcon: DEFECT_DISPLAY.stop_operation.operationalIcon,
     sort: 0,
   },
   urgent: {
-    label: 'Important',
-    badgeClass: 'bg-orange-500 text-white dark:bg-orange-600',
-    operationalClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-    operational: 'Repair required',
-    operationalIcon: '🔧',
+    label: DEFECT_DISPLAY.urgent.label,
+    badgeClass: SEVERITY_BADGE.warning,
+    operationalClass: SEVERITY_OPERATIONAL.warning,
+    operational: DEFECT_DISPLAY.urgent.operational,
+    operationalIcon: DEFECT_DISPLAY.urgent.operationalIcon,
     sort: 1,
   },
   non_urgent: {
-    label: 'Low',
-    badgeClass: 'bg-yellow-500 text-white dark:bg-yellow-600',
-    operationalClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-    operational: 'Monitor',
-    operationalIcon: '👁',
+    label: DEFECT_DISPLAY.non_urgent.label,
+    badgeClass: SEVERITY_BADGE.info,
+    operationalClass: SEVERITY_OPERATIONAL.info,
+    operational: DEFECT_DISPLAY.non_urgent.operational,
+    operationalIcon: DEFECT_DISPLAY.non_urgent.operationalIcon,
     sort: 2,
   },
 } as const;

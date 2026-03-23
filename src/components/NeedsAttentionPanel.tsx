@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { isDocExpired, daysUntilExpiry, getExpiryLabel } from '@/utils/documentHelpers';
 import { isOverdue, daysUntil } from '@/utils/complianceCounts';
 import { isDefectCritical } from '@/hooks/useDefectSummary';
+import { SEVERITY_HEADER, SEVERITY_ROW, type SeverityTier } from '@/utils/severityStyles';
 
 interface AttentionItem {
   id: string;
@@ -25,6 +26,7 @@ interface AttentionGroup {
   items: AttentionItem[];
   defaultOpen: boolean;
   headerStyle: { bg: string; border: string; iconColor: string; text: string };
+  tier: SeverityTier;
 }
 
 const INITIAL_VISIBLE = 5;
@@ -240,41 +242,46 @@ const NeedsAttentionPanel = () => {
 
   // Group items by type
   const groups: AttentionGroup[] = useMemo(() => {
-    const groupDefs: { type: AttentionItem['type']; title: string; icon: typeof AlertOctagon; defaultOpen: boolean; headerStyle: AttentionGroup['headerStyle'] }[] = [
+    const groupDefs: { type: AttentionItem['type']; title: string; icon: typeof AlertOctagon; defaultOpen: boolean; headerStyle: AttentionGroup['headerStyle']; tier: SeverityTier }[] = [
       {
         type: 'stop_use',
         title: 'Stop Use Defects',
         icon: AlertOctagon,
         defaultOpen: true,
-        headerStyle: { bg: 'bg-destructive/5', border: 'border-destructive/30', iconColor: 'text-destructive', text: 'text-destructive' },
+        tier: 'critical',
+        headerStyle: SEVERITY_HEADER.critical,
       },
       {
         type: 'check_due',
         title: 'Routine Checks',
         icon: ClipboardCheck,
         defaultOpen: false,
-        headerStyle: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-600', text: 'text-foreground' },
+        tier: 'info',
+        headerStyle: SEVERITY_HEADER.info,
       },
       {
         type: 'doc_expiring',
         title: 'Documents Expiring',
         icon: FileText,
         defaultOpen: false,
-        headerStyle: { bg: 'bg-card', border: 'border-border', iconColor: 'text-muted-foreground', text: 'text-foreground' },
+        tier: 'warning',
+        headerStyle: SEVERITY_HEADER.warning,
       },
       {
         type: 'inspection_due',
         title: 'Inspections Due',
         icon: Clock,
         defaultOpen: false,
-        headerStyle: { bg: 'bg-card', border: 'border-border', iconColor: 'text-muted-foreground', text: 'text-foreground' },
+        tier: 'warning',
+        headerStyle: SEVERITY_HEADER.warning,
       },
       {
         type: 'pressure_failed',
         title: 'Pressure Action Needed',
         icon: Gauge,
         defaultOpen: true,
-        headerStyle: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', iconColor: 'text-red-600', text: 'text-foreground' },
+        tier: 'critical',
+        headerStyle: SEVERITY_HEADER.critical,
       },
     ];
 
@@ -382,12 +389,12 @@ const AttentionItemRow = ({
   item: AttentionItem;
   navigate: ReturnType<typeof useNavigate>;
 }) => {
-  const rowStyle =
-    item.type === 'stop_use'
-      ? 'bg-destructive/5 border-destructive/20'
-      : item.urgency === 'warning'
-      ? 'bg-amber-50/50 dark:bg-amber-950/10 border-amber-200/60 dark:border-amber-800/40'
-      : 'bg-card border-border';
+  const tierMap: SeverityTier =
+    item.type === 'stop_use' ? 'critical'
+    : item.type === 'pressure_failed' ? 'critical'
+    : item.urgency === 'warning' ? 'warning'
+    : 'info';
+  const rowStyle = SEVERITY_ROW[tierMap];
 
   return (
     <button

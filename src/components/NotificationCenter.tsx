@@ -21,6 +21,10 @@ import {
   type NotificationCategory,
 } from '@/utils/notificationClassification';
 import { isDefectCritical } from '@/hooks/useDefectSummary';
+import {
+  SEVERITY_STRIP, SEVERITY_ICON_BG, SEVERITY_CARD, SEVERITY_TITLE,
+  type SeverityTier,
+} from '@/utils/severityStyles';
 
 /* ── Types ─────────────────────────────────────── */
 
@@ -132,17 +136,23 @@ const getActionLabel = (n: Notification): string => {
 const getIcon = (n: Notification) => {
   const title = n.title?.toLowerCase() ?? '';
   const cls = 'h-3.5 w-3.5';
+  // Critical — red icons
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
-  if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
-  if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-destructive')} />;
-  if (title.includes('wind') || title.includes('threshold')) return <Wind className={cn(cls, 'text-primary')} />;
-  if (title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
-  if (title.includes('inspection') || title.includes('ndt')) return <Shield className={cn(cls, 'text-primary')} />;
+  if (title.includes('pressure') && (title.includes('out of range') || title.includes('action'))) return <Gauge className={cn(cls, 'text-destructive')} />;
+  // Warning — warning-color icons
+  if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-warning')} />;
+  if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return <FileText className={cn(cls, 'text-warning')} />;
+  if (title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-warning')} />;
+  // Info — primary/info icons
+  if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-info')} />;
+  if (title.includes('wind') || title.includes('threshold')) return <Wind className={cn(cls, 'text-info')} />;
+  if (title.includes('check')) return <ClipboardCheck className={cn(cls, 'text-info')} />;
+  if (title.includes('inspection') || title.includes('ndt')) return <Shield className={cn(cls, 'text-info')} />;
   if (title.includes('sent') || title.includes('shared')) return <Send className={cn(cls, 'text-primary')} />;
-  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
-  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-accent-foreground')} />;
-  if (title.includes('billing') || title.includes('plan')) return <CreditCard className={cn(cls, 'text-accent-foreground')} />;
-  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-primary')} />;
+  if (title.includes('document') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
+  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-primary')} />;
+  if (title.includes('billing') || title.includes('plan')) return <CreditCard className={cn(cls, 'text-muted-foreground')} />;
+  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-success')} />;
   return <Info className={cn(cls, 'text-muted-foreground')} />;
 };
 
@@ -708,7 +718,7 @@ const NotificationCenter = () => {
       {actionItems.length > 0 && (
         <section className="space-y-2.5">
           <div className="flex items-center gap-2 px-1">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
               Action needed
             </p>
@@ -825,20 +835,16 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
   const equipment = extractEquipmentName(n.message);
   const isBrowse = variant === 'browse' || variant === 'default';
 
-  const stripColor =
-    variant === 'urgent' ? 'bg-destructive' :
-    variant === 'action' ? 'bg-amber-500' :
-    'bg-border';
+  const tier: SeverityTier =
+    variant === 'urgent' ? 'critical' :
+    variant === 'action' ? 'warning' :
+    'neutral';
 
-  const cardBorder =
-    variant === 'urgent' ? 'border-destructive/30 bg-destructive/[0.03] hover:border-destructive/50' :
-    variant === 'action' ? 'border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30' :
-    'hover:border-primary/20';
-
-  const iconBg =
-    variant === 'urgent' ? 'bg-destructive/10' :
-    variant === 'action' ? 'bg-amber-500/10' :
-    'bg-muted/60';
+  const stripColor = SEVERITY_STRIP[tier];
+  const cardBorder = variant === 'browse' || variant === 'default'
+    ? 'hover:border-primary/20'
+    : SEVERITY_CARD[tier];
+  const iconBg = SEVERITY_ICON_BG[tier];
 
   return (
     <Card
@@ -869,7 +875,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
               <div className="flex-1 min-w-0 space-y-1">
                 <p className={cn(
                   'text-[13px] font-semibold leading-snug line-clamp-2',
-                  variant === 'urgent' ? 'text-destructive' :
+                  variant === 'urgent' ? SEVERITY_TITLE.critical :
                   n.is_read && isBrowse ? 'text-muted-foreground' : 'text-foreground'
                 )}>
                   {n.title}
@@ -907,7 +913,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
                   <span className={cn(
                     'text-[10px] font-semibold px-2 py-0.5 rounded-md',
                     variant === 'urgent' ? 'text-destructive bg-destructive/8' :
-                    variant === 'action' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/8' :
+                    variant === 'action' ? 'text-warning bg-warning/8' :
                     'text-muted-foreground bg-muted'
                   )}>
                     {getActionLabel(n)}
