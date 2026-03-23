@@ -398,6 +398,7 @@ export default function PlanBilling() {
             </Button>
           </AlertDescription>
         </Alert>
+      )}
 
       {/* Current Plan Card */}
       <Card className="border border-[#BFDBFE] bg-card shadow-sm">
