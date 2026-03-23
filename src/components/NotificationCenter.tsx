@@ -646,7 +646,7 @@ const NotificationCenter = () => {
     );
   }
 
-  const totalActionable = urgentItems.length + actionItems.length;
+  const totalActionable = criticalItems.length + actionItems.length;
   const BROWSE_INITIAL = 15;
   const browseSlice = showOlder ? domainFiltered : domainFiltered.slice(0, BROWSE_INITIAL);
   const hasMoreBrowse = domainFiltered.length > BROWSE_INITIAL;
@@ -656,10 +656,10 @@ const NotificationCenter = () => {
       {/* ── Summary bar ── */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          {urgentItems.length > 0 && (
-            <span className="text-destructive font-semibold">{urgentItems.length} urgent</span>
+          {criticalItems.length > 0 && (
+            <span className="text-destructive font-semibold">{criticalItems.length} critical</span>
           )}
-          {urgentItems.length > 0 && actionItems.length > 0 && ' · '}
+          {criticalItems.length > 0 && actionItems.length > 0 && ' · '}
           {actionItems.length > 0 && (
             <span className="font-semibold text-foreground">{actionItems.length} action</span>
           )}
@@ -680,18 +680,18 @@ const NotificationCenter = () => {
         )}
       </div>
 
-      {/* ── URGENT section ── */}
-      {urgentItems.length > 0 && (
+      {/* ── CRITICAL section (RED) — safety-critical items ── */}
+      {criticalItems.length > 0 && (
         <section className="space-y-2.5">
           <div className="flex items-center gap-2 px-1">
             <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-destructive">
-              Urgent
+              Critical
             </p>
-            <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{urgentItems.length}</Badge>
+            <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{criticalItems.length}</Badge>
           </div>
           <div className="space-y-2">
-            {urgentItems.map(n => (
+            {criticalItems.map(n => (
               <NotificationRow
                 key={n.id}
                 notification={n}
