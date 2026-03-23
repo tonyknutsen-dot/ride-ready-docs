@@ -56,7 +56,7 @@ const OWNER_PERMISSIONS: FeaturePermissions = {
 };
 
 export function StaffProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isStaff, setIsStaff] = useState(false);
   const [isOwner, setIsOwner] = useState(true); // Default to owner for non-staff
   const [staffMembership, setStaffMembership] = useState<StaffMembership | null>(null);
@@ -65,6 +65,10 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchStaffStatus = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
     if (!user) {
       setIsStaff(false);
       setIsOwner(true);
@@ -74,6 +78,8 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     try {
       // Check if user is a staff member of any organisation
@@ -142,21 +148,45 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error in fetchStaffStatus:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [user]);
+  }, [authLoading, user]);
 
   useEffect(() => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let idleCallbackId: number | null = null;
+
     // Defer staff status check to not block initial render
     if (user) {
       if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(() => fetchStaffStatus(), { timeout: 2000 });
+        idleCallbackId = (window as any).requestIdleCallback(() => {
+          void fetchStaffStatus();
+        }, { timeout: 2000 });
       } else {
-        setTimeout(fetchStaffStatus, 100);
+        timeoutId = setTimeout(() => {
+          void fetchStaffStatus();
+        }, 100);
       }
     } else {
-      fetchStaffStatus();
+      void fetchStaffStatus();
     }
-  }, [user]);
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      if (idleCallbackId !== null && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleCallbackId);
+      }
+    };
+  }, [authLoading, user, fetchStaffStatus]);
 
   // Permission helpers using granular permissions
   const canAccessCalendar = isOwner || (isStaff && (featurePermissions?.calendar ?? false));

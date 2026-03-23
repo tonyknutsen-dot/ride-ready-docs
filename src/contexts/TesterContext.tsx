@@ -23,11 +23,15 @@ export const useTester = () => {
 };
 
 export const TesterProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isTester, setIsTester] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const checkTesterStatus = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
     // No user - not tester, done loading immediately
     if (!user) {
       setIsTester(false);
@@ -68,16 +72,21 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       // Only set loading false after check is complete
       setIsLoading(false);
     }
-  }, [user]);
+  }, [authLoading, user]);
 
   // Initial check
   useEffect(() => {
-    checkTesterStatus();
-  }, [checkTesterStatus]);
+    if (authLoading) {
+      setIsLoading(true);
+      return;
+    }
+
+    void checkTesterStatus();
+  }, [authLoading, checkTesterStatus]);
 
   // Subscribe to realtime changes on user_roles table
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
 
     console.log('[TesterContext] Setting up realtime subscription for user:', user.id);
 
@@ -105,12 +114,12 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       console.log('[TesterContext] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [user, checkTesterStatus]);
+  }, [authLoading, user, checkTesterStatus]);
 
   // Recheck on window focus only after extended absence (5+ minutes)
   // This reduces unnecessary API calls while still catching role changes
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
     
     let lastCheck = Date.now();
     
@@ -125,7 +134,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [user, checkTesterStatus]);
+  }, [authLoading, user, checkTesterStatus]);
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo(() => ({

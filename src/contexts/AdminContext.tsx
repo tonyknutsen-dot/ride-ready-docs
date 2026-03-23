@@ -21,27 +21,43 @@ export const useAdmin = () => {
 };
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkAdminStatus = async () => {
+      if (authLoading) {
+        if (!cancelled) {
+          setIsLoading(true);
+        }
+        return;
+      }
+
       // No user - not admin, done loading
       if (!user) {
-        setIsAdmin(false);
-        setIsLoading(false);
-        setCheckedUserId(null);
+        if (!cancelled) {
+          setIsAdmin(false);
+          setIsLoading(false);
+          setCheckedUserId(null);
+        }
         return;
       }
 
       // Already checked for this user - skip
       if (checkedUserId === user.id) {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
         return;
       }
 
-      setIsLoading(true);
+      if (!cancelled) {
+        setIsLoading(true);
+      }
 
       try {
         const { data, error } = await supabase
@@ -52,18 +68,28 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         console.log('Admin check result:', { data, error });
-        setIsAdmin(!!data && !error);
+        if (!cancelled) {
+          setIsAdmin(!!data && !error);
+        }
       } catch (error) {
         console.error('Error checking admin status:', error);
-        setIsAdmin(false);
+        if (!cancelled) {
+          setIsAdmin(false);
+        }
       } finally {
-        setCheckedUserId(user.id);
-        setIsLoading(false);
+        if (!cancelled) {
+          setCheckedUserId(user.id);
+          setIsLoading(false);
+        }
       }
     };
 
-    checkAdminStatus();
-  }, [user?.id, checkedUserId]);
+    void checkAdminStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, checkedUserId]);
 
   return (
     <AdminContext.Provider value={{ isAdmin, isLoading }}>
