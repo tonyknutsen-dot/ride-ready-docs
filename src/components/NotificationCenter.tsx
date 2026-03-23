@@ -5,7 +5,7 @@ import {
   Bell, Check, X, AlertTriangle, Info, CheckCircle,
   FileText, Wrench, ClipboardCheck, Shield, Wind,
   CreditCard, ChevronRight, Clock, AlertOctagon,
-  Send, Gauge
+  Send, Gauge, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,6 @@ import {
   type NotificationCategory,
 } from '@/utils/notificationClassification';
 import { isDefectCritical } from '@/hooks/useDefectSummary';
-import { DEFECT_SEVERITY_CONFIG } from '@/utils/uiConstants';
 
 /* ── Types ─────────────────────────────────────── */
 
@@ -42,7 +41,6 @@ type DomainTab = 'all' | 'defects' | 'compliance' | 'checks' | 'documents' | 'ma
 const getCategory = (n: Notification): NotificationCategory => getNotificationCategory(n);
 const isActionable = (n: Notification): boolean => isNotificationActionable(n);
 
-/** Urgent = requires immediate action (stop-use, expired, overdue, failed) */
 const isUrgent = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
   if (title.includes('stop use') || title.includes('critical')) return true;
@@ -105,7 +103,7 @@ const getActionLabel = (n: Notification): string => {
 
 const getIcon = (n: Notification) => {
   const title = n.title?.toLowerCase() ?? '';
-  const cls = 'h-4 w-4';
+  const cls = 'h-3.5 w-3.5';
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
   if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
   if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-destructive')} />;
@@ -120,6 +118,31 @@ const getIcon = (n: Notification) => {
   return <Info className={cn(cls, 'text-muted-foreground')} />;
 };
 
+/** Extract equipment name from the message (appears after " — ") */
+const extractEquipmentName = (message?: string): string | null => {
+  if (!message) return null;
+  const dashMatch = message.match(/\s[—–-]\s(.+?)(?:\.|$)/);
+  if (dashMatch) {
+    const name = dashMatch[1].trim().replace(/\.$/, '');
+    if (name.length > 0 && name.length < 40 && !name.includes('expired') && !name.includes('overdue')) {
+      return name;
+    }
+  }
+  return null;
+};
+
+/** Format a compact time string */
+const compactTime = (dateStr: string): string => {
+  const str = formatDistanceToNow(new Date(dateStr), { addSuffix: false });
+  return str
+    .replace(' minutes', 'm').replace(' minute', 'm')
+    .replace(' hours', 'h').replace(' hour', 'h')
+    .replace(' days', 'd').replace(' day', 'd')
+    .replace('about ', '~')
+    .replace('less than a', '<1')
+    .replace('over ', '>');
+};
+
 /* ── Dedup window ── */
 const DEDUP_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -129,8 +152,8 @@ const DOMAIN_TABS: { id: DomainTab; label: string }[] = [
   { id: 'defects', label: 'Defects' },
   { id: 'compliance', label: 'Compliance' },
   { id: 'checks', label: 'Checks' },
-  { id: 'documents', label: 'Documents' },
-  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'documents', label: 'Docs' },
+  { id: 'maintenance', label: 'Maint.' },
 ];
 
 /* ── Component ─────────────────────────────────── */
@@ -143,6 +166,7 @@ const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [domainTab, setDomainTab] = useState<DomainTab>('all');
+  const [showOlder, setShowOlder] = useState(false);
   const role = useAppRole();
   const isController = role === 'controller';
 
@@ -195,7 +219,6 @@ const NotificationCenter = () => {
   const cleanupStaleNotifications = async () => {
     if (!effectiveUserId) return;
     try {
-      // Get unread notifications that reference defects/documents/compliance_events
       const { data: unreadWithRefs } = await supabase
         .from('notifications')
         .select('id, related_table, related_id')
@@ -207,7 +230,6 @@ const NotificationCenter = () => {
 
       const staleIds: string[] = [];
 
-      // Check resolved defects
       const defectNotifs = unreadWithRefs.filter(n => n.related_table === 'defects');
       if (defectNotifs.length > 0) {
         const defectIds = [...new Set(defectNotifs.map(n => n.related_id!))];
@@ -222,7 +244,6 @@ const NotificationCenter = () => {
         });
       }
 
-      // Check completed compliance events
       const compNotifs = unreadWithRefs.filter(n => n.related_table === 'compliance_events');
       if (compNotifs.length > 0) {
         const compIds = [...new Set(compNotifs.map(n => n.related_id!))];
@@ -237,7 +258,6 @@ const NotificationCenter = () => {
         });
       }
 
-      // Mark stale notifications as read
       if (staleIds.length > 0) {
         await supabase
           .from('notifications')
@@ -275,16 +295,33 @@ const NotificationCenter = () => {
       for (const doc of docsWithExpiry || []) {
         const expDate = parseISO(doc.expires_at!);
         const daysUntil = differenceInDays(expDate, today);
-        const rideName = doc.ride_id ? rideMap.get(doc.ride_id) || '' : 'Global';
+        const rideName = doc.ride_id ? rideMap.get(doc.ride_id) || '' : '';
+        const ctx = rideName ? ` — ${rideName}` : '';
 
         if (daysUntil < 0) {
-          await ensureNotification(`Document expired: ${doc.document_name}`, `${doc.document_name}${rideName ? ` (${rideName})` : ''} expired ${daysLabel(Math.abs(daysUntil))} ago.`, 'error', 'documents', doc.id);
+          await ensureNotification(
+            `Expired: ${doc.document_name}`,
+            `This document expired ${daysLabel(Math.abs(daysUntil))} ago. Upload a new version or remove it${ctx}.`,
+            'error', 'documents', doc.id
+          );
         } else if (daysUntil <= 7) {
-          await ensureNotification(`Document expiring in ${daysLabel(daysUntil)}`, `${doc.document_name}${rideName ? ` (${rideName})` : ''} expires in ${daysLabel(daysUntil)}.`, 'warning', 'documents', doc.id);
+          await ensureNotification(
+            `Expiring in ${daysLabel(daysUntil)}: ${doc.document_name}`,
+            `Renew or replace before it expires${ctx}.`,
+            'warning', 'documents', doc.id
+          );
         } else if (daysUntil <= 14) {
-          await ensureNotification(`Document expiring in ${daysLabel(daysUntil)}`, `${doc.document_name}${rideName ? ` (${rideName})` : ''} expires in ${daysLabel(daysUntil)}.`, 'warning', 'documents', doc.id);
+          await ensureNotification(
+            `Expiring in ${daysLabel(daysUntil)}: ${doc.document_name}`,
+            `Renewal recommended soon${ctx}.`,
+            'warning', 'documents', doc.id
+          );
         } else if (daysUntil <= 30) {
-          await ensureNotification(`Document expiring soon: ${doc.document_name}`, `${doc.document_name}${rideName ? ` (${rideName})` : ''} expires in ${daysLabel(daysUntil)}.`, 'info', 'documents', doc.id);
+          await ensureNotification(
+            `Expiring soon: ${doc.document_name}`,
+            `Expires in ${daysLabel(daysUntil)}${ctx}.`,
+            'info', 'documents', doc.id
+          );
         }
       }
 
@@ -299,15 +336,32 @@ const NotificationCenter = () => {
         const dueDate = parseISO(evt.due_date);
         const daysUntil = differenceInDays(dueDate, today);
         const rideName = evt.ride_id ? rideMap.get(evt.ride_id) || '' : '';
+        const ctx = rideName ? ` — ${rideName}` : '';
 
         if (daysUntil < 0) {
-          await ensureNotification(`Inspection overdue: ${evt.event_name}`, `${evt.event_name}${rideName ? ` — ${rideName}` : ''} was due ${daysLabel(Math.abs(daysUntil))} ago.`, 'error', 'compliance_events', evt.id);
+          await ensureNotification(
+            `Overdue: ${evt.event_name}`,
+            `Was due ${daysLabel(Math.abs(daysUntil))} ago. Arrange this urgently${ctx}.`,
+            'error', 'compliance_events', evt.id
+          );
         } else if (daysUntil <= 7) {
-          await ensureNotification(`Inspection due in ${daysLabel(daysUntil)}`, `${evt.event_name}${rideName ? ` — ${rideName}` : ''} is due in ${daysLabel(daysUntil)}.`, 'warning', 'compliance_events', evt.id);
+          await ensureNotification(
+            `Due in ${daysLabel(daysUntil)}: ${evt.event_name}`,
+            `Book or confirm this soon${ctx}.`,
+            'warning', 'compliance_events', evt.id
+          );
         } else if (daysUntil <= 14) {
-          await ensureNotification(`Inspection due in ${daysLabel(daysUntil)}`, `${evt.event_name}${rideName ? ` — ${rideName}` : ''} is due in ${daysLabel(daysUntil)}.`, 'warning', 'compliance_events', evt.id);
+          await ensureNotification(
+            `Due in ${daysLabel(daysUntil)}: ${evt.event_name}`,
+            `Plan ahead for this inspection${ctx}.`,
+            'warning', 'compliance_events', evt.id
+          );
         } else if (daysUntil <= 30) {
-          await ensureNotification(`Inspection due soon: ${evt.event_name}`, `${evt.event_name}${rideName ? ` — ${rideName}` : ''} is due in ${daysLabel(daysUntil)}.`, 'info', 'compliance_events', evt.id);
+          await ensureNotification(
+            `Coming up: ${evt.event_name}`,
+            `Due in ${daysLabel(daysUntil)}${ctx}.`,
+            'info', 'compliance_events', evt.id
+          );
         }
       }
 
@@ -321,12 +375,29 @@ const NotificationCenter = () => {
       for (const d of openDefects || []) {
         const rideName = d.ride_id ? rideMap.get(d.ride_id) || '' : '';
         const daysOpen = differenceInDays(today, parseISO(d.reported_at));
+        const ctx = rideName ? ` — ${rideName}` : '';
+        // Create a clean summary: first sentence or first 80 chars
+        const rawDesc = d.description || '';
+        const firstSentence = rawDesc.split(/[.!]\s/)[0].slice(0, 80);
+
         if (isDefectCritical(d.severity)) {
-          await ensureNotification(`Stop Use defect unresolved`, `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`, 'error', 'defects', d.id);
+          await ensureNotification(
+            `Stop Use: ${rideName || 'equipment'}`,
+            `${firstSentence}. Do not operate until resolved. Open ${daysLabel(daysOpen)}${ctx}.`,
+            'error', 'defects', d.id
+          );
         } else if (d.severity === 'urgent') {
-          await ensureNotification(`High-priority defect unresolved`, `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`, 'warning', 'defects', d.id);
+          await ensureNotification(
+            `Repair needed: ${rideName || 'equipment'}`,
+            `${firstSentence}. Open ${daysLabel(daysOpen)}${ctx}.`,
+            'warning', 'defects', d.id
+          );
         } else {
-          await ensureNotification(`Open defect: ${rideName || 'equipment'}`, `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`, 'info', 'defects', d.id);
+          await ensureNotification(
+            `Open defect: ${rideName || 'equipment'}`,
+            `${firstSentence}. Open ${daysLabel(daysOpen)}${ctx}.`,
+            'info', 'defects', d.id
+          );
         }
       }
 
@@ -338,20 +409,33 @@ const NotificationCenter = () => {
 
       for (const m of maintenanceRecords || []) {
         const rideName = m.ride_id ? rideMap.get(m.ride_id) || '' : '';
+        const ctx = rideName ? ` — ${rideName}` : '';
         if (m.next_maintenance_due) {
           const dueDate = parseISO(m.next_maintenance_due);
           const daysUntil = differenceInDays(dueDate, today);
           if (daysUntil < 0) {
-            await ensureNotification(`Maintenance overdue`, `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''} was due ${daysLabel(Math.abs(daysUntil))} ago.`, 'warning', 'maintenance_records', m.id);
+            await ensureNotification(
+              `Maintenance overdue: ${rideName || 'equipment'}`,
+              `Was due ${daysLabel(Math.abs(daysUntil))} ago${ctx}.`,
+              'warning', 'maintenance_records', m.id
+            );
           } else if (daysUntil <= 7) {
-            await ensureNotification(`Maintenance due in ${daysLabel(daysUntil)}`, `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''}.`, 'info', 'maintenance_records', m.id);
+            await ensureNotification(
+              `Maintenance due in ${daysLabel(daysUntil)}`,
+              `${m.description.slice(0, 60)}${ctx}.`,
+              'info', 'maintenance_records', m.id
+            );
           }
         }
         if (m.maintenance_date) {
           const logDate = parseISO(m.maintenance_date);
           const daysAgo = differenceInDays(today, logDate);
           if (daysAgo >= 0 && daysAgo <= 7) {
-            await ensureNotification(`Maintenance logged: ${rideName || 'equipment'}`, `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''}.`, 'success', 'maintenance_records', m.id);
+            await ensureNotification(
+              `Maintenance logged: ${rideName || 'equipment'}`,
+              `${m.description.slice(0, 60)}${ctx}.`,
+              'success', 'maintenance_records', m.id
+            );
           }
         }
       }
@@ -369,7 +453,11 @@ const NotificationCenter = () => {
         overdueChecks.forEach(c => byRide.set(c.ride_id, (byRide.get(c.ride_id) || 0) + 1));
         for (const [rideId, count] of byRide) {
           const rideName = rideMap.get(rideId) || 'Unknown';
-          await ensureNotification(`Missed check: ${rideName}`, `${count} overdue check${count > 1 ? 's' : ''} for ${rideName}.`, 'warning', 'checks');
+          await ensureNotification(
+            `Missed check: ${rideName}`,
+            `${count} overdue check${count > 1 ? 's' : ''} — complete or review.`,
+            'warning', 'checks'
+          );
         }
       }
 
@@ -391,9 +479,17 @@ const NotificationCenter = () => {
           .maybeSingle();
 
         if (linkedDefect?.id) {
-          await ensureNotification(`Check failure linked defect: ${rideName || 'asset'}`, `A failed check for ${rideName || 'an asset'} has an open defect.`, 'warning', 'defects', linkedDefect.id);
+          await ensureNotification(
+            `Check failed with defect: ${rideName || 'asset'}`,
+            `A failed check raised a defect — review and resolve.`,
+            'warning', 'defects', linkedDefect.id
+          );
         } else {
-          await ensureNotification(`Failed check: ${rideName || 'asset'}`, `A check for ${rideName || 'an asset'} failed today.`, 'warning', 'checks', fc.id);
+          await ensureNotification(
+            `Failed check: ${rideName || 'asset'}`,
+            `Today's check failed — review the results.`,
+            'warning', 'checks', fc.id
+          );
         }
       }
 
@@ -433,7 +529,11 @@ const NotificationCenter = () => {
 
           if (outOfRange.length > 0) {
             const sectionNames = outOfRange.map(l => l.section_name).join(', ');
-            await ensureNotification(`Pressure out of range — ${psRideName || 'inflatable'}`, `${outOfRange.length} section${outOfRange.length > 1 ? 's' : ''} outside limits (${sectionNames}).`, 'warning', 'pressure_sessions', ps.id);
+            await ensureNotification(
+              `Pressure out of range: ${psRideName || 'inflatable'}`,
+              `${outOfRange.length} section${outOfRange.length > 1 ? 's' : ''} outside limits (${sectionNames}).`,
+              'warning', 'pressure_sessions', ps.id
+            );
           }
         }
       }
@@ -464,21 +564,18 @@ const NotificationCenter = () => {
 
   /* ── Derived data ── */
 
-  // Urgent: unread + urgent classification
   const urgentItems = useMemo(() =>
     notifications.filter(n => !n.is_read && isUrgent(n) && isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [notifications]
   );
 
-  // Action needed (non-urgent): unread + actionable but not urgent
   const actionItems = useMemo(() =>
     notifications.filter(n => !n.is_read && isActionable(n) && !isUrgent(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [notifications]
   );
 
-  // Updates: everything else (read items, non-actionable, etc.)
   const updateItems = useMemo(() =>
     notifications.filter(n => n.is_read || !isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
@@ -487,21 +584,20 @@ const NotificationCenter = () => {
 
   // Domain filtering for the browse section
   const domainFiltered = useMemo(() => {
-    const nonUrgent = notifications.filter(n => !(isUrgent(n) && isActionable(n) && !n.is_read));
+    const nonUrgent = updateItems;
     if (domainTab === 'all') return nonUrgent;
     return nonUrgent.filter(n => getCategory(n) === domainTab);
-  }, [notifications, domainTab]);
+  }, [updateItems, domainTab]);
 
   const domainCounts = useMemo(() => {
     const counts: Record<string, number> = { all: 0, defects: 0, compliance: 0, checks: 0, documents: 0, maintenance: 0 };
-    const nonUrgent = notifications.filter(n => !(isUrgent(n) && isActionable(n) && !n.is_read));
-    nonUrgent.forEach(n => {
+    updateItems.forEach(n => {
       counts.all++;
       const cat = getCategory(n);
       if (counts[cat] !== undefined) counts[cat]++;
     });
     return counts;
-  }, [notifications]);
+  }, [updateItems]);
 
   const handleNavigate = useCallback(async (n: Notification) => {
     const route = getActionRoute(n);
@@ -515,7 +611,7 @@ const NotificationCenter = () => {
   if (loading) {
     return (
       <div className="space-y-2">
-        {[1, 2, 3, 4].map(i => (
+        {[1, 2, 3].map(i => (
           <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
         ))}
       </div>
@@ -523,9 +619,12 @@ const NotificationCenter = () => {
   }
 
   const totalActionable = urgentItems.length + actionItems.length;
+  const BROWSE_INITIAL = 15;
+  const browseSlice = showOlder ? domainFiltered : domainFiltered.slice(0, BROWSE_INITIAL);
+  const hasMoreBrowse = domainFiltered.length > BROWSE_INITIAL;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* ── Summary line ── */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
@@ -534,11 +633,11 @@ const NotificationCenter = () => {
           )}
           {urgentItems.length > 0 && actionItems.length > 0 && ' · '}
           {actionItems.length > 0 && (
-            <span className="font-semibold text-foreground">{actionItems.length} need action</span>
+            <span className="font-semibold text-foreground">{actionItems.length} action</span>
           )}
           {totalActionable > 0 && updateItems.length > 0 && ' · '}
           {updateItems.length > 0 && (
-            <span>{updateItems.length} updates</span>
+            <span>{updateItems.length} older</span>
           )}
           {totalActionable === 0 && updateItems.length === 0 && 'No notifications'}
         </p>
@@ -555,12 +654,14 @@ const NotificationCenter = () => {
 
       {/* ── URGENT section ── */}
       {urgentItems.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-destructive flex items-center gap-1.5">
-            <AlertOctagon className="h-3 w-3" />
-            Urgent
-            <Badge variant="destructive" className="text-[9px] h-4 px-1.5">{urgentItems.length}</Badge>
-          </p>
+        <section className="space-y-1.5">
+          <div className="flex items-center gap-1.5 px-1">
+            <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+            <p className="text-[11px] font-bold uppercase tracking-widest text-destructive">
+              Urgent
+            </p>
+            <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{urgentItems.length}</Badge>
+          </div>
           <div className="space-y-1">
             {urgentItems.map(n => (
               <NotificationRow
@@ -572,17 +673,19 @@ const NotificationCenter = () => {
               />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* ── ACTION NEEDED section ── */}
       {actionItems.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-foreground flex items-center gap-1.5">
+        <section className="space-y-1.5">
+          <div className="flex items-center gap-1.5 px-1">
             <AlertTriangle className="h-3 w-3 text-accent-foreground" />
-            Action needed
-            <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{actionItems.length}</Badge>
-          </p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
+              Action needed
+            </p>
+            <Badge variant="secondary" className="text-[9px] h-4 px-1.5 ml-auto">{actionItems.length}</Badge>
+          </div>
           <div className="space-y-1">
             {actionItems.map(n => (
               <NotificationRow
@@ -594,7 +697,7 @@ const NotificationCenter = () => {
               />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* ── All clear ── */}
@@ -610,11 +713,11 @@ const NotificationCenter = () => {
         </div>
       )}
 
-      {/* ── BROWSE section (domain tabs) ── */}
+      {/* ── BROWSE / OLDER section ── */}
       {domainFiltered.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-            Browse
+        <section className="space-y-2 pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-1">
+            Updates & history
           </p>
 
           {/* Domain tabs */}
@@ -647,18 +750,29 @@ const NotificationCenter = () => {
           </div>
 
           {/* Filtered list */}
-          <div className="space-y-1">
-            {domainFiltered.slice(0, 50).map(n => (
+          <div className="space-y-0.5">
+            {browseSlice.map(n => (
               <NotificationRow
                 key={n.id}
                 notification={n}
-                variant="default"
+                variant="browse"
                 onNavigate={handleNavigate}
                 onDelete={isController && getCategory(n) === 'system' ? deleteNotification : undefined}
               />
             ))}
           </div>
-        </div>
+
+          {/* Show more */}
+          {hasMoreBrowse && !showOlder && (
+            <button
+              onClick={() => setShowOlder(true)}
+              className="flex items-center gap-1 mx-auto px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <ChevronDown className="h-3 w-3" />
+              Show {domainFiltered.length - BROWSE_INITIAL} older
+            </button>
+          )}
+        </section>
       )}
     </div>
   );
@@ -668,7 +782,7 @@ const NotificationCenter = () => {
 
 interface NotificationRowProps {
   notification: Notification;
-  variant: 'urgent' | 'action' | 'default';
+  variant: 'urgent' | 'action' | 'browse' | 'default';
   onNavigate: (n: Notification) => void;
   onDelete?: (id: string) => void;
 }
@@ -676,22 +790,24 @@ interface NotificationRowProps {
 const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: NotificationRowProps) => {
   const route = getActionRoute(n);
   const hasAction = route != null;
+  const equipment = extractEquipmentName(n.message);
+  const isBrowse = variant === 'browse' || variant === 'default';
 
   return (
     <div
       onClick={() => hasAction && onNavigate(n)}
       className={cn(
-        'flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all group',
-        variant === 'urgent' && 'border-destructive/20 bg-destructive/[0.03] hover:border-destructive/40',
+        'flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-all group',
+        variant === 'urgent' && 'border-destructive/20 bg-destructive/[0.04]',
         variant === 'action' && 'border-border bg-card hover:border-primary/30',
-        variant === 'default' && n.is_read && 'border-transparent bg-muted/50 hover:bg-muted',
-        variant === 'default' && !n.is_read && 'border-border bg-card hover:border-primary/30',
+        isBrowse && n.is_read && 'border-transparent bg-transparent hover:bg-muted/60',
+        isBrowse && !n.is_read && 'border-border/50 bg-card/50 hover:bg-card',
         hasAction && 'cursor-pointer active:scale-[0.995]'
       )}
     >
       {/* Icon */}
       <div className={cn(
-        'flex items-center justify-center w-7 h-7 rounded-lg shrink-0',
+        'flex items-center justify-center w-6 h-6 rounded-md shrink-0 mt-0.5',
         variant === 'urgent' ? 'bg-destructive/10' : variant === 'action' ? 'bg-accent' : 'bg-muted'
       )}>
         {getIcon(n)}
@@ -701,44 +817,57 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <p className={cn(
-            'text-[13px] font-medium leading-tight truncate',
-            n.is_read ? 'text-muted-foreground' : 'text-foreground'
+            'text-[13px] font-medium leading-snug line-clamp-1',
+            n.is_read && isBrowse ? 'text-muted-foreground' : 'text-foreground'
           )}>
             {n.title}
           </p>
           {!n.is_read && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary" />}
         </div>
-        <p className="text-[11px] text-muted-foreground/70 mt-0.5 flex items-center gap-1">
-          <Clock className="h-2.5 w-2.5 shrink-0" />
-          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-        </p>
+
+        {/* Message preview — only for urgent/action, or unread browse */}
+        {(variant === 'urgent' || variant === 'action' || (!n.is_read && isBrowse)) && n.message && (
+          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 line-clamp-1">
+            {n.message}
+          </p>
+        )}
+
+        {/* Meta line: equipment tag + time */}
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {equipment && (
+            <span className="text-[10px] font-medium text-primary bg-primary/8 px-1.5 py-0 rounded shrink-0 max-w-[120px] truncate">
+              {equipment}
+            </span>
+          )}
+          <span className="text-[10px] text-muted-foreground/60">
+            {compactTime(n.created_at)}
+          </span>
+        </div>
       </div>
 
       {/* Action */}
-      <div className="flex items-center gap-1 shrink-0">
-        {hasAction && (
+      {hasAction && (
+        <div className="flex items-center gap-0.5 shrink-0 mt-1">
           <span className={cn(
-            'text-[11px] font-medium px-2 py-0.5 rounded-md transition-all',
-            variant === 'urgent' ? 'text-destructive group-hover:bg-destructive/10' :
-            variant === 'action' ? 'text-foreground group-hover:bg-accent' :
-            'text-muted-foreground group-hover:bg-muted'
+            'text-[10px] font-semibold px-1.5 py-0.5 rounded-md',
+            variant === 'urgent' ? 'text-destructive bg-destructive/8' :
+            variant === 'action' ? 'text-foreground bg-accent' :
+            'text-muted-foreground'
           )}>
             {getActionLabel(n)}
           </span>
-        )}
-        <ChevronRight className={cn(
-          'h-3.5 w-3.5 shrink-0',
-          hasAction ? 'text-muted-foreground/50' : 'text-transparent'
-        )} />
-        {onDelete && (
-          <button
-            onClick={e => { e.stopPropagation(); onDelete(n.id); }}
-            className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
+          <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
+        </div>
+      )}
+
+      {onDelete && (
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(n.id); }}
+          className="p-1 rounded-md text-muted-foreground/30 hover:text-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100 shrink-0 mt-0.5"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 };
