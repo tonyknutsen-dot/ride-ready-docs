@@ -42,12 +42,39 @@ type DomainTab = 'all' | 'defects' | 'compliance' | 'checks' | 'documents' | 'ma
 const getCategory = (n: Notification): NotificationCategory => getNotificationCategory(n);
 const isActionable = (n: Notification): boolean => isNotificationActionable(n);
 
-const isUrgent = (n: Notification): boolean => {
+/**
+ * SEVERITY COLOUR POLICY
+ * ──────────────────────
+ * RED (Critical)   — Safety-critical, equipment must not operate:
+ *                     Stop Use defects, critical unresolved defects,
+ *                     failed checks with linked defects, pressure out of range.
+ *
+ * AMBER (Action)   — Requires attention but not a safety emergency:
+ *                     Overdue inspections, expired/expiring documents,
+ *                     open non-critical defects, missed checks, warnings.
+ *
+ * GREY (Neutral)   — Informational updates, confirmations, history:
+ *                     Maintenance logged, documents sent, check completed.
+ */
+
+/** True safety-critical — RED section */
+const isCritical = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
-  if (title.includes('stop use') || title.includes('critical')) return true;
-  if (title.includes('overdue') || title.includes('expired')) return true;
-  if (title.includes('failed check') || title.includes('check failure')) return true;
+  // Stop Use / critical defects
+  if (title.includes('stop use') || title.includes('do not operate')) return true;
+  if (n.related_table === 'defects' && title.includes('critical')) return true;
+  // Failed checks that raised a defect
+  if (title.includes('check failed with defect') || title.includes('failed check') && title.includes('defect')) return true;
+  // Pressure out of range (operational safety)
+  if (title.includes('pressure out of range') || title.includes('pressure') && title.includes('action needed')) return true;
   return false;
+};
+
+/** Standard action-needed — AMBER section (overdue, expired, open defects, warnings) */
+const isUrgent = (n: Notification): boolean => {
+  // isCritical items are handled separately — this is for non-critical action items
+  if (isCritical(n)) return false;
+  return isActionable(n);
 };
 
 const isSentDocument = (n: Notification): boolean => {
