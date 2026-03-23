@@ -885,7 +885,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
                 {/* Meta line: badges, equipment tag, time */}
                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                   {variant === 'urgent' && (
-                    <Badge className="text-[10px] px-1.5 py-0 font-semibold bg-destructive text-destructive-foreground">Urgent</Badge>
+                    <Badge className="text-[10px] px-1.5 py-0 font-semibold bg-destructive text-destructive-foreground">Critical</Badge>
                   )}
                   {equipment && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20">
