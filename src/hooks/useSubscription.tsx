@@ -55,6 +55,8 @@ export interface SubscriptionData {
   cancelAtPeriodEnd: boolean;
   cancelAt: string | null;
   wasPaidCustomer: boolean;
+  pendingSubscriptionPlan: string | null;
+  pendingChangeEffectiveDate: string | null;
 }
 
 export const useSubscription = () => {
