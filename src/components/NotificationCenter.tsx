@@ -592,14 +592,14 @@ const NotificationCenter = () => {
 
   /* ── Derived data ── */
 
-  const urgentItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isUrgent(n) && isActionable(n))
+  const criticalItems = useMemo(() =>
+    notifications.filter(n => !n.is_read && isCritical(n) && isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [notifications]
   );
 
   const actionItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isActionable(n) && !isUrgent(n))
+    notifications.filter(n => !n.is_read && isActionable(n) && !isCritical(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [notifications]
   );
