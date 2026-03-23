@@ -201,6 +201,8 @@ export const useSubscription = () => {
           cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
           cancelAt: data.cancel_at ?? null,
           wasPaidCustomer: !!data.stripe_customer_id,
+          pendingSubscriptionPlan: data.pending_subscription_plan ?? null,
+          pendingChangeEffectiveDate: data.pending_change_effective_date ?? null,
         };
 
         setSubscription(subscriptionData);
