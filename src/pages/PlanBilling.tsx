@@ -373,6 +373,32 @@ export default function PlanBilling() {
         </Alert>
       )}
 
+      {/* Scheduled Downgrade Banner */}
+      {isDowngradeScheduled && !isCancelScheduled && (
+        <Alert className="border-2 border-[#3B82F6] bg-[#EFF6FF]">
+          <Calendar className="h-5 w-5 text-[#3B82F6]" />
+          <AlertTitle className="text-[#1E40AF] font-semibold">Plan Change Scheduled</AlertTitle>
+          <AlertDescription className="text-sm text-[#1E40AF]/80 mt-1 space-y-3">
+            <p>
+              Your plan will change from <strong>{subscription?.tierLabel}</strong> to{' '}
+              <strong className="capitalize">{subscription?.pendingSubscriptionPlan}</strong> on{' '}
+              <strong>{subscription?.pendingChangeEffectiveDate ? format(new Date(subscription.pendingChangeEffectiveDate), "MMMM d, yyyy") : 'your next billing date'}</strong>.
+              Your current plan remains active until then.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-[#3B82F6] text-[#1E40AF] hover:bg-[#DBEAFE]"
+              onClick={handleManageSubscriptionClick}
+              disabled={portalLoading}
+            >
+              {portalLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Settings className="w-4 h-4 mr-2" />}
+              Modify in Billing Portal
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+
       {/* Current Plan Card */}
       <Card className="border border-[#BFDBFE] bg-card shadow-sm">
         <CardHeader className="pb-3">

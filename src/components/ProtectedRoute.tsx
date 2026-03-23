@@ -10,9 +10,10 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const REFRESH_SESSION_TIMEOUT_MS = 10000;
-const REDIRECT_GRACE_MS = 1500;
-const LOADER_FAILSAFE_MS = 15000;
+const REFRESH_SESSION_TIMEOUT_MS = 15000;
+const REDIRECT_GRACE_MS = 2000;
+const LOADER_FAILSAFE_MS = 20000;
+const MAX_REFRESH_RETRIES = 3;
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
