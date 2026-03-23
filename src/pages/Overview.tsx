@@ -54,7 +54,7 @@ const Overview = () => {
   }
 
   const hasActionNeeded = actionNeededCount > 0;
-  const hasBadge = unreadCount > 0;
+  const hasBadge = actionNeededCount > 0;
 
   return (
     <>
