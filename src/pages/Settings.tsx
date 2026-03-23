@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Settings as SettingsIcon, User, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug,
-  Calendar, Building2, Shield, Users, CreditCard, ChevronRight, Palette, Pencil, X,
+  Calendar, Building2, Shield, Users, CreditCard, ChevronRight, FileText, Pencil, X,
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimeSettings, COUNTRY_TIMEZONES, COUNTRY_DATE_FORMATS } from '@/components/DateTimeSettings';
@@ -29,7 +29,6 @@ import BugReportDialog from '@/components/BugReportDialog';
 import ActivityLog from '@/components/ActivityLog';
 import SupportAccessManager from '@/components/SupportAccessManager';
 import { SecuritySettingsSection } from '@/components/SecuritySettingsSection';
-import { CompanyLogoField, type CompanyLogoValue } from '@/components/profile/CompanyLogoField';
 
 /* ── Reusable section label ── */
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -82,12 +81,6 @@ const Settings = () => {
 
   // Expand state for summary→edit cards
   const [editingProfile, setEditingProfile] = useState(false);
-  const [editingBranding, setEditingBranding] = useState(false);
-
-  // Branding logo state
-  const [logo, setLogo] = useState<CompanyLogoValue>({ file: null, previewUrl: null, remove: false });
-  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
-  const [savingLogo, setSavingLogo] = useState(false);
 
   /* ── Data fetching ── */
   const fetchProfile = async () => {
@@ -111,20 +104,6 @@ const Settings = () => {
 
   useEffect(() => { fetchProfile(); }, [user]);
 
-  // Load existing logo
-  useEffect(() => {
-    const load = async () => {
-      if (profile?.company_logo_path) {
-        try {
-          const { data } = await supabase.storage.from('ride-documents').createSignedUrl(profile.company_logo_path, 3600);
-          if (data?.signedUrl) setExistingLogoUrl(data.signedUrl);
-        } catch { /* ignore */ }
-      } else {
-        setExistingLogoUrl(null);
-      }
-    };
-    load();
-  }, [profile?.company_logo_path]);
 
   const handleComplete = () => {
     setEditingProfile(false);
@@ -188,36 +167,6 @@ const Settings = () => {
     if (!error) { setTimezone(newTimezone); toast({ title: "Timezone updated", description: "Your timezone preference has been saved" }); }
     else toast({ title: "Error", description: "Failed to update timezone", variant: "destructive" });
     setSavingDateTime(false);
-  };
-
-  /* ── Branding / logo save ── */
-  const handleBrandingSave = async () => {
-    if (!user || !profile) return;
-    setSavingLogo(true);
-    try {
-      let logoPath: string | null | undefined = undefined;
-      if (logo.file) {
-        const ext = logo.file.name.split('.').pop();
-        const fileName = `company-logos/${profile.user_id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('ride-documents').upload(fileName, logo.file, { upsert: true });
-        if (upErr) throw upErr;
-        logoPath = fileName;
-      } else if (logo.remove) {
-        logoPath = null;
-      }
-      if (logoPath !== undefined) {
-        const { error } = await supabase.from('profiles').update({ company_logo_path: logoPath }).eq('user_id', user.id);
-        if (error) throw error;
-      }
-      toast({ title: "Branding updated", description: "Your logo has been saved." });
-      setLogo({ file: null, previewUrl: null, remove: false });
-      setEditingBranding(false);
-      fetchProfile();
-    } catch {
-      toast({ title: "Error", description: "Failed to save branding.", variant: "destructive" });
-    } finally {
-      setSavingLogo(false);
-    }
   };
 
   const selectedCountry = COUNTRIES.find(c => c.code === country);
@@ -353,7 +302,7 @@ const Settings = () => {
                       <span className="font-medium text-right">{profile?.company_name || '—'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Controller</span>
+                      <span className="text-muted-foreground">Primary Contact</span>
                       <span className="font-medium text-right">{profile?.controller_name || '—'}</span>
                     </div>
                     <div className="flex justify-between">
@@ -365,60 +314,38 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Branding & Reports — summary → edit */}
+            {/* Reports & Identity — text-based identity for PDFs/exports */}
             <Card>
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                      <Palette className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">Branding & Reports</CardTitle>
-                      <CardDescription className="text-xs mt-0.5">Logo shown on generated PDFs and exports</CardDescription>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  {!editingBranding && !loading && (
-                    <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setEditingBranding(true)}>
-                      <Pencil className="h-3.5 w-3.5" />Edit
-                    </Button>
-                  )}
-                  {editingBranding && (
-                    <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground" onClick={() => { setEditingBranding(false); setLogo({ file: null, previewUrl: null, remove: false }); }}>
-                      <X className="h-3.5 w-3.5" />Cancel
-                    </Button>
-                  )}
+                  <div>
+                    <CardTitle className="text-base">Reports & Identity</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">Text-based identity shown on reports, PDFs, and exports</CardDescription>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {loading ? (
                   <Skeleton className="h-16 w-full" />
-                ) : editingBranding ? (
-                  <div className="space-y-4">
-                    <CompanyLogoField
-                      label="Company Logo"
-                      disabled={savingLogo}
-                      existingPreviewUrl={existingLogoUrl}
-                      value={logo}
-                      onChange={setLogo}
-                      helperText="Used on PDF reports • Minimum 200×200px • Max 5MB • JPG, PNG, or WebP"
-                    />
-                    <Button onClick={handleBrandingSave} disabled={savingLogo || (!logo.file && !logo.remove)} className="w-full h-11">
-                      {savingLogo ? 'Saving…' : 'Save Branding'}
-                    </Button>
-                  </div>
                 ) : (
-                  /* Summary view */
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-lg border bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                      {existingLogoUrl ? (
-                        <img src={existingLogoUrl} alt="Company logo" className="w-full h-full object-contain" />
-                      ) : (
-                        <Palette className="h-5 w-5 text-muted-foreground/50" />
-                      )}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Organisation Name</span>
+                      <span className="font-medium text-right">{profile?.company_name || '—'}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {existingLogoUrl ? 'Logo set — appears on generated reports and PDFs' : 'No logo uploaded yet'}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Contact Name</span>
+                      <span className="font-medium text-right">{profile?.controller_name || '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Address</span>
+                      <span className="font-medium text-right max-w-[60%] truncate">{profile?.address || '—'}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-1">
+                      These details appear on generated reports and exported documents. Edit via Organisation Profile above.
                     </p>
                   </div>
                 )}
