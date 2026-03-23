@@ -45,7 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
-import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useActionNeededCount } from '@/hooks/useActionNeededCount';
 import { useOverdueCompliance } from '@/hooks/useOverdueCompliance';
 import appLogo from '@/assets/app-logo.jpg';
 
