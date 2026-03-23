@@ -45,15 +45,30 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       setRefreshing(true);
       setCanRedirectToAuth(false);
 
-      try {
-        await withTimeout(supabase.auth.refreshSession(), REFRESH_SESSION_TIMEOUT_MS);
-      } catch (error) {
-        console.warn('[ProtectedRoute] refreshSession failed or timed out:', error);
-      } finally {
-        if (!isMounted) return;
+      let success = false;
+      for (let attempt = 1; attempt <= MAX_REFRESH_RETRIES; attempt++) {
+        try {
+          const { data } = await withTimeout(supabase.auth.refreshSession(), REFRESH_SESSION_TIMEOUT_MS);
+          if (data?.session) {
+            success = true;
+            break;
+          }
+        } catch (error) {
+          console.warn(`[ProtectedRoute] refreshSession attempt ${attempt}/${MAX_REFRESH_RETRIES} failed:`, error);
+        }
+        // Wait before retrying (exponential: 1s, 2s, 4s)
+        if (attempt < MAX_REFRESH_RETRIES) {
+          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+        }
+      }
 
-        setRefreshing(false);
-        setRefreshAttempted(true);
+      if (!isMounted) return;
+
+      setRefreshing(false);
+      setRefreshRetryCount(prev => prev + 1);
+      setRefreshAttempted(true);
+
+      if (!success) {
         redirectTimer = setTimeout(() => {
           if (isMounted) {
             setCanRedirectToAuth(true);
