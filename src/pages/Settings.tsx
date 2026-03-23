@@ -302,7 +302,7 @@ const Settings = () => {
                       <span className="font-medium text-right">{profile?.company_name || '—'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Controller</span>
+                      <span className="text-muted-foreground">Primary Contact</span>
                       <span className="font-medium text-right">{profile?.controller_name || '—'}</span>
                     </div>
                     <div className="flex justify-between">
