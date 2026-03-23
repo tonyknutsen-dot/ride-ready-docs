@@ -256,6 +256,7 @@ export default function PlanBilling() {
   const isPastDue = status === 'past_due';
   const pastDueGraceActive = isPastDue && subscription?.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date();
   const isTrialOrExpired = !isPastDue && (status === "trial" || status === "expired" || !subscription?.hasStripeSubscription);
+  const isDowngradeScheduled = !!(subscription?.pendingSubscriptionPlan && subscription?.pendingChangeEffectiveDate && status === 'active');
 
   const getPlanName = () => {
     if (isPastDue) return `${subscription?.tierLabel || 'Starter'} Plan`;
