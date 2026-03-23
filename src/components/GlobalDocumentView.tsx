@@ -43,6 +43,7 @@ import {
   fileExtension as fileExt,
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
+  getCompactExpiry,
   DOC_TYPE_LABELS,
   matchesGlobalCategory as matchesCategory,
   GLOBAL_CATEGORY_MAP as CATEGORY_MAP,
