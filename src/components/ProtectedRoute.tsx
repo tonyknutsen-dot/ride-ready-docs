@@ -21,6 +21,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
   const [refreshAttempted, setRefreshAttempted] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshRetryCount, setRefreshRetryCount] = useState(0);
   const [canRedirectToAuth, setCanRedirectToAuth] = useState(false);
   const [loaderTimedOut, setLoaderTimedOut] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
