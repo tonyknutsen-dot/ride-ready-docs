@@ -13,7 +13,7 @@ import { useAdmin } from "@/contexts/AdminContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useActionNeededCount } from "@/hooks/useActionNeededCount";
 import { useOverdueCompliance } from "@/hooks/useOverdueCompliance";
 
 // Routes where the mobile nav should NOT appear (public pages + full-screen workflows)
