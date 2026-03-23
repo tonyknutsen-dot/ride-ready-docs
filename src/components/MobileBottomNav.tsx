@@ -240,6 +240,9 @@ export default function MobileBottomNav() {
                 {canAccessBilling && (
                   <MenuItem icon={CreditCard} label="Plan & Billing" onClick={() => go("/billing")} active={isActive(["/billing"])} />
                 )}
+                {canAccessSettings && (
+                  <MenuItem icon={Settings} label="Settings" onClick={() => go("/settings")} active={isActive(["/settings"])} />
+                )}
                 {canManageStaff && (
                   <MenuItem icon={Users} label="Staff Management" onClick={() => go("/staff")} active={isActive(["/staff"])} />
                 )}
