@@ -6,21 +6,72 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  DollarSign, 
-  TrendingUp, 
-  AlertTriangle, 
-  Users, 
+import {
+  DollarSign,
+  TrendingUp,
+  AlertTriangle,
+  Users,
   RefreshCw,
   CreditCard,
   Calendar,
   XCircle,
   CheckCircle,
-  Clock
+  Clock,
+  Activity,
+  ShieldAlert,
+  History,
+  RotateCw,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
+
+// ── Types ──
+
+interface UserHealthRow {
+  user_id: string;
+  controller_name: string | null;
+  company_name: string | null;
+  app_status: string | null;
+  app_plan: string | null;
+  stripe_status: string | null;
+  stripe_plan: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: string | null;
+  stripe_current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  stripe_cancel_at_period_end: boolean | null;
+  cancel_at: string | null;
+  last_billing_sync_at: string | null;
+  pending_subscription_plan: string | null;
+  pending_change_effective_date: string | null;
+  status_mismatch: boolean;
+  plan_mismatch: boolean;
+  period_end_mismatch: boolean;
+  has_mismatch: boolean;
+  problem_type: string | null;
+  sync_stale: boolean;
+}
+
+interface BillingEvent {
+  id: string;
+  user_id: string | null;
+  event_type: string;
+  stripe_event_id: string | null;
+  previous_status: string | null;
+  new_status: string | null;
+  previous_plan: string | null;
+  new_plan: string | null;
+  stripe_status: string | null;
+  stripe_plan: string | null;
+  mismatch_detected: boolean;
+  details: Record<string, unknown>;
+  created_at: string;
+}
 
 interface PaymentData {
   summary: {
@@ -32,48 +83,112 @@ interface PaymentData {
     pastDueSubscriptions: number;
     recentCancellations: number;
     failedPaymentsCount: number;
-    balance: {
-      available: number;
-      pending: number;
-      currency: string;
-    };
+    balance: { available: number; pending: number; currency: string };
   };
   failedPayments: Array<{
-    id: string;
-    amount: number;
-    currency: string;
-    status: string;
-    error: string;
-    created: number;
-    email?: string;
+    id: string; amount: number; currency: string; status: string;
+    error: string; created: number; email?: string;
   }>;
   recentPayments: Array<{
-    id: string;
-    amount: number;
-    currency: string;
-    status: string;
-    created: number;
-    email?: string;
+    id: string; amount: number; currency: string; status: string;
+    created: number; email?: string;
   }>;
-  subscriptionBreakdown: {
-    active: number;
-    trialing: number;
-    pastDue: number;
-    canceled: number;
-  };
+  subscriptionBreakdown: { active: number; trialing: number; pastDue: number; canceled: number };
+  userHealth: UserHealthRow[];
+  billingEventLog: BillingEvent[];
+  problemUserCount: number;
 }
 
-const formatCurrency = (amount: number, currency: string = 'gbp') => {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(amount / 100);
+const formatCurrency = (amount: number, currency = 'gbp') =>
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency.toUpperCase() }).format(amount / 100);
+
+// ── Problem badge ──
+
+const ProblemBadge = ({ type }: { type: string | null }) => {
+  if (!type) return <Badge variant="outline" className="text-xs">Healthy</Badge>;
+  const config: Record<string, { label: string; variant: 'destructive' | 'secondary' | 'outline' }> = {
+    mismatch: { label: 'Mismatch', variant: 'destructive' },
+    past_due: { label: 'Past Due', variant: 'destructive' },
+    stale_sync: { label: 'Stale Sync', variant: 'secondary' },
+    cancelling: { label: 'Cancelling', variant: 'secondary' },
+  };
+  const c = config[type] || { label: type, variant: 'secondary' as const };
+  return <Badge variant={c.variant} className="text-xs">{c.label}</Badge>;
 };
+
+// ── Status badge ──
+
+const StatusBadge = ({ status, isStripe }: { status: string | null; isStripe?: boolean }) => {
+  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  const color =
+    status === 'active' ? 'bg-green-500/15 text-green-700 dark:text-green-400' :
+    status === 'past_due' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
+    status === 'canceled' || status === 'expired' ? 'bg-red-500/15 text-red-700 dark:text-red-400' :
+    status === 'trialing' || status === 'trial' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-400' :
+    'bg-muted text-muted-foreground';
+  return (
+    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${color}`}>
+      {isStripe && <span className="mr-1 opacity-60">S:</span>}
+      {status}
+    </span>
+  );
+};
+
+// ── Plan label ──
+
+const PlanLabel = ({ plan, mismatch }: { plan: string | null; mismatch?: boolean }) => {
+  if (!plan) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <span className={`text-xs font-medium capitalize ${mismatch ? 'text-destructive font-bold' : ''}`}>
+      {plan}
+    </span>
+  );
+};
+
+// ── Event type label ──
+
+const eventTypeLabel = (type: string) => {
+  const map: Record<string, string> = {
+    'checkout.session.completed': 'Checkout',
+    'customer.subscription.updated': 'Sub Updated',
+    'customer.subscription.deleted': 'Sub Deleted',
+    'invoice.paid': 'Invoice Paid',
+    'invoice.payment_failed': 'Payment Failed',
+    'polling_sync': 'Polling Sync',
+    'manual_resync': 'Manual Re-sync',
+  };
+  return map[type] || type;
+};
+
+const changeTypeLabel = (details: Record<string, unknown>) => {
+  const ct = details?.change_type as string;
+  if (!ct) return null;
+  const map: Record<string, { label: string; color: string }> = {
+    upgrade: { label: '↑ Upgrade', color: 'text-green-600' },
+    downgrade: { label: '↓ Downgrade', color: 'text-amber-600' },
+    cancellation_scheduled: { label: '⏳ Cancel Scheduled', color: 'text-amber-600' },
+    cancellation_completed: { label: '✕ Cancelled', color: 'text-red-600' },
+    reactivation: { label: '↻ Reactivated', color: 'text-green-600' },
+    payment_failed: { label: '✕ Payment Failed', color: 'text-red-600' },
+    renewal: { label: '✓ Renewal', color: 'text-green-600' },
+    renewal_after_failure: { label: '✓ Recovered', color: 'text-green-600' },
+  };
+  const c = map[ct] || { label: ct, color: '' };
+  return <span className={`text-xs font-medium ${c.color}`}>{c.label}</span>;
+};
+
+// ════════════════════════════════════════
+// Main component
+// ════════════════════════════════════════
 
 export default function PaymentsDashboard() {
   const [data, setData] = useState<PaymentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [resyncingUser, setResyncingUser] = useState<string | null>(null);
+  const [eventDrawerOpen, setEventDrawerOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchData = async () => {
@@ -81,275 +196,317 @@ export default function PaymentsDashboard() {
     setError(null);
     try {
       const { data: response, error: fnError } = await supabase.functions.invoke('admin-stripe-data');
-      
       if (fnError) throw fnError;
       if (response.error) throw new Error(response.error);
-      
       setData(response);
     } catch (err: any) {
-      console.error('Error fetching payment data:', err);
       setError(err.message || 'Failed to fetch payment data');
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to fetch payment data',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: err.message || 'Failed to fetch payment data', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const handleResync = async (userId: string) => {
+    setResyncingUser(userId);
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('admin-stripe-data', {
+        body: { action: 'manual_resync', user_id: userId },
+      });
+      if (fnError) throw fnError;
+      if (response.error) throw new Error(response.error);
+      toast({
+        title: response.mismatch ? 'Re-sync corrected a mismatch' : 'Re-sync complete',
+        description: response.mismatch
+          ? `Status updated to ${response.newStatus}, plan: ${response.newPlan || '—'}`
+          : 'Profile is in sync with Stripe.',
+      });
+      await fetchData();
+    } catch (err: any) {
+      toast({ title: 'Re-sync failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setResyncingUser(null);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-10 w-24" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map(i => (
-              <Card key={i}>
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-24" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-32" />
-                </CardContent>
-              </Card>
-            ))}
+        <div className="space-y-6 max-w-6xl">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map(i => <Card key={i}><CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /></CardContent></Card>)}
           </div>
         </div>
       </AdminLayout>
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <AdminLayout>
         <div className="flex flex-col items-center justify-center py-12">
           <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-xl font-semibold mb-2">Failed to load payment data</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={fetchData}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
+          <Button onClick={fetchData}><RefreshCw className="h-4 w-4 mr-2" />Retry</Button>
         </div>
       </AdminLayout>
     );
   }
 
-  if (!data) return null;
+  const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, problemUserCount } = data;
 
-  const { summary, failedPayments, recentPayments, subscriptionBreakdown } = data;
+  const displayedUsers = showAllUsers
+    ? userHealth
+    : userHealth.filter(u => u.problem_type !== null);
+
+  // Filter events for selected user
+  const selectedUserEvents = selectedUserId
+    ? billingEventLog.filter(e => e.user_id === selectedUserId)
+    : billingEventLog;
+
+  const selectedUserName = selectedUserId
+    ? userHealth.find(u => u.user_id === selectedUserId)?.controller_name || userHealth.find(u => u.user_id === selectedUserId)?.company_name || 'User'
+    : null;
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-bold">Payments & Billing</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Monitor revenue, subscriptions, and payment issues
+              Subscription health, sync status, and payment monitoring
             </p>
           </div>
           <Button onClick={fetchData} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+            <RefreshCw className="h-4 w-4 mr-2" />Refresh
           </Button>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Revenue (30d)</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
+        {/* ── Key Metrics (compact) ── */}
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+              <CardTitle className="text-xs font-medium">MRR</CardTitle>
+              <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-lg sm:text-2xl font-bold truncate">
-                {formatCurrency(summary.totalRevenue30Days, summary.balance.currency)}
+              <div className="text-lg font-bold">{formatCurrency(summary.mrr, summary.balance.currency)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+              <CardTitle className="text-xs font-medium">Active Subscriptions</CardTitle>
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-lg font-bold">{summary.activeSubscriptions}</div>
+              <p className="text-xs text-muted-foreground">+{summary.trialingSubscriptions} trialing</p>
+            </CardContent>
+          </Card>
+          <Card className={summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}>
+            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+              <CardTitle className="text-xs font-medium">Past Due</CardTitle>
+              <AlertTriangle className={`h-3.5 w-3.5 ${summary.pastDueSubscriptions > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className={`text-lg font-bold ${summary.pastDueSubscriptions > 0 ? 'text-amber-600' : ''}`}>
+                {summary.pastDueSubscriptions}
               </div>
-              <p className="text-xs text-muted-foreground truncate">
-                From successful payments
-              </p>
             </CardContent>
           </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium">MRR</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Card className={summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}>
+            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+              <CardTitle className="text-xs font-medium">Failed Payments</CardTitle>
+              <XCircle className={`h-3.5 w-3.5 ${summary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-lg sm:text-2xl font-bold truncate">
-                {formatCurrency(summary.mrr, summary.balance.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground truncate">
-                Monthly recurring
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Active Subscriptions</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-lg sm:text-2xl font-bold">{summary.activeSubscriptions}</div>
-              <p className="text-xs text-muted-foreground truncate">
-                +{summary.trialingSubscriptions} trialing
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className={`overflow-hidden ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Failed Payments</CardTitle>
-              <AlertTriangle className={`h-4 w-4 shrink-0 ${summary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className={`text-lg sm:text-2xl font-bold ${summary.failedPaymentsCount > 0 ? 'text-destructive' : ''}`}>
+              <div className={`text-lg font-bold ${summary.failedPaymentsCount > 0 ? 'text-destructive' : ''}`}>
                 {summary.failedPaymentsCount}
               </div>
-              <p className="text-xs text-muted-foreground truncate">
-                Last 60 days
-              </p>
+              <p className="text-xs text-muted-foreground">Last 60 days</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Secondary Metrics */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
-                <Calendar className="h-4 w-4 shrink-0" />
-                <span className="truncate">Upcoming Revenue</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-lg sm:text-xl font-bold truncate">
-                {formatCurrency(summary.upcomingRevenue30Days, summary.balance.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground truncate">
-                Expected from invoices
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
-                <CreditCard className="h-4 w-4 shrink-0" />
-                <span className="truncate">Stripe Balance</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-1">
-                <div className="flex justify-between items-center gap-2 min-w-0">
-                  <span className="text-xs sm:text-sm text-muted-foreground shrink-0">Available:</span>
-                  <span className="font-medium text-sm truncate">{formatCurrency(summary.balance.available, summary.balance.currency)}</span>
-                </div>
-                <div className="flex justify-between items-center gap-2 min-w-0">
-                  <span className="text-xs sm:text-sm text-muted-foreground shrink-0">Pending:</span>
-                  <span className="font-medium text-sm truncate">{formatCurrency(summary.balance.pending, summary.balance.currency)}</span>
+        {/* ══ SUBSCRIPTION HEALTH TABLE ══ */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-primary" />
+                <div>
+                  <CardTitle className="text-base md:text-lg">Subscription Health</CardTitle>
+                  <CardDescription className="text-xs">
+                    {problemUserCount > 0
+                      ? `${problemUserCount} user${problemUserCount !== 1 ? 's' : ''} need${problemUserCount === 1 ? 's' : ''} attention`
+                      : 'All users healthy'}
+                  </CardDescription>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className={`overflow-hidden ${summary.pastDueSubscriptions > 0 ? 'border-warning' : ''}`}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
-                <Clock className="h-4 w-4 shrink-0" />
-                <span className="truncate">Subscription Health</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-1">
-                <div className="flex justify-between items-center gap-2 min-w-0">
-                  <span className="text-xs sm:text-sm text-muted-foreground shrink-0">Past Due:</span>
-                  <Badge variant={summary.pastDueSubscriptions > 0 ? 'destructive' : 'secondary'} className="shrink-0">
-                    {summary.pastDueSubscriptions}
-                  </Badge>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="show-all"
+                    checked={showAllUsers}
+                    onCheckedChange={setShowAllUsers}
+                  />
+                  <Label htmlFor="show-all" className="text-xs cursor-pointer">
+                    Show all users ({userHealth.length})
+                  </Label>
                 </div>
-                <div className="flex justify-between items-center gap-2 min-w-0">
-                  <span className="text-xs sm:text-sm text-muted-foreground shrink-0">Canceled:</span>
-                  <Badge variant="secondary" className="shrink-0">{summary.recentCancellations}</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Subscription Breakdown */}
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Subscription Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
-              <div className="flex items-center gap-2 min-w-0">
-                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 shrink-0" />
-                <span className="font-medium">{subscriptionBreakdown.active}</span>
-                <span className="text-muted-foreground text-sm truncate">Active</span>
-              </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" />
-                <span className="font-medium">{subscriptionBreakdown.trialing}</span>
-                <span className="text-muted-foreground text-sm truncate">Trialing</span>
-              </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500 shrink-0" />
-                <span className="font-medium">{subscriptionBreakdown.pastDue}</span>
-                <span className="text-muted-foreground text-sm truncate">Past Due</span>
-              </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
-                <span className="font-medium">{subscriptionBreakdown.canceled}</span>
-                <span className="text-muted-foreground text-sm truncate">Canceled</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setSelectedUserId(null); setEventDrawerOpen(true); }}
+                  className="text-xs"
+                >
+                  <History className="h-3.5 w-3.5 mr-1.5" />
+                  Event Log
+                </Button>
               </div>
             </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {displayedUsers.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-500" />
+                <p className="font-medium">No problem users detected</p>
+                <p className="text-xs mt-1">Toggle "Show all users" to view everyone</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs min-w-[140px]">Organisation / User</TableHead>
+                      <TableHead className="text-xs">Problem</TableHead>
+                      <TableHead className="text-xs">App Status</TableHead>
+                      <TableHead className="text-xs">Stripe Status</TableHead>
+                      <TableHead className="text-xs">App Plan</TableHead>
+                      <TableHead className="text-xs">Stripe Plan</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Period End</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">Last Sync</TableHead>
+                      <TableHead className="text-xs text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {displayedUsers.map(user => (
+                      <TableRow
+                        key={user.user_id}
+                        className={user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}
+                      >
+                        <TableCell className="min-w-[140px]">
+                          <div className="space-y-0.5">
+                            <div className="text-sm font-medium truncate max-w-[180px]">
+                              {user.company_name || '—'}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate max-w-[180px]">
+                              {user.controller_name || '—'}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <ProblemBadge type={user.problem_type} />
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={user.app_status} />
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={user.stripe_status} isStripe />
+                        </TableCell>
+                        <TableCell>
+                          <PlanLabel plan={user.app_plan} mismatch={user.plan_mismatch} />
+                        </TableCell>
+                        <TableCell>
+                          <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} />
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="space-y-0.5">
+                            {user.current_period_end ? (
+                              <span className="text-xs">{format(new Date(user.current_period_end), 'dd MMM yyyy')}</span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                            {user.cancel_at_period_end && (
+                              <div className="text-xs text-amber-600 font-medium">Cancels at end</div>
+                            )}
+                            {user.pending_subscription_plan && (
+                              <div className="text-xs text-blue-600 font-medium">
+                                → {user.pending_subscription_plan}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {user.last_billing_sync_at ? (
+                            <span className={`text-xs ${user.sync_stale ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                              {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Never</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}
+                            >
+                              <Activity className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              disabled={resyncingUser === user.user_id}
+                              onClick={() => handleResync(user.user_id)}
+                            >
+                              <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Payment Tables */}
+        {/* ── Payment Details Tabs (secondary) ── */}
         <Tabs defaultValue="failed" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="failed" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
+            <TabsTrigger value="failed" className="flex items-center gap-1.5 text-xs">
+              <AlertTriangle className="h-3.5 w-3.5" />
               Failed Payments
-              {failedPayments.length > 0 && (
-                <Badge variant="destructive" className="ml-1">{failedPayments.length}</Badge>
-              )}
+              {failedPayments.length > 0 && <Badge variant="destructive" className="ml-1 text-xs">{failedPayments.length}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="recent" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
+            <TabsTrigger value="recent" className="flex items-center gap-1.5 text-xs">
+              <CheckCircle className="h-3.5 w-3.5" />
               Recent Payments
+            </TabsTrigger>
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs">
+              <CreditCard className="h-3.5 w-3.5" />
+              Overview
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="failed">
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg">Failed Payments</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  Payments that failed in the last 60 days
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-6">
+            <Card>
+              <CardContent className="p-0 md:p-4">
                 {failedPayments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground px-4">
-                    <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
-                    <p>No failed payments! All payments are processing correctly.</p>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm">No failed payments</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -360,29 +517,17 @@ export default function PaymentsDashboard() {
                           <TableHead className="text-xs">Customer</TableHead>
                           <TableHead className="text-xs">Amount</TableHead>
                           <TableHead className="text-xs">Status</TableHead>
-                          <TableHead className="text-xs hidden sm:table-cell">Error</TableHead>
+                          <TableHead className="text-xs hidden md:table-cell">Error</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {failedPayments.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell className="whitespace-nowrap text-xs sm:text-sm">
-                              {format(new Date(payment.created * 1000), 'dd MMM')}
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm max-w-[100px] truncate">
-                              {payment.email || (
-                                <span className="text-muted-foreground">Unknown</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
-                              {formatCurrency(payment.amount, payment.currency)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="destructive" className="text-xs">{payment.status}</Badge>
-                            </TableCell>
-                            <TableCell className="max-w-[150px] truncate text-xs text-muted-foreground hidden sm:table-cell">
-                              {payment.error}
-                            </TableCell>
+                        {failedPayments.map(p => (
+                          <TableRow key={p.id}>
+                            <TableCell className="text-xs whitespace-nowrap">{format(new Date(p.created * 1000), 'dd MMM')}</TableCell>
+                            <TableCell className="text-xs max-w-[120px] truncate">{p.email || <span className="text-muted-foreground">Unknown</span>}</TableCell>
+                            <TableCell className="text-xs font-medium whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</TableCell>
+                            <TableCell><Badge variant="destructive" className="text-xs">{p.status}</Badge></TableCell>
+                            <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate hidden md:table-cell">{p.error}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -394,18 +539,10 @@ export default function PaymentsDashboard() {
           </TabsContent>
 
           <TabsContent value="recent">
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-base sm:text-lg">Recent Payments</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  Payments processed in the last 30 days
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 sm:p-6">
+            <Card>
+              <CardContent className="p-0 md:p-4">
                 {recentPayments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground px-4">
-                    <p>No recent payments found.</p>
-                  </div>
+                  <div className="text-center py-8 text-muted-foreground"><p className="text-sm">No recent payments</p></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -418,24 +555,12 @@ export default function PaymentsDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {recentPayments.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell className="whitespace-nowrap text-xs sm:text-sm">
-                              {format(new Date(payment.created * 1000), 'dd MMM')}
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm max-w-[100px] truncate">
-                              {payment.email || (
-                                <span className="text-muted-foreground">Unknown</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium text-xs sm:text-sm whitespace-nowrap">
-                              {formatCurrency(payment.amount, payment.currency)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="default" className="bg-green-500 text-xs">
-                                {payment.status}
-                              </Badge>
-                            </TableCell>
+                        {recentPayments.map(p => (
+                          <TableRow key={p.id}>
+                            <TableCell className="text-xs whitespace-nowrap">{format(new Date(p.created * 1000), 'dd MMM')}</TableCell>
+                            <TableCell className="text-xs max-w-[120px] truncate">{p.email || <span className="text-muted-foreground">Unknown</span>}</TableCell>
+                            <TableCell className="text-xs font-medium whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</TableCell>
+                            <TableCell><Badge className="bg-green-500 text-xs">{p.status}</Badge></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -445,8 +570,128 @@ export default function PaymentsDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="overview">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2"><DollarSign className="h-4 w-4" />Revenue (30 days)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold">{formatCurrency(summary.totalRevenue30Days, summary.balance.currency)}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2"><Calendar className="h-4 w-4" />Upcoming Revenue</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold">{formatCurrency(summary.upcomingRevenue30Days, summary.balance.currency)}</div>
+                  <p className="text-xs text-muted-foreground">From draft invoices</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2"><CreditCard className="h-4 w-4" />Stripe Balance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Available:</span>
+                      <span className="font-medium">{formatCurrency(summary.balance.available, summary.balance.currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Pending:</span>
+                      <span className="font-medium">{formatCurrency(summary.balance.pending, summary.balance.currency)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* ── Billing Event Log Drawer ── */}
+      <Sheet open={eventDrawerOpen} onOpenChange={setEventDrawerOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              {selectedUserName ? `Events: ${selectedUserName}` : 'Billing Event Log'}
+            </SheetTitle>
+            <SheetDescription>
+              {selectedUserId
+                ? 'Sync and webhook events for this user'
+                : 'Last 50 billing events across all users'}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-3">
+            {selectedUserEvents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Activity className="h-8 w-8 mx-auto mb-2" />
+                <p className="text-sm">No billing events recorded yet</p>
+              </div>
+            ) : (
+              selectedUserEvents.map(event => (
+                <div
+                  key={event.id}
+                  className={`rounded-lg border p-3 space-y-1.5 ${
+                    event.mismatch_detected ? 'border-destructive bg-destructive/5' : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {eventTypeLabel(event.event_type)}
+                      </Badge>
+                      {changeTypeLabel(event.details)}
+                      {event.mismatch_detected && (
+                        <Badge variant="destructive" className="text-xs">Mismatch</Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {format(new Date(event.created_at), 'dd MMM HH:mm')}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    {event.previous_status && (
+                      <>
+                        <span className="text-muted-foreground">Status:</span>
+                        <span>
+                          {event.previous_status} → <span className="font-medium">{event.new_status}</span>
+                        </span>
+                      </>
+                    )}
+                    {(event.previous_plan || event.new_plan) && (
+                      <>
+                        <span className="text-muted-foreground">Plan:</span>
+                        <span>
+                          {event.previous_plan || '—'} → <span className="font-medium">{event.new_plan || '—'}</span>
+                        </span>
+                      </>
+                    )}
+                    {event.stripe_status && (
+                      <>
+                        <span className="text-muted-foreground">Stripe status:</span>
+                        <span>{event.stripe_status}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {event.stripe_event_id && (
+                    <div className="text-xs text-muted-foreground font-mono truncate">
+                      {event.stripe_event_id}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 }
