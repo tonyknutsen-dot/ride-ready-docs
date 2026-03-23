@@ -144,7 +144,7 @@ serve(async (req) => {
     // Get all profiles with Stripe data
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("user_id, full_name, company_name, subscription_status, subscription_plan, stripe_customer_id, stripe_subscription_id, current_period_end, cancel_at_period_end, cancel_at, last_billing_sync_at, pending_subscription_plan, pending_change_effective_date")
+      .select("user_id, controller_name, company_name, subscription_status, subscription_plan, stripe_customer_id, stripe_subscription_id, current_period_end, cancel_at_period_end, cancel_at, last_billing_sync_at, pending_subscription_plan, pending_change_effective_date")
       .not("stripe_customer_id", "is", null);
 
     // Build Stripe subscription lookup by subscription ID
