@@ -81,6 +81,8 @@ serve(async (req) => {
     let tier: string | null = null;
     let subscriptionEnd: string | null = null;
     let subStatus: 'active' | 'past_due' = 'active';
+    let pendingPlan: string | null = null;
+    let pendingChangeDate: string | null = null;
 
     if (hasActiveSub) {
       subStatus = subscription.status === 'past_due' ? 'past_due' : 'active';
@@ -93,6 +95,37 @@ serve(async (req) => {
         : null;
       logStep("Subscription found", { subscriptionId: subscription.id, tier, productId, status: subStatus, cancelAtPeriodEnd });
 
+      // Check for a scheduled plan change (downgrade/upgrade deferred to period end)
+      const scheduleId = subscription.schedule as string | null;
+      if (scheduleId) {
+        try {
+          const schedule = await stripe.subscriptionSchedules.retrieve(scheduleId);
+          // Look at the next phase to find the pending plan
+          if (schedule.phases && schedule.phases.length > 1) {
+            const nextPhase = schedule.phases[schedule.phases.length - 1];
+            if (nextPhase.items && nextPhase.items.length > 0) {
+              // Get the price from the next phase
+              const nextPriceId = typeof nextPhase.items[0].price === 'string'
+                ? nextPhase.items[0].price
+                : nextPhase.items[0].price;
+              // Retrieve the price to get the product
+              const nextPrice = await stripe.prices.retrieve(nextPriceId as string);
+              const nextProductId = typeof nextPrice.product === 'string' ? nextPrice.product : '';
+              const nextTier = PRODUCT_TO_TIER[nextProductId] || null;
+              if (nextTier && nextTier !== tier) {
+                pendingPlan = nextTier;
+                pendingChangeDate = nextPhase.start_date
+                  ? new Date(nextPhase.start_date * 1000).toISOString()
+                  : subscriptionEnd;
+                logStep("Pending plan change detected", { pendingPlan, pendingChangeDate });
+              }
+            }
+          }
+        } catch (schedError) {
+          logStep("Could not fetch subscription schedule", { error: String(schedError) });
+        }
+      }
+
       const { error: updateError } = await supabaseClient
         .from("profiles")
         .update({
@@ -104,6 +137,8 @@ serve(async (req) => {
           current_period_end: subscriptionEnd,
           cancel_at_period_end: cancelAtPeriodEnd,
           cancel_at: cancelAt,
+          pending_subscription_plan: pendingPlan,
+          pending_change_effective_date: pendingChangeDate,
         })
         .eq("user_id", user.id);
 
@@ -112,12 +147,23 @@ serve(async (req) => {
       }
     } else {
       logStep("No active subscription found");
+
+      // Clear any stale pending plan data
+      await supabaseClient
+        .from("profiles")
+        .update({
+          pending_subscription_plan: null,
+          pending_change_effective_date: null,
+        })
+        .eq("user_id", user.id);
     }
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       tier,
       subscription_end: subscriptionEnd,
+      pending_plan: pendingPlan,
+      pending_change_date: pendingChangeDate,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
     });
