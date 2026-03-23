@@ -169,36 +169,6 @@ const Settings = () => {
     setSavingDateTime(false);
   };
 
-  /* ── Branding / logo save ── */
-  const handleBrandingSave = async () => {
-    if (!user || !profile) return;
-    setSavingLogo(true);
-    try {
-      let logoPath: string | null | undefined = undefined;
-      if (logo.file) {
-        const ext = logo.file.name.split('.').pop();
-        const fileName = `company-logos/${profile.user_id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('ride-documents').upload(fileName, logo.file, { upsert: true });
-        if (upErr) throw upErr;
-        logoPath = fileName;
-      } else if (logo.remove) {
-        logoPath = null;
-      }
-      if (logoPath !== undefined) {
-        const { error } = await supabase.from('profiles').update({ company_logo_path: logoPath }).eq('user_id', user.id);
-        if (error) throw error;
-      }
-      toast({ title: "Branding updated", description: "Your logo has been saved." });
-      setLogo({ file: null, previewUrl: null, remove: false });
-      setEditingBranding(false);
-      fetchProfile();
-    } catch {
-      toast({ title: "Error", description: "Failed to save branding.", variant: "destructive" });
-    } finally {
-      setSavingLogo(false);
-    }
-  };
-
   const selectedCountry = COUNTRIES.find(c => c.code === country);
   const pendingCountryInfo = COUNTRIES.find(c => c.code === pendingCountry);
   const currentTerms = getTerminologyForCountry(country);
