@@ -36,28 +36,10 @@ interface DefectsListProps {
   onDefectUpdated?: () => void;
 }
 
-const SEVERITY_CONFIG: Record<DefectSeverity, {
-  label: string; icon: typeof AlertOctagon; badgeClass: string;
-  operationalClass: string; operational: string;
-}> = {
-  stop_operation: {
-    label: 'Stop Use', icon: AlertOctagon,
-    badgeClass: 'bg-destructive text-destructive-foreground',
-    operationalClass: 'bg-destructive/10 text-destructive',
-    operational: 'Do not operate',
-  },
-  urgent: {
-    label: 'Important', icon: Wrench,
-    badgeClass: 'bg-orange-500 text-white dark:bg-orange-600',
-    operationalClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-    operational: 'Repair required',
-  },
-  non_urgent: {
-    label: 'Low', icon: Clock,
-    badgeClass: 'bg-yellow-500 text-white dark:bg-yellow-600',
-    operationalClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
-    operational: 'Monitor',
-  },
+const SEVERITY_ICONS: Record<DefectSeverity, typeof AlertOctagon> = {
+  stop_operation: AlertOctagon,
+  urgent: Wrench,
+  non_urgent: Clock,
 };
 
 const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }: DefectsListProps) => {
