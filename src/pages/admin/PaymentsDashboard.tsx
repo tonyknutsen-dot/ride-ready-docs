@@ -199,7 +199,7 @@ export default function PaymentsDashboard() {
 
           <Card className="overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs sm:text-sm font-medium truncate">Active Subs</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium truncate">Active Subscriptions</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground shrink-0" />
             </CardHeader>
             <CardContent className="pt-0">
