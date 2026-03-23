@@ -104,7 +104,7 @@ const Overview = () => {
                     ? 'bg-destructive text-destructive-foreground'
                     : 'bg-primary text-primary-foreground'
                 }`}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {actionNeededCount > 99 ? '99+' : actionNeededCount}
                 </span>
               )}
             </button>
