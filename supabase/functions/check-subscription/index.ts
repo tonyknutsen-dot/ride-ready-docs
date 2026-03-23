@@ -57,6 +57,13 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Get current profile state before sync for comparison
+    const { data: prevProfile } = await supabaseClient
+      .from("profiles")
+      .select("subscription_status, subscription_plan")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
@@ -70,7 +77,6 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Check for active OR past_due subscriptions
     const [activeSubs, pastDueSubs] = await Promise.all([
       stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 }),
       stripe.subscriptions.list({ customer: customerId, status: "past_due", limit: 1 }),
@@ -95,20 +101,17 @@ serve(async (req) => {
         : null;
       logStep("Subscription found", { subscriptionId: subscription.id, tier, productId, status: subStatus, cancelAtPeriodEnd });
 
-      // Check for a scheduled plan change (downgrade/upgrade deferred to period end)
+      // Check for a scheduled plan change
       const scheduleId = subscription.schedule as string | null;
       if (scheduleId) {
         try {
           const schedule = await stripe.subscriptionSchedules.retrieve(scheduleId);
-          // Look at the next phase to find the pending plan
           if (schedule.phases && schedule.phases.length > 1) {
             const nextPhase = schedule.phases[schedule.phases.length - 1];
             if (nextPhase.items && nextPhase.items.length > 0) {
-              // Get the price from the next phase
               const nextPriceId = typeof nextPhase.items[0].price === 'string'
                 ? nextPhase.items[0].price
                 : nextPhase.items[0].price;
-              // Retrieve the price to get the product
               const nextPrice = await stripe.prices.retrieve(nextPriceId as string);
               const nextProductId = typeof nextPrice.product === 'string' ? nextPrice.product : '';
               const nextTier = PRODUCT_TO_TIER[nextProductId] || null;
@@ -126,6 +129,13 @@ serve(async (req) => {
         }
       }
 
+      // Detect mismatch: profile state doesn't match what Stripe says
+      const mismatch = prevProfile
+        ? (prevProfile.subscription_status !== subStatus || prevProfile.subscription_plan !== tier)
+        : false;
+
+      const syncTimestamp = new Date().toISOString();
+
       const { error: updateError } = await supabaseClient
         .from("profiles")
         .update({
@@ -139,16 +149,45 @@ serve(async (req) => {
           cancel_at: cancelAt,
           pending_subscription_plan: pendingPlan,
           pending_change_effective_date: pendingChangeDate,
+          last_billing_sync_at: syncTimestamp,
         })
         .eq("user_id", user.id);
 
       if (updateError) {
         logStep("Error updating profile", { error: updateError.message });
       }
+
+      // Log the polling sync event
+      if (mismatch) {
+        logStep("Mismatch detected during polling sync", {
+          prevStatus: prevProfile?.subscription_status,
+          newStatus: subStatus,
+          prevPlan: prevProfile?.subscription_plan,
+          newPlan: tier,
+        });
+      }
+
+      await supabaseClient.from("billing_sync_log").insert({
+        user_id: user.id,
+        event_type: 'polling_sync',
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: customerId,
+        previous_status: prevProfile?.subscription_status ?? null,
+        new_status: subStatus,
+        previous_plan: prevProfile?.subscription_plan ?? null,
+        new_plan: tier,
+        stripe_status: subscription.status,
+        stripe_plan: tier,
+        mismatch_detected: mismatch,
+        details: {
+          cancel_at_period_end: cancelAtPeriodEnd,
+          cancel_at: cancelAt,
+          pending_plan: pendingPlan,
+        },
+      });
     } else {
       logStep("No active subscription found");
 
-      // Clear any stale pending plan data
       await supabaseClient
         .from("profiles")
         .update({

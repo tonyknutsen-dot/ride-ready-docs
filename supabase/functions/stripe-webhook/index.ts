@@ -9,6 +9,61 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+/** Fetch the user's current profile status + plan so we can log the delta. */
+async function getProfileState(supabase: ReturnType<typeof createClient>, key: string, value: string) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("user_id, subscription_status, subscription_plan, last_billing_sync_at")
+    .eq(key, value)
+    .maybeSingle();
+  return data;
+}
+
+/** Write a row to billing_sync_log and stamp last_billing_sync_at on the profile. */
+async function logBillingEvent(
+  supabase: ReturnType<typeof createClient>,
+  params: {
+    userId: string | null;
+    eventType: string;
+    stripeEventId: string;
+    stripeSubscriptionId?: string;
+    stripeCustomerId?: string;
+    previousStatus?: string | null;
+    newStatus?: string | null;
+    previousPlan?: string | null;
+    newPlan?: string | null;
+    stripeStatus?: string;
+    stripePlan?: string | null;
+    mismatchDetected?: boolean;
+    details?: Record<string, unknown>;
+  }
+) {
+  const { error } = await supabase.from("billing_sync_log").insert({
+    user_id: params.userId,
+    event_type: params.eventType,
+    stripe_event_id: params.stripeEventId,
+    stripe_subscription_id: params.stripeSubscriptionId ?? null,
+    stripe_customer_id: params.stripeCustomerId ?? null,
+    previous_status: params.previousStatus ?? null,
+    new_status: params.newStatus ?? null,
+    previous_plan: params.previousPlan ?? null,
+    new_plan: params.newPlan ?? null,
+    stripe_status: params.stripeStatus ?? null,
+    stripe_plan: params.stripePlan ?? null,
+    mismatch_detected: params.mismatchDetected ?? false,
+    details: params.details ?? {},
+  });
+  if (error) logStep("Failed to write billing_sync_log", { error: error.message });
+
+  // Stamp last_billing_sync_at
+  if (params.userId) {
+    await supabase
+      .from("profiles")
+      .update({ last_billing_sync_at: new Date().toISOString() })
+      .eq("user_id", params.userId);
+  }
+}
+
 serve(async (req) => {
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
@@ -31,7 +86,7 @@ serve(async (req) => {
     if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET is not set");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    
+
     const signature = req.headers.get("stripe-signature");
     if (!signature) throw new Error("No stripe-signature header");
 
@@ -54,16 +109,17 @@ serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         logStep("Checkout session completed", { sessionId: session.id });
-        
+
         const userId = session.metadata?.user_id;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
-        
+
         if (userId && customerId && subscriptionId) {
+          const prev = await getProfileState(supabaseAdmin, "user_id", userId);
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const productId = subscription.items.data[0]?.price.product as string;
           const tier = PRODUCT_TO_TIER[productId] || 'starter';
-          
+
           const { error } = await supabaseAdmin
             .from("profiles")
             .update({
@@ -73,6 +129,7 @@ serve(async (req) => {
               subscription_plan: tier,
               billing_cycle: 'monthly',
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              last_billing_sync_at: new Date().toISOString(),
             })
             .eq("user_id", userId);
 
@@ -81,6 +138,21 @@ serve(async (req) => {
           } else {
             logStep("Profile updated successfully", { userId, tier, customerId });
           }
+
+          await logBillingEvent(supabaseAdmin, {
+            userId,
+            eventType: event.type,
+            stripeEventId: event.id,
+            stripeSubscriptionId: subscriptionId,
+            stripeCustomerId: customerId,
+            previousStatus: prev?.subscription_status,
+            newStatus: 'active',
+            previousPlan: prev?.subscription_plan,
+            newPlan: tier,
+            stripeStatus: subscription.status,
+            stripePlan: tier,
+            details: { session_id: session.id },
+          });
         }
         break;
       }
@@ -92,15 +164,17 @@ serve(async (req) => {
           cancel_at_period_end: subscription.cancel_at_period_end,
           cancel_at: subscription.cancel_at,
         });
-        
+
         const productId = subscription.items.data[0]?.price.product as string;
         const tier = PRODUCT_TO_TIER[productId] || 'starter';
-        
+
         const mappedStatus = subscription.status === 'active'
           ? 'active'
           : subscription.status === 'past_due'
           ? 'past_due'
           : 'expired';
+
+        const prev = await getProfileState(supabaseAdmin, "stripe_subscription_id", subscription.id);
 
         const { error } = await supabaseAdmin
           .from("profiles")
@@ -112,6 +186,7 @@ serve(async (req) => {
             cancel_at: subscription.cancel_at
               ? new Date(subscription.cancel_at * 1000).toISOString()
               : null,
+            last_billing_sync_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
 
@@ -120,18 +195,49 @@ serve(async (req) => {
         } else {
           logStep("Subscription updated in database", { tier, cancel_at_period_end: subscription.cancel_at_period_end });
         }
+
+        // Detect change type for the log
+        let changeType = 'update';
+        if (subscription.cancel_at_period_end && !prev?.subscription_status?.includes('cancel')) {
+          changeType = 'cancellation_scheduled';
+        } else if (prev?.subscription_plan && tier !== prev.subscription_plan) {
+          changeType = tier > prev.subscription_plan ? 'upgrade' : 'downgrade';
+        } else if (prev?.subscription_status === 'past_due' && mappedStatus === 'active') {
+          changeType = 'reactivation';
+        }
+
+        await logBillingEvent(supabaseAdmin, {
+          userId: prev?.user_id ?? null,
+          eventType: event.type,
+          stripeEventId: event.id,
+          stripeSubscriptionId: subscription.id,
+          previousStatus: prev?.subscription_status,
+          newStatus: mappedStatus,
+          previousPlan: prev?.subscription_plan,
+          newPlan: tier,
+          stripeStatus: subscription.status,
+          stripePlan: tier,
+          details: {
+            change_type: changeType,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            cancel_at: subscription.cancel_at,
+          },
+        });
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         logStep("Subscription deleted", { subscriptionId: subscription.id });
-        
+
+        const prev = await getProfileState(supabaseAdmin, "stripe_subscription_id", subscription.id);
+
         const { error } = await supabaseAdmin
           .from("profiles")
           .update({
             subscription_status: 'expired',
             subscription_plan: null,
+            last_billing_sync_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
 
@@ -140,17 +246,33 @@ serve(async (req) => {
         } else {
           logStep("Subscription marked as expired");
         }
+
+        await logBillingEvent(supabaseAdmin, {
+          userId: prev?.user_id ?? null,
+          eventType: event.type,
+          stripeEventId: event.id,
+          stripeSubscriptionId: subscription.id,
+          previousStatus: prev?.subscription_status,
+          newStatus: 'expired',
+          previousPlan: prev?.subscription_plan,
+          newPlan: null,
+          stripeStatus: 'canceled',
+          stripePlan: null,
+          details: { change_type: 'cancellation_completed' },
+        });
         break;
       }
 
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
         logStep("Invoice paid", { invoiceId: invoice.id });
-        
+
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const productId = subscription.items.data[0]?.price.product as string;
           const tier = PRODUCT_TO_TIER[productId] || 'starter';
+
+          const prev = await getProfileState(supabaseAdmin, "stripe_subscription_id", invoice.subscription as string);
 
           const { error } = await supabaseAdmin
             .from("profiles")
@@ -158,6 +280,7 @@ serve(async (req) => {
               subscription_status: 'active',
               subscription_plan: tier,
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              last_billing_sync_at: new Date().toISOString(),
             })
             .eq("stripe_subscription_id", invoice.subscription as string);
 
@@ -166,6 +289,22 @@ serve(async (req) => {
           } else {
             logStep("Profile restored to active on invoice.paid", { tier });
           }
+
+          const changeType = prev?.subscription_status === 'past_due' ? 'renewal_after_failure' : 'renewal';
+
+          await logBillingEvent(supabaseAdmin, {
+            userId: prev?.user_id ?? null,
+            eventType: event.type,
+            stripeEventId: event.id,
+            stripeSubscriptionId: invoice.subscription as string,
+            previousStatus: prev?.subscription_status,
+            newStatus: 'active',
+            previousPlan: prev?.subscription_plan,
+            newPlan: tier,
+            stripeStatus: 'active',
+            stripePlan: tier,
+            details: { change_type: changeType, invoice_id: invoice.id, amount: invoice.amount_paid },
+          });
         }
         break;
       }
@@ -174,12 +313,14 @@ serve(async (req) => {
         const invoice = event.data.object as Stripe.Invoice;
         logStep("Invoice payment failed", { invoiceId: invoice.id, attempt: invoice.attempt_count });
 
-        // Mark profile so the app can show a payment-failed warning
         if (invoice.subscription) {
+          const prev = await getProfileState(supabaseAdmin, "stripe_subscription_id", invoice.subscription as string);
+
           const { error } = await supabaseAdmin
             .from("profiles")
             .update({
               subscription_status: 'past_due',
+              last_billing_sync_at: new Date().toISOString(),
             })
             .eq("stripe_subscription_id", invoice.subscription);
 
@@ -188,6 +329,25 @@ serve(async (req) => {
           } else {
             logStep("Profile marked as past_due");
           }
+
+          await logBillingEvent(supabaseAdmin, {
+            userId: prev?.user_id ?? null,
+            eventType: event.type,
+            stripeEventId: event.id,
+            stripeSubscriptionId: invoice.subscription as string,
+            previousStatus: prev?.subscription_status,
+            newStatus: 'past_due',
+            previousPlan: prev?.subscription_plan,
+            newPlan: prev?.subscription_plan,
+            stripeStatus: 'past_due',
+            stripePlan: prev?.subscription_plan,
+            details: {
+              change_type: 'payment_failed',
+              invoice_id: invoice.id,
+              attempt_count: invoice.attempt_count,
+              amount_due: invoice.amount_due,
+            },
+          });
         }
         break;
       }

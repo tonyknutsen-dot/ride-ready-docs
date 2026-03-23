@@ -157,6 +157,60 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_sync_log: {
+        Row: {
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          mismatch_detected: boolean | null
+          new_plan: string | null
+          new_status: string | null
+          previous_plan: string | null
+          previous_status: string | null
+          stripe_customer_id: string | null
+          stripe_event_id: string | null
+          stripe_plan: string | null
+          stripe_status: string | null
+          stripe_subscription_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          mismatch_detected?: boolean | null
+          new_plan?: string | null
+          new_status?: string | null
+          previous_plan?: string | null
+          previous_status?: string | null
+          stripe_customer_id?: string | null
+          stripe_event_id?: string | null
+          stripe_plan?: string | null
+          stripe_status?: string | null
+          stripe_subscription_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          mismatch_detected?: boolean | null
+          new_plan?: string | null
+          new_status?: string | null
+          previous_plan?: string | null
+          previous_status?: string | null
+          stripe_customer_id?: string | null
+          stripe_event_id?: string | null
+          stripe_plan?: string | null
+          stripe_status?: string | null
+          stripe_subscription_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       blocked_ips: {
         Row: {
           blocked_at: string
@@ -2114,6 +2168,7 @@ export type Database = {
           extra_items_count: number | null
           id: string
           is_suspended: boolean
+          last_billing_sync_at: string | null
           operator_type: string | null
           pending_change_effective_date: string | null
           pending_subscription_plan: string | null
@@ -2152,6 +2207,7 @@ export type Database = {
           extra_items_count?: number | null
           id?: string
           is_suspended?: boolean
+          last_billing_sync_at?: string | null
           operator_type?: string | null
           pending_change_effective_date?: string | null
           pending_subscription_plan?: string | null
@@ -2190,6 +2246,7 @@ export type Database = {
           extra_items_count?: number | null
           id?: string
           is_suspended?: boolean
+          last_billing_sync_at?: string | null
           operator_type?: string | null
           pending_change_effective_date?: string | null
           pending_subscription_plan?: string | null
