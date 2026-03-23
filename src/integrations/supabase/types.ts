@@ -2115,6 +2115,8 @@ export type Database = {
           id: string
           is_suspended: boolean
           operator_type: string | null
+          pending_change_effective_date: string | null
+          pending_subscription_plan: string | null
           requires_operational_checks: boolean
           risk_settings: Json | null
           showmen_name: string | null
@@ -2151,6 +2153,8 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           operator_type?: string | null
+          pending_change_effective_date?: string | null
+          pending_subscription_plan?: string | null
           requires_operational_checks?: boolean
           risk_settings?: Json | null
           showmen_name?: string | null
@@ -2187,6 +2191,8 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           operator_type?: string | null
+          pending_change_effective_date?: string | null
+          pending_subscription_plan?: string | null
           requires_operational_checks?: boolean
           risk_settings?: Json | null
           showmen_name?: string | null
