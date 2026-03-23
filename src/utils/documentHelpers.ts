@@ -70,6 +70,39 @@ export const getExpiryLabel = (expiryDate: string): string => {
   return `Expires in ${days} days`;
 };
 
+/**
+ * Compact expiry labels for mobile-friendly chips.
+ * Returns a short chip label and a detail string for display beside it.
+ *
+ * Examples:
+ *   { chip: 'Expired', detail: '15d ago' }
+ *   { chip: 'Expires', detail: 'in 3d' }
+ *   { chip: 'Expires', detail: 'today' }
+ *   { chip: 'Valid', detail: '90d left' }
+ */
+export const getCompactExpiry = (expiryDate: string): { chip: string; detail: string; severity: 'expired' | 'critical' | 'warning' | 'ok' } => {
+  const days = daysUntilExpiry(expiryDate);
+  if (days < 0) {
+    return { chip: 'Expired', detail: `${Math.abs(days)}d ago`, severity: 'expired' };
+  }
+  if (days === 0) {
+    return { chip: 'Expires', detail: 'today', severity: 'critical' };
+  }
+  if (days <= 7) {
+    return { chip: 'Expires', detail: `in ${days}d`, severity: 'critical' };
+  }
+  if (days <= 30) {
+    return { chip: 'Expires', detail: `in ${days}d`, severity: 'warning' };
+  }
+  return { chip: 'Valid', detail: `${days}d left`, severity: 'ok' };
+};
+
+/** Compact overdue label for compliance events / schedules */
+export const getCompactOverdue = (daysOverdue: number): { chip: string; detail: string } => {
+  if (daysOverdue <= 0) return { chip: 'Overdue', detail: 'today' };
+  return { chip: 'Overdue', detail: `${daysOverdue}d` };
+};
+
 /* ─── Friendly type labels ─── */
 
 export const DOC_TYPE_LABELS: Record<string, string> = {

@@ -43,6 +43,7 @@ import {
   fileExtension as fileExt,
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
+  getCompactExpiry,
   DOC_TYPE_LABELS,
   matchesGlobalCategory as matchesCategory,
   GLOBAL_CATEGORY_MAP as CATEGORY_MAP,
@@ -251,18 +252,25 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   /* ─── Render helpers ─── */
 
   const ExpiryPill = ({ date }: { date: string }) => {
-    if (isExpired(date)) {
+    const { chip, detail, severity } = getCompactExpiry(date);
+    if (severity === 'expired') {
       return (
-        <Badge variant="destructive" className="text-[10px] h-5 gap-1">
-          <AlertTriangle className="h-3 w-3" /> Expired {formatDateUK(new Date(date))}
-        </Badge>
+        <span className="inline-flex items-center gap-1.5">
+          <Badge variant="destructive" className="text-[10px] h-5 gap-1 whitespace-nowrap">
+            <AlertTriangle className="h-3 w-3" /> {chip}
+          </Badge>
+          <span className="text-[10px] text-destructive font-medium">{detail}</span>
+        </span>
       );
     }
-    if (isExpiringSoon(date)) {
+    if (severity === 'critical' || severity === 'warning') {
       return (
-        <Badge className="text-[10px] h-5 gap-1 bg-warning/15 text-warning-foreground border-warning/30">
-          <AlertTriangle className="h-3 w-3" /> Due {formatDateUK(new Date(date))}
-        </Badge>
+        <span className="inline-flex items-center gap-1.5">
+          <Badge className="text-[10px] h-5 gap-1 bg-warning/15 text-warning-foreground border-warning/30 whitespace-nowrap">
+            <AlertTriangle className="h-3 w-3" /> {chip}
+          </Badge>
+          <span className="text-[10px] text-warning-foreground font-medium">{detail}</span>
+        </span>
       );
     }
     return (

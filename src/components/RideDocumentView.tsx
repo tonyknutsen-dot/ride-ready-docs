@@ -51,6 +51,7 @@ import {
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
   getExpiryLabel,
+  getCompactExpiry,
   DOC_TYPE_LABELS as TYPE_LABELS,
 } from '@/utils/documentHelpers';
 
@@ -255,23 +256,29 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   };
 
   const ExpiryPill = ({ date }: { date: string }) => {
-    const label = getRelativeExpiry(date);
-    if (isExpired(date)) {
+    const { chip, detail, severity } = getCompactExpiry(date);
+    if (severity === 'expired') {
       return (
-        <Badge variant="destructive" className="text-[10px] h-5 gap-1">
-          <AlertTriangle className="h-3 w-3" /> {label}
-        </Badge>
+        <span className="inline-flex items-center gap-1.5">
+          <Badge variant="destructive" className="text-[10px] h-5 gap-1 whitespace-nowrap">
+            <AlertTriangle className="h-3 w-3" /> {chip}
+          </Badge>
+          <span className="text-[10px] text-destructive font-medium">{detail}</span>
+        </span>
       );
     }
-    if (isExpiringSoon(date)) {
+    if (severity === 'critical' || severity === 'warning') {
       return (
-        <Badge className="text-[10px] h-5 gap-1 bg-warning/15 text-warning-foreground border-warning/30">
-          <AlertTriangle className="h-3 w-3" /> {label}
-        </Badge>
+        <span className="inline-flex items-center gap-1.5">
+          <Badge className="text-[10px] h-5 gap-1 bg-warning/15 text-warning-foreground border-warning/30 whitespace-nowrap">
+            <AlertTriangle className="h-3 w-3" /> {chip}
+          </Badge>
+          <span className="text-[10px] text-warning-foreground font-medium">{detail}</span>
+        </span>
       );
     }
     return (
-      <Badge variant="outline" className="text-[10px] h-5 text-green-700 border-green-200 bg-green-50">
+      <Badge variant="outline" className="text-[10px] h-5 text-green-700 border-green-200 bg-green-50 whitespace-nowrap">
         Current
       </Badge>
     );

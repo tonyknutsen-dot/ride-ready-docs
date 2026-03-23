@@ -70,13 +70,13 @@ const DOCCertificateCard = ({ rideId, rideName, onUploadClick }: DOCCertificateC
     const daysUntil = getDaysUntilExpiry(docCertificate.expires_at);
     
     if (daysUntil < 0) {
-      return { color: 'text-destructive', icon: AlertTriangle, text: `Expired ${Math.abs(daysUntil)} days ago`, bgColor: 'bg-destructive/10' };
+      return { color: 'text-destructive', icon: AlertTriangle, text: `Expired · ${Math.abs(daysUntil)}d ago`, bgColor: 'bg-destructive/10' };
     } else if (daysUntil <= 30) {
-      return { color: 'text-amber-600', icon: AlertTriangle, text: `Expires in ${daysUntil} days`, bgColor: 'bg-amber-50 dark:bg-amber-950/30' };
+      return { color: 'text-amber-600', icon: AlertTriangle, text: `Expires · ${daysUntil}d`, bgColor: 'bg-amber-50 dark:bg-amber-950/30' };
     } else if (daysUntil <= 90) {
-      return { color: 'text-blue-600', icon: Calendar, text: `Expires in ${daysUntil} days`, bgColor: 'bg-blue-50 dark:bg-blue-950/30' };
+      return { color: 'text-blue-600', icon: Calendar, text: `Expires · ${daysUntil}d`, bgColor: 'bg-blue-50 dark:bg-blue-950/30' };
     } else {
-      return { color: 'text-emerald-600', icon: CheckCircle, text: `Valid for ${daysUntil} days`, bgColor: 'bg-emerald-50 dark:bg-emerald-950/30' };
+      return { color: 'text-emerald-600', icon: CheckCircle, text: `Valid · ${daysUntil}d`, bgColor: 'bg-emerald-50 dark:bg-emerald-950/30' };
     }
   };
 
