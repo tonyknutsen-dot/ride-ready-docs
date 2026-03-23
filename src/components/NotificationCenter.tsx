@@ -829,20 +829,16 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
   const equipment = extractEquipmentName(n.message);
   const isBrowse = variant === 'browse' || variant === 'default';
 
-  const stripColor =
-    variant === 'urgent' ? 'bg-destructive' :
-    variant === 'action' ? 'bg-amber-500' :
-    'bg-border';
+  const tier: SeverityTier =
+    variant === 'urgent' ? 'critical' :
+    variant === 'action' ? 'warning' :
+    'neutral';
 
-  const cardBorder =
-    variant === 'urgent' ? 'border-destructive/30 bg-destructive/[0.03] hover:border-destructive/50' :
-    variant === 'action' ? 'border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30' :
-    'hover:border-primary/20';
-
-  const iconBg =
-    variant === 'urgent' ? 'bg-destructive/10' :
-    variant === 'action' ? 'bg-amber-500/10' :
-    'bg-muted/60';
+  const stripColor = SEVERITY_STRIP[tier];
+  const cardBorder = variant === 'browse' || variant === 'default'
+    ? 'hover:border-primary/20'
+    : SEVERITY_CARD[tier];
+  const iconBg = SEVERITY_ICON_BG[tier];
 
   return (
     <Card
