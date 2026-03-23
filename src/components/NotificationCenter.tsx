@@ -69,8 +69,8 @@ const isCritical = (n: Notification): boolean => {
   if (n.related_table === 'defects' && title.includes('critical')) return true;
   // Failed checks that raised a defect
   if (title.includes('check failed with defect') || title.includes('failed check') && title.includes('defect')) return true;
-  // Pressure out of range (operational safety)
-  if (title.includes('pressure out of range') || title.includes('pressure') && title.includes('action needed')) return true;
+  // NOTE: Pressure out of range is WARNING (amber), not critical.
+  // It prompts "retake readings / raise defect" — not "stop use".
   return false;
 };
 

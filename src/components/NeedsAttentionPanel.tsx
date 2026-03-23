@@ -280,8 +280,8 @@ const NeedsAttentionPanel = () => {
         title: 'Pressure Action Needed',
         icon: Gauge,
         defaultOpen: true,
-        tier: 'critical',
-        headerStyle: SEVERITY_HEADER.critical,
+        tier: 'warning',
+        headerStyle: SEVERITY_HEADER.warning,
       },
     ];
 
