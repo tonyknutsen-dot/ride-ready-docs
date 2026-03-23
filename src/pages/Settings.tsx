@@ -321,7 +321,7 @@ const Settings = () => {
                     <X className="h-3.5 w-3.5" />Close
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground -mt-1">This text-based identity appears on generated reports and exported documents</p>
+                <p className="text-xs text-muted-foreground -mt-1">These details are pulled automatically from your Organisation Profile and used on reports, PDFs, and exports.</p>
                 {loading ? (
                   <Skeleton className="h-16 w-full" />
                 ) : (
@@ -338,8 +338,8 @@ const Settings = () => {
                       <span className="text-muted-foreground">Address</span>
                       <span className="font-medium text-right max-w-[60%] truncate">{profile?.address || '—'}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground/70 pt-2">
-                      Edit these details via Organisation Profile.
+                    <p className="text-[11px] text-muted-foreground/70 pt-1">
+                      To update, edit Organisation Profile above.
                     </p>
                   </div>
                 )}
@@ -422,7 +422,7 @@ const Settings = () => {
             icon={Mail}
             title="Account Email"
             value={user?.email || '—'}
-            chevron={false}
+            onClick={() => togglePanel('email')}
           />
           {!isStaff && (
             <SettingsRow
@@ -450,6 +450,22 @@ const Settings = () => {
         </SettingsGroup>
 
         {activePanel === 'security' && (
+          <div className="space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">)
+
+        {activePanel === 'email' && (
+          <div className="rounded-xl border border-border bg-card p-4 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold">Account Email</p>
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground" onClick={() => setActivePanel(null)}>
+                <X className="h-3.5 w-3.5" />Close
+              </Button>
+            </div>
+            <p className="text-sm font-medium break-all">{user?.email || '—'}</p>
+            <p className="text-[11px] text-muted-foreground mt-2">This is your login email. To change it, contact support.</p>
+          </div>
+        )}
+
+        {activePanel === 'security' && (
           <div className="space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
             <div className="flex items-center justify-between px-1">
               <p className="text-sm font-semibold">Security & Account Actions</p>
@@ -467,7 +483,7 @@ const Settings = () => {
           <SettingsRow
             icon={Calendar}
             title="Date & Time"
-            value={dateFormat}
+            value={`${dateFormat} · ${timezone.replace(/_/g, ' ').split('/').pop()}`}
             onClick={() => togglePanel('datetime')}
           />
           <SettingsRow
