@@ -42,12 +42,39 @@ type DomainTab = 'all' | 'defects' | 'compliance' | 'checks' | 'documents' | 'ma
 const getCategory = (n: Notification): NotificationCategory => getNotificationCategory(n);
 const isActionable = (n: Notification): boolean => isNotificationActionable(n);
 
-const isUrgent = (n: Notification): boolean => {
+/**
+ * SEVERITY COLOUR POLICY
+ * ──────────────────────
+ * RED (Critical)   — Safety-critical, equipment must not operate:
+ *                     Stop Use defects, critical unresolved defects,
+ *                     failed checks with linked defects, pressure out of range.
+ *
+ * AMBER (Action)   — Requires attention but not a safety emergency:
+ *                     Overdue inspections, expired/expiring documents,
+ *                     open non-critical defects, missed checks, warnings.
+ *
+ * GREY (Neutral)   — Informational updates, confirmations, history:
+ *                     Maintenance logged, documents sent, check completed.
+ */
+
+/** True safety-critical — RED section */
+const isCritical = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
-  if (title.includes('stop use') || title.includes('critical')) return true;
-  if (title.includes('overdue') || title.includes('expired')) return true;
-  if (title.includes('failed check') || title.includes('check failure')) return true;
+  // Stop Use / critical defects
+  if (title.includes('stop use') || title.includes('do not operate')) return true;
+  if (n.related_table === 'defects' && title.includes('critical')) return true;
+  // Failed checks that raised a defect
+  if (title.includes('check failed with defect') || title.includes('failed check') && title.includes('defect')) return true;
+  // Pressure out of range (operational safety)
+  if (title.includes('pressure out of range') || title.includes('pressure') && title.includes('action needed')) return true;
   return false;
+};
+
+/** Standard action-needed — AMBER section (overdue, expired, open defects, warnings) */
+const isUrgent = (n: Notification): boolean => {
+  // isCritical items are handled separately — this is for non-critical action items
+  if (isCritical(n)) return false;
+  return isActionable(n);
 };
 
 const isSentDocument = (n: Notification): boolean => {
@@ -565,14 +592,14 @@ const NotificationCenter = () => {
 
   /* ── Derived data ── */
 
-  const urgentItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isUrgent(n) && isActionable(n))
+  const criticalItems = useMemo(() =>
+    notifications.filter(n => !n.is_read && isCritical(n) && isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [notifications]
   );
 
   const actionItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isActionable(n) && !isUrgent(n))
+    notifications.filter(n => !n.is_read && isActionable(n) && !isCritical(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
     [notifications]
   );
@@ -619,7 +646,7 @@ const NotificationCenter = () => {
     );
   }
 
-  const totalActionable = urgentItems.length + actionItems.length;
+  const totalActionable = criticalItems.length + actionItems.length;
   const BROWSE_INITIAL = 15;
   const browseSlice = showOlder ? domainFiltered : domainFiltered.slice(0, BROWSE_INITIAL);
   const hasMoreBrowse = domainFiltered.length > BROWSE_INITIAL;
@@ -629,10 +656,10 @@ const NotificationCenter = () => {
       {/* ── Summary bar ── */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          {urgentItems.length > 0 && (
-            <span className="text-destructive font-semibold">{urgentItems.length} urgent</span>
+          {criticalItems.length > 0 && (
+            <span className="text-destructive font-semibold">{criticalItems.length} critical</span>
           )}
-          {urgentItems.length > 0 && actionItems.length > 0 && ' · '}
+          {criticalItems.length > 0 && actionItems.length > 0 && ' · '}
           {actionItems.length > 0 && (
             <span className="font-semibold text-foreground">{actionItems.length} action</span>
           )}
@@ -653,18 +680,18 @@ const NotificationCenter = () => {
         )}
       </div>
 
-      {/* ── URGENT section ── */}
-      {urgentItems.length > 0 && (
+      {/* ── CRITICAL section (RED) — safety-critical items ── */}
+      {criticalItems.length > 0 && (
         <section className="space-y-2.5">
           <div className="flex items-center gap-2 px-1">
             <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-destructive">
-              Urgent
+              Critical
             </p>
-            <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{urgentItems.length}</Badge>
+            <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{criticalItems.length}</Badge>
           </div>
           <div className="space-y-2">
-            {urgentItems.map(n => (
+            {criticalItems.map(n => (
               <NotificationRow
                 key={n.id}
                 notification={n}
@@ -858,7 +885,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
                 {/* Meta line: badges, equipment tag, time */}
                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                   {variant === 'urgent' && (
-                    <Badge className="text-[10px] px-1.5 py-0 font-semibold bg-destructive text-destructive-foreground">Urgent</Badge>
+                    <Badge className="text-[10px] px-1.5 py-0 font-semibold bg-destructive text-destructive-foreground">Critical</Badge>
                   )}
                   {equipment && (
                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20">
