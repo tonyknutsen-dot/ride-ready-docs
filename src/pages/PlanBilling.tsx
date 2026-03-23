@@ -45,6 +45,26 @@ export default function PlanBilling() {
   const [showReturnBanner, setShowReturnBanner] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncAttempt, setSyncAttempt] = useState(0);
+
+  // Poll checkSubscriptionStatus up to `maxAttempts` times with delay between each.
+  // This ensures Stripe webhook has time to propagate.
+  const pollSubscriptionSync = async (maxAttempts = 4, delayMs = 3000) => {
+    setIsSyncing(true);
+    for (let i = 1; i <= maxAttempts; i++) {
+      setSyncAttempt(i);
+      try {
+        await checkSubscriptionStatus();
+      } catch (e) {
+        console.warn(`[Billing] Sync poll attempt ${i} failed:`, e);
+      }
+      if (i < maxAttempts) {
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+    setSyncAttempt(0);
+    setIsSyncing(false);
+  };
 
   const hasValidAuthSession = !authLoading && !!user && !!session?.access_token && session.user.id === user.id;
 
