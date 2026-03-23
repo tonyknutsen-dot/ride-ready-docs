@@ -146,6 +146,8 @@ export const useSubscription = () => {
             cancelAtPeriodEnd: false,
             cancelAt: null,
             wasPaidCustomer: false,
+            pendingSubscriptionPlan: null,
+            pendingChangeEffectiveDate: null,
           };
           setSubscription(testerSubscription);
           setLoading(false);
