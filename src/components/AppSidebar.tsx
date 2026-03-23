@@ -5,6 +5,7 @@ import {
   FolderOpen,
   Calendar as CalendarIcon,
   FileText,
+  Settings,
   ShieldCheck,
   CheckSquare,
   Send,
@@ -79,6 +80,7 @@ const toolsNavItems: NavItemDef[] = [
 const accountNavItems: NavItemDef[] = [
   { title: 'Notifications', url: '/notifications', icon: Bell, ownerOnly: true, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
+  { title: 'Settings', url: '/settings', icon: Settings, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];
 
@@ -95,6 +97,7 @@ export function AppSidebar() {
     canAccessDocuments,
     canAccessRiskAssessments,
     canAccessSendDocuments,
+    canAccessSettings,
     canManageStaff,
   } = useStaff();
   const { toast } = useToast();
@@ -137,6 +140,7 @@ export function AppSidebar() {
   const filterNavItems = (items: NavItemDef[]) =>
     items.filter(item => {
       if (item.ownerOnly && isStaff) return false;
+      if (item.url === '/settings' && !canAccessSettings) return false;
       if (item.feature && !hasFeatureAccess(item.feature)) return false;
       return true;
     });
