@@ -75,9 +75,6 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Set loading false early for faster initial render
-    setLoading(false);
-
     try {
       // Check if user is a staff member of any organisation
       const { data: membership, error } = await supabase

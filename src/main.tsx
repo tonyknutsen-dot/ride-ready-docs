@@ -6,7 +6,7 @@ import "./index.css";
 // Register service worker for offline-first PWA support
 // Skip in dev/preview environments to prevent stale-cache issues
 const _hostname = window.location.hostname;
-const _isDevEnv = _hostname === 'localhost' || _hostname.includes('lovableproject.com');
+const _isDevEnv = _hostname === 'localhost' || _hostname.includes('lovableproject.com') || _hostname.includes('lovable.app');
 
 if ('serviceWorker' in navigator && !_isDevEnv) {
   window.addEventListener('load', () => {
