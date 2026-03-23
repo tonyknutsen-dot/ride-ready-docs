@@ -624,8 +624,8 @@ const NotificationCenter = () => {
   const hasMoreBrowse = domainFiltered.length > BROWSE_INITIAL;
 
   return (
-    <div className="space-y-5">
-      {/* ── Summary line ── */}
+    <div className="space-y-6">
+      {/* ── Summary bar ── */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           {urgentItems.length > 0 && (
@@ -654,15 +654,15 @@ const NotificationCenter = () => {
 
       {/* ── URGENT section ── */}
       {urgentItems.length > 0 && (
-        <section className="space-y-1.5">
-          <div className="flex items-center gap-1.5 px-1">
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
             <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-destructive">
               Urgent
             </p>
             <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{urgentItems.length}</Badge>
           </div>
-          <div className="rounded-xl border border-destructive/20 bg-destructive/[0.03] overflow-hidden divide-y divide-destructive/10">
+          <div className="space-y-2">
             {urgentItems.map(n => (
               <NotificationRow
                 key={n.id}
@@ -678,15 +678,15 @@ const NotificationCenter = () => {
 
       {/* ── ACTION NEEDED section ── */}
       {actionItems.length > 0 && (
-        <section className="space-y-1.5">
-          <div className="flex items-center gap-1.5 px-1">
-            <AlertTriangle className="h-3 w-3 text-amber-500" />
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
             <p className="text-[11px] font-bold uppercase tracking-widest text-foreground">
               Action needed
             </p>
             <Badge variant="secondary" className="text-[9px] h-4 px-1.5 ml-auto">{actionItems.length}</Badge>
           </div>
-          <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.02] overflow-hidden divide-y divide-amber-500/10">
+          <div className="space-y-2">
             {actionItems.map(n => (
               <NotificationRow
                 key={n.id}
@@ -702,26 +702,30 @@ const NotificationCenter = () => {
 
       {/* ── All clear ── */}
       {totalActionable === 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-            <CheckCircle className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <p className="text-[13px] font-semibold text-foreground">All clear</p>
-            <p className="text-[11px] text-muted-foreground">No items need attention right now.</p>
-          </div>
-        </div>
+        <Card className="border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
+                <CheckCircle className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[13px] font-semibold text-foreground">All clear</p>
+                <p className="text-[11px] text-muted-foreground">No items need attention right now.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ── BROWSE / OLDER section ── */}
       {domainFiltered.length > 0 && (
-        <section className="space-y-2 pt-1">
+        <section className="space-y-3 pt-2">
           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground px-1">
             Updates & history
           </p>
 
           {/* Domain tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
             {DOMAIN_TABS.map(tab => {
               const count = domainCounts[tab.id] || 0;
               const isActive = domainTab === tab.id;
@@ -750,7 +754,7 @@ const NotificationCenter = () => {
           </div>
 
           {/* Filtered list */}
-          <div className="space-y-0.5">
+          <div className="space-y-2">
             {browseSlice.map(n => (
               <NotificationRow
                 key={n.id}
@@ -778,7 +782,7 @@ const NotificationCenter = () => {
   );
 };
 
-/* ── Compact Notification Row ── */
+/* ── Notification Row — Card pattern matching DefectRegister ── */
 
 interface NotificationRowProps {
   notification: Notification;
@@ -793,93 +797,111 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
   const equipment = extractEquipmentName(n.message);
   const isBrowse = variant === 'browse' || variant === 'default';
 
+  const stripColor =
+    variant === 'urgent' ? 'bg-destructive' :
+    variant === 'action' ? 'bg-amber-500' :
+    'bg-border';
+
+  const cardBorder =
+    variant === 'urgent' ? 'border-destructive/30 bg-destructive/[0.03] hover:border-destructive/50' :
+    variant === 'action' ? 'border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30' :
+    'hover:border-primary/20';
+
+  const iconBg =
+    variant === 'urgent' ? 'bg-destructive/10' :
+    variant === 'action' ? 'bg-amber-500/10' :
+    'bg-muted/60';
+
   return (
-    <div
-      onClick={() => hasAction && onNavigate(n)}
+    <Card
       className={cn(
-        'flex items-start gap-2.5 px-3 py-2.5 transition-all group relative',
-        // Left accent border via pseudo-element
-        variant === 'urgent' && 'pl-5',
-        variant === 'action' && 'pl-5',
-        isBrowse && 'rounded-xl',
-        isBrowse && n.is_read && 'bg-transparent hover:bg-muted/60',
-        isBrowse && !n.is_read && 'bg-card/50 hover:bg-card',
-        hasAction && 'cursor-pointer active:scale-[0.995]'
+        'overflow-hidden rounded-xl transition-all',
+        hasAction && 'cursor-pointer active:scale-[0.997]',
+        isBrowse && n.is_read && 'opacity-70',
+        cardBorder
       )}
+      onClick={() => hasAction && onNavigate(n)}
     >
-      {/* Left accent bar */}
-      {(variant === 'urgent' || variant === 'action') && (
-        <span className={cn(
-          'absolute left-0 top-2 bottom-2 w-[3px] rounded-full',
-          variant === 'urgent' ? 'bg-destructive' : 'bg-amber-500'
-        )} />
-      )}
+      <CardContent className="p-0">
+        <div className="flex items-stretch">
+          {/* Left color strip */}
+          <div className={cn('w-1 shrink-0', stripColor)} />
 
-      {/* Icon */}
-      <div className={cn(
-        'flex items-center justify-center w-6 h-6 rounded-md shrink-0 mt-0.5',
-        variant === 'urgent' ? 'bg-destructive/10' : variant === 'action' ? 'bg-amber-500/10' : 'bg-muted'
-      )}>
-        {getIcon(n)}
-      </div>
+          <div className="flex-1 p-3.5">
+            <div className="flex items-start gap-3">
+              {/* Icon container */}
+              <div className={cn(
+                'mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
+                iconBg
+              )}>
+                {getIcon(n)}
+              </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className={cn(
-            'text-[13px] font-medium leading-snug line-clamp-1',
-            variant === 'urgent' ? 'text-destructive font-semibold' :
-            n.is_read && isBrowse ? 'text-muted-foreground' : 'text-foreground'
-          )}>
-            {n.title}
-          </p>
-          {!n.is_read && isBrowse && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary" />}
+              {/* Content */}
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className={cn(
+                  'text-[13px] font-semibold leading-snug line-clamp-2',
+                  variant === 'urgent' ? 'text-destructive' :
+                  n.is_read && isBrowse ? 'text-muted-foreground' : 'text-foreground'
+                )}>
+                  {n.title}
+                </p>
+
+                {/* Message preview */}
+                {(variant === 'urgent' || variant === 'action' || (!n.is_read && isBrowse)) && n.message && (
+                  <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                    {n.message}
+                  </p>
+                )}
+
+                {/* Meta line: badges, equipment tag, time */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  {variant === 'urgent' && (
+                    <Badge className="text-[10px] px-1.5 py-0 font-semibold bg-destructive text-destructive-foreground">Urgent</Badge>
+                  )}
+                  {equipment && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20">
+                      {equipment}
+                    </Badge>
+                  )}
+                  {!n.is_read && isBrowse && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                  )}
+                  <span className="text-[11px] text-muted-foreground ml-auto">
+                    {compactTime(n.created_at)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action + chevron */}
+              <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
+                {hasAction && (
+                  <span className={cn(
+                    'text-[10px] font-semibold px-2 py-0.5 rounded-md',
+                    variant === 'urgent' ? 'text-destructive bg-destructive/8' :
+                    variant === 'action' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/8' :
+                    'text-muted-foreground bg-muted'
+                  )}>
+                    {getActionLabel(n)}
+                  </span>
+                )}
+                <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+              </div>
+            </div>
+          </div>
         </div>
+      </CardContent>
 
-        {/* Message preview — only for urgent/action, or unread browse */}
-        {(variant === 'urgent' || variant === 'action' || (!n.is_read && isBrowse)) && n.message && (
-          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 line-clamp-1">
-            {n.message}
-          </p>
-        )}
-
-        {/* Meta line: equipment tag + time */}
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {equipment && (
-            <span className="text-[10px] font-medium text-primary bg-primary/8 px-1.5 py-0 rounded shrink-0 max-w-[120px] truncate">
-              {equipment}
-            </span>
-          )}
-          <span className="text-[10px] text-muted-foreground/60">
-            {compactTime(n.created_at)}
-          </span>
-        </div>
-      </div>
-
-      {/* Action */}
-      {hasAction && (
-        <div className="flex items-center gap-0.5 shrink-0 mt-1">
-          <span className={cn(
-            'text-[10px] font-semibold px-1.5 py-0.5 rounded-md',
-            variant === 'urgent' ? 'text-destructive bg-destructive/8' :
-            variant === 'action' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/8' :
-            'text-muted-foreground'
-          )}>
-            {getActionLabel(n)}
-          </span>
-          <ChevronRight className="h-3 w-3 text-muted-foreground/40" />
-        </div>
-      )}
-
+      {/* Delete overlay */}
       {onDelete && (
         <button
           onClick={e => { e.stopPropagation(); onDelete(n.id); }}
-          className="p-1 rounded-md text-muted-foreground/30 hover:text-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100 shrink-0 mt-0.5"
+          className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground/30 hover:text-foreground hover:bg-muted transition-all opacity-0 group-hover:opacity-100"
         >
           <X className="h-3 w-3" />
         </button>
       )}
-    </div>
+    </Card>
   );
 };
 
