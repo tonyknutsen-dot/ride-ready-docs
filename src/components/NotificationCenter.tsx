@@ -662,7 +662,7 @@ const NotificationCenter = () => {
             </p>
             <Badge variant="destructive" className="text-[9px] h-4 px-1.5 ml-auto">{urgentItems.length}</Badge>
           </div>
-          <div className="space-y-1">
+          <div className="rounded-xl border border-destructive/20 bg-destructive/[0.03] overflow-hidden divide-y divide-destructive/10">
             {urgentItems.map(n => (
               <NotificationRow
                 key={n.id}
