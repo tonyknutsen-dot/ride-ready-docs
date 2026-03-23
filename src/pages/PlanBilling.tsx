@@ -68,7 +68,9 @@ export default function PlanBilling() {
 
   const hasValidAuthSession = !authLoading && !!user && !!session?.access_token && session.user.id === user.id;
 
-  // Auto-sync subscription status only after auth is fully restored and valid.
+  // Auto-sync subscription status once after auth is fully restored and valid.
+  // NOTE: checkSubscriptionStatus is intentionally excluded from deps to prevent
+  // an infinite re-render loop (it updates state → new ref → re-trigger).
   useEffect(() => {
     if (!hasValidAuthSession || isTester) return;
 
@@ -84,15 +86,13 @@ export default function PlanBilling() {
       }
     };
 
-    const timer = window.setTimeout(() => {
-      void sync();
-    }, 0);
+    void sync();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
     };
-  }, [hasValidAuthSession, isTester, checkSubscriptionStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasValidAuthSession, isTester]);
 
   // Handle success/cancel from Stripe checkout — only after auth is valid.
   // Uses polling to wait for Stripe webhook propagation.
