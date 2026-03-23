@@ -162,7 +162,7 @@ serve(async (req) => {
       const stripeStatus = stripeSub?.status ?? null;
       const stripeProductId = stripeSub?.items?.data?.[0]?.price?.product as string | undefined;
       const stripePlan = stripeProductId ? (PRODUCT_TO_TIER[stripeProductId] || 'unknown') : null;
-      const stripeCurrentPeriodEnd = stripeSub
+      const stripeCurrentPeriodEnd = stripeSub?.current_period_end
         ? new Date(stripeSub.current_period_end * 1000).toISOString()
         : null;
       const stripeCancelAtPeriodEnd = stripeSub?.cancel_at_period_end ?? null;
