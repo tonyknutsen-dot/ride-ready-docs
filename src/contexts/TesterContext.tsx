@@ -113,7 +113,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('[TesterContext] Realtime role change detected:', payload);
+          
           checkTesterStatus(true);
         }
       )
