@@ -205,6 +205,27 @@ const changeTypeLabel = (details: Record<string, unknown>) => {
   return <span className={`text-xs font-medium ${c.color}`}>{c.label}</span>;
 };
 
+// ── Review status badge ──
+
+const ReviewStatusBadge = ({ status }: { status: string }) => {
+  const config: Record<string, { label: string; color: string }> = {
+    new: { label: 'New', color: 'bg-blue-500/15 text-blue-700 dark:text-blue-400' },
+    under_review: { label: 'Reviewing', color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+    waiting: { label: 'Waiting', color: 'bg-purple-500/15 text-purple-700 dark:text-purple-400' },
+    resolved: { label: 'Resolved', color: 'bg-green-500/15 text-green-700 dark:text-green-400' },
+    ignored: { label: 'Expected', color: 'bg-muted text-muted-foreground' },
+  };
+  const c = config[status] || { label: status, color: 'bg-muted text-muted-foreground' };
+  return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${c.color}`}>{c.label}</span>;
+};
+
+// ── Severity indicator ──
+
+const SeverityDot = ({ severity }: { severity: string }) => {
+  const color = severity === 'critical' ? 'bg-destructive' : severity === 'warning' ? 'bg-amber-500' : 'bg-blue-400';
+  return <span className={`inline-block h-2 w-2 rounded-full ${color}`} />;
+};
+
 // ════════════════════════════════════════
 // Main component
 // ════════════════════════════════════════
@@ -216,8 +237,11 @@ export default function PaymentsDashboard() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [resyncingUser, setResyncingUser] = useState<string | null>(null);
   const [eventDrawerOpen, setEventDrawerOpen] = useState(false);
+  const [flagDrawerOpen, setFlagDrawerOpen] = useState(false);
+  const [flagDrawerUserId, setFlagDrawerUserId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('failed');
+  const [updatingFlag, setUpdatingFlag] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
