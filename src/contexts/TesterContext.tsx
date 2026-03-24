@@ -122,7 +122,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       });
 
     return () => {
-      console.log('[TesterContext] Cleaning up realtime subscription');
+      
       supabase.removeChannel(channel);
     };
   }, [authLoading, userId]); // eslint-disable-line react-hooks/exhaustive-deps
