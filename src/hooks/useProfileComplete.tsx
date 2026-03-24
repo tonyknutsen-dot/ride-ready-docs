@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { saveIdentityCache, type IdentityCacheEntry } from '@/lib/offlineDb';
@@ -8,6 +8,8 @@ export function useProfileComplete() {
   const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
   const [isStaffMember, setIsStaffMember] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Track which user we've already checked to prevent re-runs on cachedIdentity changes
+  const checkedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) {
