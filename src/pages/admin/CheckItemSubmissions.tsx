@@ -160,7 +160,7 @@ export default function CheckItemSubmissions() {
       // Step 1: Check scope match (equipment group alignment)
       let scopeMatch = false;
       if (isGeneric) {
-        scopeMatch = item.equipment_group === 'general' || item.equipment_group === 'Rides';
+        scopeMatch = item.equipment_group === 'general' || item.equipment_group.toLowerCase() === 'rides';
       } else if (equipGroup) {
         scopeMatch = item.equipment_group === equipGroup
           || (!!submission.ride_category_id && item.ride_category_id === submission.ride_category_id);
