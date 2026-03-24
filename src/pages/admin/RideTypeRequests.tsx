@@ -295,22 +295,21 @@ const ApprovalDialog = memo(function ApprovalDialog({
         .eq('id', request.id);
       if (reqError) throw reqError;
 
-      try {
-        const { data: emailData } = await supabase.functions.invoke('get-user-email', {
-          body: { userId: request.user_id },
-        });
-        if (emailData?.email) {
-          await supabase.functions.invoke('send-request-status-email', {
-            body: {
-              userEmail: emailData.email,
-              requestType: 'ride_type',
-              requestName: typeName.trim(),
-              status: 'approved',
-              adminNotes: adminNote || undefined,
-            },
-          });
-        }
-      } catch { /* email failure is non-blocking */ }
+      // Fire-and-forget email notification (non-blocking)
+      supabase.functions.invoke('get-user-email', { body: { userId: request.user_id } })
+        .then(({ data: emailData }) => {
+          if (emailData?.email) {
+            supabase.functions.invoke('send-request-status-email', {
+              body: {
+                userEmail: emailData.email,
+                requestType: 'ride_type',
+                requestName: typeName.trim(),
+                status: 'approved',
+                adminNotes: adminNote || undefined,
+              },
+            }).catch(() => {});
+          }
+        }).catch(() => {});
 
       onApproved(request.id, typeName.trim(), categoryGroup);
       toast({ title: 'Type Created', description: `"${typeName.trim()}" added to ${categoryGroup} and is now available to all users.` });
