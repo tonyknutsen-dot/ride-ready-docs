@@ -293,26 +293,17 @@ export default function CheckLibrary() {
   const openCreate = () => {
     setIsCreating(true);
     setEditItem(null);
-    setEditLabel('');
-    setEditHint('');
-    setEditCategory('');
-    setEditFrequency('daily');
-    setEditGroup('rides');
-    setEditRideCategoryId(null);
-    setEditNote('');
   };
 
   const openEdit = (item: LibraryItem) => {
     setIsCreating(false);
     setEditItem(item);
-    setEditLabel(item.label);
-    setEditHint(item.hint || '');
-    setEditCategory(item.category || '');
-    setEditFrequency(item.frequency);
-    setEditGroup(item.equipment_group.toLowerCase());
-    setEditRideCategoryId(item.ride_category_id);
-    setEditNote('');
   };
+
+  const closeDialog = useCallback(() => {
+    setEditItem(null);
+    setIsCreating(false);
+  }, []);
 
   const handleSaveEdit = async () => {
     if (!editLabel.trim()) return;
