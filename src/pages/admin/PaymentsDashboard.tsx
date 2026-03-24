@@ -727,6 +727,7 @@ export default function PaymentsDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
 
       {/* ── Billing Event Log Drawer ── */}
