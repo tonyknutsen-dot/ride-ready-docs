@@ -310,20 +310,27 @@ export default function AdminDashboard() {
                 Users & Billing Health
               </h2>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                {/* Registered Users */}
+                {/* Registered Users — with breakdown */}
                 <Link to="/admin/users" className="group">
                   <Card className="h-full hover:border-primary/40 transition-colors">
                     <CardContent className="pt-5 pb-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Registered Users</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Accounts</p>
                         <Users className="h-4 w-4 text-muted-foreground/60" />
                       </div>
                       <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                      {stats.totalTesters > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Including {stats.totalTesters} tester{stats.totalTesters !== 1 ? 's' : ''}
-                        </p>
-                      )}
+                      <div className="text-xs text-muted-foreground mt-1.5 space-y-0.5">
+                        {(() => {
+                          const customerAccounts = stats.totalUsers - stats.totalStaff;
+                          return (
+                            <>
+                              <p>{customerAccounts} customer account{customerAccounts !== 1 ? 's' : ''}</p>
+                              {stats.totalStaff > 0 && <p>{stats.totalStaff} staff user{stats.totalStaff !== 1 ? 's' : ''}</p>}
+                              {stats.totalTesters > 0 && <p className="text-muted-foreground/60">{stats.totalTesters} tester{stats.totalTesters !== 1 ? 's' : ''}</p>}
+                            </>
+                          );
+                        })()}
+                      </div>
                       <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
                         <span>Manage Users</span>
                         <ArrowRight className="h-3 w-3" />
