@@ -301,8 +301,9 @@ export default function PaymentsDashboard() {
           </div>
         <TooltipProvider delayDuration={300}>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+
             <Card
-              className="cursor-pointer"
+              className="cursor-pointer transition-shadow hover:shadow-md"
               onClick={() => { setActiveTab('overview'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
@@ -321,7 +322,7 @@ export default function PaymentsDashboard() {
             </Card>
 
             <Card
-              className="cursor-pointer"
+              className="cursor-pointer transition-shadow hover:shadow-md"
               onClick={() => { setShowAllUsers(true); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
@@ -335,7 +336,7 @@ export default function PaymentsDashboard() {
             </Card>
 
             <Card
-              className={`cursor-pointer ${summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}`}
+              className={`cursor-pointer transition-shadow hover:shadow-md ${summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}`}
               onClick={() => { setShowAllUsers(false); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
@@ -356,7 +357,7 @@ export default function PaymentsDashboard() {
             </Card>
 
             <Card
-              className={`cursor-pointer ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}
+              className={`cursor-pointer transition-shadow hover:shadow-md ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}
               onClick={() => { setActiveTab('failed'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
@@ -390,30 +391,37 @@ export default function PaymentsDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <CardDescription className="text-xs">
-                {problemUserCount > 0
-                  ? `${problemUserCount} account${problemUserCount !== 1 ? 's' : ''} flagged`
-                  : 'All accounts healthy — no issues detected'}
-              </CardDescription>
-              <div className="flex items-center gap-3">
+              {problemUserCount > 0 ? (
+                <Badge variant="destructive" className="text-xs px-2.5 py-1 font-semibold">
+                  <ShieldAlert className="h-3 w-3 mr-1.5" />
+                  {problemUserCount} account{problemUserCount !== 1 ? 's' : ''} flagged
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs px-2.5 py-1 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                  <CheckCircle className="h-3 w-3 mr-1.5" />
+                  All accounts healthy
+                </Badge>
+              )}
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <Switch
                     id="show-all"
                     checked={showAllUsers}
                     onCheckedChange={setShowAllUsers}
                   />
-                  <Label htmlFor="show-all" className="text-xs cursor-pointer">
-                    Show all users ({userHealth.length})
+                  <Label htmlFor="show-all" className="text-xs cursor-pointer whitespace-nowrap">
+                    All users ({userHealth.length})
                   </Label>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => { setSelectedUserId(null); setEventDrawerOpen(true); }}
-                  className="text-xs"
+                  className="text-xs h-8"
                 >
                   <History className="h-3.5 w-3.5 mr-1.5" />
-                  Event Log
+                  <span className="hidden sm:inline">Event Log</span>
+                  <span className="sm:hidden">Log</span>
                 </Button>
               </div>
             </div>
@@ -572,7 +580,7 @@ export default function PaymentsDashboard() {
         <div className="space-y-3">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Payment Activity</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Recent payment attempts, failures, and revenue overview</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Failed charges, successful payments, and revenue trends from Stripe — across all customer accounts</p>
           </div>
         <div ref={tabsRef}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
