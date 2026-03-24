@@ -316,7 +316,11 @@ const ApprovalDialog = memo(function ApprovalDialog({
       toast({ title: 'Type Created', description: `"${typeName.trim()}" added to ${categoryGroup} and is now available to all users.` });
       onClose();
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to create type', variant: 'destructive' });
+      console.error('[RideTypeRequests] Approve/create error:', err);
+      const msg = err?.message?.includes('row-level security')
+        ? 'This type could not be created due to an admin permission rule. The technical error has been logged.'
+        : (err.message || 'Failed to create type');
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }

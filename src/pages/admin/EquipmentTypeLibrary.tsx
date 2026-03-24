@@ -266,7 +266,8 @@ export default function EquipmentTypeLibrary() {
         source: 'admin',
       });
       if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        console.error('[EquipmentTypeLibrary] Insert error:', error);
+        toast({ title: 'Could not create type', description: 'This type could not be created due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
       logEvent('create', 'ride_category', undefined, { name: data.name, group: data.categoryGroup });
@@ -281,7 +282,8 @@ export default function EquipmentTypeLibrary() {
         updated_at: new Date().toISOString(),
       }).eq('id', dialogItem.id);
       if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        console.error('[EquipmentTypeLibrary] Update error:', error);
+        toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
       logEvent('update', 'ride_category', dialogItem.id, { name: data.name });
@@ -300,7 +302,8 @@ export default function EquipmentTypeLibrary() {
       updated_at: new Date().toISOString(),
     }).eq('id', item.id);
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      console.error('[EquipmentTypeLibrary] Archive toggle error:', error);
+      toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
     logEvent(newArchived ? 'archive' : 'unarchive', 'ride_category', item.id, { name: item.name });
@@ -331,7 +334,8 @@ export default function EquipmentTypeLibrary() {
     if (!deleteTarget || deleteBlocked) return;
     const { error } = await (supabase as any).from('ride_categories').delete().eq('id', deleteTarget.id);
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      console.error('[EquipmentTypeLibrary] Delete error:', error);
+      toast({ title: 'Could not delete type', description: 'This type could not be deleted due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
     logEvent('delete', 'ride_category', deleteTarget.id, { name: deleteTarget.name });
