@@ -81,6 +81,23 @@ interface BillingEvent {
   created_at: string;
 }
 
+interface AccountFlag {
+  id: string;
+  user_id: string;
+  flag_reason: string;
+  severity: string;
+  review_status: string;
+  admin_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  auto_detected: boolean;
+  source_details: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 interface PaymentData {
   summary: {
     totalRevenue30Days: number;
@@ -91,6 +108,7 @@ interface PaymentData {
     pastDueSubscriptions: number;
     recentCancellations: number;
     failedPaymentsCount: number;
+    activeFlagCount: number;
     balance: { available: number; pending: number; currency: string };
   };
   failedPayments: Array<{
@@ -104,6 +122,7 @@ interface PaymentData {
   subscriptionBreakdown: { active: number; trialing: number; pastDue: number; canceled: number };
   userHealth: UserHealthRow[];
   billingEventLog: BillingEvent[];
+  accountFlags: AccountFlag[];
   problemUserCount: number;
 }
 
