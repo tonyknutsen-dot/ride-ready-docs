@@ -387,21 +387,14 @@ export default function PaymentsDashboard() {
             <p className="text-xs text-muted-foreground mt-0.5">Customer accounts with billing, sync, or Stripe-link issues</p>
           </div>
 
-        {/* ══ SUBSCRIPTION HEALTH TABLE ══ */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5 text-primary" />
-                <div>
-                  <CardTitle className="text-base md:text-lg">Users Needing Attention</CardTitle>
-                  <CardDescription className="text-xs">
-                    {problemUserCount > 0
-                      ? `${problemUserCount} user account${problemUserCount !== 1 ? 's' : ''} flagged — these are other users, not your account`
-                      : 'All user accounts are healthy — no billing issues detected'}
-                  </CardDescription>
-                </div>
-              </div>
+              <CardDescription className="text-xs">
+                {problemUserCount > 0
+                  ? `${problemUserCount} account${problemUserCount !== 1 ? 's' : ''} flagged`
+                  : 'All accounts healthy — no issues detected'}
+              </CardDescription>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Switch
