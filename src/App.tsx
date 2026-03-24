@@ -550,6 +550,18 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/admin/check-library" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <CheckLibrary />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/admin/risk-items" 
                 element={
                   <ProtectedRoute>
