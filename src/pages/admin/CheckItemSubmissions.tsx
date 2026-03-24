@@ -19,15 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const CHECK_CATEGORIES = [
-  "Restraints", "Structure", "Control Systems", "Safety Devices",
-  "Electrical", "Mechanical", "Hydraulic/Pneumatic", "General"
-];
-
-const EQUIPMENT_GROUPS = [
-  "Rides", "Inflatables", "Stalls", "Attractions", "Food Stalls", "Games", "Equipment"
-];
+import {
+  CHECK_CATEGORIES,
+  EQUIPMENT_GROUPS,
+  EQUIPMENT_GROUP_LABELS,
+  equipmentGroupToKey,
+  type EquipmentGroup,
+} from '@/constants/checkLibrary';
 
 interface Submission {
   id: string;
