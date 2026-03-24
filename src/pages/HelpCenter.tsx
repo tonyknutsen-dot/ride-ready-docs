@@ -178,7 +178,6 @@ const HelpCenter = () => {
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
 
-  // Filter topics by search
   const filterTopics = (topics: HelpTopic[]) => {
     if (!search.trim()) return topics;
     const q = search.toLowerCase();
@@ -212,7 +211,7 @@ const HelpCenter = () => {
   );
 
   const SectionHeading = ({ children }: { children: React.ReactNode }) => (
-    <h2 className="text-lg font-semibold text-[#0F172A] mt-6 mb-3">{children}</h2>
+    <h2 className="text-base font-semibold text-[#0F172A] mt-6 mb-2">{children}</h2>
   );
 
   // ── render ──────────────────────────────────────────────────────────────────
@@ -238,103 +237,54 @@ const HelpCenter = () => {
 
           {/* ── HEADER ─────────────────────────────────────────────────────── */}
           <div className="mb-5">
-            <h1 className="text-2xl font-semibold text-[#0F172A]">Help & User Guide</h1>
+            <h1 className="text-2xl font-semibold text-[#0F172A]">Help & Support</h1>
             <p className="text-sm text-[#64748B] mt-1">
-              Learn how to use Ride Ready to manage inspections, documents, and compliance.
+              Get help, track requests, and share feedback.
             </p>
           </div>
 
-          {/* ── WELCOME PANEL ──────────────────────────────────────────────── */}
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-[18px] shadow-[0_4px_12px_rgba(0,0,0,0.05)] mb-5">
-            <p className="text-sm font-semibold text-[#0F172A] mb-1">Welcome to Ride Ready Help</p>
-            <p className="text-sm text-[#64748B] leading-relaxed">
-              Browse help topics below or use the search bar to find guidance on inspections, documentation, and compliance management.
-            </p>
-          </div>
-
-          <SectionHeading>Self-Help</SectionHeading>
-          <div className="mb-5">
+          {/* ── GET HELP NOW ──────────────────────────────────────────────── */}
+          <SectionHeading>Get Help Now</SectionHeading>
+          <div className="space-y-2.5 mb-1">
             <HelpChatWidget />
-          </div>
-
-          {/* ── SEARCH ─────────────────────────────────────────────────────── */}
-          <div className="relative mb-2">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search help topics…"
-              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-sm text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#1E3A5F] transition-colors"
-            />
-          </div>
-
-          {/* ── CORE MODULES ───────────────────────────────────────────────── */}
-          {filterTopics(coreModules).length > 0 && (
-            <>
-              <SectionHeading>Core Modules</SectionHeading>
-              <div className="grid sm:grid-cols-2 gap-2.5">
-                {filterTopics(coreModules).map((t) => (
-                  <TopicRow key={t.title} topic={t} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* ── ADVANCED FEATURES ──────────────────────────────────────────── */}
-          {filterTopics(advancedFeatures).length > 0 && (
-            <>
-              <SectionHeading>Advanced Features</SectionHeading>
-              <div className="grid sm:grid-cols-2 gap-2.5">
-                {filterTopics(advancedFeatures).map((t) => (
-                  <TopicRow key={t.title} topic={t} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* No results */}
-          {search && filterTopics(coreModules).length === 0 && filterTopics(advancedFeatures).length === 0 && (
-            <div className="text-center py-10 text-sm text-[#64748B]">
-              No topics found for "<span className="font-medium text-[#0F172A]">{search}</span>". Try different keywords.
-            </div>
-          )}
-
-          {/* ── SUPPORT ───────────────────────────────────────────────────── */}
-          <SectionHeading>Support</SectionHeading>
-          <p className="text-xs text-[#64748B] -mt-2 mb-2.5">Send a new message or check replies from our team.</p>
-          <div className="grid grid-cols-2 gap-2.5 mb-5">
             <ContactSupportDialog
               trigger={
-                <button className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full">
+                <button className="w-full flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group">
                   <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
                     <LifeBuoy className="h-5 w-5 text-[#475569] group-hover:text-[#1E3A5F] transition-colors" strokeWidth={2} />
                   </div>
-                  <div className="min-w-0">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[#0F172A]">Contact Support</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Send a new message.</p>
+                    <p className="text-xs text-[#64748B] mt-0.5">Send a new message to our team.</p>
                   </div>
+                  <ChevronRight className="h-4 w-4 text-[#94A3B8] flex-shrink-0" />
                 </button>
               }
             />
+          </div>
+
+          {/* ── TRACK MY HELP ──────────────────────────────────────────────── */}
+          <SectionHeading>Track My Help</SectionHeading>
+          <div className="mb-1">
             <button
               onClick={() => navigate('/support-requests')}
-              className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full"
+              className="w-full flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group"
             >
               <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
                 <Mail className="h-5 w-5 text-[#475569] group-hover:text-[#1E3A5F] transition-colors" strokeWidth={2} />
               </div>
-              <div className="min-w-0">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#0F172A]">My Support Requests</p>
-                <p className="text-xs text-[#64748B] mt-0.5">View replies and history.</p>
+                <p className="text-xs text-[#64748B] mt-0.5">View replies and conversation history.</p>
               </div>
+              <ChevronRight className="h-4 w-4 text-[#94A3B8] flex-shrink-0" />
             </button>
           </div>
 
-          {/* ── FEEDBACK ───────────────────────────────────────────────────── */}
-          <SectionHeading>Feedback</SectionHeading>
-          <p className="text-xs text-[#64748B] -mt-2 mb-2.5">These are reviewed separately from support requests.</p>
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* ── PRODUCT FEEDBACK ───────────────────────────────────────────── */}
+          <SectionHeading>Product Feedback</SectionHeading>
+          <p className="text-xs text-[#64748B] -mt-1 mb-2.5">Reviewed separately from support requests.</p>
+          <div className="grid grid-cols-2 gap-2.5 mb-1">
             <RequestFeatureDialog
               trigger={
                 <button className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full">
@@ -363,13 +313,54 @@ const HelpCenter = () => {
             />
           </div>
 
-          {/* ── COLLAPSIBLE GUIDE (FAQs) ────────────────────────────────────── */}
+          {/* ── GUIDES & MODULES ───────────────────────────────────────────── */}
+          <SectionHeading>Guides & Modules</SectionHeading>
+          <div className="relative mb-3">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search help topics…"
+              className="w-full bg-white border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-3 text-sm text-[#0F172A] placeholder-[#94A3B8] outline-none focus:border-[#1E3A5F] transition-colors"
+            />
+          </div>
+
+          {filterTopics(coreModules).length > 0 && (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2 px-1">Core</p>
+              <div className="grid sm:grid-cols-2 gap-2.5">
+                {filterTopics(coreModules).map((t) => (
+                  <TopicRow key={t.title} topic={t} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {filterTopics(advancedFeatures).length > 0 && (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2 mt-4 px-1">Advanced</p>
+              <div className="grid sm:grid-cols-2 gap-2.5">
+                {filterTopics(advancedFeatures).map((t) => (
+                  <TopicRow key={t.title} topic={t} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {search && filterTopics(coreModules).length === 0 && filterTopics(advancedFeatures).length === 0 && (
+            <div className="text-center py-10 text-sm text-[#64748B]">
+              No topics found for "<span className="font-medium text-[#0F172A]">{search}</span>". Try different keywords.
+            </div>
+          )}
+
+          {/* ── COLLAPSIBLE FAQs ────────────────────────────────────────────── */}
           <div className="mt-6 bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
             <button
               onClick={() => setGuideExpanded(!guideExpanded)}
               className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-[#F8FAFC] transition-colors"
             >
-              <span className="text-sm font-semibold text-[#0F172A]">Show frequently asked questions</span>
+              <span className="text-sm font-semibold text-[#0F172A]">Frequently asked questions</span>
               <ChevronDown
                 className={`h-4 w-4 text-[#475569] transition-transform duration-200 ${guideExpanded ? "rotate-180" : ""}`}
               />
@@ -460,7 +451,6 @@ const HelpCenter = () => {
               </DialogHeader>
 
               <div className="space-y-5 mt-2">
-                {/* Steps */}
                 {selectedTopic.steps && (
                   <div
                     className="rounded-[14px] border border-[#E2E8F0] p-4 space-y-3"
@@ -478,7 +468,6 @@ const HelpCenter = () => {
                   </div>
                 )}
 
-                {/* FAQs */}
                 {selectedTopic.faqs && selectedTopic.faqs.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2">Common questions</p>
@@ -501,7 +490,6 @@ const HelpCenter = () => {
                   </div>
                 )}
 
-                {/* CTA */}
                 {selectedTopic.route && (
                   <div className="flex gap-2 pt-1">
                     <Button
