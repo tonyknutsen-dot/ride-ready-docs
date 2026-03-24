@@ -293,7 +293,12 @@ export default function PaymentsDashboard() {
           </Button>
         </div>
 
-        {/* ── Key Metrics (clickable drill-down) ── */}
+        {/* ═══ SECTION 1: Platform Summary ═══ */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Platform Summary</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Live subscription totals and payment signals across all customer accounts</p>
+          </div>
         <TooltipProvider delayDuration={300}>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
             <Card
@@ -373,22 +378,23 @@ export default function PaymentsDashboard() {
             </Card>
           </div>
         </TooltipProvider>
+        </div>
 
-        {/* ══ SUBSCRIPTION HEALTH TABLE ══ */}
+        {/* ═══ SECTION 2: Accounts Needing Review ═══ */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Accounts Needing Review</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Customer accounts with billing, sync, or Stripe-link issues</p>
+          </div>
+
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5 text-primary" />
-                <div>
-                  <CardTitle className="text-base md:text-lg">Users Needing Attention</CardTitle>
-                  <CardDescription className="text-xs">
-                    {problemUserCount > 0
-                      ? `${problemUserCount} user account${problemUserCount !== 1 ? 's' : ''} flagged — these are other users, not your account`
-                      : 'All user accounts are healthy — no billing issues detected'}
-                  </CardDescription>
-                </div>
-              </div>
+              <CardDescription className="text-xs">
+                {problemUserCount > 0
+                  ? `${problemUserCount} account${problemUserCount !== 1 ? 's' : ''} flagged`
+                  : 'All accounts healthy — no issues detected'}
+              </CardDescription>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Switch
@@ -560,8 +566,14 @@ export default function PaymentsDashboard() {
             )}
           </CardContent>
         </Card>
+        </div>
 
-        {/* ── Payment Details Tabs (secondary) ── */}
+        {/* ═══ SECTION 3: Payment Activity ═══ */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Payment Activity</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Recent payment attempts, failures, and revenue overview</p>
+          </div>
         <div ref={tabsRef}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full flex">
@@ -727,6 +739,7 @@ export default function PaymentsDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
         </div>
       </div>
 
