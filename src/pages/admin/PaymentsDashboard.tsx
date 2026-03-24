@@ -283,6 +283,23 @@ export default function PaymentsDashboard() {
     }
   };
 
+  const handleUpdateFlag = async (flagId: string, updates: { review_status?: string; admin_note?: string }) => {
+    setUpdatingFlag(flagId);
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('admin-stripe-data', {
+        body: { action: 'update_flag', flag_id: flagId, ...updates },
+      });
+      if (fnError) throw fnError;
+      if (response.error) throw new Error(response.error);
+      toast({ title: 'Flag updated' });
+      await fetchData();
+    } catch (err: any) {
+      toast({ title: 'Failed to update flag', description: err.message, variant: 'destructive' });
+    } finally {
+      setUpdatingFlag(null);
+    }
+  };
+
   useEffect(() => { fetchData(); }, []);
 
   if (loading) {
@@ -311,11 +328,21 @@ export default function PaymentsDashboard() {
     );
   }
 
-  const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, problemUserCount } = data;
+  const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, accountFlags, problemUserCount } = data;
 
   const displayedUsers = showAllUsers
     ? userHealth
     : userHealth.filter(u => u.problem_type !== null);
+
+  // Build flag lookup by user_id
+  const flagsByUser: Record<string, AccountFlag[]> = {};
+  for (const flag of (accountFlags || [])) {
+    if (!flagsByUser[flag.user_id]) flagsByUser[flag.user_id] = [];
+    flagsByUser[flag.user_id].push(flag);
+  }
+
+  const activeFlagsForUser = (userId: string) =>
+    (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
 
   // Filter events for selected user
   const selectedUserEvents = selectedUserId
