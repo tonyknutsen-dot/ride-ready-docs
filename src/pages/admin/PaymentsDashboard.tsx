@@ -322,7 +322,7 @@ export default function PaymentsDashboard() {
             </Card>
 
             <Card
-              className="cursor-pointer"
+              className="cursor-pointer transition-shadow hover:shadow-md"
               onClick={() => { setShowAllUsers(true); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
