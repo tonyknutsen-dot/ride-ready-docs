@@ -13,7 +13,6 @@ import {
   HelpCircle,
   LogOut,
   Shield,
-  Shield,
   MessageCircle,
   ChevronLeft,
   ChevronRight,
