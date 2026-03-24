@@ -2,16 +2,12 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Predefined categories for check items
+// Unified categories — must match src/constants/checkLibrary.ts
 const CATEGORIES = [
-  "Restraints",
-  "Structure", 
-  "Control Systems",
-  "Safety Devices",
-  "Electrical",
-  "Mechanical",
-  "Hydraulic/Pneumatic",
-  "General"
+  "Anchorage", "Blower", "Compliance", "Control Systems", "Electrical",
+  "Fuel", "Gas", "General", "Hydraulic/Pneumatic", "Hygiene", "Mechanical",
+  "Operations", "Restraints", "Safety", "Safety Devices", "Signage",
+  "Site", "Storage", "Structure", "Weather"
 ];
 
 Deno.serve(async (req) => {
