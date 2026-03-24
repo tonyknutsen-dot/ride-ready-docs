@@ -378,6 +378,14 @@ export default function PaymentsDashboard() {
             </Card>
           </div>
         </TooltipProvider>
+        </div>
+
+        {/* ═══ SECTION 2: Accounts Needing Review ═══ */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Accounts Needing Review</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Customer accounts with billing, sync, or Stripe-link issues</p>
+          </div>
 
         {/* ══ SUBSCRIPTION HEALTH TABLE ══ */}
         <Card>
