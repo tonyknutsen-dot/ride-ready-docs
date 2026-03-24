@@ -20,6 +20,7 @@ interface DashboardStats {
   pendingDocRequests: number;
   totalUsers: number;
   totalTesters: number;
+  totalStaff: number;
   totalRides: number;
   totalDocuments: number;
   totalChecks: number;
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     unansweredSupport: 0, bugReportsNeedingTriage: 0,
     pendingRideRequests: 0, pendingDocRequests: 0,
-    totalUsers: 0, totalTesters: 0,
+    totalUsers: 0, totalTesters: 0, totalStaff: 0,
     totalRides: 0, totalDocuments: 0, totalChecks: 0, totalMaintenanceRecords: 0,
     testRides: 0, testDocuments: 0, testChecks: 0, testMaintenanceRecords: 0,
   });
@@ -57,7 +58,7 @@ export default function AdminDashboard() {
       try {
         const [
           supportRes, bugRes, rideRequests, docRequests,
-          users, testers,
+          users, testers, staffMembers,
           allRides, testRides, allDocuments, testDocuments,
           allChecks, testChecks, allMaintenance, testMaintenance,
         ] = await Promise.all([
@@ -67,6 +68,7 @@ export default function AdminDashboard() {
           supabase.from('document_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
           supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'tester'),
+          supabase.from('organisation_members').select('id', { count: 'exact', head: true }).eq('is_active', true),
           supabase.from('rides').select('id', { count: 'exact', head: true }),
           supabase.from('rides').select('id', { count: 'exact', head: true }).eq('is_test_data', true),
           supabase.from('documents').select('id', { count: 'exact', head: true }),
@@ -83,6 +85,7 @@ export default function AdminDashboard() {
           pendingDocRequests: docRequests.count || 0,
           totalUsers: users.count || 0,
           totalTesters: testers.count || 0,
+          totalStaff: staffMembers.count || 0,
           totalRides: allRides.count || 0,
           totalDocuments: allDocuments.count || 0,
           totalChecks: allChecks.count || 0,
@@ -307,20 +310,27 @@ export default function AdminDashboard() {
                 Users & Billing Health
               </h2>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                {/* Registered Users */}
+                {/* Registered Users — with breakdown */}
                 <Link to="/admin/users" className="group">
                   <Card className="h-full hover:border-primary/40 transition-colors">
                     <CardContent className="pt-5 pb-4">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Registered Users</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Accounts</p>
                         <Users className="h-4 w-4 text-muted-foreground/60" />
                       </div>
                       <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                      {stats.totalTesters > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Including {stats.totalTesters} tester{stats.totalTesters !== 1 ? 's' : ''}
-                        </p>
-                      )}
+                      <div className="text-xs text-muted-foreground mt-1.5 space-y-0.5">
+                        {(() => {
+                          const customerAccounts = stats.totalUsers - stats.totalStaff;
+                          return (
+                            <>
+                              <p>{customerAccounts} customer account{customerAccounts !== 1 ? 's' : ''}</p>
+                              {stats.totalStaff > 0 && <p>{stats.totalStaff} staff user{stats.totalStaff !== 1 ? 's' : ''}</p>}
+                              {stats.totalTesters > 0 && <p className="text-muted-foreground/60">{stats.totalTesters} tester{stats.totalTesters !== 1 ? 's' : ''}</p>}
+                            </>
+                          );
+                        })()}
+                      </div>
                       <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
                         <span>Manage Users</span>
                         <ArrowRight className="h-3 w-3" />
