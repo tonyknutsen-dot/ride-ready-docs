@@ -159,7 +159,7 @@ export default function CheckItemSubmissions() {
       const { error } = await supabase.functions.invoke('group-similar-check-items', {});
       if (error) throw error;
       toast({ title: "Grouping complete", description: "Similar items have been grouped together" });
-      fetchAllSubmissions();
+      fetchAllSubmissions(true);
     } catch (error: any) {
       toast({ title: "Error grouping items", description: error.message, variant: "destructive" });
     } finally {
