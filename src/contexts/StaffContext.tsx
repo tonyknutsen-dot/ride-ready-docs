@@ -64,7 +64,10 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [featurePermissions, setFeaturePermissions] = useState<FeaturePermissions | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchStaffStatus = useCallback(async () => {
+  // Track which user ID we've already fetched for to prevent redundant fetches
+  const [fetchedForUserId, setFetchedForUserId] = useState<string | null>(null);
+
+  const fetchStaffStatus = useCallback(async (force = false) => {
     if (authLoading) {
       return;
     }
@@ -75,7 +78,13 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       setStaffMembership(null);
       setPermissionLevel(null);
       setFeaturePermissions(null);
+      setFetchedForUserId(null);
       setLoading(false);
+      return;
+    }
+
+    // Skip if we already fetched for this user (unless forced)
+    if (!force && fetchedForUserId === user.id) {
       return;
     }
 
