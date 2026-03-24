@@ -497,10 +497,10 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
                   >
                     <div className="flex items-center gap-2">
                       <Badge
-                        variant={m.confidence === 'strong' ? 'destructive' : 'secondary'}
+                        variant={confidenceVariant(m.confidence)}
                         className="text-[10px] shrink-0"
                       >
-                        {m.confidence === 'strong' ? 'Strong' : 'Possible'}
+                        {confidenceLabel(m.confidence)}
                       </Badge>
                       <span className="font-medium">{m.category.name}</span>
                       <span className="text-xs text-muted-foreground">({m.category.category_group})</span>
