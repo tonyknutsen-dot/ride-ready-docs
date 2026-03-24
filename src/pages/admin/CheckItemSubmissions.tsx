@@ -221,9 +221,10 @@ export default function CheckItemSubmissions() {
       if (updateError) throw updateError;
 
       toast({ title: "Added to library", description: `"${approvalData.label.trim()}" is now available in the shared library.` });
+      updateSubmissionLocally(selectedSubmission.id, { status: 'approved', admin_notes: approvalData.admin_notes || null, reviewed_at: new Date().toISOString() });
       setSelectedSubmission(null);
-      fetchAllSubmissions();
       fetchLibraryItems();
+      fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error approving item", description: error.message, variant: "destructive" });
     } finally {
