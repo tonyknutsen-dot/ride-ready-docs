@@ -129,18 +129,65 @@ export default function CheckItemSubmissions() {
     setAllSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
-  // Find library items that match a submission by text similarity
+  // Text similarity check between a submission and a library item
+  const textMatches = (submissionLabel: string, itemLabel: string): boolean => {
+    const subLower = submissionLabel.toLowerCase();
+    const itemLower = itemLabel.toLowerCase();
+    if (itemLower === subLower) return true;
+    const words = subLower.split(/\s+/).filter(w => w.length > 3);
+    if (words.length === 0) return false;
+    const matchCount = words.filter(w => itemLower.includes(w)).length;
+    return matchCount >= Math.ceil(words.length * 0.6);
+  };
+
+  // Determine the equipment group of a submission from its ride_category
+  const getSubmissionEquipmentGroup = (submission: Submission): string | null => {
+    return submission.ride_category?.category_group || null;
+  };
+
+  // Scope-aware duplicate detection: returns { sameScope, broader }
+  const findScopedLibraryMatches = (submission: Submission): { sameScope: LibraryMatch[]; broader: LibraryMatch[] } => {
+    const equipGroup = getSubmissionEquipmentGroup(submission);
+    const isGeneric = submission.is_generic;
+    const category = submission.category;
+
+    const textHits = libraryItems.filter(item => textMatches(submission.label, item.label));
+    if (textHits.length === 0) return { sameScope: [], broader: [] };
+
+    const sameScope: LibraryMatch[] = [];
+    const broader: LibraryMatch[] = [];
+
+    for (const item of textHits) {
+      let isSameScope = false;
+
+      if (isGeneric) {
+        // General submission → same-scope = general library items
+        isSameScope = item.equipment_group === 'general' || item.equipment_group === 'Rides';
+      } else if (equipGroup) {
+        // Equipment-specific submission → same-scope = same equipment group OR same ride_category_id
+        isSameScope = item.equipment_group === equipGroup
+          || (!!submission.ride_category_id && item.ride_category_id === submission.ride_category_id);
+      }
+
+      // Also boost if same check category
+      if (category && item.category === category) {
+        isSameScope = true;
+      }
+
+      if (isSameScope) {
+        sameScope.push(item);
+      } else {
+        broader.push(item);
+      }
+    }
+
+    return { sameScope: sameScope.slice(0, 3), broader: broader.slice(0, 2) };
+  };
+
+  // Legacy compat wrapper used by duplicate dialog auto-select
   const findLibraryMatches = (submission: Submission): LibraryMatch[] => {
-    const words = submission.label.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    if (words.length === 0) return [];
-    return libraryItems.filter(item => {
-      const itemLower = item.label.toLowerCase();
-      // Exact match
-      if (itemLower === submission.label.toLowerCase()) return true;
-      // Significant word overlap
-      const matchCount = words.filter(w => itemLower.includes(w)).length;
-      return matchCount >= Math.ceil(words.length * 0.6);
-    }).slice(0, 3);
+    const { sameScope, broader } = findScopedLibraryMatches(submission);
+    return [...sameScope, ...broader];
   };
 
   const counts = {
