@@ -11,7 +11,9 @@ type AuditAction =
   | 'share'
   | 'export'
   | 'login'
-  | 'logout';
+  | 'logout'
+  | 'archive'
+  | 'unarchive';
 
 type ResourceType = 
   | 'document'
@@ -22,7 +24,9 @@ type ResourceType =
   | 'risk_assessment'
   | 'profile'
   | 'staff'
-  | 'session';
+  | 'session'
+  | 'ride_category'
+  | 'check_library_item';
 
 interface AuditDetails {
   [key: string]: any;
