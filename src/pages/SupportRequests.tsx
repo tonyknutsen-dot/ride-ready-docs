@@ -211,13 +211,14 @@ export default function SupportRequests() {
   // List view
   return (
     <AppLayout>
-      <div className="space-y-5 max-w-2xl mx-auto">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold">My Support Requests</h1>
-            <p className="text-sm text-muted-foreground">View and manage your support conversations</p>
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Header — stacked on mobile, inline on md+ */}
+        <div className="space-y-2 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
+          <div className="space-y-1">
+            <h1 className="text-lg md:text-xl font-bold">My Support Requests</h1>
+            <p className="text-sm text-muted-foreground">View your support conversations</p>
           </div>
-          <Button size="sm" onClick={() => setContactOpen(true)}>
+          <Button size="sm" onClick={() => setContactOpen(true)} className="w-full md:w-auto mt-1 md:mt-0">
             <Plus className="h-4 w-4 mr-1" /> New Request
           </Button>
         </div>
@@ -228,7 +229,7 @@ export default function SupportRequests() {
               <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
               <p className="text-muted-foreground text-sm mb-3">No support requests yet</p>
               <Button size="sm" variant="outline" onClick={() => setContactOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" /> Submit a Request
+                <Plus className="h-4 w-4 mr-1" /> New Request
               </Button>
             </CardContent>
           </Card>
