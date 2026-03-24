@@ -192,6 +192,8 @@ export default function PaymentsDashboard() {
   const [resyncingUser, setResyncingUser] = useState<string | null>(null);
   const [eventDrawerOpen, setEventDrawerOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('failed');
+  const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const fetchData = async () => {
