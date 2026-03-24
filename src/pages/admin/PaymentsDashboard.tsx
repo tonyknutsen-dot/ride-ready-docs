@@ -582,13 +582,10 @@ export default function PaymentsDashboard() {
                         </div>
                       </div>
 
-                      {/* Flag status row */}
+                      {/* Flag status row — show review badges only, count is on the Flags button */}
                       {activeFlagsForUser(user.user_id).length > 0 && (
                         <div className="flex items-center gap-2 text-xs">
                           <Flag className="h-3 w-3 text-amber-500 shrink-0" />
-                          <span className="text-muted-foreground">
-                            {activeFlagsForUser(user.user_id).length} active flag{activeFlagsForUser(user.user_id).length !== 1 ? 's' : ''}
-                          </span>
                           {activeFlagsForUser(user.user_id).map(f => (
                             <ReviewStatusBadge key={f.id} status={f.review_status} />
                           ))}
