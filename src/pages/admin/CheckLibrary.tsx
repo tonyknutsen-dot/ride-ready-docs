@@ -317,7 +317,7 @@ export default function CheckLibrary() {
           hint: data.hint.trim() || null,
           category: data.category || null,
           frequency: data.frequency as CheckFrequency,
-          equipment_group: data.group,
+          equipment_group: data.group.toLowerCase().replace(/\s+/g, '_'),
           ride_category_id: data.rideCategoryId,
           is_active: true,
           sort_index: 0,
@@ -341,7 +341,7 @@ export default function CheckLibrary() {
           hint: data.hint.trim() || null,
           category: data.category || null,
           frequency: data.frequency as CheckFrequency,
-          equipment_group: data.group,
+          equipment_group: data.group.toLowerCase().replace(/\s+/g, '_'),
           ride_category_id: data.rideCategoryId,
         })
         .eq('id', editItem.id);
@@ -424,7 +424,7 @@ export default function CheckLibrary() {
       .insert({
         label: `${item.label} (copy)`,
         frequency: item.frequency as CheckFrequency,
-        equipment_group: item.equipment_group,
+        equipment_group: item.equipment_group.toLowerCase().replace(/\s+/g, '_'),
         ride_category_id: item.ride_category_id,
         hint: item.hint,
         category: item.category,

@@ -288,7 +288,7 @@ export default function CheckItemSubmissions() {
           label: approvalData.label.trim(),
           hint: approvalData.hint.trim() || null,
           frequency: freq,
-          equipment_group: approvalData.scope === 'general' ? 'rides' : approvalData.equipment_group,
+          equipment_group: approvalData.scope === 'general' ? 'rides' : approvalData.equipment_group.toLowerCase().replace(/\s+/g, '_'),
           ride_category_id: approvalData.scope === 'specific' && approvalData.ride_category_id
             ? approvalData.ride_category_id : null,
           category: approvalData.check_category,
