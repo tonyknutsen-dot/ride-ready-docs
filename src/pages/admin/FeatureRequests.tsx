@@ -306,22 +306,31 @@ export default function FeatureRequests() {
         <div className="flex flex-col sm:flex-row gap-2">
           <ScrollArea className="w-full sm:w-auto">
             <div className="flex gap-1 pb-1">
-              {FILTER_TABS.map((tab) => (
-                <Button
-                  key={tab.value}
-                  variant={filterStatus === tab.value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterStatus(tab.value)}
-                  className="text-xs whitespace-nowrap h-8"
-                >
-                  {tab.label}
-                  {tab.value === 'open' && (
-                    <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">
-                      {requests.filter((r) => OPEN_STATUSES.includes(r.status)).length}
+              {FILTER_TABS.map((tab) => {
+                const count = tab.value === 'open'
+                  ? requests.filter((r) => OPEN_STATUSES.includes(r.status)).length
+                  : tab.value === 'all'
+                    ? requests.length
+                    : requests.filter((r) => r.status === tab.value).length;
+                const isActive = filterStatus === tab.value;
+                return (
+                  <Button
+                    key={tab.value}
+                    variant={isActive ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterStatus(tab.value)}
+                    className="text-xs whitespace-nowrap h-8"
+                  >
+                    {tab.label}
+                    <Badge
+                      variant="secondary"
+                      className={`ml-1 text-[10px] px-1.5 py-0 ${isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      {count}
                     </Badge>
-                  )}
-                </Button>
-              ))}
+                  </Button>
+                );
+              })}
             </div>
           </ScrollArea>
           <div className="relative flex-1 sm:max-w-xs">
