@@ -388,24 +388,17 @@ export default function PaymentsDashboard() {
                       key={user.user_id}
                       className={`p-4 space-y-3 ${user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}`}
                     >
-                      {/* Row 1: Name + problem + actions */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium truncate">{user.company_name || '—'}</div>
-                          <div className="text-xs text-muted-foreground truncate">{user.controller_name || '—'}</div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                      {/* Header: Name + badge */}
+                      <div className="space-y-1">
+                        <div className="text-sm font-semibold truncate">{user.company_name || '—'}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground truncate">{user.controller_name || '—'}</span>
                           <ProblemBadge type={user.problem_type} />
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
-                            <Activity className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
-                            <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
-                          </Button>
                         </div>
                       </div>
-                      {/* Row 2: Status + Plan comparison grid */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+
+                      {/* Comparison grid */}
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
                         <div>
                           <span className="text-muted-foreground block mb-0.5">App Status</span>
                           <StatusBadge status={user.app_status} />
@@ -423,22 +416,37 @@ export default function PaymentsDashboard() {
                           <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} />
                         </div>
                       </div>
-                      {/* Row 3: Period end + sync */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div>
+
+                      {/* Metadata: period end + sync */}
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 shrink-0" />
                           {user.current_period_end ? (
                             <span>Ends {format(new Date(user.current_period_end), 'dd MMM yyyy')}</span>
-                          ) : '—'}
-                          {user.cancel_at_period_end && <span className="ml-1.5 text-amber-600 font-medium">• Cancelling</span>}
-                          {user.pending_subscription_plan && <span className="ml-1.5 text-blue-600 font-medium">→ {user.pending_subscription_plan}</span>}
+                          ) : <span>No period end</span>}
+                          {user.cancel_at_period_end && <span className="text-amber-600 font-medium">• Cancelling</span>}
+                          {user.pending_subscription_plan && <span className="text-blue-600 font-medium">→ {user.pending_subscription_plan}</span>}
                         </div>
-                        <div>
+                        <div className="flex items-center gap-1.5">
+                          <RefreshCw className="h-3 w-3 shrink-0" />
                           {user.last_billing_sync_at ? (
                             <span className={user.sync_stale ? 'text-amber-600 font-medium' : ''}>
                               Synced {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
                             </span>
-                          ) : 'Never synced'}
+                          ) : <span>Never synced</span>}
                         </div>
+                      </div>
+
+                      {/* Actions footer */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-border/40">
+                        <Button variant="ghost" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
+                          <Activity className="h-3.5 w-3.5" />
+                          Event History
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
+                          <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
+                          Re-sync
+                        </Button>
                       </div>
                     </div>
                   ))}
