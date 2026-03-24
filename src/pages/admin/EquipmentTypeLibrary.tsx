@@ -473,15 +473,32 @@ export default function EquipmentTypeLibrary() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setIsCreating(false); setDialogItem(item); setDialogOpen(true); }}>
+                          <DropdownMenuItem onSelect={() => {
+                            setTimeout(() => {
+                              document.body.style.removeProperty('pointer-events');
+                              setIsCreating(false);
+                              setDialogItem(item);
+                              setDialogOpen(true);
+                            }, 0);
+                          }}>
                             <Edit3 className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleArchive(item)}>
+                          <DropdownMenuItem onSelect={() => {
+                            setTimeout(() => {
+                              document.body.style.removeProperty('pointer-events');
+                              handleToggleArchive(item);
+                            }, 0);
+                          }}>
                             {item.is_archived ? <ArchiveRestore className="h-4 w-4 mr-2" /> : <Archive className="h-4 w-4 mr-2" />}
                             {item.is_archived ? 'Unarchive' : 'Archive'}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDeleteCheck(item)}
+                            onSelect={() => {
+                              setTimeout(() => {
+                                document.body.style.removeProperty('pointer-events');
+                                handleDeleteCheck(item);
+                              }, 0);
+                            }}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" /> Delete
@@ -504,11 +521,11 @@ export default function EquipmentTypeLibrary() {
         item={dialogItem}
         allTypes={types}
         onSave={handleSave}
-        onClose={() => { setDialogOpen(false); setDialogItem(null); }}
+        onClose={() => { setDialogOpen(false); setDialogItem(null); document.body.style.removeProperty('pointer-events'); }}
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteBlocked(null); } }}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteBlocked(null); document.body.style.removeProperty('pointer-events'); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
