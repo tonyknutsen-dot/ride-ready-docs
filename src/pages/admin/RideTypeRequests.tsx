@@ -128,7 +128,7 @@ function findDuplicateMatches(name: string, group: string, existing: ExistingCat
         reasons.push('Different group');
       }
 
-      const confidence: 'strong' | 'possible' = score >= 70 ? 'strong' : 'possible';
+      const confidence: 'high' | 'medium' | 'low' = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
 
       return { category: cat, score, confidence, reasons };
     })
