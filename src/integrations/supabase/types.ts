@@ -2352,30 +2352,53 @@ export type Database = {
       }
       ride_categories: {
         Row: {
+          admin_notes: string | null
+          approved_from_request_id: string | null
           category_group: string
           created_at: string
           description: string | null
           id: string
+          is_archived: boolean
           is_billable: boolean
           name: string
+          source: string
+          updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
+          approved_from_request_id?: string | null
           category_group?: string
           created_at?: string
           description?: string | null
           id?: string
+          is_archived?: boolean
           is_billable?: boolean
           name: string
+          source?: string
+          updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
+          approved_from_request_id?: string | null
           category_group?: string
           created_at?: string
           description?: string | null
           id?: string
+          is_archived?: boolean
           is_billable?: boolean
           name?: string
+          source?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ride_categories_approved_from_request_id_fkey"
+            columns: ["approved_from_request_id"]
+            isOneToOne: false
+            referencedRelation: "ride_type_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ride_daily_status: {
         Row: {
