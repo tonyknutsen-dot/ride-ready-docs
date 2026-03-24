@@ -4,6 +4,60 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { PRODUCT_TO_TIER } from "../_shared/stripe-pricing.ts";
 
+// ── Flag helpers ──
+
+interface FlagInput {
+  user_id: string;
+  flag_reason: string;
+  severity: 'critical' | 'warning' | 'info';
+  source_details?: Record<string, unknown>;
+}
+
+async function upsertAutoFlags(supabaseAdmin: ReturnType<typeof createClient>, flags: FlagInput[]) {
+  if (flags.length === 0) return;
+  for (const flag of flags) {
+    await supabaseAdmin
+      .from("billing_account_flags")
+      .upsert({
+        user_id: flag.user_id,
+        flag_reason: flag.flag_reason,
+        severity: flag.severity,
+        auto_detected: true,
+        source_details: flag.source_details || {},
+        // Only set review_status to 'new' on insert, don't overwrite admin review state
+      }, { onConflict: 'user_id,flag_reason', ignoreDuplicates: false })
+      // Update severity and source_details but preserve review_status if already set
+      .then(async () => {
+        // Re-open if previously resolved but problem recurred
+        await supabaseAdmin
+          .from("billing_account_flags")
+          .update({ severity: flag.severity, source_details: flag.source_details || {} })
+          .eq("user_id", flag.user_id)
+          .eq("flag_reason", flag.flag_reason)
+          .in("review_status", ["resolved", "ignored"]);
+        // For resolved/ignored flags that recur, reset to 'new'
+        await supabaseAdmin
+          .from("billing_account_flags")
+          .update({ review_status: "new", resolved_at: null, resolved_by: null })
+          .eq("user_id", flag.user_id)
+          .eq("flag_reason", flag.flag_reason)
+          .in("review_status", ["resolved", "ignored"]);
+      });
+  }
+}
+
+async function autoResolveFlags(supabaseAdmin: ReturnType<typeof createClient>, userId: string, reasons: string[]) {
+  if (reasons.length === 0) return;
+  for (const reason of reasons) {
+    await supabaseAdmin
+      .from("billing_account_flags")
+      .update({ review_status: "resolved", resolved_at: new Date().toISOString(), admin_note: "Auto-resolved: issue no longer detected" })
+      .eq("user_id", userId)
+      .eq("flag_reason", reason)
+      .not("review_status", "in", '("resolved","ignored")');
+  }
+}
+
 serve(async (req) => {
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
@@ -32,7 +86,6 @@ serve(async (req) => {
     });
     if (!isAdmin) throw new Error("Unauthorized - Admin access required");
 
-    // Parse request body for action
     let body: Record<string, unknown> = {};
     try { body = await req.json(); } catch { /* no body is fine */ }
     const action = (body.action as string) || 'dashboard';
@@ -46,7 +99,6 @@ serve(async (req) => {
       const targetUserId = body.user_id as string;
       if (!targetUserId) throw new Error("user_id required for manual_resync");
 
-      // Get profile
       const { data: profile } = await supabaseAdmin
         .from("profiles")
         .select("user_id, subscription_status, subscription_plan, stripe_customer_id, stripe_subscription_id")
@@ -94,7 +146,6 @@ serve(async (req) => {
         }
       }
 
-      // Log the manual resync
       await supabaseAdmin.from("billing_sync_log").insert({
         user_id: targetUserId,
         event_type: 'manual_resync',
@@ -111,6 +162,57 @@ serve(async (req) => {
       });
 
       return new Response(JSON.stringify({ success: true, mismatch, newStatus, newPlan }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+      });
+    }
+
+    // ── ACTION: update_flag ──
+    if (action === 'update_flag') {
+      const flagId = body.flag_id as string;
+      const updates: Record<string, unknown> = {};
+      if (body.review_status) updates.review_status = body.review_status;
+      if (body.admin_note !== undefined) updates.admin_note = body.admin_note;
+      if (body.review_status === 'under_review' || body.review_status === 'waiting') {
+        updates.reviewed_by = userData.user.id;
+        updates.reviewed_at = new Date().toISOString();
+      }
+      if (body.review_status === 'resolved' || body.review_status === 'ignored') {
+        updates.resolved_at = new Date().toISOString();
+        updates.resolved_by = userData.user.id;
+        if (!updates.reviewed_by) {
+          updates.reviewed_by = userData.user.id;
+          updates.reviewed_at = new Date().toISOString();
+        }
+      }
+
+      const { error: updateErr } = await supabaseAdmin
+        .from("billing_account_flags")
+        .update(updates)
+        .eq("id", flagId);
+
+      if (updateErr) throw new Error(`Failed to update flag: ${updateErr.message}`);
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
+      });
+    }
+
+    // ── ACTION: create_flag (manual) ──
+    if (action === 'create_flag') {
+      const { error: insertErr } = await supabaseAdmin
+        .from("billing_account_flags")
+        .upsert({
+          user_id: body.user_id as string,
+          flag_reason: (body.flag_reason as string) || 'manual_review',
+          severity: (body.severity as string) || 'warning',
+          admin_note: (body.admin_note as string) || null,
+          auto_detected: false,
+          review_status: 'new',
+        }, { onConflict: 'user_id,flag_reason' });
+
+      if (insertErr) throw new Error(`Failed to create flag: ${insertErr.message}`);
+
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
     }
@@ -141,19 +243,20 @@ serve(async (req) => {
     ]);
 
     // ── Per-user billing health ──
-    // Get all profiles with Stripe data
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("user_id, controller_name, company_name, subscription_status, subscription_plan, stripe_customer_id, stripe_subscription_id, current_period_end, cancel_at_period_end, cancel_at, last_billing_sync_at, pending_subscription_plan, pending_change_effective_date")
       .not("stripe_customer_id", "is", null);
 
-    // Build Stripe subscription lookup by subscription ID
     const stripeSubMap: Record<string, Stripe.Subscription> = {};
     for (const sub of subscriptions.data) {
       stripeSubMap[sub.id] = sub;
     }
 
-    // Build per-user health rows
+    // Collect flags to upsert
+    const flagsToCreate: FlagInput[] = [];
+    const flagsToResolve: { userId: string; reasons: string[] }[] = [];
+
     const userHealthRows = (profiles || []).map(profile => {
       const stripeSub = profile.stripe_subscription_id
         ? stripeSubMap[profile.stripe_subscription_id]
@@ -167,11 +270,9 @@ serve(async (req) => {
         : null;
       const stripeCancelAtPeriodEnd = stripeSub?.cancel_at_period_end ?? null;
 
-      // Mismatch detection
       const appStatus = profile.subscription_status;
       const appPlan = profile.subscription_plan;
 
-      // Map Stripe status to our app status for comparison
       const expectedAppStatus = stripeStatus === 'active' ? 'active'
         : stripeStatus === 'past_due' ? 'past_due'
         : stripeStatus === 'canceled' ? 'expired'
@@ -186,19 +287,79 @@ serve(async (req) => {
 
       const hasMismatch = statusMismatch || planMismatch || periodEndMismatch;
 
-      // Classify problem severity
       let problemType: string | null = null;
       if (hasMismatch) problemType = 'mismatch';
       else if (appStatus === 'past_due') problemType = 'past_due';
       else if (stripeSub?.cancel_at_period_end) problemType = 'cancelling';
 
-      // Sync freshness
       const syncAgeMs = profile.last_billing_sync_at
         ? now.getTime() - new Date(profile.last_billing_sync_at).getTime()
         : null;
-      const syncStale = syncAgeMs !== null && syncAgeMs > 24 * 60 * 60 * 1000; // >24h
+      const syncStale = syncAgeMs !== null && syncAgeMs > 24 * 60 * 60 * 1000;
 
       if (syncStale && !problemType) problemType = 'stale_sync';
+
+      // ── Auto-flag logic ──
+      const resolveReasons: string[] = [];
+
+      if (statusMismatch || planMismatch) {
+        flagsToCreate.push({
+          user_id: profile.user_id,
+          flag_reason: statusMismatch ? 'status_mismatch' : 'plan_mismatch',
+          severity: 'critical',
+          source_details: { app_status: appStatus, stripe_status: stripeStatus, app_plan: appPlan, stripe_plan: stripePlan },
+        });
+      } else {
+        resolveReasons.push('status_mismatch', 'plan_mismatch');
+      }
+
+      if (appStatus === 'past_due') {
+        flagsToCreate.push({
+          user_id: profile.user_id,
+          flag_reason: 'past_due',
+          severity: 'critical',
+          source_details: { app_status: appStatus, stripe_status: stripeStatus },
+        });
+      } else {
+        resolveReasons.push('past_due');
+      }
+
+      if (stripeSub?.cancel_at_period_end) {
+        flagsToCreate.push({
+          user_id: profile.user_id,
+          flag_reason: 'cancellation_pending',
+          severity: 'warning',
+          source_details: { cancel_at: stripeSub.cancel_at, current_period_end: stripeCurrentPeriodEnd },
+        });
+      } else {
+        resolveReasons.push('cancellation_pending');
+      }
+
+      if (syncStale) {
+        flagsToCreate.push({
+          user_id: profile.user_id,
+          flag_reason: 'stale_sync',
+          severity: 'info',
+          source_details: { last_sync: profile.last_billing_sync_at, age_hours: syncAgeMs ? Math.round(syncAgeMs / 3600000) : null },
+        });
+      } else {
+        resolveReasons.push('stale_sync');
+      }
+
+      if (!stripeSub && profile.stripe_customer_id) {
+        flagsToCreate.push({
+          user_id: profile.user_id,
+          flag_reason: 'no_stripe_link',
+          severity: 'warning',
+          source_details: { stripe_customer_id: profile.stripe_customer_id, has_subscription: false },
+        });
+      } else {
+        resolveReasons.push('no_stripe_link');
+      }
+
+      if (resolveReasons.length > 0) {
+        flagsToResolve.push({ userId: profile.user_id, reasons: resolveReasons });
+      }
 
       return {
         user_id: profile.user_id,
@@ -227,7 +388,17 @@ serve(async (req) => {
       };
     });
 
-    // Sort: problem users first, then by last sync
+    // Run auto-flagging in background (non-blocking for response)
+    const flagPromises: Promise<void>[] = [];
+    if (flagsToCreate.length > 0) {
+      flagPromises.push(upsertAutoFlags(supabaseAdmin, flagsToCreate));
+    }
+    for (const { userId, reasons } of flagsToResolve) {
+      flagPromises.push(autoResolveFlags(supabaseAdmin, userId, reasons));
+    }
+    // Fire and forget - don't block dashboard response
+    Promise.allSettled(flagPromises).catch(() => {});
+
     userHealthRows.sort((a, b) => {
       const problemOrder = (t: string | null) => {
         if (t === 'mismatch') return 0;
@@ -238,20 +409,25 @@ serve(async (req) => {
       };
       const diff = problemOrder(a.problem_type) - problemOrder(b.problem_type);
       if (diff !== 0) return diff;
-      // Secondary: most recently synced last (stale at top)
       const aTime = a.last_billing_sync_at ? new Date(a.last_billing_sync_at).getTime() : 0;
       const bTime = b.last_billing_sync_at ? new Date(b.last_billing_sync_at).getTime() : 0;
       return aTime - bTime;
     });
 
-    // ── Recent billing event log (last 50) ──
+    // ── Fetch existing flags ──
+    const { data: existingFlags } = await supabaseAdmin
+      .from("billing_account_flags")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    // ── Recent billing event log ──
     const { data: recentSyncLog } = await supabaseAdmin
       .from("billing_sync_log")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // ── Aggregate metrics (existing) ──
+    // ── Aggregate metrics ──
     const successfulPayments = recentPayments.data.filter(p => p.status === 'succeeded');
     const totalRevenue = successfulPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
@@ -287,7 +463,6 @@ serve(async (req) => {
       created: pi.created, customer: pi.customer
     }));
 
-    // Get customer emails
     const customerIds = [...new Set([
       ...formattedFailedPayments.map(p => p.customer).filter(Boolean),
       ...formattedRecentPayments.map(p => p.customer).filter(Boolean)
@@ -310,6 +485,9 @@ serve(async (req) => {
       ...p, email: p.customer ? customerMap[p.customer as string] : undefined
     }));
 
+    // Count active (unresolved) flags
+    const activeFlags = (existingFlags || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
+
     const response = {
       summary: {
         totalRevenue30Days: totalRevenue,
@@ -320,6 +498,7 @@ serve(async (req) => {
         pastDueSubscriptions: pastDueSubscriptions.length,
         recentCancellations: recentCancellations.length,
         failedPaymentsCount: failedPayments.length,
+        activeFlagCount: activeFlags.length,
         balance: {
           available: balance.available.reduce((sum, b) => sum + b.amount, 0),
           pending: balance.pending.reduce((sum, b) => sum + b.amount, 0),
@@ -334,9 +513,9 @@ serve(async (req) => {
         pastDue: pastDueSubscriptions.length,
         canceled: canceledSubscriptions.length
       },
-      // Phase 2 additions
       userHealth: userHealthRows,
       billingEventLog: recentSyncLog || [],
+      accountFlags: existingFlags || [],
       problemUserCount: userHealthRows.filter(u => u.problem_type !== null).length,
     };
 
