@@ -104,7 +104,6 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const unreadCount = useActionNeededCount();
   const overdueCount = useOverdueCompliance();
 
