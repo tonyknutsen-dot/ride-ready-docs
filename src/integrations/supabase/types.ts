@@ -157,6 +157,57 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_account_flags: {
+        Row: {
+          admin_note: string | null
+          auto_detected: boolean
+          created_at: string
+          flag_reason: string
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string
+          source_details: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          auto_detected?: boolean
+          created_at?: string
+          flag_reason: string
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          source_details?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          auto_detected?: boolean
+          created_at?: string
+          flag_reason?: string
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string
+          source_details?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       billing_sync_log: {
         Row: {
           created_at: string
