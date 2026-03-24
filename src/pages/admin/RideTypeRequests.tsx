@@ -871,6 +871,13 @@ export default function RideTypeRequests() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Type preview */}
+      <TypePreviewDialog
+        category={previewCategory}
+        open={!!previewCategory}
+        onClose={() => setPreviewCategory(null)}
+      />
     </AdminLayout>
   );
 }
