@@ -146,6 +146,7 @@ export default function CheckItemSubmissions() {
   };
 
   // Scope-aware duplicate detection: returns { sameScope, broader }
+  // sameScope requires BOTH correct scope (equipment group) AND matching category
   const findScopedLibraryMatches = (submission: Submission): { sameScope: LibraryMatch[]; broader: LibraryMatch[] } => {
     const equipGroup = getSubmissionEquipmentGroup(submission);
     const isGeneric = submission.is_generic;
@@ -158,23 +159,20 @@ export default function CheckItemSubmissions() {
     const broader: LibraryMatch[] = [];
 
     for (const item of textHits) {
-      let isSameScope = false;
-
+      // Step 1: Check scope match (equipment group alignment)
+      let scopeMatch = false;
       if (isGeneric) {
-        // General submission → same-scope = general library items
-        isSameScope = item.equipment_group === 'general' || item.equipment_group === 'Rides';
+        scopeMatch = item.equipment_group === 'general' || item.equipment_group === 'Rides';
       } else if (equipGroup) {
-        // Equipment-specific submission → same-scope = same equipment group OR same ride_category_id
-        isSameScope = item.equipment_group === equipGroup
+        scopeMatch = item.equipment_group === equipGroup
           || (!!submission.ride_category_id && item.ride_category_id === submission.ride_category_id);
       }
 
-      // Also boost if same check category
-      if (category && item.category === category) {
-        isSameScope = true;
-      }
+      // Step 2: Check category match
+      const categoryMatch = !category || !item.category || item.category === category;
 
-      if (isSameScope) {
+      // sameScope requires BOTH scope AND category to align
+      if (scopeMatch && categoryMatch) {
         sameScope.push(item);
       } else {
         broader.push(item);
