@@ -235,7 +235,7 @@ export const useSubscription = () => {
         console.error('Error checking subscription:', error);
         return null;
       }
-      await fetchSubscriptionData();
+      await fetchSubscriptionData(true);
       return data;
     } catch (error) {
       console.error('Error checking subscription:', error);
