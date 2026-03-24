@@ -242,6 +242,7 @@ export default function PaymentsDashboard() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('failed');
   const [updatingFlag, setUpdatingFlag] = useState<string | null>(null);
+  const [showTechnicalEvents, setShowTechnicalEvents] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
