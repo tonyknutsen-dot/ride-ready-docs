@@ -3083,11 +3083,48 @@ export type Database = {
         }
         Relationships: []
       }
+      support_message_replies: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          is_internal_note: boolean
+          message_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          is_internal_note?: boolean
+          message_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          is_internal_note?: boolean
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_message_replies_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_messages: {
         Row: {
           admin_response: string | null
+          assigned_to: string | null
           created_at: string
           id: string
+          last_activity_at: string | null
           message: string
           priority: string | null
           responded_at: string | null
@@ -3099,8 +3136,10 @@ export type Database = {
         }
         Insert: {
           admin_response?: string | null
+          assigned_to?: string | null
           created_at?: string
           id?: string
+          last_activity_at?: string | null
           message: string
           priority?: string | null
           responded_at?: string | null
@@ -3112,8 +3151,10 @@ export type Database = {
         }
         Update: {
           admin_response?: string | null
+          assigned_to?: string | null
           created_at?: string
           id?: string
+          last_activity_at?: string | null
           message?: string
           priority?: string | null
           responded_at?: string | null
