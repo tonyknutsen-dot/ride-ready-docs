@@ -305,21 +305,20 @@ export default function CheckLibrary() {
     setIsCreating(false);
   }, []);
 
-  const handleSaveEdit = async () => {
-    if (!editLabel.trim()) return;
-    setSaving(true);
-
+  const handleSaveEdit = useCallback(async (data: {
+    label: string; hint: string; category: string;
+    frequency: string; group: string; rideCategoryId: string | null; note: string;
+  }) => {
     if (isCreating) {
-      // Create new library item
-      const { data, error } = await supabase
+      const { data: row, error } = await supabase
         .from('check_library_items')
         .insert({
-          label: editLabel.trim(),
-          hint: editHint.trim() || null,
-          category: editCategory || null,
-          frequency: editFrequency as CheckFrequency,
-          equipment_group: editGroup,
-          ride_category_id: editRideCategoryId,
+          label: data.label.trim(),
+          hint: data.hint.trim() || null,
+          category: data.category || null,
+          frequency: data.frequency as CheckFrequency,
+          equipment_group: data.group,
+          ride_category_id: data.rideCategoryId,
           is_active: true,
           sort_index: 0,
         })
@@ -328,41 +327,39 @@ export default function CheckLibrary() {
 
       if (error) {
         toast({ title: 'Error', description: 'Failed to create item', variant: 'destructive' });
-      } else if (data) {
-        logEvent('create', 'check', data.id, { label: editLabel, note: editNote || undefined });
+      } else if (row) {
+        logEvent('create', 'check', row.id, { label: data.label, note: data.note || undefined });
         toast({ title: 'Created', description: 'New library item added' });
-        setItems(prev => [data as unknown as LibraryItem, ...prev]);
+        setItems(prev => [row as unknown as LibraryItem, ...prev]);
         setIsCreating(false);
       }
     } else if (editItem) {
-      // Update existing
       const { error } = await supabase
         .from('check_library_items')
         .update({
-          label: editLabel.trim(),
-          hint: editHint.trim() || null,
-          category: editCategory || null,
-          frequency: editFrequency as CheckFrequency,
-          equipment_group: editGroup,
-          ride_category_id: editRideCategoryId,
+          label: data.label.trim(),
+          hint: data.hint.trim() || null,
+          category: data.category || null,
+          frequency: data.frequency as CheckFrequency,
+          equipment_group: data.group,
+          ride_category_id: data.rideCategoryId,
         })
         .eq('id', editItem.id);
 
       if (error) {
         toast({ title: 'Error', description: 'Failed to update item', variant: 'destructive' });
       } else {
-        logEvent('update', 'check', editItem.id, { label: editLabel, note: editNote || undefined });
+        logEvent('update', 'check', editItem.id, { label: data.label, note: data.note || undefined });
         toast({ title: 'Updated', description: 'Library item updated' });
         setItems(prev => prev.map(i => i.id === editItem.id ? {
-          ...i, label: editLabel.trim(), hint: editHint.trim() || null,
-          category: editCategory || null, frequency: editFrequency,
-          equipment_group: editGroup, ride_category_id: editRideCategoryId,
+          ...i, label: data.label.trim(), hint: data.hint.trim() || null,
+          category: data.category || null, frequency: data.frequency,
+          equipment_group: data.group, ride_category_id: data.rideCategoryId,
         } : i));
         setEditItem(null);
       }
     }
-    setSaving(false);
-  };
+  }, [isCreating, editItem, toast, logEvent]);
 
   const handleArchiveToggle = async () => {
     if (!archiveTarget) return;
