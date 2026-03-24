@@ -414,7 +414,7 @@ export default function PaymentsDashboard() {
                         </div>
                         <div>
                           <span className="text-muted-foreground block mb-0.5">Stripe Plan</span>
-                          <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} />
+                          <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} isStripe />
                         </div>
                       </div>
 
