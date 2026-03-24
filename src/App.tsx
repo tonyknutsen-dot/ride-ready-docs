@@ -153,6 +153,14 @@ const App = () => (
               <Route path="/data-independence" element={<DataIndependence />} />
               <Route path="/dpa" element={<DataProcessingAgreement />} />
               <Route 
+                path="/support-requests" 
+                element={
+                  <ProtectedRoute>
+                    <SupportRequests />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/profile-setup" 
                 element={
                   <ProtectedRoute>
