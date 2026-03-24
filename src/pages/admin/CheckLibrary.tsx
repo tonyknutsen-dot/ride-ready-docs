@@ -654,7 +654,7 @@ export default function CheckLibrary() {
             <AlertDialogDescription>
               {deleteBlocked ? (
                 <span className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                   <span>
                     This item is referenced by existing check templates. Use <strong>Archive</strong> instead to hide it from future use while preserving history.
                   </span>
