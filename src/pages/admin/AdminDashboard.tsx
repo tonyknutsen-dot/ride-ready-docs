@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       label: 'Pending Equipment Type Requests',
       count: stats.pendingRideRequests,
       href: '/admin/ride-requests',
-      icon: FolderOpen,
+      icon: Layers,
       accent: 'primary' as const,
       cta: 'Review Requests',
     },
