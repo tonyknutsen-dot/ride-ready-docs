@@ -401,25 +401,26 @@ export default function PaymentsDashboard() {
                   All accounts healthy
                 </Badge>
               )}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <Switch
                     id="show-all"
                     checked={showAllUsers}
                     onCheckedChange={setShowAllUsers}
                   />
-                  <Label htmlFor="show-all" className="text-xs cursor-pointer">
-                    Show all users ({userHealth.length})
+                  <Label htmlFor="show-all" className="text-xs cursor-pointer whitespace-nowrap">
+                    All users ({userHealth.length})
                   </Label>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => { setSelectedUserId(null); setEventDrawerOpen(true); }}
-                  className="text-xs"
+                  className="text-xs h-8"
                 >
                   <History className="h-3.5 w-3.5 mr-1.5" />
-                  Event Log
+                  <span className="hidden sm:inline">Event Log</span>
+                  <span className="sm:hidden">Log</span>
                 </Button>
               </div>
             </div>
