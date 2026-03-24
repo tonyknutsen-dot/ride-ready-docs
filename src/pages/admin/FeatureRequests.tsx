@@ -13,7 +13,6 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
   Lightbulb, RefreshCw, Loader2, Search, Save, Inbox, ArrowLeft,
