@@ -216,12 +216,11 @@ export const useSubscription = () => {
 
         setSubscription(subscriptionData);
       }
-    } catch (error) {
-      console.error('Error fetching subscription data:', error);
     } finally {
+      setFetchedKey(`${user.id}:${isTester}:${isStaff}:${staffMembership?.ownerId ?? ''}`);
       setLoading(false);
     }
-  }, [user, isTester, testerLoading, isStaff, staffMembership, staffLoading]);
+  }, [user?.id, isTester, testerLoading, isStaff, staffMembership?.ownerId, staffLoading, fetchedKey]);
 
   useEffect(() => {
     fetchSubscriptionData();
