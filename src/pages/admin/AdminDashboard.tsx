@@ -42,7 +42,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     unansweredSupport: 0, bugReportsNeedingTriage: 0,
     pendingRideRequests: 0, pendingDocRequests: 0,
-    totalUsers: 0, totalTesters: 0,
+    totalUsers: 0, totalTesters: 0, totalStaff: 0,
     totalRides: 0, totalDocuments: 0, totalChecks: 0, totalMaintenanceRecords: 0,
     testRides: 0, testDocuments: 0, testChecks: 0, testMaintenanceRecords: 0,
   });
