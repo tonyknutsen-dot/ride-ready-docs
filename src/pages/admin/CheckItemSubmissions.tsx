@@ -129,18 +129,65 @@ export default function CheckItemSubmissions() {
     setAllSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
-  // Find library items that match a submission by text similarity
+  // Text similarity check between a submission and a library item
+  const textMatches = (submissionLabel: string, itemLabel: string): boolean => {
+    const subLower = submissionLabel.toLowerCase();
+    const itemLower = itemLabel.toLowerCase();
+    if (itemLower === subLower) return true;
+    const words = subLower.split(/\s+/).filter(w => w.length > 3);
+    if (words.length === 0) return false;
+    const matchCount = words.filter(w => itemLower.includes(w)).length;
+    return matchCount >= Math.ceil(words.length * 0.6);
+  };
+
+  // Determine the equipment group of a submission from its ride_category
+  const getSubmissionEquipmentGroup = (submission: Submission): string | null => {
+    return submission.ride_category?.category_group || null;
+  };
+
+  // Scope-aware duplicate detection: returns { sameScope, broader }
+  const findScopedLibraryMatches = (submission: Submission): { sameScope: LibraryMatch[]; broader: LibraryMatch[] } => {
+    const equipGroup = getSubmissionEquipmentGroup(submission);
+    const isGeneric = submission.is_generic;
+    const category = submission.category;
+
+    const textHits = libraryItems.filter(item => textMatches(submission.label, item.label));
+    if (textHits.length === 0) return { sameScope: [], broader: [] };
+
+    const sameScope: LibraryMatch[] = [];
+    const broader: LibraryMatch[] = [];
+
+    for (const item of textHits) {
+      let isSameScope = false;
+
+      if (isGeneric) {
+        // General submission → same-scope = general library items
+        isSameScope = item.equipment_group === 'general' || item.equipment_group === 'Rides';
+      } else if (equipGroup) {
+        // Equipment-specific submission → same-scope = same equipment group OR same ride_category_id
+        isSameScope = item.equipment_group === equipGroup
+          || (!!submission.ride_category_id && item.ride_category_id === submission.ride_category_id);
+      }
+
+      // Also boost if same check category
+      if (category && item.category === category) {
+        isSameScope = true;
+      }
+
+      if (isSameScope) {
+        sameScope.push(item);
+      } else {
+        broader.push(item);
+      }
+    }
+
+    return { sameScope: sameScope.slice(0, 3), broader: broader.slice(0, 2) };
+  };
+
+  // Legacy compat wrapper used by duplicate dialog auto-select
   const findLibraryMatches = (submission: Submission): LibraryMatch[] => {
-    const words = submission.label.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    if (words.length === 0) return [];
-    return libraryItems.filter(item => {
-      const itemLower = item.label.toLowerCase();
-      // Exact match
-      if (itemLower === submission.label.toLowerCase()) return true;
-      // Significant word overlap
-      const matchCount = words.filter(w => itemLower.includes(w)).length;
-      return matchCount >= Math.ceil(words.length * 0.6);
-    }).slice(0, 3);
+    const { sameScope, broader } = findScopedLibraryMatches(submission);
+    return [...sameScope, ...broader];
   };
 
   const counts = {
@@ -499,7 +546,7 @@ export default function CheckItemSubmissions() {
         <div className="space-y-3">
           {filteredSubmissions.map((submission) => {
             const similarItems = getSimilarItems(submission);
-            const libraryMatches = findLibraryMatches(submission);
+            const { sameScope: sameScopeMatches, broader: broaderMatches } = findScopedLibraryMatches(submission);
             const isPending = submission.status === 'pending';
 
             return (
@@ -576,13 +623,13 @@ export default function CheckItemSubmissions() {
                     </Badge>
                   )}
 
-                  {/* Library match detection */}
-                  {isPending && libraryMatches.length > 0 && (
+                  {/* Same-scope library match detection */}
+                  {isPending && sameScopeMatches.length > 0 && (
                     <div className="rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-2.5 mb-2">
                       <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" /> Possible library match
+                        <BookOpen className="w-3 h-3" /> Likely duplicate in same category
                       </p>
-                      {libraryMatches.map(match => (
+                      {sameScopeMatches.map(match => (
                         <div key={match.id} className="text-xs text-amber-700 dark:text-amber-400 mb-0.5">
                           <span className="font-medium">"{match.label}"</span>
                           <span className="text-amber-600/70 dark:text-amber-500/70 ml-1">
@@ -593,8 +640,23 @@ export default function CheckItemSubmissions() {
                     </div>
                   )}
 
+                  {/* Broader cross-scope matches (lower priority) */}
+                  {isPending && sameScopeMatches.length === 0 && broaderMatches.length > 0 && (
+                    <div className="rounded-md bg-muted/50 border border-dashed p-2.5 mb-2">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> Possible similar item elsewhere in library
+                      </p>
+                      {broaderMatches.map(match => (
+                        <div key={match.id} className="text-xs text-muted-foreground mb-0.5">
+                          <span className="font-medium">"{match.label}"</span>
+                          <span className="ml-1">· {match.equipment_group}{match.category ? ` · ${match.category}` : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Similarity group matches (between submissions) */}
-                  {isPending && similarItems.length > 0 && libraryMatches.length === 0 && (
+                  {isPending && similarItems.length > 0 && sameScopeMatches.length === 0 && broaderMatches.length === 0 && (
                     <div className="rounded-md bg-muted/60 border border-dashed p-2.5 mb-2">
                       <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                         <Sparkles className="w-3 h-3" /> Similar submissions ({similarItems.length})
@@ -875,24 +937,54 @@ export default function CheckItemSubmissions() {
           )}
           <div>
             <Label className="mb-1.5 block">Matched library item</Label>
-            <Select value={selectedMatchId || '__none__'} onValueChange={(v) => setSelectedMatchId(v === '__none__' ? '' : v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select matching library item" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50 max-h-[250px]">
-                <SelectItem value="__none__">No specific match (general duplicate)</SelectItem>
-                {duplicateTarget && findLibraryMatches(duplicateTarget).map(match => (
-                  <SelectItem key={match.id} value={match.id}>
-                    ⭐ {match.label} ({match.equipment_group})
-                  </SelectItem>
-                ))}
-                {libraryItems.slice(0, 30).map(item => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label} ({item.equipment_group})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(() => {
+              if (!duplicateTarget) return null;
+              const { sameScope, broader } = findScopedLibraryMatches(duplicateTarget);
+              const equipGroup = getSubmissionEquipmentGroup(duplicateTarget);
+              // For browsing: show same-group items not already in matches
+              const matchIds = new Set([...sameScope, ...broader].map(m => m.id));
+              const sameScopeBrowse = libraryItems
+                .filter(item => !matchIds.has(item.id) && (
+                  duplicateTarget.is_generic
+                    ? (item.equipment_group === 'general' || item.equipment_group === 'Rides')
+                    : equipGroup ? item.equipment_group === equipGroup : false
+                ))
+                .slice(0, 15);
+              const otherBrowse = libraryItems
+                .filter(item => !matchIds.has(item.id) && !sameScopeBrowse.some(s => s.id === item.id))
+                .slice(0, 10);
+
+              return (
+                <Select value={selectedMatchId || '__none__'} onValueChange={(v) => setSelectedMatchId(v === '__none__' ? '' : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select matching library item" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50 max-h-[250px]">
+                    <SelectItem value="__none__">No specific match (general duplicate)</SelectItem>
+                    {sameScope.length > 0 && sameScope.map(match => (
+                      <SelectItem key={match.id} value={match.id}>
+                        ⭐ {match.label} ({match.equipment_group})
+                      </SelectItem>
+                    ))}
+                    {broader.length > 0 && broader.map(match => (
+                      <SelectItem key={match.id} value={match.id}>
+                        ◇ {match.label} ({match.equipment_group})
+                      </SelectItem>
+                    ))}
+                    {sameScopeBrowse.length > 0 && sameScopeBrowse.map(item => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label} ({item.equipment_group})
+                      </SelectItem>
+                    ))}
+                    {otherBrowse.length > 0 && otherBrowse.map(item => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label} ({item.equipment_group})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
           <div>
             <Label>Note (optional)</Label>
