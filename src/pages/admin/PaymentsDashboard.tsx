@@ -357,7 +357,7 @@ export default function PaymentsDashboard() {
             </Card>
 
             <Card
-              className={`cursor-pointer ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}
+              className={`cursor-pointer transition-shadow hover:shadow-md ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}
               onClick={() => { setActiveTab('failed'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
