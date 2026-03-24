@@ -1,197 +1,144 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, MessageCircle, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
-import { Loader2, MessageCircle, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { SupportQueueFilters } from '@/components/admin/support/SupportQueueFilters';
+import { SupportMessageRow } from '@/components/admin/support/SupportMessageRow';
+import { SupportThreadView } from '@/components/admin/support/SupportThreadView';
+import type { SupportMessage, SupportReply, SenderProfile, SortOption } from '@/components/admin/support/types';
 
-interface SupportMessage {
-  id: string;
-  subject: string;
-  message: string;
-  status: string;
-  priority: string;
-  admin_response: string | null;
-  responded_at: string | null;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
-
-const priorityColors = {
-  low: 'bg-blue-100 text-blue-800',
-  normal: 'bg-gray-100 text-gray-800',
-  high: 'bg-orange-100 text-orange-800',
-  urgent: 'bg-red-100 text-red-800',
-};
-
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  resolved: 'bg-green-100 text-green-800',
-};
-
-const statusIcons = {
-  pending: Clock,
-  in_progress: AlertCircle,
-  resolved: CheckCircle2,
-};
+const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+const OPEN_STATUSES = ['pending', 'in_progress', 'waiting_on_user'];
 
 export default function SupportMessages() {
   const [messages, setMessages] = useState<SupportMessage[]>([]);
+  const [replies, setReplies] = useState<Record<string, SupportReply[]>>({});
+  const [replyCounts, setReplyCounts] = useState<Record<string, number>>({});
+  const [senders, setSenders] = useState<Record<string, SenderProfile>>({});
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(null);
-  const [response, setResponse] = useState('');
-  const [updating, setUpdating] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('open');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [filterStatus]);
+  useEffect(() => { fetchMessages(); }, []);
 
   const fetchMessages = async () => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('support_messages')
         .select('*')
         .order('created_at', { ascending: false });
+      if (error) throw error;
 
-      if (filterStatus !== 'all') {
-        query = query.eq('status', filterStatus);
+      const msgs = (data || []) as SupportMessage[];
+      setMessages(msgs);
+
+      // Fetch sender profiles
+      const userIds = [...new Set(msgs.map((m) => m.user_id))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company_name')
+          .in('user_id', userIds);
+        const map: Record<string, SenderProfile> = {};
+        (profiles || []).forEach((p: any) => { map[p.user_id] = p; });
+        setSenders(map);
       }
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setMessages(data || []);
-    } catch (error: any) {
-      console.error('Error fetching messages:', error);
+      // Fetch reply counts per message
+      const msgIds = msgs.map((m) => m.id);
+      if (msgIds.length > 0) {
+        const { data: allReplies } = await (supabase.from('support_message_replies') as any)
+          .select('id, message_id')
+          .in('message_id', msgIds);
+        const countMap: Record<string, number> = {};
+        (allReplies || []).forEach((r: any) => {
+          countMap[r.message_id] = (countMap[r.message_id] || 0) + 1;
+        });
+        setReplyCounts(countMap);
+      }
+    } catch (err: any) {
+      console.error('Error fetching messages:', err);
       toast.error('Failed to load support messages');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateMessage = async (
-    messageId: string,
-    updates: { status?: string; admin_response?: string },
-    sendEmail: boolean = false
-  ) => {
-    setUpdating(true);
+  const fetchThread = async (messageId: string) => {
+    const { data } = await (supabase.from('support_message_replies') as any)
+      .select('*')
+      .eq('message_id', messageId)
+      .order('created_at', { ascending: true });
+    setReplies((prev) => ({ ...prev, [messageId]: data || [] }));
+  };
 
-    try {
-      const updateData: any = { ...updates, updated_at: new Date().toISOString() };
-      const user = (await supabase.auth.getUser()).data.user;
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    fetchThread(id);
+  };
 
-      if (updates.admin_response) {
-        updateData.responded_at = new Date().toISOString();
-        updateData.responded_by = user?.id;
-      }
+  // Counts for queue filters
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { open: 0, pending: 0, in_progress: 0, waiting_on_user: 0, resolved: 0, archived: 0, all: messages.length };
+    messages.forEach((m) => {
+      const s = m.status || 'pending';
+      if (c[s] !== undefined) c[s]++;
+      if (OPEN_STATUSES.includes(s)) c.open++;
+    });
+    return c;
+  }, [messages]);
 
-      const { error } = await supabase
-        .from('support_messages')
-        .update(updateData)
-        .eq('id', messageId);
+  // Filter + search + sort
+  const filteredMessages = useMemo(() => {
+    let result = messages;
 
-      if (error) throw error;
-
-      // Send email notification if requested and we have a response
-      if (sendEmail && updates.admin_response && selectedMessage) {
-        try {
-          // First, fetch the user's email using the admin-only edge function
-          const { data: emailData, error: fetchEmailError } = await supabase.functions.invoke('get-user-email', {
-            body: { userId: selectedMessage.user_id },
-          });
-
-          if (fetchEmailError || !emailData?.email) {
-            console.error('Failed to fetch user email:', fetchEmailError);
-            toast.warning('Message saved but could not fetch user email');
-            fetchMessages();
-            setSelectedMessage(null);
-            setResponse('');
-            return;
-          }
-
-          // Now send the email with the correct user email
-          const { error: emailError } = await supabase.functions.invoke('send-support-response', {
-            body: {
-              messageId,
-              adminResponse: updates.admin_response,
-              userEmail: emailData.email,
-              subject: selectedMessage.subject,
-            },
-          });
-
-          if (emailError) {
-            console.error('Failed to send email notification:', emailError);
-            toast.warning('Message saved but email notification failed');
-          } else {
-            toast.success('Response sent and user notified via email');
-          }
-        } catch (emailErr) {
-          console.error('Email notification error:', emailErr);
-          toast.warning('Message saved but email notification failed');
-        }
-      } else {
-        toast.success('Message updated successfully');
-      }
-
-      fetchMessages();
-      setSelectedMessage(null);
-      setResponse('');
-    } catch (error: any) {
-      console.error('Error updating message:', error);
-      toast.error('Failed to update message');
-    } finally {
-      setUpdating(false);
+    // Status filter
+    if (filterStatus === 'open') {
+      result = result.filter((m) => OPEN_STATUSES.includes(m.status || 'pending'));
+    } else if (filterStatus !== 'all') {
+      result = result.filter((m) => m.status === filterStatus);
     }
-  };
 
-  const MessageCard = ({ msg }: { msg: SupportMessage }) => {
-    const StatusIcon = statusIcons[msg.status as keyof typeof statusIcons];
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((m) => {
+        const sender = senders[m.user_id];
+        return (
+          m.subject.toLowerCase().includes(q) ||
+          m.message.toLowerCase().includes(q) ||
+          (sender?.full_name || '').toLowerCase().includes(q) ||
+          (sender?.company_name || '').toLowerCase().includes(q)
+        );
+      });
+    }
 
-    return (
-      <Card
-        className="cursor-pointer hover:border-primary transition-colors"
-        onClick={() => setSelectedMessage(msg)}
-      >
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-lg">{msg.subject}</CardTitle>
-              <CardDescription className="mt-1">
-                {format(new Date(msg.created_at), 'MMM d, yyyy h:mm a')}
-              </CardDescription>
-            </div>
-            <div className="flex flex-col gap-2 items-end">
-              <Badge className={priorityColors[msg.priority as keyof typeof priorityColors]}>
-                {msg.priority}
-              </Badge>
-              <Badge className={statusColors[msg.status as keyof typeof statusColors]}>
-                <StatusIcon className="h-3 w-3 mr-1" />
-                {msg.status.replace('_', ' ')}
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground line-clamp-2">{msg.message}</p>
-        </CardContent>
-      </Card>
-    );
-  };
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'priority':
+          return (PRIORITY_ORDER[a.priority || 'normal'] ?? 2) - (PRIORITY_ORDER[b.priority || 'normal'] ?? 2);
+        case 'waiting_longest':
+          return new Date(a.last_activity_at || a.created_at).getTime() - new Date(b.last_activity_at || b.created_at).getTime();
+        case 'unresolved':
+          const aOpen = OPEN_STATUSES.includes(a.status) ? 0 : 1;
+          const bOpen = OPEN_STATUSES.includes(b.status) ? 0 : 1;
+          return aOpen - bOpen || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        default: // newest
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [messages, filterStatus, search, sortBy, senders]);
+
+  const selectedMessage = messages.find((m) => m.id === selectedId) || null;
 
   if (loading) {
     return (
@@ -205,154 +152,59 @@ export default function SupportMessages() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Support Messages</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Review and respond to user support requests
-            </p>
-          </div>
-          <MessageCircle className="h-6 w-6 text-muted-foreground/50" />
-        </div>
-
-        <div className="flex gap-2">
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Messages</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="space-y-5">
+        {/* Header */}
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <Inbox className="h-5 w-5 text-primary" />
+            Support Inbox
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage and respond to customer support requests
+          </p>
         </div>
 
         {selectedMessage ? (
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{selectedMessage.subject}</CardTitle>
-                  <CardDescription>
-                    {format(new Date(selectedMessage.created_at), 'MMMM d, yyyy h:mm a')}
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" onClick={() => setSelectedMessage(null)}>
-                  ← Back
-                </Button>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Badge
-                  className={priorityColors[selectedMessage.priority as keyof typeof priorityColors]}
-                >
-                  {selectedMessage.priority}
-                </Badge>
-                <Badge className={statusColors[selectedMessage.status as keyof typeof statusColors]}>
-                  {selectedMessage.status.replace('_', ' ')}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>User Message</Label>
-                <div className="bg-muted p-4 rounded-md mt-2">
-                  <p className="whitespace-pre-wrap">{selectedMessage.message}</p>
-                </div>
-              </div>
-
-              {selectedMessage.admin_response && (
-                <div>
-                  <Label>Your Response</Label>
-                  <div className="bg-primary/5 p-4 rounded-md mt-2 border border-primary/20">
-                    <p className="whitespace-pre-wrap">{selectedMessage.admin_response}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Responded on{' '}
-                      {selectedMessage.responded_at &&
-                        format(new Date(selectedMessage.responded_at), 'MMM d, yyyy h:mm a')}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="status">Update Status</Label>
-                  <Select
-                    value={selectedMessage.status}
-                    onValueChange={(value) =>
-                      handleUpdateMessage(selectedMessage.id, { status: value })
-                    }
-                    disabled={updating}
-                  >
-                    <SelectTrigger id="status" className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="response">Admin Response</Label>
-                  <Textarea
-                    id="response"
-                    value={response || selectedMessage.admin_response || ''}
-                    onChange={(e) => setResponse(e.target.value)}
-                    placeholder="Type your response here..."
-                    rows={6}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() =>
-                      handleUpdateMessage(selectedMessage.id, {
-                        admin_response: response || selectedMessage.admin_response || '',
-                        status: 'in_progress',
-                      }, false)
-                    }
-                    disabled={updating || !response}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    {updating ? 'Saving...' : 'Save Only'}
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      handleUpdateMessage(selectedMessage.id, {
-                        admin_response: response || selectedMessage.admin_response || '',
-                        status: 'in_progress',
-                      }, true)
-                    }
-                    disabled={updating || !response}
-                    className="flex-1"
-                  >
-                    {updating ? 'Sending...' : 'Save & Email User'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <SupportThreadView
+            message={selectedMessage}
+            replies={replies[selectedMessage.id] || []}
+            sender={senders[selectedMessage.user_id] || null}
+            onBack={() => setSelectedId(null)}
+            onRefresh={() => { fetchMessages(); if (selectedId) fetchThread(selectedId); }}
+          />
         ) : (
-          <div className="grid gap-4">
-            {messages.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No support messages found</p>
-                </CardContent>
-              </Card>
-            ) : (
-              messages.map((msg) => <MessageCard key={msg.id} msg={msg} />)
-            )}
-          </div>
+          <>
+            <SupportQueueFilters
+              filterStatus={filterStatus}
+              onFilterChange={setFilterStatus}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              search={search}
+              onSearchChange={setSearch}
+              counts={counts}
+            />
+
+            <div className="space-y-2">
+              {filteredMessages.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground text-sm">No messages in this queue</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredMessages.map((msg) => (
+                  <SupportMessageRow
+                    key={msg.id}
+                    msg={msg}
+                    sender={senders[msg.user_id] || null}
+                    replyCount={replyCounts[msg.id] || 0}
+                    onClick={() => handleSelect(msg.id)}
+                  />
+                ))
+              )}
+            </div>
+          </>
         )}
       </div>
     </AdminLayout>
