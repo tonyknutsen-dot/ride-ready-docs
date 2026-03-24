@@ -623,13 +623,13 @@ export default function CheckItemSubmissions() {
                     </Badge>
                   )}
 
-                  {/* Library match detection */}
-                  {isPending && libraryMatches.length > 0 && (
+                  {/* Same-scope library match detection */}
+                  {isPending && sameScopeMatches.length > 0 && (
                     <div className="rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-2.5 mb-2">
                       <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" /> Possible library match
+                        <BookOpen className="w-3 h-3" /> Likely duplicate in same category
                       </p>
-                      {libraryMatches.map(match => (
+                      {sameScopeMatches.map(match => (
                         <div key={match.id} className="text-xs text-amber-700 dark:text-amber-400 mb-0.5">
                           <span className="font-medium">"{match.label}"</span>
                           <span className="text-amber-600/70 dark:text-amber-500/70 ml-1">
@@ -640,8 +640,23 @@ export default function CheckItemSubmissions() {
                     </div>
                   )}
 
+                  {/* Broader cross-scope matches (lower priority) */}
+                  {isPending && sameScopeMatches.length === 0 && broaderMatches.length > 0 && (
+                    <div className="rounded-md bg-muted/50 border border-dashed p-2.5 mb-2">
+                      <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> Possible similar item elsewhere in library
+                      </p>
+                      {broaderMatches.map(match => (
+                        <div key={match.id} className="text-xs text-muted-foreground mb-0.5">
+                          <span className="font-medium">"{match.label}"</span>
+                          <span className="ml-1">· {match.equipment_group}{match.category ? ` · ${match.category}` : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Similarity group matches (between submissions) */}
-                  {isPending && similarItems.length > 0 && libraryMatches.length === 0 && (
+                  {isPending && similarItems.length > 0 && sameScopeMatches.length === 0 && broaderMatches.length === 0 && (
                     <div className="rounded-md bg-muted/60 border border-dashed p-2.5 mb-2">
                       <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                         <Sparkles className="w-3 h-3" /> Similar submissions ({similarItems.length})
