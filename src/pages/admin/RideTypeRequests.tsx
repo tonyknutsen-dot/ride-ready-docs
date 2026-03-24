@@ -542,10 +542,15 @@ export default function RideTypeRequests() {
           <div className="text-center py-12 text-muted-foreground text-sm">Loading requests…</div>
         ) : filtered.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              {requests.length === 0
-                ? 'No equipment type requests yet'
-                : 'No requests match your current filters'}
+            <CardContent className="py-12 text-center space-y-2">
+              <Layers className="h-10 w-10 mx-auto text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
+                {requests.length === 0
+                  ? 'No equipment type requests yet. New requests from users will appear here for review.'
+                  : statusTab !== 'all'
+                    ? `No ${statusTab} equipment type requests`
+                    : 'No requests match your search'}
+              </p>
             </CardContent>
           </Card>
         ) : (
