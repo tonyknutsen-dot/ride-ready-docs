@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -74,6 +74,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'Requests & Approvals',
       items: [
         { name: 'Library Intake Queue', href: '/admin/check-items', icon: FileText, count: 0 },
+        { name: 'Check Library', href: '/admin/check-library', icon: Library, count: 0 },
         { name: 'Equipment Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
         { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
         { name: 'Risk Item Submissions', href: '/admin/risk-items', icon: Activity, count: 0 },
