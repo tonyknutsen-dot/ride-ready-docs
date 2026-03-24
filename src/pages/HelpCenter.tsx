@@ -250,13 +250,6 @@ const HelpCenter = () => {
             <p className="text-sm text-[#64748B] leading-relaxed">
               Browse help topics below or use the search bar to find guidance on inspections, documentation, and compliance management.
             </p>
-            <ContactSupportDialog
-              trigger={
-                <button className="mt-3 text-sm font-semibold text-[#1E3A5F] hover:underline underline-offset-2 transition-all">
-                  Contact Support →
-                </button>
-              }
-            />
           </div>
 
           {/* ── AI CHAT ────────────────────────────────────────────────────── */}
