@@ -317,7 +317,7 @@ export default function CheckLibrary() {
           hint: data.hint.trim() || null,
           category: data.category || null,
           frequency: data.frequency as CheckFrequency,
-          equipment_group: data.group,
+          equipment_group: data.group.toLowerCase().replace(/\s+/g, '_'),
           ride_category_id: data.rideCategoryId,
           is_active: true,
           sort_index: 0,
