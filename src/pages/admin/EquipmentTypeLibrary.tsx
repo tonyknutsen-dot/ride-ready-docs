@@ -120,7 +120,7 @@ const TypeDialog = memo(function TypeDialog({ open, isCreating, item, allTypes, 
             <Label>Type Name *</Label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Dodgems, Bouncy Castle" />
             {duplicateWarning && (
-              <div className="flex items-start gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+              <div className="flex items-start gap-2 text-xs text-warning bg-warning/10 p-2 rounded">
                 <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                 <span>{duplicateWarning}</span>
               </div>
