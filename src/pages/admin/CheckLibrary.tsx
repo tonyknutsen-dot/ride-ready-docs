@@ -174,7 +174,20 @@ export default function CheckLibrary() {
 
   // === Actions ===
 
+  const openCreate = () => {
+    setIsCreating(true);
+    setEditItem(null);
+    setEditLabel('');
+    setEditHint('');
+    setEditCategory('');
+    setEditFrequency('daily');
+    setEditGroup('rides');
+    setEditRideCategoryId(null);
+    setEditNote('');
+  };
+
   const openEdit = (item: LibraryItem) => {
+    setIsCreating(false);
     setEditItem(item);
     setEditLabel(item.label);
     setEditHint(item.hint || '');
