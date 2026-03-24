@@ -137,8 +137,8 @@ const StatusBadge = ({ status, isStripe }: { status: string | null; isStripe?: b
 
 // ── Plan label ──
 
-const PlanLabel = ({ plan, mismatch }: { plan: string | null; mismatch?: boolean }) => {
-  if (!plan) return <span className="text-xs text-muted-foreground">—</span>;
+const PlanLabel = ({ plan, mismatch, isStripe }: { plan: string | null; mismatch?: boolean; isStripe?: boolean }) => {
+  if (!plan) return <span className="text-xs text-muted-foreground italic">{isStripe ? 'No Stripe plan' : 'Not set'}</span>;
   return (
     <span className={`text-xs font-medium capitalize ${mismatch ? 'text-destructive font-bold' : ''}`}>
       {plan}
