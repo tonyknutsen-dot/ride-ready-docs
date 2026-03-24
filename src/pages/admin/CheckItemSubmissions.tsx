@@ -421,7 +421,7 @@ export default function CheckItemSubmissions() {
 
   const filteredCategories = useMemo(() => {
     if (approvalData.scope !== 'specific') return [];
-    return categories.filter(c => c.category_group === approvalData.equipment_group);
+    return categories.filter(c => c.category_group.toLowerCase().replace(/\s+/g, '_') === approvalData.equipment_group);
   }, [categories, approvalData.scope, approvalData.equipment_group]);
 
   return (
