@@ -110,10 +110,10 @@ const RiskItemSubmissions = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Shield className="h-6 w-6 text-warning" />
-            Risk Item Submissions
+            Risk Library Intake
           </h1>
           <p className="text-muted-foreground">
-            Review custom hazards and controls submitted by users
+            Review user-created hazards and controls for inclusion in the shared risk library. Users can already use their own items privately.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={loadSubmissions} disabled={loading}>

@@ -15,7 +15,7 @@ const routeLabels: Record<string, string> = {
   '/admin/audit-logs': 'Audit Logs',
   '/admin/security': 'Rate Limits & Blocks',
   '/admin/payments': 'Payments & Billing',
-  '/admin/risk-items': 'Risk Item Submissions',
+  '/admin/risk-items': 'Risk Library Intake',
 };
 
 export function AdminBreadcrumb() {
