@@ -454,7 +454,7 @@ export default function RideTypeRequests() {
   }, [logEvent]);
 
   const onDuplicateMarked = useCallback((id: string) => {
-    logEvent('duplicate', 'ride_type_request', id);
+    logEvent('update', 'ride' as any, id, { action: 'duplicate_type_request' });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'duplicate' } : r));
   }, [logEvent]);
 
