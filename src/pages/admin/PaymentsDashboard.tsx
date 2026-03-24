@@ -579,7 +579,7 @@ export default function PaymentsDashboard() {
         <div className="space-y-3">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Payment Activity</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Recent payment attempts, failures, and revenue overview</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Failed charges, successful payments, and revenue trends from Stripe — across all customer accounts</p>
           </div>
         <div ref={tabsRef}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
