@@ -73,7 +73,9 @@ export const CHECK_FREQUENCY_LABELS: Record<string, string> = {
   preopening: 'Pre-Opening',
   weekly: 'Weekly',
   monthly: 'Monthly',
+  quarterly: 'Quarterly',
   yearly: 'Yearly',
+  custom: 'Custom',
 };
 
 /** Scope type for a library item */
