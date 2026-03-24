@@ -511,8 +511,7 @@ export default function PaymentsDashboard() {
                   className="text-xs h-8"
                 >
                   <History className="h-3.5 w-3.5 mr-1.5" />
-                  <span className="hidden sm:inline">Event Log</span>
-                  <span className="sm:hidden">Log</span>
+                   Event Log
                 </Button>
               </div>
             </div>
