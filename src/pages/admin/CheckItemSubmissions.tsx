@@ -942,8 +942,8 @@ export default function CheckItemSubmissions() {
               const sameScopeBrowse = libraryItems
                 .filter(item => !matchIds.has(item.id) && (
                   duplicateTarget.is_generic
-                    ? (item.equipment_group === 'general' || item.equipment_group === 'Rides')
-                    : equipGroup ? item.equipment_group === equipGroup : false
+                    ? (item.equipment_group === 'general' || item.equipment_group.toLowerCase() === 'rides')
+                    : equipGroup ? item.equipment_group.toLowerCase() === equipGroup.toLowerCase() : false
                 ))
                 .slice(0, 15);
               const otherBrowse = libraryItems
