@@ -302,7 +302,8 @@ export default function EquipmentTypeLibrary() {
       updated_at: new Date().toISOString(),
     }).eq('id', item.id);
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      console.error('[EquipmentTypeLibrary] Archive toggle error:', error);
+      toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
     logEvent(newArchived ? 'archive' : 'unarchive', 'ride_category', item.id, { name: item.name });
