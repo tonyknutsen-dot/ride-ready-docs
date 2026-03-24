@@ -163,40 +163,39 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authLoading, user?.id, fetchedForUserId]);
 
+  const userId = user?.id;
   useEffect(() => {
     if (authLoading) {
       setLoading(true);
       return;
     }
 
+    if (!userId) {
+      void fetchStaffStatus();
+      return;
+    }
+
+    // Defer staff status check to not block initial render
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let idleCallbackId: number | null = null;
 
-    // Defer staff status check to not block initial render
-    if (user) {
-      if ('requestIdleCallback' in window) {
-        idleCallbackId = (window as any).requestIdleCallback(() => {
-          void fetchStaffStatus();
-        }, { timeout: 2000 });
-      } else {
-        timeoutId = setTimeout(() => {
-          void fetchStaffStatus();
-        }, 100);
-      }
+    if ('requestIdleCallback' in window) {
+      idleCallbackId = (window as any).requestIdleCallback(() => {
+        void fetchStaffStatus();
+      }, { timeout: 2000 });
     } else {
-      void fetchStaffStatus();
+      timeoutId = setTimeout(() => {
+        void fetchStaffStatus();
+      }, 100);
     }
 
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-
+      if (timeoutId) clearTimeout(timeoutId);
       if (idleCallbackId !== null && 'cancelIdleCallback' in window) {
         (window as any).cancelIdleCallback(idleCallbackId);
       }
     };
-  }, [authLoading, user, fetchStaffStatus]);
+  }, [authLoading, userId, fetchStaffStatus]);
 
   // Permission helpers using granular permissions
   const canAccessCalendar = isOwner || (isStaff && (featurePermissions?.calendar ?? false));
