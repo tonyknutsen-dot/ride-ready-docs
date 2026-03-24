@@ -6,7 +6,7 @@ const routeLabels: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/bug-reports': 'Bug Reports',
   '/admin/early-access': 'Early Access Signups',
-  '/admin/check-items': 'Check Item Submissions',
+  '/admin/check-items': 'Library Intake Queue',
   '/admin/ride-requests': 'Equipment Type Requests',
   '/admin/document-requests': 'Document Type Requests',
   '/admin/support': 'Support Messages',
