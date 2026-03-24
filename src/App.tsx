@@ -525,6 +525,18 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/admin/feature-requests" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <FeatureRequests />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/admin/check-items" 
                 element={
                   <ProtectedRoute>
