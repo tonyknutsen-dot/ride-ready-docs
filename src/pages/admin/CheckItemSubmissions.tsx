@@ -253,8 +253,8 @@ export default function CheckItemSubmissions() {
 
   const openApprovalDialog = (submission: Submission) => {
     const matchedCategoryGroup = submission.ride_category?.category_group;
-    const inferredGroup = matchedCategoryGroup && EQUIPMENT_GROUPS.includes(matchedCategoryGroup)
-      ? matchedCategoryGroup : 'Rides';
+    const inferredGroup = matchedCategoryGroup
+      ? equipmentGroupToKey(matchedCategoryGroup) : 'rides';
 
     setSelectedSubmission(submission);
     setApprovalData({
