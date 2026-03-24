@@ -361,14 +361,21 @@ export default function CheckLibrary() {
     <AdminLayout>
       <div className="space-y-6 max-w-5xl">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Library className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Check Library</h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Library className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">Check Library</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Manage the shared check item library. Edit wording, archive old items, or remove unused entries.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Manage the shared check item library. Edit wording, archive old items, or remove unused entries.
-          </p>
+          <Button onClick={openCreate} className="shrink-0 gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Library Item</span>
+            <span className="sm:hidden">New</span>
+          </Button>
         </div>
 
         {/* KPIs */}
