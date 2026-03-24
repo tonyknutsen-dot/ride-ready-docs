@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import {
   Search, Loader2, Library, Edit3, Archive, ArchiveRestore, Trash2, Copy,
-  MoreVertical, Globe, Target, AlertTriangle, BookOpen
+  MoreVertical, Globe, Target, AlertTriangle, BookOpen, Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
