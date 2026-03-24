@@ -120,7 +120,7 @@ const ProblemBadge = ({ type }: { type: string | null }) => {
 // ── Status badge ──
 
 const StatusBadge = ({ status, isStripe }: { status: string | null; isStripe?: boolean }) => {
-  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!status) return <span className="text-xs text-muted-foreground italic">{isStripe ? 'Not linked' : 'Unknown'}</span>;
   const color =
     status === 'active' ? 'bg-green-500/15 text-green-700 dark:text-green-400' :
     status === 'past_due' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
