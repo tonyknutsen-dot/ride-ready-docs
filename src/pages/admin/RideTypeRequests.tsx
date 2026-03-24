@@ -794,7 +794,7 @@ export default function RideTypeRequests() {
 
                     {/* Duplicate detection status — only on pending */}
                     {req.status === 'pending' && (
-                      <DuplicateStatusBanner matches={matches} />
+                      <DuplicateStatusBanner matches={matches} onPreview={setPreviewCategory} />
                     )}
 
                     {/* Admin notes */}
