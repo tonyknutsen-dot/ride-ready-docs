@@ -17,6 +17,7 @@ interface PendingCounts {
   documentRequests: number;
   supportMessages: number;
   bugReports: number;
+  featureRequests: number;
 }
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
