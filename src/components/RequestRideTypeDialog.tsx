@@ -96,8 +96,14 @@ export const RequestRideTypeDialog = ({ open, onOpenChange }: RequestRideTypeDia
         });
         setErrors(fieldErrors);
       } else {
-        console.error('Error submitting request:', error);
-        toast({ title: "Error", description: "Failed to submit your request. Please try again.", variant: "destructive" });
+        const dbError = error as { code?: string; message?: string };
+        console.error('Error submitting equipment type request:', dbError);
+        const userMessage = dbError.code === '23514'
+          ? 'Invalid equipment group selected. Please choose a valid group and try again.'
+          : dbError.code === '42501'
+          ? 'Permission denied. Please make sure you are signed in.'
+          : 'Failed to submit your request. Please try again.';
+        toast({ title: "Submission Error", description: userMessage, variant: "destructive" });
       }
     } finally {
       setIsLoading(false);
