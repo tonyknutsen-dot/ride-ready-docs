@@ -16,6 +16,12 @@ export function useProfileComplete() {
       setIsProfileComplete(null);
       setIsStaffMember(false);
       setLoading(false);
+      checkedUserIdRef.current = null;
+      return;
+    }
+
+    // If we already successfully checked this user online, don't re-run
+    if (checkedUserIdRef.current === user.id && isProfileComplete !== null) {
       return;
     }
 
