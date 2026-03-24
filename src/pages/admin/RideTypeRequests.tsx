@@ -145,7 +145,7 @@ const ApprovalDialog = memo(function ApprovalDialog({
       // 1. Create the taxonomy entry
       const { data: newCat, error: catError } = await supabase
         .from('ride_categories')
-        .insert({ name: typeName.trim(), category_group: categoryGroup, description: description || null })
+        .insert({ name: typeName.trim(), category_group: categoryGroup, description: description || null, source: 'approved_request', approved_from_request_id: request?.id || null })
         .select('id')
         .single();
       if (catError) throw catError;

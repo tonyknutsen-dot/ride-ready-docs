@@ -66,6 +66,7 @@ const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const FeatureRequests = lazy(() => import("./pages/admin/FeatureRequests"));
 const CheckItemSubmissions = lazy(() => import("./pages/admin/CheckItemSubmissions"));
 const CheckLibrary = lazy(() => import("./pages/admin/CheckLibrary"));
+const EquipmentTypeLibrary = lazy(() => import("./pages/admin/EquipmentTypeLibrary"));
 const RiskItemSubmissions = lazy(() => import("./pages/admin/RiskItemSubmissions"));
 const EarlyAccessSignups = lazy(() => import("./pages/admin/EarlyAccessSignups"));
 const PaymentsDashboard = lazy(() => import("./pages/admin/PaymentsDashboard"));
@@ -556,6 +557,18 @@ const App = () => (
                     <AdminRoute>
                       <AppLayout>
                         <CheckLibrary />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/equipment-type-library" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <EquipmentTypeLibrary />
                       </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
