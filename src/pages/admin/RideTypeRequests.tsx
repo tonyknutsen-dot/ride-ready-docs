@@ -501,7 +501,7 @@ export default function RideTypeRequests() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FolderOpen className="h-6 w-6" />
+            <Layers className="h-6 w-6" />
             Equipment Type Requests
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
