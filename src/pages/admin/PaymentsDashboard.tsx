@@ -612,11 +612,14 @@ export default function PaymentsDashboard() {
                         <TableHead className="text-xs">Stripe Plan</TableHead>
                         <TableHead className="text-xs">Period End</TableHead>
                         <TableHead className="text-xs hidden lg:table-cell">Last Sync</TableHead>
+                        <TableHead className="text-xs">Review</TableHead>
                         <TableHead className="text-xs text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayedUsers.map(user => (
+                      {displayedUsers.map(user => {
+                        const userFlags = activeFlagsForUser(user.user_id);
+                        return (
                         <TableRow
                           key={user.user_id}
                           className={user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}
@@ -648,14 +651,42 @@ export default function PaymentsDashboard() {
                               </span>
                             ) : <span className="text-xs text-muted-foreground italic">Never synced</span>}
                           </TableCell>
+                          <TableCell>
+                            {userFlags.length > 0 ? (
+                              <div className="flex items-center gap-1">
+                                {userFlags.slice(0, 2).map(f => (
+                                  <ReviewStatusBadge key={f.id} status={f.review_status} />
+                                ))}
+                                {userFlags.length > 2 && <span className="text-xs text-muted-foreground">+{userFlags.length - 2}</span>}
+                              </div>
+                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
-                                <Activity className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
-                                <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setFlagDrawerUserId(user.user_id); setFlagDrawerOpen(true); }}>
+                                    <Flag className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Manage flags</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
+                                    <Activity className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Event history</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
+                                    <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Re-sync with Stripe</TooltipContent>
+                              </Tooltip>
                             </div>
                           </TableCell>
                         </TableRow>
