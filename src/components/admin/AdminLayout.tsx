@@ -34,11 +34,12 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   useEffect(() => {
     const fetchPendingCounts = async () => {
-      const [rideRes, docRes, supportRes, bugRes] = await Promise.all([
+      const [rideRes, docRes, supportRes, bugRes, featureRes] = await Promise.all([
         supabase.from('ride_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('document_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('support_messages').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         (supabase as any).from('bug_reports').select('id', { count: 'exact', head: true }).in('status', ['new', 'in_progress']),
+        (supabase as any).from('feature_requests').select('id', { count: 'exact', head: true }).in('status', ['pending', 'in_review']),
       ]);
 
       setPendingCounts({
@@ -46,6 +47,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         documentRequests: docRes.count || 0,
         supportMessages: supportRes.count || 0,
         bugReports: bugRes.count || 0,
+        featureRequests: featureRes.count || 0,
       });
     };
 
