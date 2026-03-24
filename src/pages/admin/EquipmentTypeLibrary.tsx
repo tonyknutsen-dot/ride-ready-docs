@@ -521,7 +521,7 @@ export default function EquipmentTypeLibrary() {
         item={dialogItem}
         allTypes={types}
         onSave={handleSave}
-        onClose={() => { setDialogOpen(false); setDialogItem(null); }}
+        onClose={() => { setDialogOpen(false); setDialogItem(null); document.body.style.removeProperty('pointer-events'); }}
       />
 
       {/* Delete Confirmation */}
