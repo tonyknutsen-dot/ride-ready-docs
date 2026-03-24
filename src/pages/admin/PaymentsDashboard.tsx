@@ -562,7 +562,8 @@ export default function PaymentsDashboard() {
         </Card>
 
         {/* ── Payment Details Tabs (secondary) ── */}
-        <Tabs defaultValue="failed" className="space-y-4">
+        <div ref={tabsRef}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full flex">
             <TabsTrigger value="failed" className="flex-1 flex items-center justify-center gap-1 text-xs px-2">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
