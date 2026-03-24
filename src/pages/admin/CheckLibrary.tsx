@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,27 +25,16 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Database } from '@/integrations/supabase/types';
+import {
+  CHECK_CATEGORIES,
+  EQUIPMENT_GROUPS,
+  EQUIPMENT_GROUP_LABELS,
+  CHECK_FREQUENCY_LABELS,
+  type EquipmentGroup,
+  type LibraryScopeType,
+} from '@/constants/checkLibrary';
 
 type CheckFrequency = Database['public']['Enums']['check_frequency'];
-
-const CHECK_CATEGORIES = [
-  "Anchorage", "Blower", "Compliance", "Electrical", "Fuel", "Gas",
-  "General", "Hydraulic/Pneumatic", "Hygiene", "Operations", "Safety",
-  "Signage", "Site", "Storage", "Structure", "Weather"
-];
-
-const EQUIPMENT_GROUPS = [
-  "rides", "inflatables", "stalls", "attractions", "food_stalls", "games", "equipment"
-];
-
-const EQUIPMENT_GROUP_LABELS: Record<string, string> = {
-  rides: 'Rides', inflatables: 'Inflatables', stalls: 'Stalls',
-  attractions: 'Attractions', food_stalls: 'Food Stalls', games: 'Games', equipment: 'Equipment',
-};
-
-const FREQUENCY_LABELS: Record<string, string> = {
-  daily: 'Daily', preopening: 'Pre-Opening', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly',
-};
 
 interface LibraryItem {
   id: string;
@@ -67,6 +56,142 @@ interface RideCategory {
   name: string;
   category_group: string;
 }
+
+/* ── Extracted Edit/Create Dialog ── */
+
+interface LibraryItemDialogProps {
+  open: boolean;
+  isCreating: boolean;
+  item: LibraryItem | null;
+  rideCategories: RideCategory[];
+  onSave: (data: {
+    label: string; hint: string; category: string;
+    frequency: string; group: string; rideCategoryId: string | null; note: string;
+  }) => Promise<void>;
+  onClose: () => void;
+}
+
+const LibraryItemDialog = memo(function LibraryItemDialog({
+  open, isCreating, item, rideCategories, onSave, onClose,
+}: LibraryItemDialogProps) {
+  const [label, setLabel] = useState('');
+  const [hint, setHint] = useState('');
+  const [category, setCategory] = useState('');
+  const [frequency, setFrequency] = useState('daily');
+  const [group, setGroup] = useState('rides');
+  const [rideCategoryId, setRideCategoryId] = useState<string | null>(null);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Sync local state when dialog opens with a different item
+  useEffect(() => {
+    if (!open) return;
+    if (isCreating) {
+      setLabel(''); setHint(''); setCategory(''); setFrequency('daily');
+      setGroup('rides'); setRideCategoryId(null); setNote('');
+    } else if (item) {
+      setLabel(item.label); setHint(item.hint || ''); setCategory(item.category || '');
+      setFrequency(item.frequency); setGroup(item.equipment_group.toLowerCase());
+      setRideCategoryId(item.ride_category_id); setNote('');
+    }
+  }, [open, isCreating, item?.id]);
+
+  const filteredGroupCategories = rideCategories.filter(
+    rc => rc.category_group.toLowerCase() === group.toLowerCase()
+  );
+
+  const handleSubmit = async () => {
+    if (!label.trim()) return;
+    setSaving(true);
+    await onSave({ label, hint, category, frequency, group, rideCategoryId, note });
+    setSaving(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isCreating ? 'New Library Item' : 'Edit Library Item'}</DialogTitle>
+          <DialogDescription>
+            {isCreating ? 'Add a new item to the shared check library' : 'Update wording, classification, or scope'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>Item text</Label>
+            <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Check emergency stop button" />
+          </div>
+          <div>
+            <Label>Hint / guidance</Label>
+            <Textarea value={hint} onChange={e => setHint(e.target.value)} rows={2} placeholder="Optional guidance for the inspector" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {CHECK_CATEGORIES.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Frequency</Label>
+              <Select value={frequency} onValueChange={setFrequency}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CHECK_FREQUENCY_LABELS).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>Equipment group</Label>
+            <Select value={group} onValueChange={(v) => { setGroup(v); setRideCategoryId(null); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {EQUIPMENT_GROUPS.map(g => (
+                  <SelectItem key={g} value={g}>{EQUIPMENT_GROUP_LABELS[g as EquipmentGroup]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {filteredGroupCategories.length > 0 && (
+            <div>
+              <Label>Specific ride/equipment type (optional)</Label>
+              <Select value={rideCategoryId || 'none'} onValueChange={v => setRideCategoryId(v === 'none' ? null : v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None (group-wide)</SelectItem>
+                  {filteredGroupCategories.map(rc => (
+                    <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div>
+            <Label>Admin note (optional)</Label>
+            <Input value={note} onChange={e => setNote(e.target.value)} placeholder={isCreating ? "Reason for adding" : "Reason for change"} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={saving || !label.trim()}>
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isCreating ? 'Add to Library' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
+/* ── Main Page ── */
 
 export default function CheckLibrary() {
   const { toast } = useToast();
@@ -92,15 +217,6 @@ export default function CheckLibrary() {
   const [deleteTarget, setDeleteTarget] = useState<LibraryItem | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  // Edit form state
-  const [editLabel, setEditLabel] = useState('');
-  const [editHint, setEditHint] = useState('');
-  const [editCategory, setEditCategory] = useState('');
-  const [editFrequency, setEditFrequency] = useState('');
-  const [editGroup, setEditGroup] = useState('');
-  const [editRideCategoryId, setEditRideCategoryId] = useState<string | null>(null);
-  const [editNote, setEditNote] = useState('');
 
   // Mobile action menu
   const [mobileMenuId, setMobileMenuId] = useState<string | null>(null);
@@ -177,42 +293,32 @@ export default function CheckLibrary() {
   const openCreate = () => {
     setIsCreating(true);
     setEditItem(null);
-    setEditLabel('');
-    setEditHint('');
-    setEditCategory('');
-    setEditFrequency('daily');
-    setEditGroup('rides');
-    setEditRideCategoryId(null);
-    setEditNote('');
   };
 
   const openEdit = (item: LibraryItem) => {
     setIsCreating(false);
     setEditItem(item);
-    setEditLabel(item.label);
-    setEditHint(item.hint || '');
-    setEditCategory(item.category || '');
-    setEditFrequency(item.frequency);
-    setEditGroup(item.equipment_group.toLowerCase());
-    setEditRideCategoryId(item.ride_category_id);
-    setEditNote('');
   };
 
-  const handleSaveEdit = async () => {
-    if (!editLabel.trim()) return;
-    setSaving(true);
+  const closeDialog = useCallback(() => {
+    setEditItem(null);
+    setIsCreating(false);
+  }, []);
 
+  const handleSaveEdit = useCallback(async (data: {
+    label: string; hint: string; category: string;
+    frequency: string; group: string; rideCategoryId: string | null; note: string;
+  }) => {
     if (isCreating) {
-      // Create new library item
-      const { data, error } = await supabase
+      const { data: row, error } = await supabase
         .from('check_library_items')
         .insert({
-          label: editLabel.trim(),
-          hint: editHint.trim() || null,
-          category: editCategory || null,
-          frequency: editFrequency as CheckFrequency,
-          equipment_group: editGroup,
-          ride_category_id: editRideCategoryId,
+          label: data.label.trim(),
+          hint: data.hint.trim() || null,
+          category: data.category || null,
+          frequency: data.frequency as CheckFrequency,
+          equipment_group: data.group,
+          ride_category_id: data.rideCategoryId,
           is_active: true,
           sort_index: 0,
         })
@@ -221,41 +327,39 @@ export default function CheckLibrary() {
 
       if (error) {
         toast({ title: 'Error', description: 'Failed to create item', variant: 'destructive' });
-      } else if (data) {
-        logEvent('create', 'check', data.id, { label: editLabel, note: editNote || undefined });
+      } else if (row) {
+        logEvent('create', 'check', row.id, { label: data.label, note: data.note || undefined });
         toast({ title: 'Created', description: 'New library item added' });
-        setItems(prev => [data as unknown as LibraryItem, ...prev]);
+        setItems(prev => [row as unknown as LibraryItem, ...prev]);
         setIsCreating(false);
       }
     } else if (editItem) {
-      // Update existing
       const { error } = await supabase
         .from('check_library_items')
         .update({
-          label: editLabel.trim(),
-          hint: editHint.trim() || null,
-          category: editCategory || null,
-          frequency: editFrequency as CheckFrequency,
-          equipment_group: editGroup,
-          ride_category_id: editRideCategoryId,
+          label: data.label.trim(),
+          hint: data.hint.trim() || null,
+          category: data.category || null,
+          frequency: data.frequency as CheckFrequency,
+          equipment_group: data.group,
+          ride_category_id: data.rideCategoryId,
         })
         .eq('id', editItem.id);
 
       if (error) {
         toast({ title: 'Error', description: 'Failed to update item', variant: 'destructive' });
       } else {
-        logEvent('update', 'check', editItem.id, { label: editLabel, note: editNote || undefined });
+        logEvent('update', 'check', editItem.id, { label: data.label, note: data.note || undefined });
         toast({ title: 'Updated', description: 'Library item updated' });
         setItems(prev => prev.map(i => i.id === editItem.id ? {
-          ...i, label: editLabel.trim(), hint: editHint.trim() || null,
-          category: editCategory || null, frequency: editFrequency,
-          equipment_group: editGroup, ride_category_id: editRideCategoryId,
+          ...i, label: data.label.trim(), hint: data.hint.trim() || null,
+          category: data.category || null, frequency: data.frequency,
+          equipment_group: data.group, ride_category_id: data.rideCategoryId,
         } : i));
         setEditItem(null);
       }
     }
-    setSaving(false);
-  };
+  }, [isCreating, editItem, toast, logEvent]);
 
   const handleArchiveToggle = async () => {
     if (!archiveTarget) return;
@@ -353,9 +457,7 @@ export default function CheckLibrary() {
     return g === 'rides' && !item.ride_category_id ? 'general' : 'group';
   };
 
-  const filteredGroupCategories = rideCategories.filter(
-    rc => rc.category_group.toLowerCase() === editGroup.toLowerCase()
-  );
+  // filteredGroupCategories removed — now inside LibraryItemDialog
 
   return (
     <AdminLayout>
@@ -422,8 +524,8 @@ export default function CheckLibrary() {
               <SelectTrigger><SelectValue placeholder="Frequency" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Frequencies</SelectItem>
-                {Object.entries(FREQUENCY_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                {Object.entries(CHECK_FREQUENCY_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v as string}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -486,7 +588,7 @@ export default function CheckLibrary() {
                       {/* Metadata badges */}
                       <div className="flex flex-wrap gap-1.5">
                         <Badge variant="outline" className="text-[10px]">
-                          {FREQUENCY_LABELS[item.frequency] || item.frequency}
+                          {CHECK_FREQUENCY_LABELS[item.frequency] || item.frequency}
                         </Badge>
                         {item.category && (
                           <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
@@ -582,97 +684,15 @@ export default function CheckLibrary() {
         )}
       </div>
 
-      {/* ── Create / Edit Dialog ── */}
-      <Dialog open={!!editItem || isCreating} onOpenChange={(open) => { if (!open) { setEditItem(null); setIsCreating(false); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isCreating ? 'New Library Item' : 'Edit Library Item'}</DialogTitle>
-            <DialogDescription>
-              {isCreating ? 'Add a new item to the shared check library' : 'Update wording, classification, or scope'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Item text</Label>
-              <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} placeholder="e.g. Check emergency stop button" />
-            </div>
-            <div>
-              <Label>Hint / guidance</Label>
-              <Textarea value={editHint} onChange={e => setEditHint(e.target.value)} rows={2} placeholder="Optional guidance for the inspector" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Category</Label>
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {CHECK_CATEGORIES.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Frequency</Label>
-                <Select value={editFrequency} onValueChange={setEditFrequency}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(FREQUENCY_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label>Equipment group</Label>
-              <Select value={editGroup} onValueChange={(v) => {
-                setEditGroup(v);
-                setEditRideCategoryId(null);
-              }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EQUIPMENT_GROUPS.map(g => (
-                    <SelectItem key={g} value={g}>{EQUIPMENT_GROUP_LABELS[g]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {filteredGroupCategories.length > 0 && (
-              <div>
-                <Label>Specific ride/equipment type (optional)</Label>
-                <Select
-                  value={editRideCategoryId || 'none'}
-                  onValueChange={v => setEditRideCategoryId(v === 'none' ? null : v)}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (group-wide)</SelectItem>
-                    {filteredGroupCategories.map(rc => (
-                      <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div>
-              <Label>Admin note (optional)</Label>
-              <Input
-                value={editNote}
-                onChange={e => setEditNote(e.target.value)}
-                placeholder={isCreating ? "Reason for adding" : "Reason for change"}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setEditItem(null); setIsCreating(false); }}>Cancel</Button>
-            <Button onClick={handleSaveEdit} disabled={saving || !editLabel.trim()}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isCreating ? 'Add to Library' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ── Create / Edit Dialog (isolated state) ── */}
+      <LibraryItemDialog
+        open={!!editItem || isCreating}
+        isCreating={isCreating}
+        item={editItem}
+        rideCategories={rideCategories}
+        onSave={handleSaveEdit}
+        onClose={closeDialog}
+      />
 
       {/* ── Archive Confirmation ── */}
       <AlertDialog open={!!archiveTarget} onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}>

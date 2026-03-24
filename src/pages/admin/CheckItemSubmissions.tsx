@@ -19,15 +19,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const CHECK_CATEGORIES = [
-  "Restraints", "Structure", "Control Systems", "Safety Devices",
-  "Electrical", "Mechanical", "Hydraulic/Pneumatic", "General"
-];
-
-const EQUIPMENT_GROUPS = [
-  "Rides", "Inflatables", "Stalls", "Attractions", "Food Stalls", "Games", "Equipment"
-];
+import {
+  CHECK_CATEGORIES,
+  EQUIPMENT_GROUPS,
+  EQUIPMENT_GROUP_LABELS,
+  equipmentGroupToKey,
+  type EquipmentGroup,
+} from '@/constants/checkLibrary';
 
 interface Submission {
   id: string;
@@ -77,7 +75,7 @@ export default function CheckItemSubmissions() {
     label: '',
     hint: '',
     scope: 'general' as 'general' | 'specific',
-    equipment_group: 'Rides',
+    equipment_group: 'rides',
     ride_category_id: '',
     check_category: 'General',
     risk_level: 'low',
@@ -162,7 +160,7 @@ export default function CheckItemSubmissions() {
       // Step 1: Check scope match (equipment group alignment)
       let scopeMatch = false;
       if (isGeneric) {
-        scopeMatch = item.equipment_group === 'general' || item.equipment_group === 'Rides';
+        scopeMatch = item.equipment_group === 'general' || item.equipment_group.toLowerCase() === 'rides';
       } else if (equipGroup) {
         scopeMatch = item.equipment_group === equipGroup
           || (!!submission.ride_category_id && item.ride_category_id === submission.ride_category_id);
@@ -255,8 +253,8 @@ export default function CheckItemSubmissions() {
 
   const openApprovalDialog = (submission: Submission) => {
     const matchedCategoryGroup = submission.ride_category?.category_group;
-    const inferredGroup = matchedCategoryGroup && EQUIPMENT_GROUPS.includes(matchedCategoryGroup)
-      ? matchedCategoryGroup : 'Rides';
+    const inferredGroup = matchedCategoryGroup
+      ? equipmentGroupToKey(matchedCategoryGroup) : 'rides';
 
     setSelectedSubmission(submission);
     setApprovalData({
@@ -290,7 +288,7 @@ export default function CheckItemSubmissions() {
           label: approvalData.label.trim(),
           hint: approvalData.hint.trim() || null,
           frequency: freq,
-          equipment_group: approvalData.scope === 'general' ? 'Rides' : approvalData.equipment_group,
+          equipment_group: approvalData.scope === 'general' ? 'rides' : approvalData.equipment_group,
           ride_category_id: approvalData.scope === 'specific' && approvalData.ride_category_id
             ? approvalData.ride_category_id : null,
           category: approvalData.check_category,
@@ -423,7 +421,7 @@ export default function CheckItemSubmissions() {
 
   const filteredCategories = useMemo(() => {
     if (approvalData.scope !== 'specific') return [];
-    return categories.filter(c => c.category_group === approvalData.equipment_group);
+    return categories.filter(c => c.category_group.toLowerCase().replace(/\s+/g, '_') === approvalData.equipment_group);
   }, [categories, approvalData.scope, approvalData.equipment_group]);
 
   return (
@@ -785,7 +783,7 @@ export default function CheckItemSubmissions() {
                     </SelectTrigger>
                     <SelectContent className="bg-background border shadow-lg z-50">
                       {EQUIPMENT_GROUPS.map(g => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                        <SelectItem key={g} value={g}>{EQUIPMENT_GROUP_LABELS[g as EquipmentGroup]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -800,7 +798,7 @@ export default function CheckItemSubmissions() {
                       <SelectValue placeholder="All types in group" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
-                      <SelectItem value="__none__">All types in {approvalData.equipment_group}</SelectItem>
+                      <SelectItem value="__none__">All types in {EQUIPMENT_GROUP_LABELS[approvalData.equipment_group as EquipmentGroup] || approvalData.equipment_group}</SelectItem>
                       {filteredCategories.map(cat => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.name}
@@ -944,8 +942,8 @@ export default function CheckItemSubmissions() {
               const sameScopeBrowse = libraryItems
                 .filter(item => !matchIds.has(item.id) && (
                   duplicateTarget.is_generic
-                    ? (item.equipment_group === 'general' || item.equipment_group === 'Rides')
-                    : equipGroup ? item.equipment_group === equipGroup : false
+                    ? (item.equipment_group === 'general' || item.equipment_group.toLowerCase() === 'rides')
+                    : equipGroup ? item.equipment_group.toLowerCase() === equipGroup.toLowerCase() : false
                 ))
                 .slice(0, 15);
               const otherBrowse = libraryItems

@@ -33,19 +33,12 @@ export const isCheckPassed = (status: string): boolean =>
   classifyCheckStatus(status) === 'pass';
 
 /* ─── Check frequency labels ─── */
+// Re-export from shared constants for backward compatibility
+export { CHECK_FREQUENCY_LABELS } from '@/constants/checkLibrary';
 
-export const CHECK_FREQUENCY_LABELS: Record<string, string> = {
-  daily: 'Daily',
-  preopening: 'Pre-Opening',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  quarterly: 'Quarterly',
-  yearly: 'Yearly',
-  custom: 'Custom',
-};
-
+import { CHECK_FREQUENCY_LABELS as _LABELS } from '@/constants/checkLibrary';
 export const getCheckFrequencyLabel = (freq: string): string =>
-  CHECK_FREQUENCY_LABELS[freq] || freq;
+  _LABELS[freq] || freq;
 
 /* ─── Check action-needed logic ─── */
 
