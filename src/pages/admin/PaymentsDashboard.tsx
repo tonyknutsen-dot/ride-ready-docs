@@ -106,20 +106,21 @@ const formatCurrency = (amount: number, currency = 'gbp') =>
 
 const ProblemBadge = ({ type }: { type: string | null }) => {
   if (!type) return <Badge variant="outline" className="text-xs">Healthy</Badge>;
-  const config: Record<string, { label: string; variant: 'destructive' | 'secondary' | 'outline' }> = {
-    mismatch: { label: 'Mismatch', variant: 'destructive' },
-    past_due: { label: 'Past Due', variant: 'destructive' },
-    stale_sync: { label: 'Stale Sync', variant: 'secondary' },
-    cancelling: { label: 'Cancelling', variant: 'secondary' },
+  const config: Record<string, { label: string; description: string; variant: 'destructive' | 'secondary' | 'outline' }> = {
+    mismatch: { label: 'Mismatch', description: 'App and Stripe data disagree', variant: 'destructive' },
+    past_due: { label: 'Past Due', description: 'Payment overdue', variant: 'destructive' },
+    stale_sync: { label: 'Stale Sync', description: 'Not synced recently', variant: 'secondary' },
+    cancelling: { label: 'Cancelling', description: 'Cancellation scheduled', variant: 'secondary' },
+    no_stripe: { label: 'No Stripe Link', description: 'No Stripe subscription found', variant: 'secondary' },
   };
-  const c = config[type] || { label: type, variant: 'secondary' as const };
-  return <Badge variant={c.variant} className="text-xs">{c.label}</Badge>;
+  const c = config[type] || { label: type, description: '', variant: 'secondary' as const };
+  return <Badge variant={c.variant} className="text-xs" title={c.description}>{c.label}</Badge>;
 };
 
 // ── Status badge ──
 
 const StatusBadge = ({ status, isStripe }: { status: string | null; isStripe?: boolean }) => {
-  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!status) return <span className="text-xs text-muted-foreground italic">{isStripe ? 'Not linked' : 'Unknown'}</span>;
   const color =
     status === 'active' ? 'bg-green-500/15 text-green-700 dark:text-green-400' :
     status === 'past_due' ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
@@ -136,8 +137,8 @@ const StatusBadge = ({ status, isStripe }: { status: string | null; isStripe?: b
 
 // ── Plan label ──
 
-const PlanLabel = ({ plan, mismatch }: { plan: string | null; mismatch?: boolean }) => {
-  if (!plan) return <span className="text-xs text-muted-foreground">—</span>;
+const PlanLabel = ({ plan, mismatch, isStripe }: { plan: string | null; mismatch?: boolean; isStripe?: boolean }) => {
+  if (!plan) return <span className="text-xs text-muted-foreground italic">{isStripe ? 'No Stripe plan' : 'Not set'}</span>;
   return (
     <span className={`text-xs font-medium capitalize ${mismatch ? 'text-destructive font-bold' : ''}`}>
       {plan}
@@ -341,11 +342,11 @@ export default function PaymentsDashboard() {
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-primary" />
                 <div>
-                  <CardTitle className="text-base md:text-lg">Subscription Health</CardTitle>
+                  <CardTitle className="text-base md:text-lg">Users Needing Attention</CardTitle>
                   <CardDescription className="text-xs">
                     {problemUserCount > 0
-                      ? `${problemUserCount} user${problemUserCount !== 1 ? 's' : ''} need${problemUserCount === 1 ? 's' : ''} attention`
-                      : 'All users healthy'}
+                      ? `${problemUserCount} user account${problemUserCount !== 1 ? 's' : ''} flagged — these are other users, not your account`
+                      : 'All user accounts are healthy — no billing issues detected'}
                   </CardDescription>
                 </div>
               </div>
@@ -413,7 +414,7 @@ export default function PaymentsDashboard() {
                         </div>
                         <div>
                           <span className="text-muted-foreground block mb-0.5">Stripe Plan</span>
-                          <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} />
+                          <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} isStripe />
                         </div>
                       </div>
 
@@ -433,7 +434,7 @@ export default function PaymentsDashboard() {
                             <span className={user.sync_stale ? 'text-amber-600 font-medium' : ''}>
                               Synced {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
                             </span>
-                          ) : <span>Never synced</span>}
+                          ) : <span>Never synced with Stripe</span>}
                         </div>
                       </div>
 
@@ -484,7 +485,7 @@ export default function PaymentsDashboard() {
                           <TableCell><StatusBadge status={user.app_status} /></TableCell>
                           <TableCell><StatusBadge status={user.stripe_status} isStripe /></TableCell>
                           <TableCell><PlanLabel plan={user.app_plan} mismatch={user.plan_mismatch} /></TableCell>
-                          <TableCell><PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} /></TableCell>
+                          <TableCell><PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} isStripe /></TableCell>
                           <TableCell>
                             <div className="space-y-0.5">
                               {user.current_period_end ? (
@@ -499,7 +500,7 @@ export default function PaymentsDashboard() {
                               <span className={`text-xs ${user.sync_stale ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
                                 {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
                               </span>
-                            ) : <span className="text-xs text-muted-foreground">Never</span>}
+                            ) : <span className="text-xs text-muted-foreground italic">Never synced</span>}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
