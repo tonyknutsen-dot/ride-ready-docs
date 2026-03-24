@@ -937,24 +937,54 @@ export default function CheckItemSubmissions() {
           )}
           <div>
             <Label className="mb-1.5 block">Matched library item</Label>
-            <Select value={selectedMatchId || '__none__'} onValueChange={(v) => setSelectedMatchId(v === '__none__' ? '' : v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select matching library item" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50 max-h-[250px]">
-                <SelectItem value="__none__">No specific match (general duplicate)</SelectItem>
-                {duplicateTarget && findLibraryMatches(duplicateTarget).map(match => (
-                  <SelectItem key={match.id} value={match.id}>
-                    ⭐ {match.label} ({match.equipment_group})
-                  </SelectItem>
-                ))}
-                {libraryItems.slice(0, 30).map(item => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label} ({item.equipment_group})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(() => {
+              if (!duplicateTarget) return null;
+              const { sameScope, broader } = findScopedLibraryMatches(duplicateTarget);
+              const equipGroup = getSubmissionEquipmentGroup(duplicateTarget);
+              // For browsing: show same-group items not already in matches
+              const matchIds = new Set([...sameScope, ...broader].map(m => m.id));
+              const sameScopeBrowse = libraryItems
+                .filter(item => !matchIds.has(item.id) && (
+                  duplicateTarget.is_generic
+                    ? (item.equipment_group === 'general' || item.equipment_group === 'Rides')
+                    : equipGroup ? item.equipment_group === equipGroup : false
+                ))
+                .slice(0, 15);
+              const otherBrowse = libraryItems
+                .filter(item => !matchIds.has(item.id) && !sameScopeBrowse.some(s => s.id === item.id))
+                .slice(0, 10);
+
+              return (
+                <Select value={selectedMatchId || '__none__'} onValueChange={(v) => setSelectedMatchId(v === '__none__' ? '' : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select matching library item" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50 max-h-[250px]">
+                    <SelectItem value="__none__">No specific match (general duplicate)</SelectItem>
+                    {sameScope.length > 0 && sameScope.map(match => (
+                      <SelectItem key={match.id} value={match.id}>
+                        ⭐ {match.label} ({match.equipment_group})
+                      </SelectItem>
+                    ))}
+                    {broader.length > 0 && broader.map(match => (
+                      <SelectItem key={match.id} value={match.id}>
+                        ◇ {match.label} ({match.equipment_group})
+                      </SelectItem>
+                    ))}
+                    {sameScopeBrowse.length > 0 && sameScopeBrowse.map(item => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label} ({item.equipment_group})
+                      </SelectItem>
+                    ))}
+                    {otherBrowse.length > 0 && otherBrowse.map(item => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.label} ({item.equipment_group})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
           <div>
             <Label>Note (optional)</Label>
