@@ -300,9 +300,10 @@ const HelpCenter = () => {
             </div>
           )}
 
-          {/* ── SUPPORT SECTION ────────────────────────────────────────────── */}
+          {/* ── SUPPORT ───────────────────────────────────────────────────── */}
           <SectionHeading>Support</SectionHeading>
-          <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+          <p className="text-xs text-[#64748B] -mt-2 mb-2.5">Send a new message or check replies from our team.</p>
+          <div className="grid grid-cols-2 gap-2.5 mb-5">
             <ContactSupportDialog
               trigger={
                 <button className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full">
@@ -311,7 +312,7 @@ const HelpCenter = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[#0F172A]">Contact Support</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Send us a message.</p>
+                    <p className="text-xs text-[#64748B] mt-0.5">Send a new message.</p>
                   </div>
                 </button>
               }
@@ -330,7 +331,10 @@ const HelpCenter = () => {
             </button>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-2.5">
+          {/* ── FEEDBACK ───────────────────────────────────────────────────── */}
+          <SectionHeading>Feedback</SectionHeading>
+          <p className="text-xs text-[#64748B] -mt-2 mb-2.5">These are reviewed separately from support requests.</p>
+          <div className="grid grid-cols-2 gap-2.5">
             <RequestFeatureDialog
               trigger={
                 <button className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full">
@@ -339,7 +343,7 @@ const HelpCenter = () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[#0F172A]">Request Feature</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Suggest new functionality.</p>
+                    <p className="text-xs text-[#64748B] mt-0.5">Suggest an improvement.</p>
                   </div>
                 </button>
               }
@@ -352,7 +356,7 @@ const HelpCenter = () => {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-[#0F172A]">Report Issue</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Log a bug or technical problem.</p>
+                    <p className="text-xs text-[#64748B] mt-0.5">Log a bug or problem.</p>
                   </div>
                 </button>
               }
