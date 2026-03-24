@@ -245,7 +245,7 @@ export const useSubscription = () => {
 
   const refreshRideCount = async () => {
     if (!user || !subscription) return;
-    await fetchSubscriptionData();
+    await fetchSubscriptionData(true);
   };
 
   const isLovablePreviewHost = (hostname: string) => hostname === 'lovable.app' || hostname.endsWith('.lovable.app');
