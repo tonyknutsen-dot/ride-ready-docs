@@ -342,11 +342,11 @@ export default function PaymentsDashboard() {
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-primary" />
                 <div>
-                  <CardTitle className="text-base md:text-lg">Subscription Health</CardTitle>
+                  <CardTitle className="text-base md:text-lg">Users Needing Attention</CardTitle>
                   <CardDescription className="text-xs">
                     {problemUserCount > 0
-                      ? `${problemUserCount} user${problemUserCount !== 1 ? 's' : ''} need${problemUserCount === 1 ? 's' : ''} attention`
-                      : 'All users healthy'}
+                      ? `${problemUserCount} user account${problemUserCount !== 1 ? 's' : ''} flagged — these are other users, not your account`
+                      : 'All user accounts are healthy — no billing issues detected'}
                   </CardDescription>
                 </div>
               </div>
