@@ -20,6 +20,7 @@ interface DashboardStats {
   pendingDocRequests: number;
   totalUsers: number;
   totalTesters: number;
+  totalStaff: number;
   totalRides: number;
   totalDocuments: number;
   totalChecks: number;
