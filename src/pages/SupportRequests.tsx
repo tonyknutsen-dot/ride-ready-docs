@@ -214,10 +214,10 @@ export default function SupportRequests() {
     <AppLayout>
       <div className="space-y-5 max-w-2xl mx-auto">
         <div className="flex items-center justify-between gap-3">
-          <PageHeader
-            title="My Support Requests"
-            description="View and manage your support conversations"
-          />
+          <div>
+            <h1 className="text-xl font-bold">My Support Requests</h1>
+            <p className="text-sm text-muted-foreground">View and manage your support conversations</p>
+          </div>
           <Button size="sm" onClick={() => setContactOpen(true)}>
             <Plus className="h-4 w-4 mr-1" /> New Request
           </Button>
