@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import {
-  CheckCircle, XCircle, Clock, Search, AlertTriangle, Layers, Copy,
+  CheckCircle, XCircle, Clock, Search, AlertTriangle, Layers, Copy, Link2, ShieldCheck, Info,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EQUIPMENT_GROUPS, EQUIPMENT_GROUP_LABELS, type EquipmentGroup } from '@/constants/checkLibrary';
@@ -29,7 +29,7 @@ interface RideTypeRequest {
   id: string;
   user_id: string;
   name: string;
-  type: string; // stored as PascalCase category_group e.g. "Rides"
+  type: string;
   description: string;
   manufacturer: string | null;
   additional_info: string | null;
@@ -42,6 +42,7 @@ interface ExistingCategory {
   id: string;
   name: string;
   category_group: string;
+  description?: string | null;
 }
 
 type StatusTab = 'pending' | 'approved' | 'rejected' | 'duplicate' | 'all';
@@ -76,9 +77,16 @@ const statusIcon = (s: string) => {
   }
 };
 
-/* ─── Duplicate finder ─── */
+/* ─── Enhanced duplicate finder with confidence + reasons ─── */
 
-function findSimilarCategories(name: string, group: string, existing: ExistingCategory[]): ExistingCategory[] {
+interface DuplicateMatch {
+  category: ExistingCategory;
+  score: number;
+  confidence: 'strong' | 'possible';
+  reasons: string[];
+}
+
+function findDuplicateMatches(name: string, group: string, existing: ExistingCategory[]): DuplicateMatch[] {
   if (!name || name.length < 2) return [];
   const lower = name.toLowerCase().trim();
   const tokens = lower.split(/\s+/);
@@ -86,23 +94,97 @@ function findSimilarCategories(name: string, group: string, existing: ExistingCa
   return existing
     .map(cat => {
       const catLower = cat.name.toLowerCase();
-      // exact match
-      if (catLower === lower) return { cat, score: 100 };
-      // contains
-      if (catLower.includes(lower) || lower.includes(catLower)) return { cat, score: 70 };
-      // token overlap
-      const catTokens = catLower.split(/\s+/);
-      const overlap = tokens.filter(t => catTokens.some(ct => ct.includes(t) || t.includes(ct))).length;
-      const tokenScore = (overlap / Math.max(tokens.length, catTokens.length)) * 60;
-      if (tokenScore < 15) return null;
-      // boost same group
-      const groupBoost = cat.category_group === group ? 15 : 0;
-      return { cat, score: tokenScore + groupBoost };
+      const reasons: string[] = [];
+      let score = 0;
+
+      // Exact name match
+      if (catLower === lower) {
+        score = 100;
+        reasons.push('Exact name match');
+      }
+      // Name contains or is contained
+      else if (catLower.includes(lower) || lower.includes(catLower)) {
+        score = 70;
+        reasons.push('Similar name');
+      }
+      // Token overlap
+      else {
+        const catTokens = catLower.split(/\s+/);
+        const overlap = tokens.filter(t => catTokens.some(ct => ct.includes(t) || t.includes(ct))).length;
+        const tokenScore = (overlap / Math.max(tokens.length, catTokens.length)) * 60;
+        if (tokenScore >= 15) {
+          score = tokenScore;
+          reasons.push('Partial word match');
+        }
+      }
+
+      if (score < 15) return null;
+
+      // Same group boost + reason
+      if (cat.category_group === group) {
+        score += 15;
+        reasons.push('Same equipment group');
+      } else {
+        reasons.push('Different group');
+      }
+
+      const confidence: 'strong' | 'possible' = score >= 70 ? 'strong' : 'possible';
+
+      return { category: cat, score, confidence, reasons };
     })
-    .filter((r): r is { cat: ExistingCategory; score: number } => r !== null && r.score >= 25)
+    .filter((r): r is DuplicateMatch => r !== null && r.score >= 25)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map(r => r.cat);
+    .slice(0, 5);
+}
+
+/* ─── Duplicate Status Badge on Cards ─── */
+
+function DuplicateStatusBanner({ matches }: { matches: DuplicateMatch[] }) {
+  if (matches.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-2.5">
+        <ShieldCheck className="h-4 w-4 text-green-600 shrink-0" />
+        <p className="text-xs text-muted-foreground">No duplicate found automatically</p>
+      </div>
+    );
+  }
+
+  const hasStrong = matches.some(m => m.confidence === 'strong');
+
+  return (
+    <div className={`rounded-lg border p-2.5 space-y-2 ${
+      hasStrong
+        ? 'border-destructive/40 bg-destructive/5'
+        : 'border-amber-500/30 bg-amber-500/5'
+    }`}>
+      <p className={`text-xs font-medium flex items-center gap-1.5 ${
+        hasStrong ? 'text-destructive' : 'text-amber-700 dark:text-amber-400'
+      }`}>
+        <AlertTriangle className="h-3.5 w-3.5" />
+        {hasStrong ? 'Strong duplicate found' : 'Possible duplicate found'}
+      </p>
+      <div className="space-y-1.5">
+        {matches.map(m => (
+          <div key={m.category.id} className="flex items-start gap-2 text-xs">
+            <Badge
+              variant={m.confidence === 'strong' ? 'destructive' : 'secondary'}
+              className="text-[10px] shrink-0 mt-0.5"
+            >
+              {m.confidence === 'strong' ? 'Strong' : 'Possible'}
+            </Badge>
+            <div className="min-w-0">
+              <span className="font-medium">{m.category.name}</span>
+              <span className="text-muted-foreground ml-1">({m.category.category_group})</span>
+              {m.category.description && (
+                <p className="text-muted-foreground/70 line-clamp-1 mt-0.5">{m.category.description}</p>
+              )}
+              <p className="text-muted-foreground/60 mt-0.5">{m.reasons.join(' · ')}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /* ─── Approval Dialog ─── */
@@ -134,7 +216,7 @@ const ApprovalDialog = memo(function ApprovalDialog({
 
   const categoryGroup = GROUP_KEY_TO_CATEGORY[group];
   const duplicates = useMemo(
-    () => findSimilarCategories(typeName, categoryGroup, existingCategories),
+    () => findDuplicateMatches(typeName, categoryGroup, existingCategories),
     [typeName, categoryGroup, existingCategories]
   );
 
@@ -142,7 +224,6 @@ const ApprovalDialog = memo(function ApprovalDialog({
     if (!request || !typeName.trim()) return;
     setSaving(true);
     try {
-      // 1. Create the taxonomy entry
       const { data: newCat, error: catError } = await supabase
         .from('ride_categories')
         .insert({ name: typeName.trim(), category_group: categoryGroup, description: description || null, source: 'approved_request', approved_from_request_id: request?.id || null })
@@ -150,14 +231,12 @@ const ApprovalDialog = memo(function ApprovalDialog({
         .single();
       if (catError) throw catError;
 
-      // 2. Update the request status
       const { error: reqError } = await supabase
         .from('ride_type_requests')
         .update({ status: 'approved', admin_notes: adminNote || null })
         .eq('id', request.id);
       if (reqError) throw reqError;
 
-      // 3. Notify user
       try {
         const { data: emailData } = await supabase.functions.invoke('get-user-email', {
           body: { userId: request.user_id },
@@ -191,7 +270,7 @@ const ApprovalDialog = memo(function ApprovalDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add Equipment Type to System</DialogTitle>
+          <DialogTitle>Add to Library</DialogTitle>
           <DialogDescription>
             Review and confirm the details before creating a new shared equipment type.
           </DialogDescription>
@@ -228,9 +307,12 @@ const ApprovalDialog = memo(function ApprovalDialog({
               </div>
               <ul className="text-sm text-muted-foreground space-y-1">
                 {duplicates.map(d => (
-                  <li key={d.id} className="flex items-center gap-2">
-                    <span className="font-medium">{d.name}</span>
-                    <span className="text-xs opacity-60">({d.category_group})</span>
+                  <li key={d.category.id} className="flex items-center gap-2">
+                    <Badge variant={d.confidence === 'strong' ? 'destructive' : 'secondary'} className="text-[10px]">
+                      {d.confidence === 'strong' ? 'Strong' : 'Possible'}
+                    </Badge>
+                    <span className="font-medium">{d.category.name}</span>
+                    <span className="text-xs opacity-60">({d.category.category_group})</span>
                   </li>
                 ))}
               </ul>
@@ -257,9 +339,9 @@ const ApprovalDialog = memo(function ApprovalDialog({
   );
 });
 
-/* ─── Mark Duplicate Dialog ─── */
+/* ─── Link to Existing Type Dialog ─── */
 
-const DuplicateDialog = memo(function DuplicateDialog({
+const LinkExistingDialog = memo(function LinkExistingDialog({
   request, existingCategories, open, onClose, onMarked,
 }: {
   request: RideTypeRequest | null;
@@ -270,17 +352,24 @@ const DuplicateDialog = memo(function DuplicateDialog({
 }) {
   const [matchedId, setMatchedId] = useState('');
   const [note, setNote] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  // Compute suggested matches
+  const suggestedMatches = useMemo(() => {
+    if (!request) return [];
+    return findDuplicateMatches(request.name, request.type, existingCategories);
+  }, [request, existingCategories]);
 
   useEffect(() => {
     if (request && open) {
       setNote('');
+      setSearchTerm('');
       // Pre-select best match
-      const matches = findSimilarCategories(request.name, request.type, existingCategories);
-      setMatchedId(matches[0]?.id || '');
+      setMatchedId(suggestedMatches[0]?.category.id || '');
     }
-  }, [request, open, existingCategories]);
+  }, [request, open, suggestedMatches]);
 
   const handleMark = async () => {
     if (!request) return;
@@ -288,7 +377,7 @@ const DuplicateDialog = memo(function DuplicateDialog({
     try {
       const matched = existingCategories.find(c => c.id === matchedId);
       const adminNote = matched
-        ? `Duplicate of existing type: ${matched.name} (${matched.category_group})${note ? '. ' + note : ''}`
+        ? `Linked to existing type: ${matched.name} (${matched.category_group})${note ? '. ' + note : ''}`
         : note || 'Marked as duplicate';
 
       const { error } = await supabase
@@ -298,7 +387,7 @@ const DuplicateDialog = memo(function DuplicateDialog({
       if (error) throw error;
 
       onMarked(request.id);
-      toast({ title: 'Marked as Duplicate', description: `Request for "${request.name}" marked as duplicate.` });
+      toast({ title: 'Linked to Existing', description: `Request for "${request.name}" linked to "${matched?.name || 'existing type'}".` });
       onClose();
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -309,48 +398,104 @@ const DuplicateDialog = memo(function DuplicateDialog({
 
   if (!request) return null;
 
-  const sameGroupCats = existingCategories
-    .filter(c => c.category_group === request.type)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // Filter library for the searchable list
+  const filteredCategories = useMemo(() => {
+    const suggestedIds = new Set(suggestedMatches.map(m => m.category.id));
+    let cats = existingCategories.filter(c => !suggestedIds.has(c.id));
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      cats = cats.filter(c => c.name.toLowerCase().includes(q) || c.category_group.toLowerCase().includes(q));
+    }
+    return cats.sort((a, b) => a.name.localeCompare(b.name));
+  }, [existingCategories, suggestedMatches, searchTerm]);
+
+  const selectedCategory = existingCategories.find(c => c.id === matchedId);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Mark as Duplicate</DialogTitle>
+          <DialogTitle>Link to Existing Type</DialogTitle>
           <DialogDescription>
-            Select the existing type that covers "{request.name}".
+            Select the existing equipment type that covers "{request.name}".
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Suggested matches */}
+          {suggestedMatches.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-muted-foreground">Suggested Matches</Label>
+              <div className="space-y-1.5">
+                {suggestedMatches.map(m => (
+                  <button
+                    key={m.category.id}
+                    onClick={() => setMatchedId(m.category.id)}
+                    className={`w-full text-left p-2.5 rounded-lg border text-sm transition-colors ${
+                      matchedId === m.category.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={m.confidence === 'strong' ? 'destructive' : 'secondary'}
+                        className="text-[10px] shrink-0"
+                      >
+                        {m.confidence === 'strong' ? 'Strong' : 'Possible'}
+                      </Badge>
+                      <span className="font-medium">{m.category.name}</span>
+                      <span className="text-xs text-muted-foreground">({m.category.category_group})</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground/60 mt-1 pl-1">{m.reasons.join(' · ')}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Search full library */}
           <div className="space-y-2">
-            <Label>Existing Type</Label>
-            <Select value={matchedId} onValueChange={setMatchedId}>
-              <SelectTrigger><SelectValue placeholder="Select existing type…" /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {sameGroupCats.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{request.type}</div>
-                    {sameGroupCats.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </>
-                )}
-                {existingCategories.filter(c => c.category_group !== request.type).length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Other Groups</div>
-                    {existingCategories
-                      .filter(c => c.category_group !== request.type)
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name} ({c.category_group})</SelectItem>
-                      ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-medium text-muted-foreground">
+              {suggestedMatches.length > 0 ? 'Or search all types' : 'Search equipment types'}
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search library…"
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
+            <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg border p-1">
+              {filteredCategories.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">No types found</p>
+              ) : (
+                filteredCategories.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setMatchedId(c.id)}
+                    className={`w-full text-left px-2.5 py-1.5 rounded text-sm transition-colors ${
+                      matchedId === c.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    {c.name} <span className="text-xs text-muted-foreground">({c.category_group})</span>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
+
+          {/* Selected preview */}
+          {selectedCategory && (
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5 text-sm">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Selected</p>
+              <p className="font-medium">{selectedCategory.name} <span className="text-muted-foreground font-normal">({selectedCategory.category_group})</span></p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Note (optional)</Label>
@@ -361,9 +506,9 @@ const DuplicateDialog = memo(function DuplicateDialog({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleMark} disabled={saving} variant="secondary" className="gap-2">
-            <Copy className="h-4 w-4" />
-            {saving ? 'Saving…' : 'Mark Duplicate'}
+          <Button onClick={handleMark} disabled={saving || !matchedId} variant="secondary" className="gap-2">
+            <Link2 className="h-4 w-4" />
+            {saving ? 'Saving…' : 'Link to Existing'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -382,7 +527,7 @@ export default function RideTypeRequests() {
 
   // Dialog state
   const [approveTarget, setApproveTarget] = useState<RideTypeRequest | null>(null);
-  const [duplicateTarget, setDuplicateTarget] = useState<RideTypeRequest | null>(null);
+  const [linkTarget, setLinkTarget] = useState<RideTypeRequest | null>(null);
   const [rejectTarget, setRejectTarget] = useState<RideTypeRequest | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const [rejecting, setRejecting] = useState(false);
@@ -394,7 +539,7 @@ export default function RideTypeRequests() {
     setLoading(true);
     const [reqRes, catRes] = await Promise.all([
       supabase.from('ride_type_requests').select('*').order('created_at', { ascending: false }),
-      supabase.from('ride_categories').select('id, name, category_group').order('name'),
+      supabase.from('ride_categories').select('id, name, category_group, description').order('name'),
     ]);
     if (reqRes.data) setRequests(reqRes.data);
     if (catRes.data) setExistingCategories(catRes.data);
@@ -414,7 +559,6 @@ export default function RideTypeRequests() {
         .eq('id', rejectTarget.id);
       if (error) throw error;
 
-      // Notify user
       try {
         const { data: emailData } = await supabase.functions.invoke('get-user-email', {
           body: { userId: rejectTarget.user_id },
@@ -453,8 +597,8 @@ export default function RideTypeRequests() {
     setExistingCategories(prev => [...prev, { id: crypto.randomUUID(), name: catName, category_group: catGroup }]);
   }, [logEvent]);
 
-  const onDuplicateMarked = useCallback((id: string) => {
-    logEvent('update', 'ride' as any, id, { action: 'duplicate_type_request' });
+  const onLinked = useCallback((id: string) => {
+    logEvent('update', 'ride' as any, id, { action: 'link_type_request' });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'duplicate' } : r));
   }, [logEvent]);
 
@@ -482,16 +626,16 @@ export default function RideTypeRequests() {
     return list;
   }, [requests, statusTab, search]);
 
-  /* ─── Duplicate warnings per request ─── */
-  const getDuplicateWarnings = useCallback((req: RideTypeRequest) => {
-    return findSimilarCategories(req.name, req.type, existingCategories);
+  /* ─── Duplicate matches per pending request ─── */
+  const getMatches = useCallback((req: RideTypeRequest) => {
+    return findDuplicateMatches(req.name, req.type, existingCategories);
   }, [existingCategories]);
 
   const tabs: { key: StatusTab; label: string }[] = [
     { key: 'pending', label: 'Pending' },
     { key: 'approved', label: 'Approved' },
     { key: 'rejected', label: 'Rejected' },
-    { key: 'duplicate', label: 'Duplicate' },
+    { key: 'duplicate', label: 'Linked' },
     { key: 'all', label: 'All' },
   ];
 
@@ -505,7 +649,7 @@ export default function RideTypeRequests() {
             Equipment Type Requests
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Review requests for new shared ride or equipment types used across the app.
+            Review requests for new equipment types. If a matching type already exists, link the request to that existing library item.
           </p>
         </div>
 
@@ -548,7 +692,7 @@ export default function RideTypeRequests() {
                 {requests.length === 0
                   ? 'No equipment type requests yet. New requests from users will appear here for review.'
                   : statusTab !== 'all'
-                    ? `No ${statusTab} equipment type requests`
+                    ? `No ${statusTab === 'duplicate' ? 'linked' : statusTab} equipment type requests`
                     : 'No requests match your search'}
               </p>
             </CardContent>
@@ -556,7 +700,7 @@ export default function RideTypeRequests() {
         ) : (
           <div className="space-y-3">
             {filtered.map(req => {
-              const dupes = req.status === 'pending' ? getDuplicateWarnings(req) : [];
+              const matches = req.status === 'pending' ? getMatches(req) : [];
               return (
                 <Card key={req.id}>
                   <CardContent className="p-4 space-y-3">
@@ -570,7 +714,7 @@ export default function RideTypeRequests() {
                       </div>
                       <Badge className={`flex-shrink-0 gap-1 ${statusColor(req.status)}`}>
                         {statusIcon(req.status)}
-                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                        {req.status === 'duplicate' ? 'Linked' : req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                       </Badge>
                     </div>
 
@@ -589,19 +733,9 @@ export default function RideTypeRequests() {
                       </p>
                     )}
 
-                    {/* Duplicate warning */}
-                    {dupes.length > 0 && (
-                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 space-y-1">
-                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                          <AlertTriangle className="h-3.5 w-3.5" />
-                          Possible existing match
-                        </p>
-                        <ul className="text-xs text-muted-foreground space-y-0.5 pl-5">
-                          {dupes.map(d => (
-                            <li key={d.id}>{d.name} <span className="opacity-60">({d.category_group})</span></li>
-                          ))}
-                        </ul>
-                      </div>
+                    {/* Duplicate detection status — only on pending */}
+                    {req.status === 'pending' && (
+                      <DuplicateStatusBanner matches={matches} />
                     )}
 
                     {/* Admin notes */}
@@ -617,15 +751,15 @@ export default function RideTypeRequests() {
                       <div className="flex flex-wrap gap-2 pt-1">
                         <Button size="sm" className="gap-1.5" onClick={() => setApproveTarget(req)}>
                           <CheckCircle className="h-3.5 w-3.5" />
-                          Add to System
+                          Add to Library
                         </Button>
-                        <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setDuplicateTarget(req)}>
-                          <Copy className="h-3.5 w-3.5" />
-                          Already Exists
+                        <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => setLinkTarget(req)}>
+                          <Link2 className="h-3.5 w-3.5" />
+                          Link to Existing Type
                         </Button>
                         <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => setRejectTarget(req)}>
                           <XCircle className="h-3.5 w-3.5" />
-                          Don't Add
+                          Reject Request
                         </Button>
                       </div>
                     )}
@@ -646,13 +780,13 @@ export default function RideTypeRequests() {
         onApproved={onApproved}
       />
 
-      {/* Duplicate dialog */}
-      <DuplicateDialog
-        request={duplicateTarget}
+      {/* Link to existing dialog */}
+      <LinkExistingDialog
+        request={linkTarget}
         existingCategories={existingCategories}
-        open={!!duplicateTarget}
-        onClose={() => setDuplicateTarget(null)}
-        onMarked={onDuplicateMarked}
+        open={!!linkTarget}
+        onClose={() => setLinkTarget(null)}
+        onMarked={onLinked}
       />
 
       {/* Reject confirmation */}
