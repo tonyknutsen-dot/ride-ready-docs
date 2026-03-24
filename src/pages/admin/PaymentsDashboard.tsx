@@ -515,55 +515,74 @@ export default function PaymentsDashboard() {
 
         {/* ── Payment Details Tabs (secondary) ── */}
         <Tabs defaultValue="failed" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="failed" className="flex items-center gap-1.5 text-xs">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              Failed Payments
-              {failedPayments.length > 0 && <Badge variant="destructive" className="ml-1 text-xs">{failedPayments.length}</Badge>}
+          <TabsList className="w-full flex">
+            <TabsTrigger value="failed" className="flex-1 flex items-center justify-center gap-1 text-xs px-2">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Failed</span>
+              {failedPayments.length > 0 && <Badge variant="destructive" className="ml-1 text-xs shrink-0">{failedPayments.length}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="recent" className="flex items-center gap-1.5 text-xs">
-              <CheckCircle className="h-3.5 w-3.5" />
-              Recent Payments
+            <TabsTrigger value="recent" className="flex-1 flex items-center justify-center gap-1 text-xs px-2">
+              <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Recent</span>
             </TabsTrigger>
-            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs">
-              <CreditCard className="h-3.5 w-3.5" />
-              Overview
+            <TabsTrigger value="overview" className="flex-1 flex items-center justify-center gap-1 text-xs px-2">
+              <CreditCard className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Overview</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="failed">
             <Card>
-              <CardContent className="p-0 md:p-4">
+              <CardContent className="p-0">
                 {failedPayments.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <CheckCircle className="h-10 w-10 mx-auto mb-2 text-green-500" />
                     <p className="text-sm">No failed payments</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">Date</TableHead>
-                          <TableHead className="text-xs">Customer</TableHead>
-                          <TableHead className="text-xs">Amount</TableHead>
-                          <TableHead className="text-xs">Status</TableHead>
-                          <TableHead className="text-xs hidden md:table-cell">Error</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {failedPayments.map(p => (
-                          <TableRow key={p.id}>
-                            <TableCell className="text-xs whitespace-nowrap">{format(new Date(p.created * 1000), 'dd MMM')}</TableCell>
-                            <TableCell className="text-xs max-w-[120px] truncate">{p.email || <span className="text-muted-foreground">Unknown</span>}</TableCell>
-                            <TableCell className="text-xs font-medium whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</TableCell>
-                            <TableCell><Badge variant="destructive" className="text-xs">{p.status}</Badge></TableCell>
-                            <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate hidden md:table-cell">{p.error}</TableCell>
+                  <>
+                    {/* Mobile: stacked cards */}
+                    <div className="md:hidden divide-y">
+                      {failedPayments.map(p => (
+                        <div key={p.id} className="p-4 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground">{format(new Date(p.created * 1000), 'dd MMM yyyy')}</span>
+                            <Badge variant="destructive" className="text-xs">{p.status}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm truncate min-w-0">{p.email || 'Unknown'}</span>
+                            <span className="text-sm font-bold whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</span>
+                          </div>
+                          {p.error && <p className="text-xs text-muted-foreground line-clamp-2">{p.error}</p>}
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop: table */}
+                    <div className="hidden md:block overflow-x-auto p-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Date</TableHead>
+                            <TableHead className="text-xs">Customer</TableHead>
+                            <TableHead className="text-xs">Amount</TableHead>
+                            <TableHead className="text-xs">Status</TableHead>
+                            <TableHead className="text-xs">Error</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {failedPayments.map(p => (
+                            <TableRow key={p.id}>
+                              <TableCell className="text-xs whitespace-nowrap">{format(new Date(p.created * 1000), 'dd MMM')}</TableCell>
+                              <TableCell className="text-xs max-w-[120px] truncate">{p.email || <span className="text-muted-foreground">Unknown</span>}</TableCell>
+                              <TableCell className="text-xs font-medium whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</TableCell>
+                              <TableCell><Badge variant="destructive" className="text-xs">{p.status}</Badge></TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{p.error}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -571,32 +590,50 @@ export default function PaymentsDashboard() {
 
           <TabsContent value="recent">
             <Card>
-              <CardContent className="p-0 md:p-4">
+              <CardContent className="p-0">
                 {recentPayments.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground"><p className="text-sm">No recent payments</p></div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">Date</TableHead>
-                          <TableHead className="text-xs">Customer</TableHead>
-                          <TableHead className="text-xs">Amount</TableHead>
-                          <TableHead className="text-xs">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {recentPayments.map(p => (
-                          <TableRow key={p.id}>
-                            <TableCell className="text-xs whitespace-nowrap">{format(new Date(p.created * 1000), 'dd MMM')}</TableCell>
-                            <TableCell className="text-xs max-w-[120px] truncate">{p.email || <span className="text-muted-foreground">Unknown</span>}</TableCell>
-                            <TableCell className="text-xs font-medium whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</TableCell>
-                            <TableCell><Badge className="bg-green-500 text-xs">{p.status}</Badge></TableCell>
+                  <>
+                    {/* Mobile: stacked cards */}
+                    <div className="md:hidden divide-y">
+                      {recentPayments.map(p => (
+                        <div key={p.id} className="p-4 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground">{format(new Date(p.created * 1000), 'dd MMM yyyy')}</span>
+                            <Badge className="bg-green-500 text-xs">{p.status}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm truncate min-w-0">{p.email || 'Unknown'}</span>
+                            <span className="text-sm font-bold whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop: table */}
+                    <div className="hidden md:block overflow-x-auto p-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Date</TableHead>
+                            <TableHead className="text-xs">Customer</TableHead>
+                            <TableHead className="text-xs">Amount</TableHead>
+                            <TableHead className="text-xs">Status</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        </TableHeader>
+                        <TableBody>
+                          {recentPayments.map(p => (
+                            <TableRow key={p.id}>
+                              <TableCell className="text-xs whitespace-nowrap">{format(new Date(p.created * 1000), 'dd MMM')}</TableCell>
+                              <TableCell className="text-xs max-w-[120px] truncate">{p.email || <span className="text-muted-foreground">Unknown</span>}</TableCell>
+                              <TableCell className="text-xs font-medium whitespace-nowrap">{formatCurrency(p.amount, p.currency)}</TableCell>
+                              <TableCell><Badge className="bg-green-500 text-xs">{p.status}</Badge></TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
