@@ -525,7 +525,7 @@ export default function EquipmentTypeLibrary() {
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteBlocked(null); } }}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteBlocked(null); document.body.style.removeProperty('pointer-events'); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
