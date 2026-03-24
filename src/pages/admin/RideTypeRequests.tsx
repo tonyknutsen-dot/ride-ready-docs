@@ -82,7 +82,7 @@ const statusIcon = (s: string) => {
 interface DuplicateMatch {
   category: ExistingCategory;
   score: number;
-  confidence: 'strong' | 'possible';
+  confidence: 'high' | 'medium' | 'low';
   reasons: string[];
 }
 
