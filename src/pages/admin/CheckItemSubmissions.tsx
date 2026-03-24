@@ -546,7 +546,7 @@ export default function CheckItemSubmissions() {
         <div className="space-y-3">
           {filteredSubmissions.map((submission) => {
             const similarItems = getSimilarItems(submission);
-            const libraryMatches = findLibraryMatches(submission);
+            const { sameScope: sameScopeMatches, broader: broaderMatches } = findScopedLibraryMatches(submission);
             const isPending = submission.status === 'pending';
 
             return (
