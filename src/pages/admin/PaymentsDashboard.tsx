@@ -690,7 +690,9 @@ export default function PaymentsDashboard() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
+
                     </TableBody>
                   </Table>
                 </div>
