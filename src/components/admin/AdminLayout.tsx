@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,7 @@ interface PendingCounts {
   documentRequests: number;
   supportMessages: number;
   bugReports: number;
+  featureRequests: number;
 }
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
@@ -28,15 +29,17 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     documentRequests: 0,
     supportMessages: 0,
     bugReports: 0,
+    featureRequests: 0,
   });
 
   useEffect(() => {
     const fetchPendingCounts = async () => {
-      const [rideRes, docRes, supportRes, bugRes] = await Promise.all([
+      const [rideRes, docRes, supportRes, bugRes, featureRes] = await Promise.all([
         supabase.from('ride_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('document_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('support_messages').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         (supabase as any).from('bug_reports').select('id', { count: 'exact', head: true }).in('status', ['new', 'in_progress']),
+        (supabase as any).from('feature_requests').select('id', { count: 'exact', head: true }).in('status', ['pending', 'in_review']),
       ]);
 
       setPendingCounts({
@@ -44,6 +47,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         documentRequests: docRes.count || 0,
         supportMessages: supportRes.count || 0,
         bugReports: bugRes.count || 0,
+        featureRequests: featureRes.count || 0,
       });
     };
 
@@ -62,6 +66,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
         { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
+        { name: 'Feature Requests', href: '/admin/feature-requests', icon: Lightbulb, count: pendingCounts.featureRequests },
         { name: 'Payments & Billing', href: '/admin/payments', icon: CreditCard, count: 0 },
       ],
     },
