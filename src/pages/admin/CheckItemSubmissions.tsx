@@ -610,8 +610,8 @@ export default function CheckItemSubmissions() {
                 >
                   <Globe className="w-4 h-4 text-primary shrink-0" />
                   <div>
-                    <p className="font-medium">General</p>
-                    <p className="text-xs text-muted-foreground">All equipment types</p>
+                    <p className="font-medium">General shared item</p>
+                    <p className="text-xs text-muted-foreground">Available for all equipment types</p>
                   </div>
                 </button>
                 <button
@@ -623,8 +623,8 @@ export default function CheckItemSubmissions() {
                 >
                   <Target className="w-4 h-4 text-primary shrink-0" />
                   <div>
-                    <p className="font-medium">Specific</p>
-                    <p className="text-xs text-muted-foreground">One equipment group/type</p>
+                    <p className="font-medium">Equipment-specific shared item</p>
+                    <p className="text-xs text-muted-foreground">Only for a specific equipment group or type</p>
                   </div>
                 </button>
               </div>
