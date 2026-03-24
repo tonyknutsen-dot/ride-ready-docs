@@ -261,15 +261,6 @@ export function AppSidebar() {
                   <NavItem item={{ title: 'Staff', url: '/staff', icon: Users }} secondary />
                 )}
                 <NavItem item={{ title: 'Install App', url: '/install', icon: Download }} secondary />
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => setFeatureDialogOpen(true)}
-                    className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-                  >
-                    <Lightbulb className="h-4 w-4 flex-shrink-0" />
-                    {!collapsed && <span>Request Feature</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
