@@ -172,7 +172,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (session?.user) {
-        void hydrateAuthenticatedState(session, 'event');
+        // Only hydrate on meaningful auth events, not token refreshes
+        if (event !== 'TOKEN_REFRESHED') {
+          void hydrateAuthenticatedState(session, 'event');
+        }
+        // Only sync subscription on genuine sign-in, not token refresh
         if (event === 'SIGNED_IN') {
           syncSubscriptionStatus(session.user.id);
         }

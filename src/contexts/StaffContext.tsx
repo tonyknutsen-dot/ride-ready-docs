@@ -158,9 +158,10 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchStaffStatus:', error);
     } finally {
+      setFetchedForUserId(user.id);
       setLoading(false);
     }
-  }, [authLoading, user]);
+  }, [authLoading, user?.id, fetchedForUserId]);
 
   useEffect(() => {
     if (authLoading) {

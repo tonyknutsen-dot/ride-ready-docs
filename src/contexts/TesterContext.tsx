@@ -79,9 +79,10 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       setIsTester(false);
     } finally {
       // Only set loading false after check is complete
+      setCheckedUserId(user.id);
       setIsLoading(false);
     }
-  }, [authLoading, user]);
+  }, [authLoading, user?.id, checkedUserId]);
 
   // Initial check
   useEffect(() => {
