@@ -252,7 +252,7 @@ const HelpCenter = () => {
             </p>
           </div>
 
-          {/* ── AI CHAT ────────────────────────────────────────────────────── */}
+          <SectionHeading>Self-Help</SectionHeading>
           <div className="mb-5">
             <HelpChatWidget />
           </div>
