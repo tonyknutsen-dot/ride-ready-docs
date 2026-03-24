@@ -209,26 +209,29 @@ export default function SupportRequests() {
   }
 
   // List view
+  const isEmpty = messages.length === 0;
+
   return (
     <AppLayout>
-      <div className="space-y-6 max-w-2xl mx-auto">
-        {/* Header — stacked on mobile, inline on md+ */}
-        <div className="space-y-2 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
-          <div className="space-y-1">
-            <h1 className="text-lg md:text-xl font-bold">My Support Requests</h1>
-            <p className="text-sm text-muted-foreground">View your support conversations</p>
+      <div className="space-y-5 max-w-2xl mx-auto px-1">
+        {/* Header — hidden on mobile when empty, shown when there are messages */}
+        <div className={`space-y-2 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4 ${isEmpty ? 'hidden md:flex' : ''}`}>
+          <div className="space-y-0.5">
+            <h1 className="text-base md:text-xl font-semibold">My Support Requests</h1>
+            <p className="text-[13px] text-muted-foreground">View your support conversations</p>
           </div>
-          <Button size="sm" onClick={() => setContactOpen(true)} className="w-full md:w-auto mt-1 md:mt-0">
+          <Button size="sm" onClick={() => setContactOpen(true)} className="w-full md:w-auto mt-1.5 md:mt-0">
             <Plus className="h-4 w-4 mr-1" /> New Request
           </Button>
         </div>
 
-        {messages.length === 0 ? (
+        {isEmpty ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground text-sm mb-3">No support requests yet</p>
-              <Button size="sm" variant="outline" onClick={() => setContactOpen(true)}>
+            <CardContent className="flex flex-col items-center justify-center py-8 md:py-12">
+              <MessageCircle className="h-10 w-10 text-muted-foreground/30 mb-2.5" />
+              <p className="text-base font-semibold mb-0.5">My Support Requests</p>
+              <p className="text-[13px] text-muted-foreground mb-4">View your support conversations</p>
+              <Button size="sm" onClick={() => setContactOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" /> New Request
               </Button>
             </CardContent>
