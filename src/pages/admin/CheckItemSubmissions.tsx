@@ -283,8 +283,9 @@ export default function CheckItemSubmissions() {
         .eq('id', duplicateTarget.id);
       if (error) throw error;
       toast({ title: "Already covered", description: "Marked as covered by existing library item." });
+      updateSubmissionLocally(duplicateTarget.id, { status: 'duplicate', admin_notes: matchNote, reviewed_at: new Date().toISOString() });
       setDuplicateTarget(null);
-      fetchAllSubmissions();
+      fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
