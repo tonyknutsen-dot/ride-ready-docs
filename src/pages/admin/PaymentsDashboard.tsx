@@ -106,14 +106,15 @@ const formatCurrency = (amount: number, currency = 'gbp') =>
 
 const ProblemBadge = ({ type }: { type: string | null }) => {
   if (!type) return <Badge variant="outline" className="text-xs">Healthy</Badge>;
-  const config: Record<string, { label: string; variant: 'destructive' | 'secondary' | 'outline' }> = {
-    mismatch: { label: 'Mismatch', variant: 'destructive' },
-    past_due: { label: 'Past Due', variant: 'destructive' },
-    stale_sync: { label: 'Stale Sync', variant: 'secondary' },
-    cancelling: { label: 'Cancelling', variant: 'secondary' },
+  const config: Record<string, { label: string; description: string; variant: 'destructive' | 'secondary' | 'outline' }> = {
+    mismatch: { label: 'Mismatch', description: 'App and Stripe data disagree', variant: 'destructive' },
+    past_due: { label: 'Past Due', description: 'Payment overdue', variant: 'destructive' },
+    stale_sync: { label: 'Stale Sync', description: 'Not synced recently', variant: 'secondary' },
+    cancelling: { label: 'Cancelling', description: 'Cancellation scheduled', variant: 'secondary' },
+    no_stripe: { label: 'No Stripe Link', description: 'No Stripe subscription found', variant: 'secondary' },
   };
-  const c = config[type] || { label: type, variant: 'secondary' as const };
-  return <Badge variant={c.variant} className="text-xs">{c.label}</Badge>;
+  const c = config[type] || { label: type, description: '', variant: 'secondary' as const };
+  return <Badge variant={c.variant} className="text-xs" title={c.description}>{c.label}</Badge>;
 };
 
 // ── Status badge ──
