@@ -957,6 +957,166 @@ export default function PaymentsDashboard() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Flag Management Drawer ── */}
+      <Sheet open={flagDrawerOpen} onOpenChange={setFlagDrawerOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5" />
+              Account Flags
+            </SheetTitle>
+            <SheetDescription>
+              {flagDrawerUserId
+                ? `Review and manage flags for ${userHealth.find(u => u.user_id === flagDrawerUserId)?.company_name || userHealth.find(u => u.user_id === flagDrawerUserId)?.controller_name || 'this user'}`
+                : 'Manage account flags'}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-4">
+            {(() => {
+              const userFlags = flagDrawerUserId ? (flagsByUser[flagDrawerUserId] || []) : [];
+              if (userFlags.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm">No flags for this account</p>
+                  </div>
+                );
+              }
+              return userFlags.map(flag => (
+                <div
+                  key={flag.id}
+                  className={`rounded-lg border p-4 space-y-3 ${
+                    flag.review_status === 'resolved' || flag.review_status === 'ignored'
+                      ? 'opacity-60'
+                      : flag.severity === 'critical' ? 'border-destructive bg-destructive/5'
+                      : flag.severity === 'warning' ? 'border-amber-300 dark:border-amber-700 bg-amber-500/5'
+                      : ''
+                  }`}
+                >
+                  {/* Flag header */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <SeverityDot severity={flag.severity} />
+                      <span className="text-sm font-medium capitalize">{flag.flag_reason.replace(/_/g, ' ')}</span>
+                      {flag.auto_detected && <Badge variant="outline" className="text-xs">Auto</Badge>}
+                    </div>
+                    <ReviewStatusBadge status={flag.review_status} />
+                  </div>
+
+                  {/* Timestamps */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span>Detected:</span>
+                    <span>{format(new Date(flag.created_at), 'dd MMM yyyy HH:mm')}</span>
+                    {flag.reviewed_at && (
+                      <>
+                        <span>Reviewed:</span>
+                        <span>{format(new Date(flag.reviewed_at), 'dd MMM yyyy HH:mm')}</span>
+                      </>
+                    )}
+                    {flag.resolved_at && (
+                      <>
+                        <span>Resolved:</span>
+                        <span>{format(new Date(flag.resolved_at), 'dd MMM yyyy HH:mm')}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Admin note */}
+                  {flag.admin_note && (
+                    <div className="rounded-md bg-muted p-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <MessageSquare className="h-3 w-3" />
+                        Admin note
+                      </div>
+                      <p className="text-xs">{flag.admin_note}</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {!['resolved', 'ignored'].includes(flag.review_status) && (
+                    <div className="space-y-2 pt-1 border-t border-border/40">
+                      <div className="flex items-center gap-2">
+                        <Select
+                          defaultValue={flag.review_status}
+                          onValueChange={(value) => handleUpdateFlag(flag.id, { review_status: value })}
+                          disabled={updatingFlag === flag.id}
+                        >
+                          <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="under_review">Under Review</SelectItem>
+                            <SelectItem value="waiting">Waiting</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                            <SelectItem value="ignored">Expected / Ignore</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <FlagNoteForm flagId={flag.id} onSave={handleUpdateFlag} disabled={updatingFlag === flag.id} />
+                    </div>
+                  )}
+
+                  {/* Reopen resolved/ignored */}
+                  {['resolved', 'ignored'].includes(flag.review_status) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={updatingFlag === flag.id}
+                      onClick={() => handleUpdateFlag(flag.id, { review_status: 'under_review' })}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Re-open
+                    </Button>
+                  )}
+                </div>
+              ));
+            })()}
+          </div>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
+  );
+}
+
+// ── Inline note form ──
+function FlagNoteForm({ flagId, onSave, disabled }: { flagId: string; onSave: (id: string, updates: { admin_note: string }) => void; disabled: boolean }) {
+  const [note, setNote] = useState('');
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setOpen(true)}>
+        <MessageSquare className="h-3 w-3 mr-1" />
+        Add note
+      </Button>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Add admin note..."
+        className="text-xs min-h-[60px]"
+      />
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          className="h-7 text-xs"
+          disabled={disabled || !note.trim()}
+          onClick={() => { onSave(flagId, { admin_note: note }); setNote(''); setOpen(false); }}
+        >
+          Save note
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setOpen(false); setNote(''); }}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
