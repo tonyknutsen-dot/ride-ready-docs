@@ -129,12 +129,13 @@ export function useProfileComplete() {
           setIsProfileComplete(false);
         }
       } finally {
+        checkedUserIdRef.current = user.id;
         setLoading(false);
       }
     };
 
     checkProfile();
-  }, [user, isOfflineMode, cachedIdentity]);
+  }, [user?.id, isOfflineMode]); // Depend on user.id (stable string), not user object or cachedIdentity
 
   return { isProfileComplete, isStaffMember, loading };
 }
