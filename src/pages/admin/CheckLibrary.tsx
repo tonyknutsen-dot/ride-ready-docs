@@ -87,6 +87,7 @@ export default function CheckLibrary() {
 
   // Dialogs
   const [editItem, setEditItem] = useState<LibraryItem | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<LibraryItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LibraryItem | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
