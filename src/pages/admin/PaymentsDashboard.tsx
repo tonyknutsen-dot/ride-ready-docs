@@ -380,104 +380,135 @@ export default function PaymentsDashboard() {
                 <p className="text-xs mt-1">Toggle "Show all users" to view everyone</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs min-w-[140px]">Organisation / User</TableHead>
-                      <TableHead className="text-xs">Problem</TableHead>
-                      <TableHead className="text-xs">App Status</TableHead>
-                      <TableHead className="text-xs">Stripe Status</TableHead>
-                      <TableHead className="text-xs">App Plan</TableHead>
-                      <TableHead className="text-xs">Stripe Plan</TableHead>
-                      <TableHead className="text-xs hidden md:table-cell">Period End</TableHead>
-                      <TableHead className="text-xs hidden lg:table-cell">Last Sync</TableHead>
-                      <TableHead className="text-xs text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {displayedUsers.map(user => (
-                      <TableRow
-                        key={user.user_id}
-                        className={user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}
-                      >
-                        <TableCell className="min-w-[140px]">
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-medium truncate max-w-[180px]">
-                              {user.company_name || '—'}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate max-w-[180px]">
-                              {user.controller_name || '—'}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
+              <>
+                {/* ── Mobile: stacked cards ── */}
+                <div className="md:hidden divide-y">
+                  {displayedUsers.map(user => (
+                    <div
+                      key={user.user_id}
+                      className={`p-4 space-y-3 ${user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}`}
+                    >
+                      {/* Row 1: Name + problem + actions */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate">{user.company_name || '—'}</div>
+                          <div className="text-xs text-muted-foreground truncate">{user.controller_name || '—'}</div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
                           <ProblemBadge type={user.problem_type} />
-                        </TableCell>
-                        <TableCell>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
+                            <Activity className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-7 w-7 p-0" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
+                            <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
+                          </Button>
+                        </div>
+                      </div>
+                      {/* Row 2: Status + Plan comparison grid */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                        <div>
+                          <span className="text-muted-foreground block mb-0.5">App Status</span>
                           <StatusBadge status={user.app_status} />
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block mb-0.5">Stripe Status</span>
                           <StatusBadge status={user.stripe_status} isStripe />
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block mb-0.5">App Plan</span>
                           <PlanLabel plan={user.app_plan} mismatch={user.plan_mismatch} />
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block mb-0.5">Stripe Plan</span>
                           <PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} />
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="space-y-0.5">
-                            {user.current_period_end ? (
-                              <span className="text-xs">{format(new Date(user.current_period_end), 'dd MMM yyyy')}</span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                            {user.cancel_at_period_end && (
-                              <div className="text-xs text-amber-600 font-medium">Cancels at end</div>
-                            )}
-                            {user.pending_subscription_plan && (
-                              <div className="text-xs text-blue-600 font-medium">
-                                → {user.pending_subscription_plan}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
+                        </div>
+                      </div>
+                      {/* Row 3: Period end + sync */}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div>
+                          {user.current_period_end ? (
+                            <span>Ends {format(new Date(user.current_period_end), 'dd MMM yyyy')}</span>
+                          ) : '—'}
+                          {user.cancel_at_period_end && <span className="ml-1.5 text-amber-600 font-medium">• Cancelling</span>}
+                          {user.pending_subscription_plan && <span className="ml-1.5 text-blue-600 font-medium">→ {user.pending_subscription_plan}</span>}
+                        </div>
+                        <div>
                           {user.last_billing_sync_at ? (
-                            <span className={`text-xs ${user.sync_stale ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
-                              {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
+                            <span className={user.sync_stale ? 'text-amber-600 font-medium' : ''}>
+                              Synced {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
                             </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Never</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs"
-                              onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}
-                            >
-                              <Activity className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 px-2 text-xs"
-                              disabled={resyncingUser === user.user_id}
-                              onClick={() => handleResync(user.user_id)}
-                            >
-                              <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
-                            </Button>
-                          </div>
-                        </TableCell>
+                          ) : 'Never synced'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Desktop/tablet: table ── */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs min-w-[140px]">Organisation / User</TableHead>
+                        <TableHead className="text-xs">Problem</TableHead>
+                        <TableHead className="text-xs">App Status</TableHead>
+                        <TableHead className="text-xs">Stripe Status</TableHead>
+                        <TableHead className="text-xs">App Plan</TableHead>
+                        <TableHead className="text-xs">Stripe Plan</TableHead>
+                        <TableHead className="text-xs">Period End</TableHead>
+                        <TableHead className="text-xs hidden lg:table-cell">Last Sync</TableHead>
+                        <TableHead className="text-xs text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {displayedUsers.map(user => (
+                        <TableRow
+                          key={user.user_id}
+                          className={user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}
+                        >
+                          <TableCell className="min-w-[140px]">
+                            <div className="space-y-0.5">
+                              <div className="text-sm font-medium truncate max-w-[180px]">{user.company_name || '—'}</div>
+                              <div className="text-xs text-muted-foreground truncate max-w-[180px]">{user.controller_name || '—'}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell><ProblemBadge type={user.problem_type} /></TableCell>
+                          <TableCell><StatusBadge status={user.app_status} /></TableCell>
+                          <TableCell><StatusBadge status={user.stripe_status} isStripe /></TableCell>
+                          <TableCell><PlanLabel plan={user.app_plan} mismatch={user.plan_mismatch} /></TableCell>
+                          <TableCell><PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} /></TableCell>
+                          <TableCell>
+                            <div className="space-y-0.5">
+                              {user.current_period_end ? (
+                                <span className="text-xs">{format(new Date(user.current_period_end), 'dd MMM yyyy')}</span>
+                              ) : <span className="text-xs text-muted-foreground">—</span>}
+                              {user.cancel_at_period_end && <div className="text-xs text-amber-600 font-medium">Cancels at end</div>}
+                              {user.pending_subscription_plan && <div className="text-xs text-blue-600 font-medium">→ {user.pending_subscription_plan}</div>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {user.last_billing_sync_at ? (
+                              <span className={`text-xs ${user.sync_stale ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                                {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
+                              </span>
+                            ) : <span className="text-xs text-muted-foreground">Never</span>}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
+                                <Activity className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
+                                <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
