@@ -242,9 +242,10 @@ export default function CheckItemSubmissions() {
         .eq('id', rejectTarget.id);
       if (error) throw error;
       toast({ title: "Not added to library", description: "The user can still use this item in their own checks." });
+      updateSubmissionLocally(rejectTarget.id, { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library', reviewed_at: new Date().toISOString() });
       setRejectTarget(null);
       setRejectReason('');
-      fetchAllSubmissions();
+      fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
