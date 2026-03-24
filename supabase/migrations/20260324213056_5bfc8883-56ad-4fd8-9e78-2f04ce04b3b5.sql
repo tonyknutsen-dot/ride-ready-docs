@@ -1,0 +1,2 @@
+ALTER TABLE public.ride_type_requests DROP CONSTRAINT ride_type_requests_type_check;
+ALTER TABLE public.ride_type_requests ADD CONSTRAINT ride_type_requests_type_check CHECK (type = ANY (ARRAY['ride'::text, 'stall'::text, 'service'::text, 'Rides'::text, 'Inflatables'::text, 'Stalls'::text, 'Attractions'::text, 'Food Stalls'::text, 'Games'::text, 'Equipment'::text]));
