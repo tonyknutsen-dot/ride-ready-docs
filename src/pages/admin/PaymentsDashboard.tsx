@@ -390,11 +390,17 @@ export default function PaymentsDashboard() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              <CardDescription className="text-xs">
-                {problemUserCount > 0
-                  ? `${problemUserCount} account${problemUserCount !== 1 ? 's' : ''} flagged`
-                  : 'All accounts healthy — no issues detected'}
-              </CardDescription>
+              {problemUserCount > 0 ? (
+                <Badge variant="destructive" className="text-xs px-2.5 py-1 font-semibold">
+                  <ShieldAlert className="h-3 w-3 mr-1.5" />
+                  {problemUserCount} account{problemUserCount !== 1 ? 's' : ''} flagged
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs px-2.5 py-1 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                  <CheckCircle className="h-3 w-3 mr-1.5" />
+                  All accounts healthy
+                </Badge>
+              )}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <Switch
