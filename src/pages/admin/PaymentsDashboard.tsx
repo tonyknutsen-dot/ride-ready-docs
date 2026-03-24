@@ -303,7 +303,7 @@ export default function PaymentsDashboard() {
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
 
             <Card
-              className="cursor-pointer"
+              className="cursor-pointer transition-shadow hover:shadow-md"
               onClick={() => { setActiveTab('overview'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
