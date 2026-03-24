@@ -69,7 +69,10 @@ export default function CheckItemSubmissions() {
   const [mobileActionMenuId, setMobileActionMenuId] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Submission | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<Submission | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [selectedMatchId, setSelectedMatchId] = useState<string>('');
+  const [duplicateNote, setDuplicateNote] = useState('');
   const [approvalData, setApprovalData] = useState({
     label: '',
     hint: '',
@@ -292,10 +295,6 @@ export default function CheckItemSubmissions() {
       setProcessing(false);
     }
   };
-
-  const [duplicateTarget, setDuplicateTarget] = useState<Submission | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = useState<string>('');
-  const [duplicateNote, setDuplicateNote] = useState('');
 
   const openDuplicateDialog = (submission: Submission) => {
     const matches = findLibraryMatches(submission);
