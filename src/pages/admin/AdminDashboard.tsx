@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  FolderOpen, FileText, Users, FlaskConical, BarChart3, CheckCircle,
+  Layers, FileText, Users, FlaskConical, BarChart3, CheckCircle, FolderOpen,
   Loader2, MessageCircle, Bug, CreditCard, ArrowRight, AlertTriangle,
   ChevronDown, ChevronUp, Clock, Shield, Info,
 } from 'lucide-react';
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       label: 'Pending Equipment Type Requests',
       count: stats.pendingRideRequests,
       href: '/admin/ride-requests',
-      icon: FolderOpen,
+      icon: Layers,
       accent: 'primary' as const,
       cta: 'Review Requests',
     },

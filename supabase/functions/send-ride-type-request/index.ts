@@ -71,8 +71,9 @@ const handler = async (req: Request): Promise<Response> => {
     const safeUserName = escapeHtml(requestData.userName);
     const currentYear = new Date().getFullYear();
 
-    const typeLabel = requestData.type === 'ride' ? 'Fairground Ride' : 
-                     requestData.type === 'stall' ? 'Food/Game Stall' : 'Generator/Equipment';
+    // type field now stores PascalCase category_group (e.g. "Rides", "Food Stalls")
+    // Fall back for legacy values
+    const typeLabel = requestData.type || 'Equipment';
 
     // Admin notification email
     const adminHtml = `
