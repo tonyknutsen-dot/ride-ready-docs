@@ -13,7 +13,6 @@ import {
   HelpCircle,
   LogOut,
   Shield,
-  Lightbulb,
   MessageCircle,
   ChevronLeft,
   ChevronRight,
@@ -43,7 +42,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
-import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
+
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
 import { useActionNeededCount } from '@/hooks/useActionNeededCount';
 import { useOverdueCompliance } from '@/hooks/useOverdueCompliance';
@@ -103,7 +102,6 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
-  const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const unreadCount = useActionNeededCount();
   const overdueCount = useOverdueCompliance();
@@ -261,15 +259,6 @@ export function AppSidebar() {
                   <NavItem item={{ title: 'Staff', url: '/staff', icon: Users }} secondary />
                 )}
                 <NavItem item={{ title: 'Install App', url: '/install', icon: Download }} secondary />
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => setFeatureDialogOpen(true)}
-                    className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-                  >
-                    <Lightbulb className="h-4 w-4 flex-shrink-0" />
-                    {!collapsed && <span>Request Feature</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -356,13 +345,6 @@ export function AppSidebar() {
       </Sidebar>
 
       {/* Dialogs */}
-      {featureDialogOpen && (
-        <RequestFeatureDialog
-          open={featureDialogOpen}
-          onOpenChange={setFeatureDialogOpen}
-          hideTrigger
-        />
-      )}
       {contactDialogOpen && (
         <ContactSupportDialog
           open={contactDialogOpen}
