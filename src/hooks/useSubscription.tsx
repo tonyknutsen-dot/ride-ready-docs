@@ -65,15 +65,24 @@ export const useSubscription = () => {
   const { isStaff, staffMembership, loading: staffLoading } = useStaff();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Guard: track which user+role combo we've fetched for to prevent redundant fetches
+  const [fetchedKey, setFetchedKey] = useState<string | null>(null);
 
-  const fetchSubscriptionData = useCallback(async () => {
+  const fetchSubscriptionData = useCallback(async (force = false) => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
+      setFetchedKey(null);
       return;
     }
 
     if (testerLoading || staffLoading) {
+      return;
+    }
+
+    // Build a stable key from the values that actually matter
+    const key = `${user.id}:${isTester}:${isStaff}:${staffMembership?.ownerId ?? ''}`;
+    if (!force && fetchedKey === key) {
       return;
     }
 
