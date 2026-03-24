@@ -118,7 +118,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
         }
       )
       .subscribe((status) => {
-        console.log('[TesterContext] Realtime subscription status:', status);
+        
       });
 
     return () => {
