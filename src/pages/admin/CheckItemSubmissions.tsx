@@ -549,7 +549,7 @@ export default function CheckItemSubmissions() {
                         <Button size="sm" className="h-8 text-xs" onClick={() => openApprovalDialog(submission)}>
                           <Check className="w-3.5 h-3.5 mr-1" />Add to Library
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleMarkDuplicate(submission)}>
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openDuplicateDialog(submission)}>
                           <Copy className="w-3.5 h-3.5 mr-1" />Already Covered
                         </Button>
                         <Button size="sm" variant="outline" className="h-8 text-xs text-destructive hover:text-destructive" onClick={() => { setRejectTarget(submission); setRejectReason(''); }}>
