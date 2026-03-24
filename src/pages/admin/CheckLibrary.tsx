@@ -457,9 +457,7 @@ export default function CheckLibrary() {
     return g === 'rides' && !item.ride_category_id ? 'general' : 'group';
   };
 
-  const filteredGroupCategories = rideCategories.filter(
-    rc => rc.category_group.toLowerCase() === editGroup.toLowerCase()
-  );
+  // filteredGroupCategories removed — now inside LibraryItemDialog
 
   return (
     <AdminLayout>
