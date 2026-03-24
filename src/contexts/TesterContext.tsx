@@ -100,7 +100,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (authLoading || !userId) return;
 
-    console.log('[TesterContext] Setting up realtime subscription for user:', userId);
+    
 
     const channel = supabase
       .channel(`user_roles_${userId}`)
