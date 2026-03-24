@@ -18,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import {
-  CheckCircle, XCircle, Clock, Search, AlertTriangle, FolderOpen, Copy,
+  CheckCircle, XCircle, Clock, Search, AlertTriangle, Layers, Copy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { EQUIPMENT_GROUPS, EQUIPMENT_GROUP_LABELS, type EquipmentGroup } from '@/constants/checkLibrary';
