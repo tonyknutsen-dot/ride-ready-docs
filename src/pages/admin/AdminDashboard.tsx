@@ -58,7 +58,7 @@ export default function AdminDashboard() {
       try {
         const [
           supportRes, bugRes, rideRequests, docRequests,
-          users, testers,
+          users, testers, staffMembers,
           allRides, testRides, allDocuments, testDocuments,
           allChecks, testChecks, allMaintenance, testMaintenance,
         ] = await Promise.all([
@@ -68,6 +68,7 @@ export default function AdminDashboard() {
           supabase.from('document_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
           supabase.from('user_roles').select('id', { count: 'exact', head: true }).eq('role', 'tester'),
+          supabase.from('organisation_members').select('id', { count: 'exact', head: true }).eq('is_active', true),
           supabase.from('rides').select('id', { count: 'exact', head: true }),
           supabase.from('rides').select('id', { count: 'exact', head: true }).eq('is_test_data', true),
           supabase.from('documents').select('id', { count: 'exact', head: true }),
@@ -84,6 +85,7 @@ export default function AdminDashboard() {
           pendingDocRequests: docRequests.count || 0,
           totalUsers: users.count || 0,
           totalTesters: testers.count || 0,
+          totalStaff: staffMembers.count || 0,
           totalRides: allRides.count || 0,
           totalDocuments: allDocuments.count || 0,
           totalChecks: allChecks.count || 0,
