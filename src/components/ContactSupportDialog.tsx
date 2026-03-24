@@ -126,7 +126,8 @@ export const ContactSupportDialog = ({
           <DialogHeader>
             <DialogTitle>Contact Support</DialogTitle>
             <DialogDescription>
-              Send us a message and we'll get back to you as soon as possible
+              Send us a message and we'll get back to you as soon as possible.
+              Your message will appear in <span className="font-medium">My Support Requests</span> where you can view replies.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
