@@ -684,97 +684,15 @@ export default function CheckLibrary() {
         )}
       </div>
 
-      {/* ── Create / Edit Dialog ── */}
-      <Dialog open={!!editItem || isCreating} onOpenChange={(open) => { if (!open) { setEditItem(null); setIsCreating(false); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isCreating ? 'New Library Item' : 'Edit Library Item'}</DialogTitle>
-            <DialogDescription>
-              {isCreating ? 'Add a new item to the shared check library' : 'Update wording, classification, or scope'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Item text</Label>
-              <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} placeholder="e.g. Check emergency stop button" />
-            </div>
-            <div>
-              <Label>Hint / guidance</Label>
-              <Textarea value={editHint} onChange={e => setEditHint(e.target.value)} rows={2} placeholder="Optional guidance for the inspector" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Category</Label>
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {CHECK_CATEGORIES.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Frequency</Label>
-                <Select value={editFrequency} onValueChange={setEditFrequency}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(FREQUENCY_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label>Equipment group</Label>
-              <Select value={editGroup} onValueChange={(v) => {
-                setEditGroup(v);
-                setEditRideCategoryId(null);
-              }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EQUIPMENT_GROUPS.map(g => (
-                    <SelectItem key={g} value={g}>{EQUIPMENT_GROUP_LABELS[g]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {filteredGroupCategories.length > 0 && (
-              <div>
-                <Label>Specific ride/equipment type (optional)</Label>
-                <Select
-                  value={editRideCategoryId || 'none'}
-                  onValueChange={v => setEditRideCategoryId(v === 'none' ? null : v)}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None (group-wide)</SelectItem>
-                    {filteredGroupCategories.map(rc => (
-                      <SelectItem key={rc.id} value={rc.id}>{rc.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div>
-              <Label>Admin note (optional)</Label>
-              <Input
-                value={editNote}
-                onChange={e => setEditNote(e.target.value)}
-                placeholder={isCreating ? "Reason for adding" : "Reason for change"}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setEditItem(null); setIsCreating(false); }}>Cancel</Button>
-            <Button onClick={handleSaveEdit} disabled={saving || !editLabel.trim()}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isCreating ? 'Add to Library' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ── Create / Edit Dialog (isolated state) ── */}
+      <LibraryItemDialog
+        open={!!editItem || isCreating}
+        isCreating={isCreating}
+        item={editItem}
+        rideCategories={rideCategories}
+        onSave={handleSaveEdit}
+        onClose={closeDialog}
+      />
 
       {/* ── Archive Confirmation ── */}
       <AlertDialog open={!!archiveTarget} onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}>
