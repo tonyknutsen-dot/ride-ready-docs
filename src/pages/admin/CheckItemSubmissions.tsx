@@ -477,8 +477,8 @@ export default function CheckItemSubmissions() {
                           <DropdownMenuItem onClick={() => openApprovalDialog(submission)}>
                             <Check className="w-4 h-4 mr-2 text-green-600" />Add to Library
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleMarkDuplicate(submission)}>
-                            <Copy className="w-4 h-4 mr-2" />Already in Library
+                          <DropdownMenuItem onClick={() => openDuplicateDialog(submission)}>
+                            <Copy className="w-4 h-4 mr-2" />Already Covered
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => { setRejectTarget(submission); setRejectReason(''); }} className="text-destructive">
                             <X className="w-4 h-4 mr-2" />Don't Add
