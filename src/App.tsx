@@ -563,6 +563,18 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/admin/equipment-type-library" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <EquipmentTypeLibrary />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/admin/risk-items" 
                 element={
                   <ProtectedRoute>
