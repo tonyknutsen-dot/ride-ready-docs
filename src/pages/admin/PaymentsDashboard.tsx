@@ -567,15 +567,32 @@ export default function PaymentsDashboard() {
                         </div>
                       </div>
 
+                      {/* Flag status row */}
+                      {activeFlagsForUser(user.user_id).length > 0 && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <Flag className="h-3 w-3 text-amber-500 shrink-0" />
+                          <span className="text-muted-foreground">
+                            {activeFlagsForUser(user.user_id).length} active flag{activeFlagsForUser(user.user_id).length !== 1 ? 's' : ''}
+                          </span>
+                          {activeFlagsForUser(user.user_id).map(f => (
+                            <ReviewStatusBadge key={f.id} status={f.review_status} />
+                          ))}
+                        </div>
+                      )}
+
                       {/* Actions footer */}
                       <div className="flex items-center gap-2 pt-1 border-t border-border/40">
                         <Button variant="ghost" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
                           <Activity className="h-3.5 w-3.5" />
-                          Event History
+                          Events
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" onClick={() => { setFlagDrawerUserId(user.user_id); setFlagDrawerOpen(true); }}>
+                          <Flag className="h-3.5 w-3.5" />
+                          Flags{activeFlagsForUser(user.user_id).length > 0 ? ` (${activeFlagsForUser(user.user_id).length})` : ''}
                         </Button>
                         <Button variant="outline" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
                           <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
-                          Re-sync
+                          Sync
                         </Button>
                       </div>
                     </div>
