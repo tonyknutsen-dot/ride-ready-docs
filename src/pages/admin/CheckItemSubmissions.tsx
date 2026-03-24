@@ -246,21 +246,42 @@ export default function CheckItemSubmissions() {
     }
   };
 
-  const handleMarkDuplicate = async (submission: Submission) => {
+  const [duplicateTarget, setDuplicateTarget] = useState<Submission | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>('');
+  const [duplicateNote, setDuplicateNote] = useState('');
+
+  const openDuplicateDialog = (submission: Submission) => {
     const matches = findLibraryMatches(submission);
-    const matchNote = matches.length > 0
-      ? `Already in library: "${matches[0].label}"`
-      : 'Already covered by existing library item';
+    setDuplicateTarget(submission);
+    setSelectedMatchId(matches.length > 0 ? matches[0].id : '');
+    setDuplicateNote('');
+  };
+
+  const handleMarkDuplicate = async () => {
+    if (!duplicateTarget) return;
+    setProcessing(true);
+    const matchedItem = libraryItems.find(i => i.id === selectedMatchId);
+    const matchNote = matchedItem
+      ? `Already in library: "${matchedItem.label}"`
+      : duplicateNote || 'Already covered by existing library item';
     try {
       const { error } = await supabase
         .from('user_submitted_check_items')
-        .update({ status: 'duplicate', admin_notes: matchNote, reviewed_at: new Date().toISOString() })
-        .eq('id', submission.id);
+        .update({
+          status: 'duplicate',
+          admin_notes: matchNote,
+          matched_library_item_id: selectedMatchId || null,
+          reviewed_at: new Date().toISOString()
+        } as any)
+        .eq('id', duplicateTarget.id);
       if (error) throw error;
-      toast({ title: "Already in library", description: "Marked as covered by existing item." });
+      toast({ title: "Already covered", description: "Marked as covered by existing library item." });
+      setDuplicateTarget(null);
       fetchAllSubmissions();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setProcessing(false);
     }
   };
 
