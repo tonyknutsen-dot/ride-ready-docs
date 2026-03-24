@@ -500,7 +500,7 @@ export default function PaymentsDashboard() {
                               <span className={`text-xs ${user.sync_stale ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
                                 {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
                               </span>
-                            ) : <span className="text-xs text-muted-foreground">Never</span>}
+                            ) : <span className="text-xs text-muted-foreground italic">Never synced</span>}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
