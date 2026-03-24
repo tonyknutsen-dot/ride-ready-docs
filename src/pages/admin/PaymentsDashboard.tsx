@@ -301,6 +301,7 @@ export default function PaymentsDashboard() {
           </div>
         <TooltipProvider delayDuration={300}>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+
             <Card
               className="cursor-pointer"
               onClick={() => { setActiveTab('overview'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
