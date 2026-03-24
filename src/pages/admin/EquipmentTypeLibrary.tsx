@@ -334,7 +334,8 @@ export default function EquipmentTypeLibrary() {
     if (!deleteTarget || deleteBlocked) return;
     const { error } = await (supabase as any).from('ride_categories').delete().eq('id', deleteTarget.id);
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      console.error('[EquipmentTypeLibrary] Delete error:', error);
+      toast({ title: 'Could not delete type', description: 'This type could not be deleted due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
     logEvent('delete', 'ride_category', deleteTarget.id, { name: deleteTarget.name });
