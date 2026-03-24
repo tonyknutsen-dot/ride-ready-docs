@@ -221,7 +221,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     }
 
     setCustomItemText('');
-    toast({ title: 'Item added', description: 'Custom check item added' });
+    toast({ title: 'Added to your checks', description: 'Submitted for shared library review' });
   };
 
   const handleRemoveItem = (index: number) => {
