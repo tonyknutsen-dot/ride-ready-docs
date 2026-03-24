@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { saveIdentityCache, type IdentityCacheEntry } from '@/lib/offlineDb';
@@ -8,12 +8,20 @@ export function useProfileComplete() {
   const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
   const [isStaffMember, setIsStaffMember] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Track which user we've already checked to prevent re-runs on cachedIdentity changes
+  const checkedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) {
       setIsProfileComplete(null);
       setIsStaffMember(false);
       setLoading(false);
+      checkedUserIdRef.current = null;
+      return;
+    }
+
+    // If we already successfully checked this user online, don't re-run
+    if (checkedUserIdRef.current === user.id && isProfileComplete !== null) {
       return;
     }
 
@@ -121,12 +129,13 @@ export function useProfileComplete() {
           setIsProfileComplete(false);
         }
       } finally {
+        checkedUserIdRef.current = user.id;
         setLoading(false);
       }
     };
 
     checkProfile();
-  }, [user, isOfflineMode, cachedIdentity]);
+  }, [user?.id, isOfflineMode]); // Depend on user.id (stable string), not user object or cachedIdentity
 
   return { isProfileComplete, isStaffMember, loading };
 }

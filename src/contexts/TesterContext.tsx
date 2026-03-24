@@ -27,7 +27,10 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
   const [isTester, setIsTester] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkTesterStatus = useCallback(async () => {
+  // Track which user ID we've already checked to prevent redundant fetches
+  const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
+
+  const checkTesterStatus = useCallback(async (force = false) => {
     if (authLoading) {
       return;
     }
@@ -36,6 +39,12 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
     if (!user) {
       setIsTester(false);
       setIsLoading(false);
+      setCheckedUserId(null);
+      return;
+    }
+
+    // Skip if we already checked for this user (unless forced)
+    if (!force && checkedUserId === user.id) {
       return;
     }
 
@@ -70,9 +79,10 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       setIsTester(false);
     } finally {
       // Only set loading false after check is complete
+      setCheckedUserId(user.id);
       setIsLoading(false);
     }
-  }, [authLoading, user]);
+  }, [authLoading, user?.id, checkedUserId]);
 
   // Initial check
   useEffect(() => {
@@ -85,25 +95,26 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
   }, [authLoading, checkTesterStatus]);
 
   // Subscribe to realtime changes on user_roles table
+  // Use user.id directly (stable string) to avoid effect re-runs on token refresh
+  const userId = user?.id;
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !userId) return;
 
-    console.log('[TesterContext] Setting up realtime subscription for user:', user.id);
+    console.log('[TesterContext] Setting up realtime subscription for user:', userId);
 
     const channel = supabase
-      .channel(`user_roles_${user.id}`)
+      .channel(`user_roles_${userId}`)
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'user_roles',
-          filter: `user_id=eq.${user.id}`,
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           console.log('[TesterContext] Realtime role change detected:', payload);
-          // Re-check tester status when roles change
-          checkTesterStatus();
+          checkTesterStatus(true);
         }
       )
       .subscribe((status) => {
@@ -114,27 +125,25 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       console.log('[TesterContext] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [authLoading, user, checkTesterStatus]);
+  }, [authLoading, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Recheck on window focus only after extended absence (5+ minutes)
-  // This reduces unnecessary API calls while still catching role changes
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !userId) return;
     
     let lastCheck = Date.now();
     
     const handleFocus = () => {
       const now = Date.now();
-      // Only recheck if more than 5 minutes have passed
       if (now - lastCheck > 5 * 60 * 1000) {
         lastCheck = now;
-        checkTesterStatus();
+        checkTesterStatus(true);
       }
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [authLoading, user, checkTesterStatus]);
+  }, [authLoading, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
