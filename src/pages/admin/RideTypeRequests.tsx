@@ -547,11 +547,18 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
             </div>
           </div>
 
-          {/* Selected preview */}
+          {/* Selected preview — prominent */}
           {selectedCategory && (
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5 text-sm">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Selected</p>
-              <p className="font-medium">{selectedCategory.name} <span className="text-muted-foreground font-normal">({selectedCategory.category_group})</span></p>
+            <div className="rounded-lg border-2 border-primary bg-primary/5 p-3 text-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs font-semibold text-primary">Selected type to link</p>
+              </div>
+              <p className="font-semibold text-base">{selectedCategory.name}</p>
+              <p className="text-xs text-muted-foreground">{selectedCategory.category_group}</p>
+              {selectedCategory.description && (
+                <p className="text-xs text-muted-foreground/70 mt-1">{selectedCategory.description}</p>
+              )}
             </div>
           )}
 
