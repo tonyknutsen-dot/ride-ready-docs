@@ -588,7 +588,7 @@ export default function CheckLibrary() {
                       {/* Metadata badges */}
                       <div className="flex flex-wrap gap-1.5">
                         <Badge variant="outline" className="text-[10px]">
-                          {FREQUENCY_LABELS[item.frequency] || item.frequency}
+                          {CHECK_FREQUENCY_LABELS[item.frequency] || item.frequency}
                         </Badge>
                         {item.category && (
                           <Badge variant="secondary" className="text-[10px]">{item.category}</Badge>
