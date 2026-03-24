@@ -740,6 +740,7 @@ export default function PaymentsDashboard() {
           </TabsContent>
         </Tabs>
         </div>
+        </div>
       </div>
 
       {/* ── Billing Event Log Drawer ── */}
