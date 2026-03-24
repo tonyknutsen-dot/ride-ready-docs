@@ -902,10 +902,29 @@ export default function PaymentsDashboard() {
             </SheetTitle>
             <SheetDescription>
               {selectedUserId
-                ? 'Sync and webhook events for this user'
-                : 'Last 50 billing events across all users'}
+                ? 'Subscription lifecycle events for this user'
+                : 'Subscription lifecycle events across all users'}
             </SheetDescription>
           </SheetHeader>
+
+          {/* Event filter toggle */}
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-muted/50 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-technical"
+                checked={showTechnicalEvents}
+                onCheckedChange={setShowTechnicalEvents}
+              />
+              <Label htmlFor="show-technical" className="text-xs cursor-pointer">
+                Show sync events
+              </Label>
+            </div>
+            {technicalEventCount > 0 && !showTechnicalEvents && (
+              <span className="text-xs text-muted-foreground">
+                {technicalEventCount} hidden
+              </span>
+            )}
+          </div>
 
           <div className="mt-4 space-y-3">
             {selectedUserEvents.length === 0 ? (
