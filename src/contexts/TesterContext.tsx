@@ -100,7 +100,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (authLoading || !userId) return;
 
-    console.log('[TesterContext] Setting up realtime subscription for user:', userId);
+    
 
     const channel = supabase
       .channel(`user_roles_${userId}`)
@@ -113,16 +113,16 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('[TesterContext] Realtime role change detected:', payload);
+          
           checkTesterStatus(true);
         }
       )
       .subscribe((status) => {
-        console.log('[TesterContext] Realtime subscription status:', status);
+        
       });
 
     return () => {
-      console.log('[TesterContext] Cleaning up realtime subscription');
+      
       supabase.removeChannel(channel);
     };
   }, [authLoading, userId]); // eslint-disable-line react-hooks/exhaustive-deps

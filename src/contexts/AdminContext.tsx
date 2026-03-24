@@ -69,7 +69,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           .eq('role', 'admin')
           .single();
 
-        console.log('Admin check result:', { data, error });
+        
         if (!cancelled) {
           setIsAdmin(!!data && !error);
         }

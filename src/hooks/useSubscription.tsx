@@ -65,15 +65,24 @@ export const useSubscription = () => {
   const { isStaff, staffMembership, loading: staffLoading } = useStaff();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
+  // Guard: track which user+role combo we've fetched for to prevent redundant fetches
+  const [fetchedKey, setFetchedKey] = useState<string | null>(null);
 
-  const fetchSubscriptionData = useCallback(async () => {
+  const fetchSubscriptionData = useCallback(async (force = false) => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
+      setFetchedKey(null);
       return;
     }
 
     if (testerLoading || staffLoading) {
+      return;
+    }
+
+    // Build a stable key from the values that actually matter
+    const key = `${user.id}:${isTester}:${isStaff}:${staffMembership?.ownerId ?? ''}`;
+    if (!force && fetchedKey === key) {
       return;
     }
 
@@ -207,12 +216,11 @@ export const useSubscription = () => {
 
         setSubscription(subscriptionData);
       }
-    } catch (error) {
-      console.error('Error fetching subscription data:', error);
     } finally {
+      setFetchedKey(`${user.id}:${isTester}:${isStaff}:${staffMembership?.ownerId ?? ''}`);
       setLoading(false);
     }
-  }, [user, isTester, testerLoading, isStaff, staffMembership, staffLoading]);
+  }, [user?.id, isTester, testerLoading, isStaff, staffMembership?.ownerId, staffLoading, fetchedKey]);
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -227,7 +235,7 @@ export const useSubscription = () => {
         console.error('Error checking subscription:', error);
         return null;
       }
-      await fetchSubscriptionData();
+      await fetchSubscriptionData(true);
       return data;
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -237,7 +245,7 @@ export const useSubscription = () => {
 
   const refreshRideCount = async () => {
     if (!user || !subscription) return;
-    await fetchSubscriptionData();
+    await fetchSubscriptionData(true);
   };
 
   const isLovablePreviewHost = (hostname: string) => hostname === 'lovable.app' || hostname.endsWith('.lovable.app');
