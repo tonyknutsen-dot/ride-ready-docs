@@ -304,8 +304,8 @@ export default function FeatureRequests() {
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-2">
-          <ScrollArea className="w-full sm:w-auto">
-            <div className="flex gap-1 pb-1">
+          <div className="w-full sm:w-auto overflow-x-auto -mx-1 px-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex gap-1 pb-1 pr-4 min-w-max">
               {FILTER_TABS.map((tab) => {
                 const count = tab.value === 'open'
                   ? requests.filter((r) => OPEN_STATUSES.includes(r.status)).length
@@ -332,7 +332,7 @@ export default function FeatureRequests() {
                 );
               })}
             </div>
-          </ScrollArea>
+          </div>
           <div className="relative flex-1 sm:max-w-xs">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
