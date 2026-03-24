@@ -266,7 +266,8 @@ export default function EquipmentTypeLibrary() {
         source: 'admin',
       });
       if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        console.error('[EquipmentTypeLibrary] Insert error:', error);
+        toast({ title: 'Could not create type', description: 'This type could not be created due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
       logEvent('create', 'ride_category', undefined, { name: data.name, group: data.categoryGroup });
