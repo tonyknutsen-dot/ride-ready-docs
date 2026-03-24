@@ -293,51 +293,86 @@ export default function PaymentsDashboard() {
           </Button>
         </div>
 
-        {/* ── Key Metrics (compact) ── */}
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-              <CardTitle className="text-xs font-medium">MRR</CardTitle>
-              <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-lg font-bold">{formatCurrency(summary.mrr, summary.balance.currency)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-              <CardTitle className="text-xs font-medium">Active Subscriptions</CardTitle>
-              <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-lg font-bold">{summary.activeSubscriptions}</div>
-              <p className="text-xs text-muted-foreground">+{summary.trialingSubscriptions} trialing</p>
-            </CardContent>
-          </Card>
-          <Card className={summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-              <CardTitle className="text-xs font-medium">Past Due</CardTitle>
-              <AlertTriangle className={`h-3.5 w-3.5 ${summary.pastDueSubscriptions > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className={`text-lg font-bold ${summary.pastDueSubscriptions > 0 ? 'text-amber-600' : ''}`}>
-                {summary.pastDueSubscriptions}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className={summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-              <CardTitle className="text-xs font-medium">Failed Payments</CardTitle>
-              <XCircle className={`h-3.5 w-3.5 ${summary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className={`text-lg font-bold ${summary.failedPaymentsCount > 0 ? 'text-destructive' : ''}`}>
-                {summary.failedPaymentsCount}
-              </div>
-              <p className="text-xs text-muted-foreground">Last 60 days</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* ── Key Metrics (clickable drill-down) ── */}
+        <TooltipProvider delayDuration={300}>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <Card
+              className="cursor-pointer"
+              onClick={() => { setActiveTab('overview'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-xs font-medium">MRR</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground/50 cursor-help" /></TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px] text-xs">Monthly Recurring Revenue from all active Stripe subscriptions</TooltipContent>
+                  </Tooltip>
+                </div>
+                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-lg font-bold">{formatCurrency(summary.mrr, summary.balance.currency)}</div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer"
+              onClick={() => { setShowAllUsers(true); }}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <CardTitle className="text-xs font-medium">Active Subscriptions</CardTitle>
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-lg font-bold">{summary.activeSubscriptions}</div>
+                <p className="text-xs text-muted-foreground">+{summary.trialingSubscriptions} trialing</p>
+              </CardContent>
+            </Card>
+
+            <Card
+              className={`cursor-pointer ${summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}`}
+              onClick={() => { setShowAllUsers(false); }}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-xs font-medium">Past Due</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground/50 cursor-help" /></TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[220px] text-xs">Users with overdue payments. Write access continues until their current billing period ends.</TooltipContent>
+                  </Tooltip>
+                </div>
+                <AlertTriangle className={`h-3.5 w-3.5 ${summary.pastDueSubscriptions > 0 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className={`text-lg font-bold ${summary.pastDueSubscriptions > 0 ? 'text-amber-600' : ''}`}>
+                  {summary.pastDueSubscriptions}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className={`cursor-pointer ${summary.failedPaymentsCount > 0 ? 'border-destructive' : ''}`}
+              onClick={() => { setActiveTab('failed'); tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <div className="flex items-center gap-1.5">
+                  <CardTitle className="text-xs font-medium">Failed Payments</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild><Info className="h-3 w-3 text-muted-foreground/50 cursor-help" /></TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px] text-xs">Stripe payment intents that failed in the last 60 days</TooltipContent>
+                  </Tooltip>
+                </div>
+                <XCircle className={`h-3.5 w-3.5 ${summary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className={`text-lg font-bold ${summary.failedPaymentsCount > 0 ? 'text-destructive' : ''}`}>
+                  {summary.failedPaymentsCount}
+                </div>
+                <p className="text-xs text-muted-foreground">Last 60 days</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TooltipProvider>
 
         {/* ══ SUBSCRIPTION HEALTH TABLE ══ */}
         <Card>
