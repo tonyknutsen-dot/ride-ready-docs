@@ -75,7 +75,7 @@ export default function CheckItemSubmissions() {
     label: '',
     hint: '',
     scope: 'general' as 'general' | 'specific',
-    equipment_group: 'Rides',
+    equipment_group: 'rides',
     ride_category_id: '',
     check_category: 'General',
     risk_level: 'low',
