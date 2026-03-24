@@ -582,21 +582,23 @@ export default function CheckLibrary() {
         )}
       </div>
 
-      {/* ── Edit Dialog ── */}
-      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
+      {/* ── Create / Edit Dialog ── */}
+      <Dialog open={!!editItem || isCreating} onOpenChange={(open) => { if (!open) { setEditItem(null); setIsCreating(false); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Library Item</DialogTitle>
-            <DialogDescription>Update wording, classification, or scope</DialogDescription>
+            <DialogTitle>{isCreating ? 'New Library Item' : 'Edit Library Item'}</DialogTitle>
+            <DialogDescription>
+              {isCreating ? 'Add a new item to the shared check library' : 'Update wording, classification, or scope'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Item text</Label>
-              <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} />
+              <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} placeholder="e.g. Check emergency stop button" />
             </div>
             <div>
               <Label>Hint / guidance</Label>
-              <Textarea value={editHint} onChange={e => setEditHint(e.target.value)} rows={2} />
+              <Textarea value={editHint} onChange={e => setEditHint(e.target.value)} rows={2} placeholder="Optional guidance for the inspector" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -658,15 +660,15 @@ export default function CheckLibrary() {
               <Input
                 value={editNote}
                 onChange={e => setEditNote(e.target.value)}
-                placeholder="Reason for change"
+                placeholder={isCreating ? "Reason for adding" : "Reason for change"}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setEditItem(null); setIsCreating(false); }}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={saving || !editLabel.trim()}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
+              {isCreating ? 'Add to Library' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
