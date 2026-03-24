@@ -104,8 +104,8 @@ export default function CheckItemSubmissions() {
     if (data) setLibraryItems(data as LibraryMatch[]);
   };
 
-  const fetchAllSubmissions = async () => {
-    setLoading(true);
+  const fetchAllSubmissions = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_submitted_check_items')
@@ -116,8 +116,13 @@ export default function CheckItemSubmissions() {
     } catch (error: any) {
       toast({ title: "Error loading submissions", description: error.message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+  };
+
+  // Optimistically update a submission's status in local state
+  const updateSubmissionLocally = (id: string, updates: Partial<Submission>) => {
+    setAllSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
   // Find library items that match a submission by text similarity
@@ -154,7 +159,7 @@ export default function CheckItemSubmissions() {
       const { error } = await supabase.functions.invoke('group-similar-check-items', {});
       if (error) throw error;
       toast({ title: "Grouping complete", description: "Similar items have been grouped together" });
-      fetchAllSubmissions();
+      fetchAllSubmissions(true);
     } catch (error: any) {
       toast({ title: "Error grouping items", description: error.message, variant: "destructive" });
     } finally {
@@ -216,9 +221,10 @@ export default function CheckItemSubmissions() {
       if (updateError) throw updateError;
 
       toast({ title: "Added to library", description: `"${approvalData.label.trim()}" is now available in the shared library.` });
+      updateSubmissionLocally(selectedSubmission.id, { status: 'approved', admin_notes: approvalData.admin_notes || null, reviewed_at: new Date().toISOString() });
       setSelectedSubmission(null);
-      fetchAllSubmissions();
       fetchLibraryItems();
+      fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error approving item", description: error.message, variant: "destructive" });
     } finally {
@@ -236,9 +242,10 @@ export default function CheckItemSubmissions() {
         .eq('id', rejectTarget.id);
       if (error) throw error;
       toast({ title: "Not added to library", description: "The user can still use this item in their own checks." });
+      updateSubmissionLocally(rejectTarget.id, { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library', reviewed_at: new Date().toISOString() });
       setRejectTarget(null);
       setRejectReason('');
-      fetchAllSubmissions();
+      fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -276,8 +283,9 @@ export default function CheckItemSubmissions() {
         .eq('id', duplicateTarget.id);
       if (error) throw error;
       toast({ title: "Already covered", description: "Marked as covered by existing library item." });
+      updateSubmissionLocally(duplicateTarget.id, { status: 'duplicate', admin_notes: matchNote, reviewed_at: new Date().toISOString() });
       setDuplicateTarget(null);
-      fetchAllSubmissions();
+      fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
