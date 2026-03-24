@@ -798,7 +798,7 @@ export default function CheckItemSubmissions() {
                       <SelectValue placeholder="All types in group" />
                     </SelectTrigger>
                     <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
-                      <SelectItem value="__none__">All types in {approvalData.equipment_group}</SelectItem>
+                      <SelectItem value="__none__">All types in {EQUIPMENT_GROUP_LABELS[approvalData.equipment_group as EquipmentGroup] || approvalData.equipment_group}</SelectItem>
                       {filteredCategories.map(cat => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.name}
