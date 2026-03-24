@@ -424,11 +424,23 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
     return findDuplicateMatches(request.name, request.type, existingCategories);
   }, [request, existingCategories]);
 
+  // Filter library for the searchable list — must be before any early return
+  const filteredCategories = useMemo(() => {
+    const suggestedIds = new Set(suggestedMatches.map(m => m.category.id));
+    let cats = existingCategories.filter(c => !suggestedIds.has(c.id));
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      cats = cats.filter(c => c.name.toLowerCase().includes(q) || c.category_group.toLowerCase().includes(q));
+    }
+    return cats.sort((a, b) => a.name.localeCompare(b.name));
+  }, [existingCategories, suggestedMatches, searchTerm]);
+
+  const selectedCategory = existingCategories.find(c => c.id === matchedId);
+
   useEffect(() => {
     if (request && open) {
       setNote('');
       setSearchTerm('');
-      // Pre-select best match
       setMatchedId(suggestedMatches[0]?.category.id || '');
     }
   }, [request, open, suggestedMatches]);
@@ -459,19 +471,6 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
   };
 
   if (!request) return null;
-
-  // Filter library for the searchable list
-  const filteredCategories = useMemo(() => {
-    const suggestedIds = new Set(suggestedMatches.map(m => m.category.id));
-    let cats = existingCategories.filter(c => !suggestedIds.has(c.id));
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      cats = cats.filter(c => c.name.toLowerCase().includes(q) || c.category_group.toLowerCase().includes(q));
-    }
-    return cats.sort((a, b) => a.name.localeCompare(b.name));
-  }, [existingCategories, suggestedMatches, searchTerm]);
-
-  const selectedCategory = existingCategories.find(c => c.id === matchedId);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
