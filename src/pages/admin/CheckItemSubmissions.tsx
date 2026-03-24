@@ -104,8 +104,8 @@ export default function CheckItemSubmissions() {
     if (data) setLibraryItems(data as LibraryMatch[]);
   };
 
-  const fetchAllSubmissions = async () => {
-    setLoading(true);
+  const fetchAllSubmissions = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_submitted_check_items')
@@ -116,8 +116,13 @@ export default function CheckItemSubmissions() {
     } catch (error: any) {
       toast({ title: "Error loading submissions", description: error.message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+  };
+
+  // Optimistically update a submission's status in local state
+  const updateSubmissionLocally = (id: string, updates: Partial<Submission>) => {
+    setAllSubmissions(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
   // Find library items that match a submission by text similarity
