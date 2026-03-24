@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -27,6 +29,10 @@ import {
   History,
   RotateCw,
   Info,
+  Flag,
+  MessageSquare,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -75,6 +81,23 @@ interface BillingEvent {
   created_at: string;
 }
 
+interface AccountFlag {
+  id: string;
+  user_id: string;
+  flag_reason: string;
+  severity: string;
+  review_status: string;
+  admin_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  auto_detected: boolean;
+  source_details: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
 interface PaymentData {
   summary: {
     totalRevenue30Days: number;
@@ -85,6 +108,7 @@ interface PaymentData {
     pastDueSubscriptions: number;
     recentCancellations: number;
     failedPaymentsCount: number;
+    activeFlagCount: number;
     balance: { available: number; pending: number; currency: string };
   };
   failedPayments: Array<{
@@ -98,6 +122,7 @@ interface PaymentData {
   subscriptionBreakdown: { active: number; trialing: number; pastDue: number; canceled: number };
   userHealth: UserHealthRow[];
   billingEventLog: BillingEvent[];
+  accountFlags: AccountFlag[];
   problemUserCount: number;
 }
 
@@ -180,6 +205,27 @@ const changeTypeLabel = (details: Record<string, unknown>) => {
   return <span className={`text-xs font-medium ${c.color}`}>{c.label}</span>;
 };
 
+// ── Review status badge ──
+
+const ReviewStatusBadge = ({ status }: { status: string }) => {
+  const config: Record<string, { label: string; color: string }> = {
+    new: { label: 'New', color: 'bg-blue-500/15 text-blue-700 dark:text-blue-400' },
+    under_review: { label: 'Reviewing', color: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+    waiting: { label: 'Waiting', color: 'bg-purple-500/15 text-purple-700 dark:text-purple-400' },
+    resolved: { label: 'Resolved', color: 'bg-green-500/15 text-green-700 dark:text-green-400' },
+    ignored: { label: 'Expected', color: 'bg-muted text-muted-foreground' },
+  };
+  const c = config[status] || { label: status, color: 'bg-muted text-muted-foreground' };
+  return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${c.color}`}>{c.label}</span>;
+};
+
+// ── Severity indicator ──
+
+const SeverityDot = ({ severity }: { severity: string }) => {
+  const color = severity === 'critical' ? 'bg-destructive' : severity === 'warning' ? 'bg-amber-500' : 'bg-blue-400';
+  return <span className={`inline-block h-2 w-2 rounded-full ${color}`} />;
+};
+
 // ════════════════════════════════════════
 // Main component
 // ════════════════════════════════════════
@@ -191,8 +237,11 @@ export default function PaymentsDashboard() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [resyncingUser, setResyncingUser] = useState<string | null>(null);
   const [eventDrawerOpen, setEventDrawerOpen] = useState(false);
+  const [flagDrawerOpen, setFlagDrawerOpen] = useState(false);
+  const [flagDrawerUserId, setFlagDrawerUserId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('failed');
+  const [updatingFlag, setUpdatingFlag] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -234,6 +283,23 @@ export default function PaymentsDashboard() {
     }
   };
 
+  const handleUpdateFlag = async (flagId: string, updates: { review_status?: string; admin_note?: string }) => {
+    setUpdatingFlag(flagId);
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('admin-stripe-data', {
+        body: { action: 'update_flag', flag_id: flagId, ...updates },
+      });
+      if (fnError) throw fnError;
+      if (response.error) throw new Error(response.error);
+      toast({ title: 'Flag updated' });
+      await fetchData();
+    } catch (err: any) {
+      toast({ title: 'Failed to update flag', description: err.message, variant: 'destructive' });
+    } finally {
+      setUpdatingFlag(null);
+    }
+  };
+
   useEffect(() => { fetchData(); }, []);
 
   if (loading) {
@@ -262,11 +328,21 @@ export default function PaymentsDashboard() {
     );
   }
 
-  const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, problemUserCount } = data;
+  const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, accountFlags, problemUserCount } = data;
 
   const displayedUsers = showAllUsers
     ? userHealth
     : userHealth.filter(u => u.problem_type !== null);
+
+  // Build flag lookup by user_id
+  const flagsByUser: Record<string, AccountFlag[]> = {};
+  for (const flag of (accountFlags || [])) {
+    if (!flagsByUser[flag.user_id]) flagsByUser[flag.user_id] = [];
+    flagsByUser[flag.user_id].push(flag);
+  }
+
+  const activeFlagsForUser = (userId: string) =>
+    (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
 
   // Filter events for selected user
   const selectedUserEvents = selectedUserId
@@ -491,15 +567,32 @@ export default function PaymentsDashboard() {
                         </div>
                       </div>
 
+                      {/* Flag status row */}
+                      {activeFlagsForUser(user.user_id).length > 0 && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <Flag className="h-3 w-3 text-amber-500 shrink-0" />
+                          <span className="text-muted-foreground">
+                            {activeFlagsForUser(user.user_id).length} active flag{activeFlagsForUser(user.user_id).length !== 1 ? 's' : ''}
+                          </span>
+                          {activeFlagsForUser(user.user_id).map(f => (
+                            <ReviewStatusBadge key={f.id} status={f.review_status} />
+                          ))}
+                        </div>
+                      )}
+
                       {/* Actions footer */}
                       <div className="flex items-center gap-2 pt-1 border-t border-border/40">
                         <Button variant="ghost" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
                           <Activity className="h-3.5 w-3.5" />
-                          Event History
+                          Events
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" onClick={() => { setFlagDrawerUserId(user.user_id); setFlagDrawerOpen(true); }}>
+                          <Flag className="h-3.5 w-3.5" />
+                          Flags{activeFlagsForUser(user.user_id).length > 0 ? ` (${activeFlagsForUser(user.user_id).length})` : ''}
                         </Button>
                         <Button variant="outline" size="sm" className="h-8 text-xs flex-1 justify-center gap-1.5" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
                           <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
-                          Re-sync
+                          Sync
                         </Button>
                       </div>
                     </div>
@@ -519,11 +612,14 @@ export default function PaymentsDashboard() {
                         <TableHead className="text-xs">Stripe Plan</TableHead>
                         <TableHead className="text-xs">Period End</TableHead>
                         <TableHead className="text-xs hidden lg:table-cell">Last Sync</TableHead>
+                        <TableHead className="text-xs">Review</TableHead>
                         <TableHead className="text-xs text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayedUsers.map(user => (
+                      {displayedUsers.map(user => {
+                        const userFlags = activeFlagsForUser(user.user_id);
+                        return (
                         <TableRow
                           key={user.user_id}
                           className={user.has_mismatch ? 'bg-destructive/5' : user.problem_type ? 'bg-amber-500/5' : ''}
@@ -555,18 +651,48 @@ export default function PaymentsDashboard() {
                               </span>
                             ) : <span className="text-xs text-muted-foreground italic">Never synced</span>}
                           </TableCell>
+                          <TableCell>
+                            {userFlags.length > 0 ? (
+                              <div className="flex items-center gap-1">
+                                {userFlags.slice(0, 2).map(f => (
+                                  <ReviewStatusBadge key={f.id} status={f.review_status} />
+                                ))}
+                                {userFlags.length > 2 && <span className="text-xs text-muted-foreground">+{userFlags.length - 2}</span>}
+                              </div>
+                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
-                                <Activity className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
-                                <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setFlagDrawerUserId(user.user_id); setFlagDrawerOpen(true); }}>
+                                    <Flag className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Manage flags</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => { setSelectedUserId(user.user_id); setEventDrawerOpen(true); }}>
+                                    <Activity className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Event history</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={resyncingUser === user.user_id} onClick={() => handleResync(user.user_id)}>
+                                    <RotateCw className={`h-3.5 w-3.5 ${resyncingUser === user.user_id ? 'animate-spin' : ''}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Re-sync with Stripe</TooltipContent>
+                              </Tooltip>
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
+
                     </TableBody>
                   </Table>
                 </div>
@@ -831,6 +957,166 @@ export default function PaymentsDashboard() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Flag Management Drawer ── */}
+      <Sheet open={flagDrawerOpen} onOpenChange={setFlagDrawerOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5" />
+              Account Flags
+            </SheetTitle>
+            <SheetDescription>
+              {flagDrawerUserId
+                ? `Review and manage flags for ${userHealth.find(u => u.user_id === flagDrawerUserId)?.company_name || userHealth.find(u => u.user_id === flagDrawerUserId)?.controller_name || 'this user'}`
+                : 'Manage account flags'}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-4 space-y-4">
+            {(() => {
+              const userFlags = flagDrawerUserId ? (flagsByUser[flagDrawerUserId] || []) : [];
+              if (userFlags.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <p className="text-sm">No flags for this account</p>
+                  </div>
+                );
+              }
+              return userFlags.map(flag => (
+                <div
+                  key={flag.id}
+                  className={`rounded-lg border p-4 space-y-3 ${
+                    flag.review_status === 'resolved' || flag.review_status === 'ignored'
+                      ? 'opacity-60'
+                      : flag.severity === 'critical' ? 'border-destructive bg-destructive/5'
+                      : flag.severity === 'warning' ? 'border-amber-300 dark:border-amber-700 bg-amber-500/5'
+                      : ''
+                  }`}
+                >
+                  {/* Flag header */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <SeverityDot severity={flag.severity} />
+                      <span className="text-sm font-medium capitalize">{flag.flag_reason.replace(/_/g, ' ')}</span>
+                      {flag.auto_detected && <Badge variant="outline" className="text-xs">Auto</Badge>}
+                    </div>
+                    <ReviewStatusBadge status={flag.review_status} />
+                  </div>
+
+                  {/* Timestamps */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span>Detected:</span>
+                    <span>{format(new Date(flag.created_at), 'dd MMM yyyy HH:mm')}</span>
+                    {flag.reviewed_at && (
+                      <>
+                        <span>Reviewed:</span>
+                        <span>{format(new Date(flag.reviewed_at), 'dd MMM yyyy HH:mm')}</span>
+                      </>
+                    )}
+                    {flag.resolved_at && (
+                      <>
+                        <span>Resolved:</span>
+                        <span>{format(new Date(flag.resolved_at), 'dd MMM yyyy HH:mm')}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Admin note */}
+                  {flag.admin_note && (
+                    <div className="rounded-md bg-muted p-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <MessageSquare className="h-3 w-3" />
+                        Admin note
+                      </div>
+                      <p className="text-xs">{flag.admin_note}</p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {!['resolved', 'ignored'].includes(flag.review_status) && (
+                    <div className="space-y-2 pt-1 border-t border-border/40">
+                      <div className="flex items-center gap-2">
+                        <Select
+                          defaultValue={flag.review_status}
+                          onValueChange={(value) => handleUpdateFlag(flag.id, { review_status: value })}
+                          disabled={updatingFlag === flag.id}
+                        >
+                          <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="under_review">Under Review</SelectItem>
+                            <SelectItem value="waiting">Waiting</SelectItem>
+                            <SelectItem value="resolved">Resolved</SelectItem>
+                            <SelectItem value="ignored">Expected / Ignore</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <FlagNoteForm flagId={flag.id} onSave={handleUpdateFlag} disabled={updatingFlag === flag.id} />
+                    </div>
+                  )}
+
+                  {/* Reopen resolved/ignored */}
+                  {['resolved', 'ignored'].includes(flag.review_status) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={updatingFlag === flag.id}
+                      onClick={() => handleUpdateFlag(flag.id, { review_status: 'under_review' })}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Re-open
+                    </Button>
+                  )}
+                </div>
+              ));
+            })()}
+          </div>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
+  );
+}
+
+// ── Inline note form ──
+function FlagNoteForm({ flagId, onSave, disabled }: { flagId: string; onSave: (id: string, updates: { admin_note: string }) => void; disabled: boolean }) {
+  const [note, setNote] = useState('');
+  const [open, setOpen] = useState(false);
+
+  if (!open) {
+    return (
+      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setOpen(true)}>
+        <MessageSquare className="h-3 w-3 mr-1" />
+        Add note
+      </Button>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Add admin note..."
+        className="text-xs min-h-[60px]"
+      />
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          className="h-7 text-xs"
+          disabled={disabled || !note.trim()}
+          onClick={() => { onSave(flagId, { admin_note: note }); setNote(''); setOpen(false); }}
+        >
+          Save note
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setOpen(false); setNote(''); }}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
