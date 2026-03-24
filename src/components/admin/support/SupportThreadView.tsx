@@ -151,15 +151,15 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
       </div>
 
       {/* Controls row */}
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 items-center">
         <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Status</Label>
+          <Label className="text-xs text-muted-foreground shrink-0">Status</Label>
           <Select
             value={message.status}
             onValueChange={(v) => handleUpdateField('status', v)}
             disabled={updatingField === 'status'}
           >
-            <SelectTrigger className="h-8 text-xs w-[160px]">
+            <SelectTrigger className={`h-8 text-xs w-full sm:w-[160px] ${status.className}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -171,13 +171,13 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
         </div>
 
         <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground">Priority</Label>
+          <Label className="text-xs text-muted-foreground shrink-0">Priority</Label>
           <Select
             value={message.priority || 'normal'}
             onValueChange={(v) => handleUpdateField('priority', v)}
             disabled={updatingField === 'priority'}
           >
-            <SelectTrigger className="h-8 text-xs w-[120px]">
+            <SelectTrigger className={`h-8 text-xs w-full sm:w-[120px] ${priority.className}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -186,11 +186,6 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex gap-1.5">
-          <Badge className={status.className}>{status.label}</Badge>
-          <Badge className={priority.className}>{priority.label}</Badge>
         </div>
       </div>
 
