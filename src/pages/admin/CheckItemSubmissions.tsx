@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Search, Loader2, Sparkles, Clock, CheckCircle2, XCircle, Copy, Inbox, AlertTriangle, MoreVertical } from 'lucide-react';
+import { Check, X, Search, Loader2, Sparkles, Clock, CheckCircle2, XCircle, Copy, Inbox, MoreVertical, Library, BookOpen, Globe, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
@@ -21,14 +21,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const CHECK_CATEGORIES = [
-  "Restraints",
-  "Structure",
-  "Control Systems",
-  "Safety Devices",
-  "Electrical",
-  "Mechanical",
-  "Hydraulic/Pneumatic",
-  "General"
+  "Restraints", "Structure", "Control Systems", "Safety Devices",
+  "Electrical", "Mechanical", "Hydraulic/Pneumatic", "General"
+];
+
+const EQUIPMENT_GROUPS = [
+  "Rides", "Inflatables", "Stalls", "Attractions", "Food Stalls", "Games", "Equipment"
 ];
 
 interface Submission {
@@ -51,10 +49,19 @@ interface Submission {
   } | null;
 }
 
-// Fetch ALL submissions once for accurate KPI counts, filter client-side
+interface LibraryMatch {
+  id: string;
+  label: string;
+  category: string | null;
+  equipment_group: string;
+  ride_category_id: string | null;
+  frequency: string;
+}
+
 export default function CheckItemSubmissions() {
   const { toast } = useToast();
   const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
+  const [libraryItems, setLibraryItems] = useState<LibraryMatch[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string; category_group: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [grouping, setGrouping] = useState(false);
@@ -65,6 +72,8 @@ export default function CheckItemSubmissions() {
   const [approvalData, setApprovalData] = useState({
     label: '',
     hint: '',
+    scope: 'general' as 'general' | 'specific',
+    equipment_group: 'Rides',
     ride_category_id: '',
     check_category: 'General',
     risk_level: 'low',
@@ -75,6 +84,7 @@ export default function CheckItemSubmissions() {
   useEffect(() => {
     fetchAllSubmissions();
     fetchCategories();
+    fetchLibraryItems();
   }, []);
 
   const fetchCategories = async () => {
@@ -86,6 +96,14 @@ export default function CheckItemSubmissions() {
     if (data) setCategories(data);
   };
 
+  const fetchLibraryItems = async () => {
+    const { data } = await supabase
+      .from('check_library_items')
+      .select('id, label, category, equipment_group, ride_category_id, frequency')
+      .eq('is_active', true);
+    if (data) setLibraryItems(data as LibraryMatch[]);
+  };
+
   const fetchAllSubmissions = async () => {
     setLoading(true);
     try {
@@ -93,7 +111,6 @@ export default function CheckItemSubmissions() {
         .from('user_submitted_check_items')
         .select(`*, ride_category:ride_categories(name, category_group)`)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setAllSubmissions(data || []);
     } catch (error: any) {
@@ -103,16 +120,27 @@ export default function CheckItemSubmissions() {
     }
   };
 
-  // KPI counts from ALL data (not filtered)
+  // Find library items that match a submission by text similarity
+  const findLibraryMatches = (submission: Submission): LibraryMatch[] => {
+    const words = submission.label.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    if (words.length === 0) return [];
+    return libraryItems.filter(item => {
+      const itemLower = item.label.toLowerCase();
+      // Exact match
+      if (itemLower === submission.label.toLowerCase()) return true;
+      // Significant word overlap
+      const matchCount = words.filter(w => itemLower.includes(w)).length;
+      return matchCount >= Math.ceil(words.length * 0.6);
+    }).slice(0, 3);
+  };
+
   const counts = {
     pending: allSubmissions.filter(s => s.status === 'pending').length,
     approved: allSubmissions.filter(s => s.status === 'approved').length,
     rejected: allSubmissions.filter(s => s.status === 'rejected').length,
     duplicate: allSubmissions.filter(s => s.status === 'duplicate').length,
-    withSimilarityGroup: allSubmissions.filter(s => s.status === 'pending' && s.similarity_group).length,
   };
 
-  // Apply filters client-side
   const filteredSubmissions = allSubmissions.filter(s => {
     if (filter.status !== 'all' && s.status !== filter.status) return false;
     if (filter.frequency !== 'all' && s.frequency !== filter.frequency) return false;
@@ -135,11 +163,17 @@ export default function CheckItemSubmissions() {
   };
 
   const openApprovalDialog = (submission: Submission) => {
+    const matchedCategoryGroup = submission.ride_category?.category_group;
+    const inferredGroup = matchedCategoryGroup && EQUIPMENT_GROUPS.includes(matchedCategoryGroup)
+      ? matchedCategoryGroup : 'Rides';
+
     setSelectedSubmission(submission);
     setApprovalData({
       label: submission.label,
       hint: submission.hint || '',
-      ride_category_id: submission.is_generic ? '' : (submission.ride_category_id || ''),
+      scope: submission.is_generic ? 'general' : 'specific',
+      equipment_group: inferredGroup,
+      ride_category_id: submission.ride_category_id || '',
       check_category: submission.category || 'General',
       risk_level: 'low',
       admin_notes: ''
@@ -165,7 +199,9 @@ export default function CheckItemSubmissions() {
           label: approvalData.label.trim(),
           hint: approvalData.hint.trim() || null,
           frequency: freq,
-          ride_category_id: approvalData.ride_category_id || null,
+          equipment_group: approvalData.scope === 'general' ? 'Rides' : approvalData.equipment_group,
+          ride_category_id: approvalData.scope === 'specific' && approvalData.ride_category_id
+            ? approvalData.ride_category_id : null,
           category: approvalData.check_category,
           risk_level: approvalData.risk_level,
           sort_index: (maxSort?.sort_index || 0) + 1,
@@ -179,9 +215,10 @@ export default function CheckItemSubmissions() {
         .eq('id', selectedSubmission.id);
       if (updateError) throw updateError;
 
-      toast({ title: "Item approved", description: "Added to the shared check library" });
+      toast({ title: "Added to library", description: `"${approvalData.label.trim()}" is now available in the shared library.` });
       setSelectedSubmission(null);
       fetchAllSubmissions();
+      fetchLibraryItems();
     } catch (error: any) {
       toast({ title: "Error approving item", description: error.message, variant: "destructive" });
     } finally {
@@ -195,31 +232,35 @@ export default function CheckItemSubmissions() {
     try {
       const { error } = await supabase
         .from('user_submitted_check_items')
-        .update({ status: 'rejected', admin_notes: rejectReason || 'Not suitable for library', reviewed_at: new Date().toISOString() })
+        .update({ status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library', reviewed_at: new Date().toISOString() })
         .eq('id', rejectTarget.id);
       if (error) throw error;
-      toast({ title: "Item rejected", description: "Submission has been rejected" });
+      toast({ title: "Not added to library", description: "The user can still use this item in their own checks." });
       setRejectTarget(null);
       setRejectReason('');
       fetchAllSubmissions();
     } catch (error: any) {
-      toast({ title: "Error rejecting item", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setProcessing(false);
     }
   };
 
   const handleMarkDuplicate = async (submission: Submission) => {
+    const matches = findLibraryMatches(submission);
+    const matchNote = matches.length > 0
+      ? `Already in library: "${matches[0].label}"`
+      : 'Already covered by existing library item';
     try {
       const { error } = await supabase
         .from('user_submitted_check_items')
-        .update({ status: 'duplicate', admin_notes: 'Already exists in library or similar submission', reviewed_at: new Date().toISOString() })
+        .update({ status: 'duplicate', admin_notes: matchNote, reviewed_at: new Date().toISOString() })
         .eq('id', submission.id);
       if (error) throw error;
-      toast({ title: "Marked as duplicate", description: "Submission marked as already existing" });
+      toast({ title: "Already in library", description: "Marked as covered by existing item." });
       fetchAllSubmissions();
     } catch (error: any) {
-      toast({ title: "Error updating item", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 
@@ -247,31 +288,38 @@ export default function CheckItemSubmissions() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800"><Clock className="w-3 h-3 mr-1" />Awaiting Review</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"><CheckCircle2 className="w-3 h-3 mr-1" />Approved</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"><CheckCircle2 className="w-3 h-3 mr-1" />In Library</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800"><XCircle className="w-3 h-3 mr-1" />Not Added</Badge>;
       case 'duplicate':
-        return <Badge variant="outline" className="bg-muted text-muted-foreground"><Copy className="w-3 h-3 mr-1" />Duplicate</Badge>;
+        return <Badge variant="outline" className="bg-muted text-muted-foreground"><Copy className="w-3 h-3 mr-1" />Already Covered</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  // Find items in the same similarity group for a given submission
   const getSimilarItems = (submission: Submission) => {
     if (!submission.similarity_group) return [];
     return allSubmissions.filter(s => s.similarity_group === submission.similarity_group && s.id !== submission.id);
   };
 
+  const filteredCategories = useMemo(() => {
+    if (approvalData.scope !== 'specific') return [];
+    return categories.filter(c => c.category_group === approvalData.equipment_group);
+  }, [categories, approvalData.scope, approvalData.equipment_group]);
+
   return (
     <AdminLayout>
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Check Item Submissions</h1>
-        <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-          Users can suggest new check items. Review, edit, and approve them here to add to the shared check library available to all users.
+        <div className="flex items-center gap-2 mb-1">
+          <Library className="w-5 h-5 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Library Intake Queue</h1>
+        </div>
+        <p className="text-sm text-muted-foreground max-w-xl">
+          Review user-created check items for inclusion in the shared library. Users can already use their own items privately — this queue is for promoting items to the global library.
         </p>
       </div>
 
@@ -292,8 +340,8 @@ export default function CheckItemSubmissions() {
           className={`text-left rounded-lg border p-3 transition-colors ${filter.status === 'duplicate' ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/40'}`}
         >
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Duplicates</span>
+            <Copy className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Already Covered</span>
           </div>
           <div className="text-2xl font-bold text-muted-foreground">{counts.duplicate}</div>
         </button>
@@ -303,7 +351,7 @@ export default function CheckItemSubmissions() {
         >
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Approved</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">In Library</span>
           </div>
           <div className="text-2xl font-bold text-green-600">{counts.approved}</div>
         </button>
@@ -313,7 +361,7 @@ export default function CheckItemSubmissions() {
         >
           <div className="flex items-center gap-2 mb-1">
             <XCircle className="w-4 h-4 text-red-600" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rejected</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Not Added</span>
           </div>
           <div className="text-2xl font-bold text-red-600">{counts.rejected}</div>
         </button>
@@ -372,7 +420,7 @@ export default function CheckItemSubmissions() {
           <CardContent className="py-12 text-center">
             <Inbox className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              {filter.status === 'pending' ? 'No items awaiting review.' : 'No submissions match your filters.'}
+              {filter.status === 'pending' ? 'No items awaiting library review.' : 'No submissions match your filters.'}
             </p>
           </CardContent>
         </Card>
@@ -380,20 +428,21 @@ export default function CheckItemSubmissions() {
         <div className="space-y-3">
           {filteredSubmissions.map((submission) => {
             const similarItems = getSimilarItems(submission);
+            const libraryMatches = findLibraryMatches(submission);
             const isPending = submission.status === 'pending';
 
             return (
               <Card key={submission.id} className={`border-l-4 ${getStatusColor(submission.status)} overflow-hidden`}>
                 <CardContent className="p-4">
-                  {/* Card Header: Status + metadata */}
+                  {/* Card Header */}
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {getStatusBadge(submission.status)}
                       <Badge variant="secondary" className="text-xs">{getFrequencyLabel(submission.frequency)}</Badge>
-                      {submission.is_generic ? (
-                        <Badge variant="outline" className="text-xs">Generic</Badge>
-                      ) : submission.ride_category ? (
+                      {submission.ride_category ? (
                         <Badge className="bg-primary/10 text-primary text-xs">{submission.ride_category.name}</Badge>
+                      ) : submission.is_generic ? (
+                        <Badge variant="outline" className="text-xs"><Globe className="w-3 h-3 mr-0.5" />General</Badge>
                       ) : null}
                     </div>
                     {isPending && (
@@ -405,53 +454,66 @@ export default function CheckItemSubmissions() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
                           <DropdownMenuItem onClick={() => openApprovalDialog(submission)}>
-                            <Check className="w-4 h-4 mr-2 text-green-600" />Approve & Add to Library
+                            <Check className="w-4 h-4 mr-2 text-green-600" />Add to Library
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleMarkDuplicate(submission)}>
-                            <Copy className="w-4 h-4 mr-2" />Mark as Duplicate
+                            <Copy className="w-4 h-4 mr-2" />Already in Library
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => { setRejectTarget(submission); setRejectReason(''); }} className="text-destructive">
-                            <X className="w-4 h-4 mr-2" />Reject
+                            <X className="w-4 h-4 mr-2" />Don't Add
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
                   </div>
 
-                  {/* Card Body: Item content */}
+                  {/* Card Body */}
                   <p className="font-medium text-sm leading-snug mb-1 break-words">{submission.label}</p>
                   {submission.hint && (
                     <p className="text-xs text-muted-foreground leading-relaxed mb-2 break-words">{submission.hint}</p>
                   )}
 
-                  {/* Category tag */}
                   {submission.category && submission.category !== 'General' && (
                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800 mb-2">
                       {submission.category}
                     </Badge>
                   )}
 
-                  {/* Similarity match */}
-                  {isPending && similarItems.length > 0 && (
+                  {/* Library match detection */}
+                  {isPending && libraryMatches.length > 0 && (
+                    <div className="rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-2.5 mb-2">
+                      <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> Possible library match
+                      </p>
+                      {libraryMatches.map(match => (
+                        <div key={match.id} className="text-xs text-amber-700 dark:text-amber-400 mb-0.5">
+                          <span className="font-medium">"{match.label}"</span>
+                          <span className="text-amber-600/70 dark:text-amber-500/70 ml-1">
+                            · {match.equipment_group}{match.category ? ` · ${match.category}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Similarity group matches (between submissions) */}
+                  {isPending && similarItems.length > 0 && libraryMatches.length === 0 && (
                     <div className="rounded-md bg-muted/60 border border-dashed p-2.5 mb-2">
                       <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" /> Possible duplicates ({similarItems.length})
+                        <Sparkles className="w-3 h-3" /> Similar submissions ({similarItems.length})
                       </p>
                       {similarItems.slice(0, 2).map(s => (
                         <p key={s.id} className="text-xs text-muted-foreground truncate">• {s.label}</p>
                       ))}
-                      {similarItems.length > 2 && (
-                        <p className="text-xs text-muted-foreground">+ {similarItems.length - 2} more</p>
-                      )}
                     </div>
                   )}
 
-                  {/* Admin notes (shown on reviewed items) */}
+                  {/* Admin notes on reviewed items */}
                   {submission.admin_notes && !isPending && (
-                    <p className="text-xs text-muted-foreground italic mt-1">Admin: {submission.admin_notes}</p>
+                    <p className="text-xs text-muted-foreground italic mt-1">Note: {submission.admin_notes}</p>
                   )}
 
-                  {/* Card Footer: Metadata + Actions */}
+                  {/* Card Footer */}
                   <Separator className="my-2.5" />
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs text-muted-foreground">
@@ -461,17 +523,16 @@ export default function CheckItemSubmissions() {
                       )}
                     </p>
 
-                    {/* Desktop actions */}
                     {isPending && (
                       <div className="hidden sm:flex gap-2">
                         <Button size="sm" className="h-8 text-xs" onClick={() => openApprovalDialog(submission)}>
-                          <Check className="w-3.5 h-3.5 mr-1" />Approve
+                          <Check className="w-3.5 h-3.5 mr-1" />Add to Library
                         </Button>
                         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleMarkDuplicate(submission)}>
-                          <Copy className="w-3.5 h-3.5 mr-1" />Duplicate
+                          <Copy className="w-3.5 h-3.5 mr-1" />Already Covered
                         </Button>
                         <Button size="sm" variant="outline" className="h-8 text-xs text-destructive hover:text-destructive" onClick={() => { setRejectTarget(submission); setRejectReason(''); }}>
-                          <X className="w-3.5 h-3.5 mr-1" />Reject
+                          <X className="w-3.5 h-3.5 mr-1" />Don't Add
                         </Button>
                       </div>
                     )}
@@ -487,9 +548,12 @@ export default function CheckItemSubmissions() {
       <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Approve & Add to Library</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Library className="w-5 h-5 text-primary" />
+              Add to Shared Library
+            </DialogTitle>
             <DialogDescription>
-              Review and edit this check item before adding it to the shared library. All users will be able to see it.
+              This item will become available to all users in the check library. The submitting user already has access to it in their own checks.
             </DialogDescription>
           </DialogHeader>
 
@@ -511,25 +575,81 @@ export default function CheckItemSubmissions() {
                 rows={2}
               />
             </div>
+
+            {/* Scope selection */}
             <div>
-              <Label>Equipment Category</Label>
-              <Select
-                value={approvalData.ride_category_id || '__generic__'}
-                onValueChange={(v) => setApprovalData(d => ({ ...d, ride_category_id: v === '__generic__' ? '' : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Generic (all equipment)" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
-                  <SelectItem value="__generic__">Generic (all equipment)</SelectItem>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name} ({cat.category_group})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="mb-2 block">Library Scope</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setApprovalData(d => ({ ...d, scope: 'general' }))}
+                  className={`flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors ${
+                    approvalData.scope === 'general' ? 'ring-2 ring-primary border-primary bg-primary/5' : 'hover:border-primary/40'
+                  }`}
+                >
+                  <Globe className="w-4 h-4 text-primary shrink-0" />
+                  <div>
+                    <p className="font-medium">General</p>
+                    <p className="text-xs text-muted-foreground">All equipment types</p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApprovalData(d => ({ ...d, scope: 'specific' }))}
+                  className={`flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors ${
+                    approvalData.scope === 'specific' ? 'ring-2 ring-primary border-primary bg-primary/5' : 'hover:border-primary/40'
+                  }`}
+                >
+                  <Target className="w-4 h-4 text-primary shrink-0" />
+                  <div>
+                    <p className="font-medium">Specific</p>
+                    <p className="text-xs text-muted-foreground">One equipment group/type</p>
+                  </div>
+                </button>
+              </div>
             </div>
+
+            {/* Equipment group / category (only for specific scope) */}
+            {approvalData.scope === 'specific' && (
+              <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+                <div>
+                  <Label>Equipment Group</Label>
+                  <Select
+                    value={approvalData.equipment_group}
+                    onValueChange={(v) => setApprovalData(d => ({ ...d, equipment_group: v, ride_category_id: '' }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {EQUIPMENT_GROUPS.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Equipment Type (optional — leave blank for whole group)</Label>
+                  <Select
+                    value={approvalData.ride_category_id || '__none__'}
+                    onValueChange={(v) => setApprovalData(d => ({ ...d, ride_category_id: v === '__none__' ? '' : v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All types in group" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
+                      <SelectItem value="__none__">All types in {approvalData.equipment_group}</SelectItem>
+                      {filteredCategories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Check Category</Label>
@@ -580,8 +700,8 @@ export default function CheckItemSubmissions() {
               Cancel
             </Button>
             <Button onClick={handleApprove} disabled={processing || !approvalData.label.trim()} className="w-full sm:w-auto">
-              {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-              Add to Library
+              {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Library className="w-4 h-4 mr-2" />}
+              Add to Shared Library
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -591,9 +711,9 @@ export default function CheckItemSubmissions() {
       <Dialog open={!!rejectTarget} onOpenChange={(open) => !open && setRejectTarget(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Reject Submission</DialogTitle>
+            <DialogTitle>Don't Add to Library</DialogTitle>
             <DialogDescription>
-              This item will be marked as rejected. The submitting user won't be notified.
+              This item won't be added to the shared library. The user can still use it in their own checks — this only affects library promotion.
             </DialogDescription>
           </DialogHeader>
           {rejectTarget && (
@@ -606,7 +726,7 @@ export default function CheckItemSubmissions() {
             <Textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Not suitable for shared library"
+              placeholder="Too specific, already covered, unclear wording..."
               rows={2}
             />
           </div>
@@ -614,7 +734,7 @@ export default function CheckItemSubmissions() {
             <Button variant="outline" onClick={() => setRejectTarget(null)} className="w-full sm:w-auto">Cancel</Button>
             <Button variant="destructive" onClick={handleReject} disabled={processing} className="w-full sm:w-auto">
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <X className="w-4 h-4 mr-2" />}
-              Reject
+              Don't Add
             </Button>
           </DialogFooter>
         </DialogContent>
