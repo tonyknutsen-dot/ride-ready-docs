@@ -346,13 +346,6 @@ export function AppSidebar() {
       </Sidebar>
 
       {/* Dialogs */}
-      {featureDialogOpen && (
-        <RequestFeatureDialog
-          open={featureDialogOpen}
-          onOpenChange={setFeatureDialogOpen}
-          hideTrigger
-        />
-      )}
       {contactDialogOpen && (
         <ContactSupportDialog
           open={contactDialogOpen}
