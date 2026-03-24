@@ -250,13 +250,6 @@ const HelpCenter = () => {
             <p className="text-sm text-[#64748B] leading-relaxed">
               Browse help topics below or use the search bar to find guidance on inspections, documentation, and compliance management.
             </p>
-            <ContactSupportDialog
-              trigger={
-                <button className="mt-3 text-sm font-semibold text-[#1E3A5F] hover:underline underline-offset-2 transition-all">
-                  Contact Support →
-                </button>
-              }
-            />
           </div>
 
           {/* ── AI CHAT ────────────────────────────────────────────────────── */}
@@ -309,20 +302,35 @@ const HelpCenter = () => {
 
           {/* ── SUPPORT SECTION ────────────────────────────────────────────── */}
           <SectionHeading>Support</SectionHeading>
-          <div className="grid sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 mb-2.5">
             <ContactSupportDialog
               trigger={
                 <button className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full">
                   <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
                     <LifeBuoy className="h-5 w-5 text-[#475569] group-hover:text-[#1E3A5F] transition-colors" strokeWidth={2} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-[#0F172A]">Contact Support</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Submit a help request.</p>
+                    <p className="text-xs text-[#64748B] mt-0.5">Send us a message.</p>
                   </div>
                 </button>
               }
             />
+            <button
+              onClick={() => navigate('/support-requests')}
+              className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full"
+            >
+              <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-[#F1F5F9] flex items-center justify-center">
+                <Mail className="h-5 w-5 text-[#475569] group-hover:text-[#1E3A5F] transition-colors" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#0F172A]">My Support Requests</p>
+                <p className="text-xs text-[#64748B] mt-0.5">View replies and history.</p>
+              </div>
+            </button>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-2.5">
             <RequestFeatureDialog
               trigger={
                 <button className="flex items-center gap-3 p-3.5 rounded-[14px] bg-white border border-[#E2E8F0] text-left transition-all hover:border-[#1E3A5F] hover:bg-[#F1F5F9] group w-full">
