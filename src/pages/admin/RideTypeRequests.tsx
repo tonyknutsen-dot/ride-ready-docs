@@ -295,22 +295,21 @@ const ApprovalDialog = memo(function ApprovalDialog({
         .eq('id', request.id);
       if (reqError) throw reqError;
 
-      try {
-        const { data: emailData } = await supabase.functions.invoke('get-user-email', {
-          body: { userId: request.user_id },
-        });
-        if (emailData?.email) {
-          await supabase.functions.invoke('send-request-status-email', {
-            body: {
-              userEmail: emailData.email,
-              requestType: 'ride_type',
-              requestName: typeName.trim(),
-              status: 'approved',
-              adminNotes: adminNote || undefined,
-            },
-          });
-        }
-      } catch { /* email failure is non-blocking */ }
+      // Fire-and-forget email notification (non-blocking)
+      supabase.functions.invoke('get-user-email', { body: { userId: request.user_id } })
+        .then(({ data: emailData }) => {
+          if (emailData?.email) {
+            supabase.functions.invoke('send-request-status-email', {
+              body: {
+                userEmail: emailData.email,
+                requestType: 'ride_type',
+                requestName: typeName.trim(),
+                status: 'approved',
+                adminNotes: adminNote || undefined,
+              },
+            }).catch(() => {});
+          }
+        }).catch(() => {});
 
       onApproved(request.id, typeName.trim(), categoryGroup);
       toast({ title: 'Type Created', description: `"${typeName.trim()}" added to ${categoryGroup} and is now available to all users.` });
@@ -621,40 +620,41 @@ export default function RideTypeRequests() {
   const handleReject = async () => {
     if (!rejectTarget) return;
     setRejecting(true);
+    const target = rejectTarget;
+    const note = rejectNote || 'Not suitable for addition';
     try {
       const { error } = await supabase
         .from('ride_type_requests')
-        .update({ status: 'rejected', admin_notes: rejectNote || 'Not suitable for addition' })
-        .eq('id', rejectTarget.id);
+        .update({ status: 'rejected', admin_notes: note })
+        .eq('id', target.id);
       if (error) throw error;
 
-      try {
-        const { data: emailData } = await supabase.functions.invoke('get-user-email', {
-          body: { userId: rejectTarget.user_id },
-        });
-        if (emailData?.email) {
-          await supabase.functions.invoke('send-request-status-email', {
-            body: {
-              userEmail: emailData.email,
-              requestType: 'ride_type',
-              requestName: rejectTarget.name,
-              status: 'rejected',
-              adminNotes: rejectNote || undefined,
-            },
-          });
-        }
-      } catch { /* non-blocking */ }
-
-      logEvent('update', 'ride' as any, rejectTarget.id, { action: 'reject_type_request', name: rejectTarget.name });
-
-      setRequests(prev => prev.map(r => r.id === rejectTarget.id
-        ? { ...r, status: 'rejected', admin_notes: rejectNote || 'Not suitable for addition' } : r));
-      toast({ title: 'Request Rejected', description: `"${rejectTarget.name}" has been rejected.` });
+      // Optimistic UI update — immediate
+      setRequests(prev => prev.map(r => r.id === target.id
+        ? { ...r, status: 'rejected', admin_notes: note } : r));
+      toast({ title: 'Request Rejected', description: `"${target.name}" has been rejected.` });
       setRejectTarget(null);
       setRejectNote('');
+      setRejecting(false);
+
+      // Fire-and-forget: email + audit (non-blocking)
+      logEvent('update', 'ride' as any, target.id, { action: 'reject_type_request', name: target.name });
+      supabase.functions.invoke('get-user-email', { body: { userId: target.user_id } })
+        .then(({ data: emailData }) => {
+          if (emailData?.email) {
+            supabase.functions.invoke('send-request-status-email', {
+              body: {
+                userEmail: emailData.email,
+                requestType: 'ride_type',
+                requestName: target.name,
+                status: 'rejected',
+                adminNotes: note !== 'Not suitable for addition' ? note : undefined,
+              },
+            }).catch(() => {});
+          }
+        }).catch(() => {});
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
       setRejecting(false);
     }
   };
