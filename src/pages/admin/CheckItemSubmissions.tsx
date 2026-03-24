@@ -783,7 +783,7 @@ export default function CheckItemSubmissions() {
                     </SelectTrigger>
                     <SelectContent className="bg-background border shadow-lg z-50">
                       {EQUIPMENT_GROUPS.map(g => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                        <SelectItem key={g} value={g}>{EQUIPMENT_GROUP_LABELS[g as EquipmentGroup]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
