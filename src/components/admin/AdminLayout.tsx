@@ -66,6 +66,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
         { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
+        { name: 'Feature Requests', href: '/admin/feature-requests', icon: Lightbulb, count: pendingCounts.featureRequests },
         { name: 'Payments & Billing', href: '/admin/payments', icon: CreditCard, count: 0 },
       ],
     },
