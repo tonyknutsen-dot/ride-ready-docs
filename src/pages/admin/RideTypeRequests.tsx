@@ -82,7 +82,7 @@ const statusIcon = (s: string) => {
 interface DuplicateMatch {
   category: ExistingCategory;
   score: number;
-  confidence: 'strong' | 'possible';
+  confidence: 'high' | 'medium' | 'low';
   reasons: string[];
 }
 
@@ -128,7 +128,7 @@ function findDuplicateMatches(name: string, group: string, existing: ExistingCat
         reasons.push('Different group');
       }
 
-      const confidence: 'strong' | 'possible' = score >= 70 ? 'strong' : 'possible';
+      const confidence: 'high' | 'medium' | 'low' = score >= 70 ? 'high' : score >= 40 ? 'medium' : 'low';
 
       return { category: cat, score, confidence, reasons };
     })
@@ -137,53 +137,111 @@ function findDuplicateMatches(name: string, group: string, existing: ExistingCat
     .slice(0, 5);
 }
 
-/* ─── Duplicate Status Badge on Cards ─── */
+/* ─── Confidence helpers ─── */
 
-function DuplicateStatusBanner({ matches }: { matches: DuplicateMatch[] }) {
+const confidenceLabel = (c: DuplicateMatch['confidence']) =>
+  c === 'high' ? 'High' : c === 'medium' ? 'Medium' : 'Low';
+
+const confidenceVariant = (c: DuplicateMatch['confidence']): 'destructive' | 'default' | 'secondary' =>
+  c === 'high' ? 'destructive' : c === 'medium' ? 'default' : 'secondary';
+
+/* ─── Duplicate Status Banner on Cards ─── */
+
+function DuplicateStatusBanner({
+  matches,
+  onPreview,
+}: {
+  matches: DuplicateMatch[];
+  onPreview: (cat: ExistingCategory) => void;
+}) {
   if (matches.length === 0) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-2.5">
         <ShieldCheck className="h-4 w-4 text-green-600 shrink-0" />
-        <p className="text-xs text-muted-foreground">No duplicate found automatically</p>
+        <p className="text-xs text-muted-foreground">No similar type found</p>
       </div>
     );
   }
 
-  const hasStrong = matches.some(m => m.confidence === 'strong');
+  const hasHigh = matches.some(m => m.confidence === 'high');
 
   return (
     <div className={`rounded-lg border p-2.5 space-y-2 ${
-      hasStrong
+      hasHigh
         ? 'border-destructive/40 bg-destructive/5'
         : 'border-amber-500/30 bg-amber-500/5'
     }`}>
       <p className={`text-xs font-medium flex items-center gap-1.5 ${
-        hasStrong ? 'text-destructive' : 'text-amber-700 dark:text-amber-400'
+        hasHigh ? 'text-destructive' : 'text-amber-700 dark:text-amber-400'
       }`}>
         <AlertTriangle className="h-3.5 w-3.5" />
-        {hasStrong ? 'Strong duplicate found' : 'Possible duplicate found'}
+        {hasHigh ? 'Likely existing type found' : 'Possible similar type found'}
       </p>
       <div className="space-y-1.5">
         {matches.map(m => (
-          <div key={m.category.id} className="flex items-start gap-2 text-xs">
+          <button
+            key={m.category.id}
+            onClick={() => onPreview(m.category)}
+            className="w-full text-left flex items-start gap-2 text-xs rounded-md p-1.5 -m-1 hover:bg-background/60 transition-colors"
+          >
             <Badge
-              variant={m.confidence === 'strong' ? 'destructive' : 'secondary'}
+              variant={confidenceVariant(m.confidence)}
               className="text-[10px] shrink-0 mt-0.5"
             >
-              {m.confidence === 'strong' ? 'Strong' : 'Possible'}
+              {confidenceLabel(m.confidence)}
             </Badge>
             <div className="min-w-0">
-              <span className="font-medium">{m.category.name}</span>
+              <span className="font-medium underline decoration-dotted">{m.category.name}</span>
               <span className="text-muted-foreground ml-1">({m.category.category_group})</span>
               {m.category.description && (
                 <p className="text-muted-foreground/70 line-clamp-1 mt-0.5">{m.category.description}</p>
               )}
               <p className="text-muted-foreground/60 mt-0.5">{m.reasons.join(' · ')}</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
+  );
+}
+
+/* ─── Quick Type Preview Dialog ─── */
+
+function TypePreviewDialog({
+  category, open, onClose,
+}: {
+  category: ExistingCategory | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!category) return null;
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-base">Existing Type</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">Name</p>
+            <p className="font-medium">{category.name}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Equipment Group</p>
+            <p>{category.category_group}</p>
+          </div>
+          {category.description && (
+            <div>
+              <p className="text-xs text-muted-foreground">Description</p>
+              <p>{category.description}</p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -308,8 +366,8 @@ const ApprovalDialog = memo(function ApprovalDialog({
               <ul className="text-sm text-muted-foreground space-y-1">
                 {duplicates.map(d => (
                   <li key={d.category.id} className="flex items-center gap-2">
-                    <Badge variant={d.confidence === 'strong' ? 'destructive' : 'secondary'} className="text-[10px]">
-                      {d.confidence === 'strong' ? 'Strong' : 'Possible'}
+                    <Badge variant={confidenceVariant(d.confidence)} className="text-[10px]">
+                      {confidenceLabel(d.confidence)}
                     </Badge>
                     <span className="font-medium">{d.category.name}</span>
                     <span className="text-xs opacity-60">({d.category.category_group})</span>
@@ -439,10 +497,10 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
                   >
                     <div className="flex items-center gap-2">
                       <Badge
-                        variant={m.confidence === 'strong' ? 'destructive' : 'secondary'}
+                        variant={confidenceVariant(m.confidence)}
                         className="text-[10px] shrink-0"
                       >
-                        {m.confidence === 'strong' ? 'Strong' : 'Possible'}
+                        {confidenceLabel(m.confidence)}
                       </Badge>
                       <span className="font-medium">{m.category.name}</span>
                       <span className="text-xs text-muted-foreground">({m.category.category_group})</span>
@@ -489,11 +547,18 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
             </div>
           </div>
 
-          {/* Selected preview */}
+          {/* Selected preview — prominent */}
           {selectedCategory && (
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-2.5 text-sm">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Selected</p>
-              <p className="font-medium">{selectedCategory.name} <span className="text-muted-foreground font-normal">({selectedCategory.category_group})</span></p>
+            <div className="rounded-lg border-2 border-primary bg-primary/5 p-3 text-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs font-semibold text-primary">Selected type to link</p>
+              </div>
+              <p className="font-semibold text-base">{selectedCategory.name}</p>
+              <p className="text-xs text-muted-foreground">{selectedCategory.category_group}</p>
+              {selectedCategory.description && (
+                <p className="text-xs text-muted-foreground/70 mt-1">{selectedCategory.description}</p>
+              )}
             </div>
           )}
 
@@ -531,6 +596,7 @@ export default function RideTypeRequests() {
   const [rejectTarget, setRejectTarget] = useState<RideTypeRequest | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const [rejecting, setRejecting] = useState(false);
+  const [previewCategory, setPreviewCategory] = useState<ExistingCategory | null>(null);
 
   const { toast } = useToast();
   const { logEvent } = useAuditLog();
@@ -735,7 +801,7 @@ export default function RideTypeRequests() {
 
                     {/* Duplicate detection status — only on pending */}
                     {req.status === 'pending' && (
-                      <DuplicateStatusBanner matches={matches} />
+                      <DuplicateStatusBanner matches={matches} onPreview={setPreviewCategory} />
                     )}
 
                     {/* Admin notes */}
@@ -812,6 +878,13 @@ export default function RideTypeRequests() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Type preview */}
+      <TypePreviewDialog
+        category={previewCategory}
+        open={!!previewCategory}
+        onClose={() => setPreviewCategory(null)}
+      />
     </AdminLayout>
   );
 }
