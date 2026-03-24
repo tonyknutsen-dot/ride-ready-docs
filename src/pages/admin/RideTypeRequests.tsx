@@ -589,6 +589,7 @@ export default function RideTypeRequests() {
   const [rejectTarget, setRejectTarget] = useState<RideTypeRequest | null>(null);
   const [rejectNote, setRejectNote] = useState('');
   const [rejecting, setRejecting] = useState(false);
+  const [previewCategory, setPreviewCategory] = useState<ExistingCategory | null>(null);
 
   const { toast } = useToast();
   const { logEvent } = useAuditLog();
