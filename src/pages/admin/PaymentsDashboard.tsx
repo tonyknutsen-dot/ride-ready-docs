@@ -293,7 +293,12 @@ export default function PaymentsDashboard() {
           </Button>
         </div>
 
-        {/* ── Key Metrics (clickable drill-down) ── */}
+        {/* ═══ SECTION 1: Platform Summary ═══ */}
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-foreground/70">Platform Summary</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Live subscription totals and payment signals across all customer accounts</p>
+          </div>
         <TooltipProvider delayDuration={300}>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
             <Card
