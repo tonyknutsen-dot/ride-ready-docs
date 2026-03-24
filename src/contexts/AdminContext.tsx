@@ -26,6 +26,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
 
+  const userId = user?.id ?? null;
+
   useEffect(() => {
     let cancelled = false;
 
@@ -38,7 +40,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // No user - not admin, done loading
-      if (!user) {
+      if (!userId) {
         if (!cancelled) {
           setIsAdmin(false);
           setIsLoading(false);
@@ -48,7 +50,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Already checked for this user - skip
-      if (checkedUserId === user.id) {
+      if (checkedUserId === userId) {
         if (!cancelled) {
           setIsLoading(false);
         }
@@ -63,7 +65,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('role', 'admin')
           .single();
 
@@ -78,7 +80,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         }
       } finally {
         if (!cancelled) {
-          setCheckedUserId(user.id);
+          setCheckedUserId(userId);
           setIsLoading(false);
         }
       }
@@ -89,7 +91,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, checkedUserId]);
+  }, [authLoading, userId, checkedUserId]);
 
   return (
     <AdminContext.Provider value={{ isAdmin, isLoading }}>
