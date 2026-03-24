@@ -485,7 +485,7 @@ export default function PaymentsDashboard() {
                           <TableCell><StatusBadge status={user.app_status} /></TableCell>
                           <TableCell><StatusBadge status={user.stripe_status} isStripe /></TableCell>
                           <TableCell><PlanLabel plan={user.app_plan} mismatch={user.plan_mismatch} /></TableCell>
-                          <TableCell><PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} /></TableCell>
+                          <TableCell><PlanLabel plan={user.stripe_plan} mismatch={user.plan_mismatch} isStripe /></TableCell></TableCell>
                           <TableCell>
                             <div className="space-y-0.5">
                               {user.current_period_end ? (
