@@ -434,7 +434,7 @@ export default function PaymentsDashboard() {
                             <span className={user.sync_stale ? 'text-amber-600 font-medium' : ''}>
                               Synced {formatDistanceToNow(new Date(user.last_billing_sync_at), { addSuffix: true })}
                             </span>
-                          ) : <span>Never synced</span>}
+                          ) : <span>Never synced with Stripe</span>}
                         </div>
                       </div>
 
