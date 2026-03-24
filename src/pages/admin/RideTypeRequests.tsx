@@ -366,8 +366,8 @@ const ApprovalDialog = memo(function ApprovalDialog({
               <ul className="text-sm text-muted-foreground space-y-1">
                 {duplicates.map(d => (
                   <li key={d.category.id} className="flex items-center gap-2">
-                    <Badge variant={d.confidence === 'strong' ? 'destructive' : 'secondary'} className="text-[10px]">
-                      {d.confidence === 'strong' ? 'Strong' : 'Possible'}
+                    <Badge variant={confidenceVariant(d.confidence)} className="text-[10px]">
+                      {confidenceLabel(d.confidence)}
                     </Badge>
                     <span className="font-medium">{d.category.name}</span>
                     <span className="text-xs opacity-60">({d.category.category_group})</span>
