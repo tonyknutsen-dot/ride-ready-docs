@@ -234,7 +234,6 @@ serve(async (req) => {
       stripe.paymentIntents.list({ limit: 50, created: { gte: sixtyDaysAgo } })
         .then(res => res.data.filter(pi =>
           pi.status === 'requires_payment_method' ||
-          pi.status === 'canceled' ||
           pi.last_payment_error !== null
         )),
       stripe.subscriptions.list({ limit: 100, status: 'all' }),

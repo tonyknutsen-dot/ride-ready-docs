@@ -242,6 +242,7 @@ export default function PaymentsDashboard() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('failed');
   const [updatingFlag, setUpdatingFlag] = useState<string | null>(null);
+  const [showTechnicalEvents, setShowTechnicalEvents] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -344,10 +345,24 @@ export default function PaymentsDashboard() {
   const activeFlagsForUser = (userId: string) =>
     (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
 
-  // Filter events for selected user
-  const selectedUserEvents = selectedUserId
-    ? billingEventLog.filter(e => e.user_id === selectedUserId)
-    : billingEventLog;
+  // Technical event types that are low-value for admin review
+  const technicalEventTypes = ['polling_sync', 'manual_resync'];
+  const isTechnicalEvent = (e: BillingEvent) => technicalEventTypes.includes(e.event_type);
+
+  // Filter events for selected user, then optionally hide technical events
+  const selectedUserEvents = (() => {
+    let events = selectedUserId
+      ? billingEventLog.filter(e => e.user_id === selectedUserId)
+      : billingEventLog;
+    if (!showTechnicalEvents) {
+      events = events.filter(e => !isTechnicalEvent(e));
+    }
+    return events;
+  })();
+
+  const technicalEventCount = selectedUserId
+    ? billingEventLog.filter(e => e.user_id === selectedUserId && isTechnicalEvent(e)).length
+    : billingEventLog.filter(e => isTechnicalEvent(e)).length;
 
   const selectedUserName = selectedUserId
     ? userHealth.find(u => u.user_id === selectedUserId)?.controller_name || userHealth.find(u => u.user_id === selectedUserId)?.company_name || 'User'
@@ -887,10 +902,29 @@ export default function PaymentsDashboard() {
             </SheetTitle>
             <SheetDescription>
               {selectedUserId
-                ? 'Sync and webhook events for this user'
-                : 'Last 50 billing events across all users'}
+                ? 'Subscription lifecycle events for this user'
+                : 'Subscription lifecycle events across all users'}
             </SheetDescription>
           </SheetHeader>
+
+          {/* Event filter toggle */}
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-muted/50 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="show-technical"
+                checked={showTechnicalEvents}
+                onCheckedChange={setShowTechnicalEvents}
+              />
+              <Label htmlFor="show-technical" className="text-xs cursor-pointer">
+                Show sync events
+              </Label>
+            </div>
+            {technicalEventCount > 0 && !showTechnicalEvents && (
+              <span className="text-xs text-muted-foreground">
+                {technicalEventCount} hidden
+              </span>
+            )}
+          </div>
 
           <div className="mt-4 space-y-3">
             {selectedUserEvents.length === 0 ? (

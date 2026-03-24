@@ -157,7 +157,8 @@ serve(async (req) => {
         logStep("Error updating profile", { error: updateError.message });
       }
 
-      // Log the polling sync event
+      // Only log polling sync when something actually changed (mismatch detected)
+      // This prevents noisy repeated no-change entries from cluttering the billing event log
       if (mismatch) {
         logStep("Mismatch detected during polling sync", {
           prevStatus: prevProfile?.subscription_status,
@@ -165,26 +166,26 @@ serve(async (req) => {
           prevPlan: prevProfile?.subscription_plan,
           newPlan: tier,
         });
-      }
 
-      await supabaseClient.from("billing_sync_log").insert({
-        user_id: user.id,
-        event_type: 'polling_sync',
-        stripe_subscription_id: subscription.id,
-        stripe_customer_id: customerId,
-        previous_status: prevProfile?.subscription_status ?? null,
-        new_status: subStatus,
-        previous_plan: prevProfile?.subscription_plan ?? null,
-        new_plan: tier,
-        stripe_status: subscription.status,
-        stripe_plan: tier,
-        mismatch_detected: mismatch,
-        details: {
-          cancel_at_period_end: cancelAtPeriodEnd,
-          cancel_at: cancelAt,
-          pending_plan: pendingPlan,
-        },
-      });
+        await supabaseClient.from("billing_sync_log").insert({
+          user_id: user.id,
+          event_type: 'polling_sync',
+          stripe_subscription_id: subscription.id,
+          stripe_customer_id: customerId,
+          previous_status: prevProfile?.subscription_status ?? null,
+          new_status: subStatus,
+          previous_plan: prevProfile?.subscription_plan ?? null,
+          new_plan: tier,
+          stripe_status: subscription.status,
+          stripe_plan: tier,
+          mismatch_detected: true,
+          details: {
+            cancel_at_period_end: cancelAtPeriodEnd,
+            cancel_at: cancelAt,
+            pending_plan: pendingPlan,
+          },
+        });
+      }
     } else {
       logStep("No active subscription found");
 
