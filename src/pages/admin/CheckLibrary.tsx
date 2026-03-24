@@ -524,8 +524,8 @@ export default function CheckLibrary() {
               <SelectTrigger><SelectValue placeholder="Frequency" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Frequencies</SelectItem>
-                {Object.entries(FREQUENCY_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                {Object.entries(CHECK_FREQUENCY_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v as string}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
