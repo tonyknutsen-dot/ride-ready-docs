@@ -1416,10 +1416,12 @@ export type Database = {
       feature_requests: {
         Row: {
           admin_notes: string | null
+          category: string | null
           created_at: string
           feature_description: string
           feature_title: string
           id: string
+          priority: string
           status: string
           updated_at: string
           use_case: string | null
@@ -1428,10 +1430,12 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          category?: string | null
           created_at?: string
           feature_description: string
           feature_title: string
           id?: string
+          priority?: string
           status?: string
           updated_at?: string
           use_case?: string | null
@@ -1440,10 +1444,12 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          category?: string | null
           created_at?: string
           feature_description?: string
           feature_title?: string
           id?: string
+          priority?: string
           status?: string
           updated_at?: string
           use_case?: string | null
