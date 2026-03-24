@@ -345,10 +345,24 @@ export default function PaymentsDashboard() {
   const activeFlagsForUser = (userId: string) =>
     (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
 
-  // Filter events for selected user
-  const selectedUserEvents = selectedUserId
-    ? billingEventLog.filter(e => e.user_id === selectedUserId)
-    : billingEventLog;
+  // Technical event types that are low-value for admin review
+  const technicalEventTypes = ['polling_sync', 'manual_resync'];
+  const isTechnicalEvent = (e: BillingEvent) => technicalEventTypes.includes(e.event_type);
+
+  // Filter events for selected user, then optionally hide technical events
+  const selectedUserEvents = (() => {
+    let events = selectedUserId
+      ? billingEventLog.filter(e => e.user_id === selectedUserId)
+      : billingEventLog;
+    if (!showTechnicalEvents) {
+      events = events.filter(e => !isTechnicalEvent(e));
+    }
+    return events;
+  })();
+
+  const technicalEventCount = selectedUserId
+    ? billingEventLog.filter(e => e.user_id === selectedUserId && isTechnicalEvent(e)).length
+    : billingEventLog.filter(e => isTechnicalEvent(e)).length;
 
   const selectedUserName = selectedUserId
     ? userHealth.find(u => u.user_id === selectedUserId)?.controller_name || userHealth.find(u => u.user_id === selectedUserId)?.company_name || 'User'
