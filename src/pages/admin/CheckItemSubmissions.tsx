@@ -246,21 +246,42 @@ export default function CheckItemSubmissions() {
     }
   };
 
-  const handleMarkDuplicate = async (submission: Submission) => {
+  const [duplicateTarget, setDuplicateTarget] = useState<Submission | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>('');
+  const [duplicateNote, setDuplicateNote] = useState('');
+
+  const openDuplicateDialog = (submission: Submission) => {
     const matches = findLibraryMatches(submission);
-    const matchNote = matches.length > 0
-      ? `Already in library: "${matches[0].label}"`
-      : 'Already covered by existing library item';
+    setDuplicateTarget(submission);
+    setSelectedMatchId(matches.length > 0 ? matches[0].id : '');
+    setDuplicateNote('');
+  };
+
+  const handleMarkDuplicate = async () => {
+    if (!duplicateTarget) return;
+    setProcessing(true);
+    const matchedItem = libraryItems.find(i => i.id === selectedMatchId);
+    const matchNote = matchedItem
+      ? `Already in library: "${matchedItem.label}"`
+      : duplicateNote || 'Already covered by existing library item';
     try {
       const { error } = await supabase
         .from('user_submitted_check_items')
-        .update({ status: 'duplicate', admin_notes: matchNote, reviewed_at: new Date().toISOString() })
-        .eq('id', submission.id);
+        .update({
+          status: 'duplicate',
+          admin_notes: matchNote,
+          matched_library_item_id: selectedMatchId || null,
+          reviewed_at: new Date().toISOString()
+        } as any)
+        .eq('id', duplicateTarget.id);
       if (error) throw error;
-      toast({ title: "Already in library", description: "Marked as covered by existing item." });
+      toast({ title: "Already covered", description: "Marked as covered by existing library item." });
+      setDuplicateTarget(null);
       fetchAllSubmissions();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -456,8 +477,8 @@ export default function CheckItemSubmissions() {
                           <DropdownMenuItem onClick={() => openApprovalDialog(submission)}>
                             <Check className="w-4 h-4 mr-2 text-green-600" />Add to Library
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleMarkDuplicate(submission)}>
-                            <Copy className="w-4 h-4 mr-2" />Already in Library
+                          <DropdownMenuItem onClick={() => openDuplicateDialog(submission)}>
+                            <Copy className="w-4 h-4 mr-2" />Already Covered
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => { setRejectTarget(submission); setRejectReason(''); }} className="text-destructive">
                             <X className="w-4 h-4 mr-2" />Don't Add
@@ -528,7 +549,7 @@ export default function CheckItemSubmissions() {
                         <Button size="sm" className="h-8 text-xs" onClick={() => openApprovalDialog(submission)}>
                           <Check className="w-3.5 h-3.5 mr-1" />Add to Library
                         </Button>
-                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleMarkDuplicate(submission)}>
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => openDuplicateDialog(submission)}>
                           <Copy className="w-3.5 h-3.5 mr-1" />Already Covered
                         </Button>
                         <Button size="sm" variant="outline" className="h-8 text-xs text-destructive hover:text-destructive" onClick={() => { setRejectTarget(submission); setRejectReason(''); }}>
@@ -589,8 +610,8 @@ export default function CheckItemSubmissions() {
                 >
                   <Globe className="w-4 h-4 text-primary shrink-0" />
                   <div>
-                    <p className="font-medium">General</p>
-                    <p className="text-xs text-muted-foreground">All equipment types</p>
+                    <p className="font-medium">General shared item</p>
+                    <p className="text-xs text-muted-foreground">Available for all equipment types</p>
                   </div>
                 </button>
                 <button
@@ -602,8 +623,8 @@ export default function CheckItemSubmissions() {
                 >
                   <Target className="w-4 h-4 text-primary shrink-0" />
                   <div>
-                    <p className="font-medium">Specific</p>
-                    <p className="text-xs text-muted-foreground">One equipment group/type</p>
+                    <p className="font-medium">Equipment-specific shared item</p>
+                    <p className="text-xs text-muted-foreground">Only for a specific equipment group or type</p>
                   </div>
                 </button>
               </div>
@@ -735,6 +756,64 @@ export default function CheckItemSubmissions() {
             <Button variant="destructive" onClick={handleReject} disabled={processing} className="w-full sm:w-auto">
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <X className="w-4 h-4 mr-2" />}
               Don't Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate / Already Covered Dialog */}
+      <Dialog open={!!duplicateTarget} onOpenChange={(open) => !open && setDuplicateTarget(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5 text-muted-foreground" />
+              Already Covered
+            </DialogTitle>
+            <DialogDescription>
+              Select the existing library item that already covers this check. The user can still use their own item privately.
+            </DialogDescription>
+          </DialogHeader>
+          {duplicateTarget && (
+            <div className="rounded-md bg-muted p-3 mb-2">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Submitted item</p>
+              <p className="text-sm font-medium break-words">{duplicateTarget.label}</p>
+            </div>
+          )}
+          <div>
+            <Label className="mb-1.5 block">Matched library item</Label>
+            <Select value={selectedMatchId || '__none__'} onValueChange={(v) => setSelectedMatchId(v === '__none__' ? '' : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select matching library item" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50 max-h-[250px]">
+                <SelectItem value="__none__">No specific match (general duplicate)</SelectItem>
+                {duplicateTarget && findLibraryMatches(duplicateTarget).map(match => (
+                  <SelectItem key={match.id} value={match.id}>
+                    ⭐ {match.label} ({match.equipment_group})
+                  </SelectItem>
+                ))}
+                {libraryItems.slice(0, 30).map(item => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label} ({item.equipment_group})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Note (optional)</Label>
+            <Textarea
+              value={duplicateNote}
+              onChange={(e) => setDuplicateNote(e.target.value)}
+              placeholder="Additional context..."
+              rows={2}
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setDuplicateTarget(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleMarkDuplicate} disabled={processing} className="w-full sm:w-auto">
+              {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+              Mark as Already Covered
             </Button>
           </DialogFooter>
         </DialogContent>

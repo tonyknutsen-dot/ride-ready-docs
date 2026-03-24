@@ -3305,6 +3305,7 @@ export type Database = {
           id: string
           is_generic: boolean
           label: string
+          matched_library_item_id: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           ride_category_id: string | null
@@ -3321,6 +3322,7 @@ export type Database = {
           id?: string
           is_generic?: boolean
           label: string
+          matched_library_item_id?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           ride_category_id?: string | null
@@ -3337,6 +3339,7 @@ export type Database = {
           id?: string
           is_generic?: boolean
           label?: string
+          matched_library_item_id?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           ride_category_id?: string | null
@@ -3345,6 +3348,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_submitted_check_items_matched_library_item_id_fkey"
+            columns: ["matched_library_item_id"]
+            isOneToOne: false
+            referencedRelation: "check_library_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_submitted_check_items_ride_category_id_fkey"
             columns: ["ride_category_id"]
