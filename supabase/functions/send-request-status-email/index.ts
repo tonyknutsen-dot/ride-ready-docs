@@ -40,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const isApproved = status === 'approved';
-    const typeLabel = requestType === 'ride_type' ? 'Ride Type' : 'Document Type';
+    const typeLabel = requestType === 'ride_type' ? 'Equipment Type' : 'Document Type';
     const statusColor = isApproved ? success : danger;
     const statusLabel = isApproved ? 'Approved' : 'Rejected';
     const statusIcon = isApproved ? '✓' : '✗';
