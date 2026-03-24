@@ -66,6 +66,7 @@ export default function CheckItemSubmissions() {
   const [loading, setLoading] = useState(true);
   const [grouping, setGrouping] = useState(false);
   const [filter, setFilter] = useState({ status: 'pending', frequency: 'all', search: '' });
+  const [mobileActionMenuId, setMobileActionMenuId] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Submission | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -153,6 +154,43 @@ export default function CheckItemSubmissions() {
     return true;
   });
 
+  const clearPointerLock = () => {
+    if (typeof document !== 'undefined' && document.body.style.pointerEvents === 'none') {
+      document.body.style.removeProperty('pointer-events');
+    }
+  };
+
+  const closeMobileActionMenu = () => {
+    setMobileActionMenuId(null);
+    clearPointerLock();
+  };
+
+  const openDialogFromActionMenu = (callback: () => void) => {
+    closeMobileActionMenu();
+    window.setTimeout(callback, 0);
+  };
+
+  useEffect(() => {
+    if (mobileActionMenuId && !allSubmissions.some((submission) => submission.id === mobileActionMenuId && submission.status === 'pending')) {
+      closeMobileActionMenu();
+    }
+
+    if (selectedSubmission && !allSubmissions.some((submission) => submission.id === selectedSubmission.id && submission.status === 'pending')) {
+      setSelectedSubmission(null);
+    }
+
+    if (rejectTarget && !allSubmissions.some((submission) => submission.id === rejectTarget.id && submission.status === 'pending')) {
+      setRejectTarget(null);
+      setRejectReason('');
+    }
+
+    if (duplicateTarget && !allSubmissions.some((submission) => submission.id === duplicateTarget.id && submission.status === 'pending')) {
+      setDuplicateTarget(null);
+      setSelectedMatchId('');
+      setDuplicateNote('');
+    }
+  }, [allSubmissions, mobileActionMenuId, selectedSubmission, rejectTarget, duplicateTarget]);
+
   const handleGroupSimilar = async () => {
     setGrouping(true);
     try {
@@ -222,6 +260,7 @@ export default function CheckItemSubmissions() {
 
       toast({ title: "Added to library", description: `"${approvalData.label.trim()}" is now available in the shared library.` });
       updateSubmissionLocally(selectedSubmission.id, { status: 'approved', admin_notes: approvalData.admin_notes || null, reviewed_at: new Date().toISOString() });
+      closeMobileActionMenu();
       setSelectedSubmission(null);
       fetchLibraryItems();
       fetchAllSubmissions(true); // silent background sync
@@ -243,6 +282,7 @@ export default function CheckItemSubmissions() {
       if (error) throw error;
       toast({ title: "Not added to library", description: "The user can still use this item in their own checks." });
       updateSubmissionLocally(rejectTarget.id, { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library', reviewed_at: new Date().toISOString() });
+      closeMobileActionMenu();
       setRejectTarget(null);
       setRejectReason('');
       fetchAllSubmissions(true); // silent background sync
@@ -284,7 +324,10 @@ export default function CheckItemSubmissions() {
       if (error) throw error;
       toast({ title: "Already covered", description: "Marked as covered by existing library item." });
       updateSubmissionLocally(duplicateTarget.id, { status: 'duplicate', admin_notes: matchNote, reviewed_at: new Date().toISOString() });
+      closeMobileActionMenu();
       setDuplicateTarget(null);
+      setSelectedMatchId('');
+      setDuplicateNote('');
       fetchAllSubmissions(true); // silent background sync
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -475,20 +518,46 @@ export default function CheckItemSubmissions() {
                       ) : null}
                     </div>
                     {isPending && (
-                      <DropdownMenu>
+                      <DropdownMenu
+                        modal={false}
+                        open={mobileActionMenuId === submission.id}
+                        onOpenChange={(open) => {
+                          setMobileActionMenuId(open ? submission.id : null);
+                          if (!open) clearPointerLock();
+                        }}
+                      >
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0 sm:hidden">
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => openApprovalDialog(submission)}>
+                        <DropdownMenuContent
+                          align="end"
+                          className="bg-background border shadow-lg z-50"
+                          onCloseAutoFocus={(event) => {
+                            event.preventDefault();
+                            clearPointerLock();
+                          }}
+                        >
+                          <DropdownMenuItem onSelect={(event) => {
+                            event.preventDefault();
+                            openDialogFromActionMenu(() => openApprovalDialog(submission));
+                          }}>
                             <Check className="w-4 h-4 mr-2 text-green-600" />Add to Library
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openDuplicateDialog(submission)}>
+                          <DropdownMenuItem onSelect={(event) => {
+                            event.preventDefault();
+                            openDialogFromActionMenu(() => openDuplicateDialog(submission));
+                          }}>
                             <Copy className="w-4 h-4 mr-2" />Already Covered
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => { setRejectTarget(submission); setRejectReason(''); }} className="text-destructive">
+                          <DropdownMenuItem onSelect={(event) => {
+                            event.preventDefault();
+                            openDialogFromActionMenu(() => {
+                              setRejectTarget(submission);
+                              setRejectReason('');
+                            });
+                          }} className="text-destructive">
                             <X className="w-4 h-4 mr-2" />Don't Add
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -574,7 +643,12 @@ export default function CheckItemSubmissions() {
       )}
 
       {/* Approval Dialog */}
-      <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
+      <Dialog open={!!selectedSubmission} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedSubmission(null);
+          clearPointerLock();
+        }
+      }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -737,7 +811,13 @@ export default function CheckItemSubmissions() {
       </Dialog>
 
       {/* Reject Confirmation Dialog */}
-      <Dialog open={!!rejectTarget} onOpenChange={(open) => !open && setRejectTarget(null)}>
+      <Dialog open={!!rejectTarget} onOpenChange={(open) => {
+        if (!open) {
+          setRejectTarget(null);
+          setRejectReason('');
+          clearPointerLock();
+        }
+      }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Don't Add to Library</DialogTitle>
@@ -770,7 +850,14 @@ export default function CheckItemSubmissions() {
       </Dialog>
 
       {/* Duplicate / Already Covered Dialog */}
-      <Dialog open={!!duplicateTarget} onOpenChange={(open) => !open && setDuplicateTarget(null)}>
+      <Dialog open={!!duplicateTarget} onOpenChange={(open) => {
+        if (!open) {
+          setDuplicateTarget(null);
+          setSelectedMatchId('');
+          setDuplicateNote('');
+          clearPointerLock();
+        }
+      }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
