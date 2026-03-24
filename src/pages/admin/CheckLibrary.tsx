@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import {
   Search, Loader2, Library, Edit3, Archive, ArchiveRestore, Trash2, Copy,
-  MoreVertical, Globe, Target, AlertTriangle, BookOpen
+  MoreVertical, Globe, Target, AlertTriangle, BookOpen, Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -87,6 +87,7 @@ export default function CheckLibrary() {
 
   // Dialogs
   const [editItem, setEditItem] = useState<LibraryItem | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<LibraryItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LibraryItem | null>(null);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
@@ -173,7 +174,20 @@ export default function CheckLibrary() {
 
   // === Actions ===
 
+  const openCreate = () => {
+    setIsCreating(true);
+    setEditItem(null);
+    setEditLabel('');
+    setEditHint('');
+    setEditCategory('');
+    setEditFrequency('daily');
+    setEditGroup('rides');
+    setEditRideCategoryId(null);
+    setEditNote('');
+  };
+
   const openEdit = (item: LibraryItem) => {
+    setIsCreating(false);
     setEditItem(item);
     setEditLabel(item.label);
     setEditHint(item.hint || '');
@@ -185,31 +199,60 @@ export default function CheckLibrary() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editItem || !editLabel.trim()) return;
+    if (!editLabel.trim()) return;
     setSaving(true);
-    const { error } = await supabase
-      .from('check_library_items')
-      .update({
-        label: editLabel.trim(),
-        hint: editHint.trim() || null,
-        category: editCategory || null,
-        frequency: editFrequency as CheckFrequency,
-        equipment_group: editGroup,
-        ride_category_id: editRideCategoryId,
-      })
-      .eq('id', editItem.id);
 
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to update item', variant: 'destructive' });
-    } else {
-      logEvent('update', 'check', editItem.id, { label: editLabel, note: editNote || undefined });
-      toast({ title: 'Updated', description: 'Library item updated' });
-      setItems(prev => prev.map(i => i.id === editItem.id ? {
-        ...i, label: editLabel.trim(), hint: editHint.trim() || null,
-        category: editCategory || null, frequency: editFrequency,
-        equipment_group: editGroup, ride_category_id: editRideCategoryId,
-      } : i));
-      setEditItem(null);
+    if (isCreating) {
+      // Create new library item
+      const { data, error } = await supabase
+        .from('check_library_items')
+        .insert({
+          label: editLabel.trim(),
+          hint: editHint.trim() || null,
+          category: editCategory || null,
+          frequency: editFrequency as CheckFrequency,
+          equipment_group: editGroup,
+          ride_category_id: editRideCategoryId,
+          is_active: true,
+          sort_index: 0,
+        })
+        .select('*, ride_category:ride_categories(name, category_group)')
+        .single();
+
+      if (error) {
+        toast({ title: 'Error', description: 'Failed to create item', variant: 'destructive' });
+      } else if (data) {
+        logEvent('create', 'check', data.id, { label: editLabel, note: editNote || undefined });
+        toast({ title: 'Created', description: 'New library item added' });
+        setItems(prev => [data as unknown as LibraryItem, ...prev]);
+        setIsCreating(false);
+      }
+    } else if (editItem) {
+      // Update existing
+      const { error } = await supabase
+        .from('check_library_items')
+        .update({
+          label: editLabel.trim(),
+          hint: editHint.trim() || null,
+          category: editCategory || null,
+          frequency: editFrequency as CheckFrequency,
+          equipment_group: editGroup,
+          ride_category_id: editRideCategoryId,
+        })
+        .eq('id', editItem.id);
+
+      if (error) {
+        toast({ title: 'Error', description: 'Failed to update item', variant: 'destructive' });
+      } else {
+        logEvent('update', 'check', editItem.id, { label: editLabel, note: editNote || undefined });
+        toast({ title: 'Updated', description: 'Library item updated' });
+        setItems(prev => prev.map(i => i.id === editItem.id ? {
+          ...i, label: editLabel.trim(), hint: editHint.trim() || null,
+          category: editCategory || null, frequency: editFrequency,
+          equipment_group: editGroup, ride_category_id: editRideCategoryId,
+        } : i));
+        setEditItem(null);
+      }
     }
     setSaving(false);
   };
@@ -318,14 +361,21 @@ export default function CheckLibrary() {
     <AdminLayout>
       <div className="space-y-6 max-w-5xl">
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Library className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Check Library</h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Library className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">Check Library</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Manage the shared check item library. Edit wording, archive old items, or remove unused entries.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Manage the shared check item library. Edit wording, archive old items, or remove unused entries.
-          </p>
+          <Button onClick={openCreate} className="shrink-0 gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">New Library Item</span>
+            <span className="sm:hidden">New</span>
+          </Button>
         </div>
 
         {/* KPIs */}
@@ -532,21 +582,23 @@ export default function CheckLibrary() {
         )}
       </div>
 
-      {/* ── Edit Dialog ── */}
-      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
+      {/* ── Create / Edit Dialog ── */}
+      <Dialog open={!!editItem || isCreating} onOpenChange={(open) => { if (!open) { setEditItem(null); setIsCreating(false); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Library Item</DialogTitle>
-            <DialogDescription>Update wording, classification, or scope</DialogDescription>
+            <DialogTitle>{isCreating ? 'New Library Item' : 'Edit Library Item'}</DialogTitle>
+            <DialogDescription>
+              {isCreating ? 'Add a new item to the shared check library' : 'Update wording, classification, or scope'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Item text</Label>
-              <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} />
+              <Input value={editLabel} onChange={e => setEditLabel(e.target.value)} placeholder="e.g. Check emergency stop button" />
             </div>
             <div>
               <Label>Hint / guidance</Label>
-              <Textarea value={editHint} onChange={e => setEditHint(e.target.value)} rows={2} />
+              <Textarea value={editHint} onChange={e => setEditHint(e.target.value)} rows={2} placeholder="Optional guidance for the inspector" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -608,15 +660,15 @@ export default function CheckLibrary() {
               <Input
                 value={editNote}
                 onChange={e => setEditNote(e.target.value)}
-                placeholder="Reason for change"
+                placeholder={isCreating ? "Reason for adding" : "Reason for change"}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setEditItem(null); setIsCreating(false); }}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={saving || !editLabel.trim()}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
+              {isCreating ? 'Add to Library' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
