@@ -90,6 +90,7 @@ const InspectionRecordPage = lazy(() => import("./pages/InspectionRecordPage"));
 const Reports = lazy(() => import("./pages/Reports"));
 const PressureReadings = lazy(() => import("./pages/PressureReadings"));
 const PressureReadingsRegister = lazy(() => import("./pages/PressureReadingsRegister"));
+const SupportRequests = lazy(() => import("./pages/SupportRequests"));
 
 // PageLoader is now inside OfflineSuspense
 
@@ -151,6 +152,14 @@ const App = () => (
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/data-independence" element={<DataIndependence />} />
               <Route path="/dpa" element={<DataProcessingAgreement />} />
+              <Route 
+                path="/support-requests" 
+                element={
+                  <ProtectedRoute>
+                    <SupportRequests />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/profile-setup" 
                 element={
