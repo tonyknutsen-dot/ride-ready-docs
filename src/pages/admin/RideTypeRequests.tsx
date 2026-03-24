@@ -432,7 +432,7 @@ export default function RideTypeRequests() {
         }
       } catch { /* non-blocking */ }
 
-      logEvent('reject', 'ride_type_request', rejectTarget.id, { name: rejectTarget.name });
+      logEvent('update', 'ride' as any, rejectTarget.id, { action: 'reject_type_request', name: rejectTarget.name });
 
       setRequests(prev => prev.map(r => r.id === rejectTarget.id
         ? { ...r, status: 'rejected', admin_notes: rejectNote || 'Not suitable for addition' } : r));
