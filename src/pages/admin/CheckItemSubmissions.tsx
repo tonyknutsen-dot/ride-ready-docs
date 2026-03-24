@@ -760,6 +760,64 @@ export default function CheckItemSubmissions() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Duplicate / Already Covered Dialog */}
+      <Dialog open={!!duplicateTarget} onOpenChange={(open) => !open && setDuplicateTarget(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5 text-muted-foreground" />
+              Already Covered
+            </DialogTitle>
+            <DialogDescription>
+              Select the existing library item that already covers this check. The user can still use their own item privately.
+            </DialogDescription>
+          </DialogHeader>
+          {duplicateTarget && (
+            <div className="rounded-md bg-muted p-3 mb-2">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Submitted item</p>
+              <p className="text-sm font-medium break-words">{duplicateTarget.label}</p>
+            </div>
+          )}
+          <div>
+            <Label className="mb-1.5 block">Matched library item</Label>
+            <Select value={selectedMatchId || '__none__'} onValueChange={(v) => setSelectedMatchId(v === '__none__' ? '' : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select matching library item" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50 max-h-[250px]">
+                <SelectItem value="__none__">No specific match (general duplicate)</SelectItem>
+                {duplicateTarget && findLibraryMatches(duplicateTarget).map(match => (
+                  <SelectItem key={match.id} value={match.id}>
+                    ⭐ {match.label} ({match.equipment_group})
+                  </SelectItem>
+                ))}
+                {libraryItems.slice(0, 30).map(item => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label} ({item.equipment_group})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Note (optional)</Label>
+            <Textarea
+              value={duplicateNote}
+              onChange={(e) => setDuplicateNote(e.target.value)}
+              placeholder="Additional context..."
+              rows={2}
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setDuplicateTarget(null)} className="w-full sm:w-auto">Cancel</Button>
+            <Button onClick={handleMarkDuplicate} disabled={processing} className="w-full sm:w-auto">
+              {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+              Mark as Already Covered
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
