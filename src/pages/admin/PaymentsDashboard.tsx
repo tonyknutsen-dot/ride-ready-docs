@@ -336,7 +336,7 @@ export default function PaymentsDashboard() {
             </Card>
 
             <Card
-              className={`cursor-pointer ${summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}`}
+              className={`cursor-pointer transition-shadow hover:shadow-md ${summary.pastDueSubscriptions > 0 ? 'border-amber-500' : ''}`}
               onClick={() => { setShowAllUsers(false); }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
