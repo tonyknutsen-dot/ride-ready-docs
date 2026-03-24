@@ -27,7 +27,10 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
   const [isTester, setIsTester] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkTesterStatus = useCallback(async () => {
+  // Track which user ID we've already checked to prevent redundant fetches
+  const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
+
+  const checkTesterStatus = useCallback(async (force = false) => {
     if (authLoading) {
       return;
     }
@@ -36,6 +39,12 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
     if (!user) {
       setIsTester(false);
       setIsLoading(false);
+      setCheckedUserId(null);
+      return;
+    }
+
+    // Skip if we already checked for this user (unless forced)
+    if (!force && checkedUserId === user.id) {
       return;
     }
 
