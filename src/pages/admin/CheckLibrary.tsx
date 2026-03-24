@@ -424,7 +424,7 @@ export default function CheckLibrary() {
       .insert({
         label: `${item.label} (copy)`,
         frequency: item.frequency as CheckFrequency,
-        equipment_group: item.equipment_group,
+        equipment_group: item.equipment_group.toLowerCase().replace(/\s+/g, '_'),
         ride_category_id: item.ride_category_id,
         hint: item.hint,
         category: item.category,
