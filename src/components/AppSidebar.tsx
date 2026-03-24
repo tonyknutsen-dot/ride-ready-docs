@@ -43,7 +43,7 @@ import { useAdmin } from '@/contexts/AdminContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
-import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
+
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
 import { useActionNeededCount } from '@/hooks/useActionNeededCount';
 import { useOverdueCompliance } from '@/hooks/useOverdueCompliance';
