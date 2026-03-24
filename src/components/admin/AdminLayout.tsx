@@ -28,6 +28,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     documentRequests: 0,
     supportMessages: 0,
     bugReports: 0,
+    featureRequests: 0,
   });
 
   useEffect(() => {
