@@ -143,8 +143,8 @@ const Documents = () => {
         <Alert className="border-info/30 bg-info/5 py-2.5">
           <Upload className="h-4 w-4 text-info" />
           <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-xs">To upload documents, go to a specific equipment page.</span>
-            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info text-xs">
+            <span className="text-xs text-foreground/70">To upload documents, go to a specific equipment page.</span>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info text-xs font-semibold">
               <Link to="/rides" className="flex items-center gap-1">
                 Equipment <ArrowRight className="h-3 w-3" />
               </Link>
