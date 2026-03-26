@@ -143,8 +143,8 @@ const Documents = () => {
         <Alert className="border-info/30 bg-info/5 py-2.5">
           <Upload className="h-4 w-4 text-info" />
           <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-xs">To upload documents, go to a specific equipment page.</span>
-            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info text-xs">
+            <span className="text-xs text-foreground/70">To upload documents, go to a specific equipment page.</span>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info text-xs font-semibold">
               <Link to="/rides" className="flex items-center gap-1">
                 Equipment <ArrowRight className="h-3 w-3" />
               </Link>
@@ -176,7 +176,7 @@ const Documents = () => {
                         </div>
                         <div className="text-left">
                           <div className="text-sm font-semibold text-foreground">Global Documents</div>
-                          <div className="text-[11px] text-muted-foreground">Shared across all equipment</div>
+                          <div className="text-[11px] text-foreground/60 font-medium">Shared across all equipment</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -205,11 +205,11 @@ const Documents = () => {
                 <div className="p-1.5 bg-primary/10 rounded-lg">
                   <FolderOpen className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <h2 className="text-xs font-semibold text-primary uppercase tracking-wider">
+                <h2 className="text-xs font-bold text-primary uppercase tracking-wider">
                   Equipment Documents
                 </h2>
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] font-medium text-foreground/50">
                   {ridesWithDocs.reduce((sum, r) => sum + r.document_count, 0)} files
                 </span>
               </div>
@@ -234,7 +234,7 @@ const Documents = () => {
                         </div>
                         <div className="text-left min-w-0">
                           <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
-                          <div className="text-[11px] text-muted-foreground">{ride.category_name}</div>
+                          <div className="text-[11px] font-medium text-foreground/55">{ride.category_name}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
