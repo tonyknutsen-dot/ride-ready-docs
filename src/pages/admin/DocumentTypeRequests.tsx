@@ -13,6 +13,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useDocumentTypes, type DocumentType } from '@/hooks/useDocumentTypes';
 import {
   CheckCircle, XCircle, Clock, Search, AlertTriangle, FileText, ShieldCheck, Link2,
 } from 'lucide-react';
