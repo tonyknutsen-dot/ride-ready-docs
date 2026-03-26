@@ -568,16 +568,15 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
-              <Bug className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Bug Reports</h1>
-              <p className="text-sm text-muted-foreground">
-                {reports.length} reports total • {selectedIds.size} selected
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <Bug className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              Bug Reports
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {reports.length} reports total • {selectedIds.size} selected
+            </p>
+          </div>
           </div>
           <div className="flex items-center gap-2">
             {selectedIds.size > 0 && (
