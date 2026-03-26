@@ -577,7 +577,6 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
               {reports.length} reports total • {selectedIds.size} selected
             </p>
           </div>
-          </div>
           <div className="flex items-center gap-2">
             {selectedIds.size > 0 && (
               <Button 
