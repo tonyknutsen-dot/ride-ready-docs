@@ -393,6 +393,26 @@ export default function DocumentTypeRequests() {
     const target = approveTarget;
     const note = approveNote;
     try {
+      // Generate a type_key from the name
+      const typeKey = target.document_type_name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '');
+
+      // Create the document type in the library
+      const { error: dtError } = await supabase
+        .from('document_types')
+        .insert({
+          type_key: typeKey,
+          name: target.document_type_name.trim(),
+          category: 'Other',
+          description: target.description || null,
+          source: 'approved_request',
+          approved_from_request_id: target.id,
+        });
+      if (dtError && !dtError.message?.includes('duplicate key')) throw dtError;
+
+      // Update request status
       const { error } = await supabase
         .from('document_type_requests')
         .update({ status: 'approved', admin_notes: note || null })
@@ -402,7 +422,7 @@ export default function DocumentTypeRequests() {
       // Optimistic UI
       setRequests(prev => prev.map(r => r.id === target.id
         ? { ...r, status: 'approved', admin_notes: note || null } : r));
-      toast({ title: 'Request Approved', description: `"${target.document_type_name}" has been approved. Remember to add it to the document types list.` });
+      toast({ title: 'Request Approved', description: `"${target.document_type_name}" has been approved and added to the Document Type Library.` });
       setApproveTarget(null);
       setApproveNote('');
       setApproving(false);
@@ -424,7 +444,10 @@ export default function DocumentTypeRequests() {
           }
         }).catch(() => {});
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      const msg = err?.message?.includes('row-level security')
+        ? 'Permission denied. The technical error has been logged.'
+        : (err.message || 'Failed to approve');
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
       setApproving(false);
     }
   };
