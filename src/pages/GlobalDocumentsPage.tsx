@@ -25,8 +25,8 @@ const GlobalDocumentsPage = () => {
         <PageHeader
           icon={<FolderOpen className="h-5 w-5 text-info" />}
           iconBgClass="from-info/20 to-primary/10"
-          title="Company Documents"
-          subtitle="Applies across all rides"
+          title="Shared Insurance Documents"
+          subtitle="Insurance documents shared across all equipment"
           showBackButton
           backTo="/overview"
         />

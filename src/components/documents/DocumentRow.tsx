@@ -99,10 +99,10 @@ const DocumentRow = ({
         })()}
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {!isOlderVersion && doc.is_global && (
-            <span className="text-[10px] text-muted-foreground font-medium">Global</span>
+            <span className="text-[10px] text-muted-foreground font-medium">Shared insurance</span>
           )}
           {!isOlderVersion && !doc.is_global && rideId && (
-            <span className="text-[10px] text-muted-foreground font-medium">This ride only</span>
+            <span className="text-[10px] text-muted-foreground font-medium">This equipment only</span>
           )}
           {!isOlderVersion && (
             <span className="text-xs text-muted-foreground">{uploadedStr}</span>

@@ -76,9 +76,9 @@ const DocumentRowActions = ({
               <>
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleGlobal(); }}>
                   {isGlobal ? (
-                    <><MapPin className="h-4 w-4 mr-2" /> Make Ride-Only</>
+                    <><MapPin className="h-4 w-4 mr-2" /> Make equipment-only</>
                   ) : (
-                    <><Globe className="h-4 w-4 mr-2" /> Make Global</>
+                    <><Globe className="h-4 w-4 mr-2" /> Share across all equipment</>
                   )}
                 </DropdownMenuItem>
                 {(onCopyLink || onReplace || onDelete) && <DropdownMenuSeparator />}

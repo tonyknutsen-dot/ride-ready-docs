@@ -212,7 +212,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
   expiredDocs.slice(0, 5).forEach(doc => {
     const daysUntil = Math.ceil((new Date(doc.expires_at!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const isGlobal = (doc as any).is_global === true;
-    const rideName = isGlobal ? 'All rides (Global)' : (doc.ride_id ? rideMap.get(doc.ride_id) || '' : '');
+    const rideName = isGlobal ? 'Shared insurance' : (doc.ride_id ? rideMap.get(doc.ride_id) || '' : '');
     dueSoonItems.push({ label: doc.document_name, rideName, daysUntil, type: 'document' });
   });
 

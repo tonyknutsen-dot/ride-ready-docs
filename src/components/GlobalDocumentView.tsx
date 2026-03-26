@@ -421,11 +421,11 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         <div className="py-12 text-center space-y-2">
           <Globe className="h-8 w-8 mx-auto text-muted-foreground/50" />
           <p className="text-sm text-muted-foreground">
-            {search || filter !== 'all' ? 'No documents match your filters' : 'No global documents yet'}
+            {search || filter !== 'all' ? 'No documents match your filters' : 'No shared insurance documents yet'}
           </p>
           {!search && filter === 'all' && (
             <p className="text-xs text-muted-foreground">
-              Upload insurance, policies, training certs and other company-wide documents
+              Upload insurance documents to share them across all equipment
             </p>
           )}
         </div>

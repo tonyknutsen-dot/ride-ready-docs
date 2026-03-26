@@ -161,7 +161,7 @@ const Documents = () => {
           </div>
         ) : (
           <>
-            {/* Global Documents Section */}
+            {/* Shared Insurance Section */}
             {globalDocCount > 0 && (
               <div className="rounded-xl border border-info/30 bg-info/5 overflow-hidden">
                 <Collapsible defaultOpen>
@@ -175,8 +175,8 @@ const Documents = () => {
                           <Globe className="h-4 w-4 text-info" />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-semibold text-foreground">Global Documents</div>
-                          <div className="text-[11px] text-foreground/60 font-medium">Shared across all equipment</div>
+                          <div className="text-sm font-semibold text-foreground">Shared Insurance</div>
+                          <div className="text-[11px] text-foreground/60 font-medium">Applies to all equipment</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

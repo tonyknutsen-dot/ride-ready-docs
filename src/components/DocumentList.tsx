@@ -357,13 +357,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
   const handleToggleGlobal = async (document: Document) => {
     try {
+      // Only insurance documents can be toggled to global
+      if (document.document_type !== 'insurance') {
+        toast({
+          title: "Not allowed",
+          description: "Only insurance documents can be shared across all equipment.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const newGlobalStatus = !document.is_global;
       
       const { error } = await supabase
         .from('documents')
         .update({ 
           is_global: newGlobalStatus,
-          // If making global, clear ride_id; if making ride-specific, keep current ride_id
           ride_id: newGlobalStatus ? null : (document.ride_id || rideId)
         })
         .eq('id', document.id);
@@ -371,10 +380,10 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       if (error) throw error;
 
       toast({
-        title: newGlobalStatus ? "Document is now Global" : "Document is now Ride-Specific",
+        title: newGlobalStatus ? "Insurance shared" : "Insurance restricted",
         description: newGlobalStatus 
-          ? "This document will appear on all your devices" 
-          : "This document is now specific to this device only",
+          ? "This insurance document now applies to all equipment" 
+          : "This insurance document is now specific to this equipment only",
       });
 
       loadDocuments();

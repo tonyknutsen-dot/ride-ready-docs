@@ -176,8 +176,8 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
     return (
       <EmptyState
         icon={FolderOpen}
-        title="Pick a ride first to add a document"
-        description="or check 'Global Document' below"
+        title="Pick a piece of equipment first"
+        description="Select equipment to upload a document for it"
         variant="compact"
       />
     );
