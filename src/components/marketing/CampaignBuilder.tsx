@@ -10,9 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Send, Eye, Users, Tag, Info } from "lucide-react";
+import { Send, Eye, Users, Tag, Info, FlaskConical, CheckCircle2 } from "lucide-react";
 import { CampaignPreview } from "./CampaignPreview";
+import { format } from "date-fns";
 
 interface MarketingContact {
   id: string;
@@ -25,6 +27,14 @@ interface MarketingContact {
 
 interface CampaignBuilderProps {
   onCampaignSent: () => void;
+}
+
+interface TestSendResult {
+  sentTo: string;
+  sentAt: string;
+  fromName: string;
+  fromEmail: string;
+  replyTo: string;
 }
 
 export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
@@ -43,6 +53,12 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   const [selectionMode, setSelectionMode] = useState<"all" | "tags" | "custom">("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+
+  // Test send
+  const [showTestDialog, setShowTestDialog] = useState(false);
+  const [testEmail, setTestEmail] = useState(user?.email || "");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [lastTestResult, setLastTestResult] = useState<TestSendResult | null>(null);
 
   const fetchContacts = useCallback(async () => {
     if (!user) return;
@@ -68,10 +84,15 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
     fetchContacts();
   }, [fetchContacts]);
 
-  // Get all unique tags
+  // Pre-fill test email when user loads
+  useEffect(() => {
+    if (user?.email && !testEmail) {
+      setTestEmail(user.email);
+    }
+  }, [user?.email]);
+
   const allTags = Array.from(new Set(contacts.flatMap(c => c.tags || [])));
 
-  // Calculate selected recipients
   const getSelectedRecipients = (): MarketingContact[] => {
     if (selectionMode === "all") {
       return contacts;
@@ -110,6 +131,42 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
     }
   };
 
+  const handleSendTest = async () => {
+    if (!user || !testEmail.trim() || !subject.trim() || !content.trim()) {
+      toast.error("Please fill in subject and content before sending a test");
+      return;
+    }
+
+    setSendingTest(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke("send-test-marketing-email", {
+        body: {
+          testEmail: testEmail.trim(),
+          subject: subject.trim(),
+          content: content,
+        },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to send test email");
+      }
+
+      const result = response.data as TestSendResult;
+      setLastTestResult(result);
+      setShowTestDialog(false);
+      toast.success(`Test email sent to ${testEmail.trim()}`);
+    } catch (error: any) {
+      console.error("Test send error:", error);
+      toast.error(error.message || "Failed to send test email");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   const handleSendCampaign = async () => {
     if (!user) return;
     if (!campaignName.trim() || !subject.trim() || !content.trim()) {
@@ -124,7 +181,6 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
     setSending(true);
 
     try {
-      // Create the campaign record
       const { data: campaign, error: campaignError } = await supabase
         .from("email_campaigns")
         .insert({
@@ -140,7 +196,6 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
 
       if (campaignError) throw campaignError;
 
-      // Create recipient records
       const recipientRecords = selectedRecipients.map(contact => ({
         campaign_id: campaign.id,
         contact_id: contact.id,
@@ -153,7 +208,6 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
 
       if (recipientsError) throw recipientsError;
 
-      // Call edge function to send emails
       const { data: session } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke("send-marketing-campaign", {
         body: { campaignId: campaign.id },
@@ -168,13 +222,13 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
 
       toast.success(`Campaign sent to ${selectedRecipients.length} recipients!`);
       
-      // Reset form
       setCampaignName("");
       setSubject("");
       setContent("");
       setSelectionMode("all");
       setSelectedTags([]);
       setSelectedContactIds([]);
+      setLastTestResult(null);
       
       onCampaignSent();
     } catch (error: any) {
@@ -262,6 +316,21 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
           </CardContent>
         </Card>
 
+        {/* Last test send indicator */}
+        {lastTestResult && (
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-muted/50 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-muted-foreground">
+              Test sent to <span className="font-medium text-foreground">{lastTestResult.sentTo}</span>
+              {" · "}
+              {format(new Date(lastTestResult.sentAt), "MMM d, HH:mm")}
+              {" · "}
+              From: {lastTestResult.fromName}
+              {lastTestResult.replyTo && <> · Reply-to: {lastTestResult.replyTo}</>}
+            </span>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -271,9 +340,17 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowTestDialog(true)}
+            disabled={!subject || !content}
+          >
+            <FlaskConical className="h-4 w-4 mr-2" />
+            Send Test
+          </Button>
           <Button 
             onClick={handleSendCampaign}
-            disabled={sending || selectedRecipients.length === 0}
+            disabled={sending || selectedRecipients.length === 0 || !campaignName || !subject || !content}
             className="flex-1"
           >
             <Send className="h-4 w-4 mr-2" />
@@ -399,6 +476,52 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
         content={content}
         sampleContact={selectedRecipients[0] || contacts[0]}
       />
+
+      {/* Test Send Dialog */}
+      <Dialog open={showTestDialog} onOpenChange={setShowTestDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FlaskConical className="h-5 w-5" />
+              Send Test Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Send a real email using the full branded template. Subject will be prefixed with [TEST]. 
+              Tokens will be replaced with sample data.
+            </p>
+            <div>
+              <Label htmlFor="testEmail">Send to email address</Label>
+              <Input
+                id="testEmail"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="your@email.com"
+              />
+            </div>
+            <div className="p-3 rounded-lg bg-muted text-xs text-muted-foreground space-y-1">
+              <p><strong>Subject:</strong> [TEST] {subject || "(empty)"}</p>
+              <p><strong>From:</strong> Your company name &lt;info@ridereadydocs.com&gt;</p>
+              <p><strong>Reply-to:</strong> {user?.email || "your login email"}</p>
+              <p><strong>Tokens:</strong> {`{{name}}`} → "Test Recipient", {`{{company}}`} → "Test Company"</p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowTestDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendTest} 
+                disabled={sendingTest || !testEmail.trim()}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {sendingTest ? "Sending..." : "Send Test"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

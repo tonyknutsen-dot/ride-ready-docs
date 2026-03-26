@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
-import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
+import { brandColors, emailStyles, logoHtml, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
@@ -164,7 +164,7 @@ serve(async (req: Request) => {
   <div style="${emailStyles.container}">
     <!-- Header -->
     <div style="${emailStyles.header}">
-      <div style="margin-bottom: 16px;">${logoSvg}</div>
+      ${logoHtml}
     </div>
     
     <!-- Content -->
@@ -193,6 +193,7 @@ serve(async (req: Request) => {
           from: profile?.company_name 
             ? `${profile.company_name} <info@ridereadydocs.com>` 
             : "Ride Ready Docs <info@ridereadydocs.com>",
+          reply_to: user.email || undefined,
           to: [contact.email],
           subject: personalizedSubject,
           html: htmlContent,
