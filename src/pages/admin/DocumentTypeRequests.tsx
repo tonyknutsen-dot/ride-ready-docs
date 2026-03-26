@@ -187,7 +187,7 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
 
   const filteredTypes = useMemo(() => {
     const suggestedIds = new Set(suggestedMatches.map(m => m.docType.id));
-    let types = EXISTING_DOC_TYPES.filter(t => !suggestedIds.has(t.id));
+    let types = existingTypes.filter(t => !suggestedIds.has(t.id));
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       types = types.filter(t => t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
