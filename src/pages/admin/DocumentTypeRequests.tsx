@@ -209,7 +209,7 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
     if (!request) return;
     setSaving(true);
     try {
-      const matched = EXISTING_DOC_TYPES.find(t => t.id === matchedId);
+      const matched = existingTypes.find(t => t.id === matchedId);
       const adminNote = matched
         ? `Linked to existing type: ${matched.name} (${matched.category})${note ? '. ' + note : ''}`
         : note || 'Linked to existing type';
