@@ -527,11 +527,11 @@ export default function DocumentTypeRequests() {
       <div className="space-y-5">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="h-6 w-6" />
+          <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <FileText className="h-5 w-5 md:h-6 md:w-6 text-primary" />
             Document Type Requests
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Review requests for new document types. If a matching type already exists, link the request to that existing type.
           </p>
         </div>
