@@ -176,7 +176,7 @@ const Documents = () => {
                         </div>
                         <div className="text-left">
                           <div className="text-sm font-semibold text-foreground">Global Documents</div>
-                          <div className="text-[11px] text-muted-foreground">Shared across all equipment</div>
+                          <div className="text-[11px] text-foreground/60 font-medium">Shared across all equipment</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
