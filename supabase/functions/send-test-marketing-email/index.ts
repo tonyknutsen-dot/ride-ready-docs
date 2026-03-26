@@ -150,7 +150,7 @@ serve(async (req: Request) => {
         sentAt: new Date().toISOString(),
         fromName: senderName,
         fromEmail: "info@ridereadydocs.com",
-        replyTo: user.email,
+        replyTo: "info@ridereadydocs.com",
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
