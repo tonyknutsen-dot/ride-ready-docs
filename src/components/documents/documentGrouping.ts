@@ -65,7 +65,7 @@ export const CATEGORY_STYLES: Record<string, { iconBg: string; iconColor: string
 /**
  * Group documents by type category, with globals separated when appropriate.
  */
-export const groupByType = (docs: Document[], isGlobal: boolean) => {
+export const groupByType = (docs: Document[], isGlobal: boolean, categoryMap?: Record<string, string>) => {
   const groups: Record<string, DocumentGroup[]> = {};
   
   const globalDocs: Document[] = [];
@@ -85,7 +85,7 @@ export const groupByType = (docs: Document[], isGlobal: boolean) => {
   
   const rideDocGroups = groupDocumentsByName(rideDocs);
   rideDocGroups.forEach(docGroup => {
-    const k = getDocGroupCategory(docGroup.latestDoc.document_type);
+    const k = getDocGroupCategory(docGroup.latestDoc.document_type, categoryMap);
     (groups[k] ||= []).push(docGroup);
   });
   
