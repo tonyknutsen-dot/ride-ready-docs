@@ -339,8 +339,10 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             <Label htmlFor="subject" className="text-xs md:text-sm">Email Subject *</Label>
             <Input
               id="subject"
+              ref={subjectRef}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              onFocus={() => { lastFocusedField.current = "subject"; }}
               placeholder="Exciting news from {{company}}!"
             />
           </div>
@@ -349,19 +351,33 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             <Label htmlFor="content" className="text-xs md:text-sm">Email Content *</Label>
             <Textarea
               id="content"
+              ref={contentRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onFocus={() => { lastFocusedField.current = "content"; }}
               placeholder={`Dear {{name}},\n\nI hope this email finds you well...\n\nBest regards`}
               rows={isMobile ? 8 : 12}
               className="font-mono text-sm"
             />
           </div>
 
-          <div className="flex items-start gap-2 p-2.5 md:p-3 bg-muted rounded-lg">
-            <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground">
-              Tokens: {`{{name}}`} · {`{{company}}`} · {`{{email}}`}
-            </p>
+          <div className="space-y-2 p-2.5 md:p-3 bg-muted rounded-lg">
+            <div className="flex items-center gap-1.5">
+              <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground font-medium">Tap a token to insert:</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {AVAILABLE_TOKENS.map(({ token, label }) => (
+                <button
+                  key={token}
+                  type="button"
+                  onClick={() => insertToken(token)}
+                  className="inline-flex items-center px-2 py-1 rounded-md bg-background border border-border text-xs font-mono text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
