@@ -211,7 +211,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-64 border-r bg-card min-h-[calc(100vh-73px)] sticky top-[73px]">
+        <aside className="hidden md:block w-64 border-r bg-card h-[calc(100vh-73px)] sticky top-[73px] overflow-y-auto">
           <NavigationContent />
         </aside>
 
