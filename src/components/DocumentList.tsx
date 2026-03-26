@@ -539,7 +539,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         )}
         {groupedDocs.map((g, groupIdx) => {
           // Use consistent color for all document type groups
-          const isGlobalSection = g.type === "🌐 Global Documents";
+          const isGlobalSection = g.type === "🛡️ Shared Insurance";
           const isCheckRecordSection = g.type === "✅ Safety Check Records";
           
           // Apply filters to check record sections
