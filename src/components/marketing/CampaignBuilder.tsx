@@ -266,6 +266,25 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Campaign Form */}
       <div className="lg:col-span-2 space-y-4">
+        {/* Sending Identity */}
+        <Card className="border-dashed">
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Sending Identity</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>Provider</span>
+              <span className="text-foreground">Resend</span>
+              <span>From name</span>
+              <span className="text-foreground">Your company name</span>
+              <span>From email</span>
+              <span className="text-foreground">info@ridereadydocs.com</span>
+              <span>Reply-to</span>
+              <span className="text-foreground">{user?.email || "your login email"}</span>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Create Campaign</CardTitle>
@@ -501,11 +520,11 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                 placeholder="your@email.com"
               />
             </div>
-            <div className="p-3 rounded-lg bg-muted text-xs text-muted-foreground space-y-1">
-              <p><strong>Subject:</strong> [TEST] {subject || "(empty)"}</p>
-              <p><strong>From:</strong> Your company name &lt;info@ridereadydocs.com&gt;</p>
-              <p><strong>Reply-to:</strong> {user?.email || "your login email"}</p>
-              <p><strong>Tokens:</strong> {`{{name}}`} → "Test Recipient", {`{{company}}`} → "Test Company"</p>
+            <div className="p-3 rounded-lg bg-muted text-xs space-y-1.5">
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Subject:</span> [TEST] {subject || "(empty)"}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">From:</span> Your company name &lt;info@ridereadydocs.com&gt;</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Reply-to:</span> {user?.email || "your login email"}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Tokens:</span> {`{{name}}`} → "Test Recipient", {`{{company}}`} → "Test Company"</p>
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowTestDialog(false)}>
