@@ -48,8 +48,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
 
   // Auto-suggest global for insurance documents
   useEffect(() => {
-    const selectedType = documentTypes.find(t => t.id === documentType);
-    if (selectedType?.suggestGlobal && !rideId) {
+    if (SUGGEST_GLOBAL_TYPE_KEYS.has(documentType) && !rideId) {
       setIsGlobal(true);
     }
   }, [documentType, rideId]);
