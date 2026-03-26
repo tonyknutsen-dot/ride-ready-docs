@@ -325,9 +325,9 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       {/* Recipients */}
       <Card>
         <CardHeader className="pb-3 md:pb-4 px-3 md:px-6 pt-4 md:pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <CardTitle className="text-base md:text-lg">Recipients</CardTitle>
-            <Badge variant="secondary" className="text-xs">{selectedRecipients.length}</Badge>
+            <Badge variant="secondary" className="text-xs tabular-nums">{selectedRecipients.length}</Badge>
           </div>
           <CardDescription className="text-xs md:text-sm">
             Select who receives this campaign
