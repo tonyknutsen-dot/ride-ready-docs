@@ -240,20 +240,20 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                 <span className="text-sm font-medium">Sending Identity</span>
               </div>
             )}
-            <CollapsibleContent>
-              <div className={`grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground ${isMobile ? "mt-2.5 pt-2.5 border-t" : ""}`}>
-                <span>Provider</span>
-                <span className="text-foreground">Resend</span>
-                <span>From name</span>
-                <span className="text-foreground">Your company name</span>
-                <span>From email</span>
-                <span className="text-foreground">info@ridereadydocs.com</span>
-                <span>Reply-to</span>
-                <span className="text-foreground">{user?.email || "your login email"}</span>
-              </div>
-            </CollapsibleContent>
-            {/* Desktop: always show grid without collapsible */}
-            {!isMobile && (
+            {isMobile ? (
+              <CollapsibleContent>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
+                  <span>Provider</span>
+                  <span className="text-foreground">Resend</span>
+                  <span>From name</span>
+                  <span className="text-foreground">Your company name</span>
+                  <span>From email</span>
+                  <span className="text-foreground">info@ridereadydocs.com</span>
+                  <span>Reply-to</span>
+                  <span className="text-foreground">{user?.email || "your login email"}</span>
+                </div>
+              </CollapsibleContent>
+            ) : (
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>Provider</span>
                 <span className="text-foreground">Resend</span>
