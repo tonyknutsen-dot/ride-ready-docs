@@ -265,13 +265,13 @@ const Documents = () => {
 
             {/* Empty state */}
             {ridesWithDocs.length === 0 && globalDocCount === 0 && (
-              <div className="py-12 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-info/20 mx-auto flex items-center justify-center mb-4">
-                  <FileText className="h-10 w-10 text-primary" />
+              <div className="py-10 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted mx-auto flex items-center justify-center mb-3">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mt-4">No documents yet</h3>
-                <p className="text-muted-foreground">
-                  Upload documents from individual ride pages
+                <h3 className="text-base font-semibold">No documents yet</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload documents from individual equipment pages
                 </p>
               </div>
             )}
