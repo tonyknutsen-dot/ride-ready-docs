@@ -280,13 +280,13 @@ function SubmissionCard({
   const isProcessing = processing === submission.id;
 
   const borderColor = submission.status === 'pending'
-    ? 'border-l-yellow-500'
+    ? 'border-l-yellow-400'
     : submission.status === 'approved'
-    ? 'border-l-green-500'
-    : 'border-l-red-400';
+    ? 'border-l-green-400'
+    : 'border-l-red-300';
 
   return (
-    <Card className={`border-l-4 ${borderColor} hover:shadow-none hover:translate-y-0`}>
+    <Card className={`border-l-[3px] ${borderColor} hover:shadow-none hover:translate-y-0`}>
       <CardContent className="px-3.5 pt-3.5 pb-3">
         {/* Badge row */}
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
