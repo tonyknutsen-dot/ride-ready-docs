@@ -22,6 +22,7 @@ type ResourceType =
   | 'defect'
   | 'maintenance'
   | 'risk_assessment'
+  | 'risk_library'
   | 'profile'
   | 'staff'
   | 'session'

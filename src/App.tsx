@@ -69,6 +69,7 @@ const CheckLibrary = lazy(() => import("./pages/admin/CheckLibrary"));
 const EquipmentTypeLibrary = lazy(() => import("./pages/admin/EquipmentTypeLibrary"));
 const DocumentTypeLibrary = lazy(() => import("./pages/admin/DocumentTypeLibrary"));
 const RiskItemSubmissions = lazy(() => import("./pages/admin/RiskItemSubmissions"));
+const RiskLibrary = lazy(() => import("./pages/admin/RiskLibrary"));
 const EarlyAccessSignups = lazy(() => import("./pages/admin/EarlyAccessSignups"));
 const PaymentsDashboard = lazy(() => import("./pages/admin/PaymentsDashboard"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
@@ -582,6 +583,18 @@ const App = () => (
                     <AdminRoute>
                       <AppLayout>
                         <DocumentTypeLibrary />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/risk-library" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <RiskLibrary />
                       </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>

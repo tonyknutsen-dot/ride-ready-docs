@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library, Layers, Package } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library, Layers, Package, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -84,7 +84,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Check Library', href: '/admin/check-library', icon: Library, count: 0 },
         { name: 'Check Intake Queue', href: '/admin/check-items', icon: FileText, count: pendingCounts.checkIntake },
-        { name: 'Risk Library', href: '/admin/risk-items', icon: Shield, count: pendingCounts.riskIntake },
+        { name: 'Risk Library', href: '/admin/risk-library', icon: Shield, count: 0 },
+        { name: 'Risk Intake Queue', href: '/admin/risk-items', icon: AlertTriangle, count: pendingCounts.riskIntake },
         { name: 'Equipment Type Library', href: '/admin/equipment-type-library', icon: Package, count: 0 },
         { name: 'Document Type Library', href: '/admin/document-type-library', icon: FolderOpen, count: 0 },
       ],
@@ -177,14 +178,14 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="py-4">
-                  <div className="px-4 mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Shield className="h-6 w-6 text-primary" />
-                      <h2 className="text-lg font-semibold">Admin Panel</h2>
-                    </div>
+              <SheetContent side="left" className="w-64 p-0 flex flex-col">
+                <div className="px-4 pt-4 pb-2 shrink-0">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="h-6 w-6 text-primary" />
+                    <h2 className="text-lg font-semibold">Admin Panel</h2>
                   </div>
+                </div>
+                <div className="flex-1 overflow-y-auto overscroll-contain">
                   <NavigationContent />
                 </div>
               </SheetContent>
@@ -210,7 +211,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-64 border-r bg-card min-h-[calc(100vh-73px)] sticky top-[73px]">
+        <aside className="hidden md:block w-64 border-r bg-card h-[calc(100vh-73px)] sticky top-[73px] overflow-y-auto">
           <NavigationContent />
         </aside>
 
