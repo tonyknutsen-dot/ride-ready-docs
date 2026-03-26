@@ -22,11 +22,16 @@ export const CampaignPreview = ({
 }: CampaignPreviewProps) => {
   const renderPersonalized = (text: string) => {
     if (!sampleContact) return text;
+    const firstName = sampleContact.name ? sampleContact.name.split(" ")[0] : "";
     
     return text
+      .replace(/\{\{first_name\}\}/g, firstName || sampleContact.name || "there")
       .replace(/\{\{name\}\}/g, sampleContact.name || "Valued Customer")
       .replace(/\{\{company\}\}/g, sampleContact.company_name || "Your Company")
-      .replace(/\{\{email\}\}/g, sampleContact.email);
+      .replace(/\{\{email\}\}/g, sampleContact.email)
+      .replace(/\{\{unsubscribe_url\}\}/g, "#unsubscribe")
+      .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
+      .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
   };
 
   const personalizedSubject = renderPersonalized(subject);

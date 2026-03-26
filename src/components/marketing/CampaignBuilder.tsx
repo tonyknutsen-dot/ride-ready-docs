@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,16 @@ import { Send, Eye, Users, Tag, Info, FlaskConical, CheckCircle2, ChevronDown, M
 import { CampaignPreview } from "./CampaignPreview";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const AVAILABLE_TOKENS = [
+  { token: "{{first_name}}", label: "First Name", sample: "John" },
+  { token: "{{name}}", label: "Name", sample: "John Doe" },
+  { token: "{{company}}", label: "Company", sample: "Acme Corp" },
+  { token: "{{email}}", label: "Email", sample: "john@example.com" },
+  { token: "{{unsubscribe_url}}", label: "Unsubscribe", sample: "#unsubscribe" },
+  { token: "{{website_url}}", label: "Website", sample: "https://ridereadydocs.com" },
+  { token: "{{support_email}}", label: "Support", sample: "info@ridereadydocs.com" },
+];
 
 interface MarketingContact {
   id: string;
@@ -58,11 +68,45 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
 
+  // Refs for token insertion
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const lastFocusedField = useRef<"subject" | "content">("content");
+
   // Test send
   const [showTestDialog, setShowTestDialog] = useState(false);
   const [testEmail, setTestEmail] = useState(user?.email || "");
   const [sendingTest, setSendingTest] = useState(false);
   const [lastTestResult, setLastTestResult] = useState<TestSendResult | null>(null);
+
+  const insertToken = (token: string) => {
+    const field = lastFocusedField.current;
+    if (field === "subject") {
+      const el = subjectRef.current;
+      if (el) {
+        const start = el.selectionStart ?? subject.length;
+        const end = el.selectionEnd ?? subject.length;
+        const newVal = subject.slice(0, start) + token + subject.slice(end);
+        setSubject(newVal);
+        requestAnimationFrame(() => {
+          el.focus();
+          el.setSelectionRange(start + token.length, start + token.length);
+        });
+      }
+    } else {
+      const el = contentRef.current;
+      if (el) {
+        const start = el.selectionStart ?? content.length;
+        const end = el.selectionEnd ?? content.length;
+        const newVal = content.slice(0, start) + token + content.slice(end);
+        setContent(newVal);
+        requestAnimationFrame(() => {
+          el.focus();
+          el.setSelectionRange(start + token.length, start + token.length);
+        });
+      }
+    }
+  };
 
   const fetchContacts = useCallback(async () => {
     if (!user) return;
@@ -295,8 +339,10 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             <Label htmlFor="subject" className="text-xs md:text-sm">Email Subject *</Label>
             <Input
               id="subject"
+              ref={subjectRef}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              onFocus={() => { lastFocusedField.current = "subject"; }}
               placeholder="Exciting news from {{company}}!"
             />
           </div>
@@ -305,19 +351,33 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             <Label htmlFor="content" className="text-xs md:text-sm">Email Content *</Label>
             <Textarea
               id="content"
+              ref={contentRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onFocus={() => { lastFocusedField.current = "content"; }}
               placeholder={`Dear {{name}},\n\nI hope this email finds you well...\n\nBest regards`}
               rows={isMobile ? 8 : 12}
               className="font-mono text-sm"
             />
           </div>
 
-          <div className="flex items-start gap-2 p-2.5 md:p-3 bg-muted rounded-lg">
-            <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground">
-              Tokens: {`{{name}}`} · {`{{company}}`} · {`{{email}}`}
-            </p>
+          <div className="space-y-2 p-2.5 md:p-3 bg-muted rounded-lg">
+            <div className="flex items-center gap-1.5">
+              <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground font-medium">Tap a token to insert:</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {AVAILABLE_TOKENS.map(({ token, label }) => (
+                <button
+                  key={token}
+                  type="button"
+                  onClick={() => insertToken(token)}
+                  className="inline-flex items-center px-2 py-1 rounded-md bg-background border border-border text-xs font-mono text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -497,8 +557,8 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             </div>
             <div className="p-2.5 rounded-lg bg-muted text-[11px] space-y-1">
               <p className="text-muted-foreground"><span className="font-medium text-foreground">Subject:</span> [TEST] {subject || "(empty)"}</p>
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">From:</span> Your company &lt;info@ridereadydocs.com&gt;</p>
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">Reply-to:</span> {user?.email || "your login email"}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">From:</span> Ride Ready Docs &lt;info@ridereadydocs.com&gt;</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Reply-to:</span> info@ridereadydocs.com</p>
             </div>
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
               <Button variant="outline" onClick={() => setShowTestDialog(false)} className="w-full sm:w-auto">

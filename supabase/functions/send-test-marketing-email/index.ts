@@ -58,7 +58,7 @@ serve(async (req: Request) => {
 
     // Stricter rate limit for test sends
     const rateLimitKey = getClientIdentifier(req, "send-test-marketing-email", user.id);
-    const rateLimitResult = await checkRateLimit(rateLimitKey, "standard");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     if (!rateLimitResult.allowed) {
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
@@ -83,15 +83,19 @@ serve(async (req: Request) => {
     const senderName = "Ride Ready Docs";
 
     // Personalize with test placeholders
-    const personalizedSubject = `[TEST] ${subject}`
-      .replace(/\{\{name\}\}/g, "Test Recipient")
-      .replace(/\{\{company\}\}/g, "Test Company")
-      .replace(/\{\{email\}\}/g, testEmail);
+    const personalizeText = (text: string): string => {
+      return text
+        .replace(/\{\{first_name\}\}/g, "Test")
+        .replace(/\{\{name\}\}/g, "Test Recipient")
+        .replace(/\{\{company\}\}/g, "Test Company")
+        .replace(/\{\{email\}\}/g, testEmail)
+        .replace(/\{\{unsubscribe_url\}\}/g, "#unsubscribe-test")
+        .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
+        .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
+    };
 
-    const personalizedContent = content
-      .replace(/\{\{name\}\}/g, "Test Recipient")
-      .replace(/\{\{company\}\}/g, "Test Company")
-      .replace(/\{\{email\}\}/g, testEmail);
+    const personalizedSubject = `[TEST] ${personalizeText(subject)}`;
+    const personalizedContent = personalizeText(content);
 
     // Build the exact same branded HTML as the real campaign sender
     const htmlContent = `
