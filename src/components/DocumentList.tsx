@@ -480,7 +480,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       onDownload={handleDownload}
       onCopyLink={handleCopyLink}
       onDelete={!isOlderVersion ? handleDelete : undefined}
-      onToggleGlobal={!isStaff ? handleToggleGlobal : undefined}
+      onToggleGlobal={!isStaff && doc.document_type === 'insurance' ? handleToggleGlobal : undefined}
     />
   );
 
