@@ -301,18 +301,18 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
             <SelectTrigger className="h-12 border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] font-medium">
               <SelectValue placeholder="What type of document?" />
             </SelectTrigger>
-            <SelectContent className="max-h-80">
+            <SelectContent className="max-h-[60vh] z-[100]">
               {Object.entries(groupedActive).map(([category, items]) => (
-                <div key={category}>
-                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 sticky top-0 border-b border-border/50">
+                <SelectGroup key={category}>
+                  <SelectLabel className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted/50 border-b border-border/40 sticky top-0 z-10">
                     {category}
-                  </div>
+                  </SelectLabel>
                   {items.map((item) => (
-                    <SelectItem key={item.type_key} value={item.type_key} className="pl-4">
+                    <SelectItem key={item.type_key} value={item.type_key} className="pl-6 py-3 text-sm">
                       {item.name}
                     </SelectItem>
                   ))}
-                </div>
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
