@@ -230,7 +230,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                   <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <div className="text-xs min-w-0">
                     <span className="text-muted-foreground">From: </span>
-                    <span className="font-medium text-foreground">Your company</span>
+                    <span className="font-medium text-foreground">Ride Ready Docs</span>
                     <span className="text-muted-foreground block truncate">info@ridereadydocs.com</span>
                   </div>
                 </div>
