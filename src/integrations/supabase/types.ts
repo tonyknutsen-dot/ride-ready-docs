@@ -1206,6 +1206,53 @@ export type Database = {
         }
         Relationships: []
       }
+      document_types: {
+        Row: {
+          approved_from_request_id: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          source: string
+          type_key: string
+          updated_at: string
+        }
+        Insert: {
+          approved_from_request_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          source?: string
+          type_key: string
+          updated_at?: string
+        }
+        Update: {
+          approved_from_request_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          source?: string
+          type_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_types_approved_from_request_id_fkey"
+            columns: ["approved_from_request_id"]
+            isOneToOne: false
+            referencedRelation: "document_type_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           document_name: string
