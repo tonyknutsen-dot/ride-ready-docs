@@ -315,6 +315,7 @@ export default function DocumentTypeLibrary() {
         .eq('id', deleteTarget.id);
       if (error) throw error;
       setTypes(prev => prev.filter(t => t.id !== deleteTarget.id));
+      logEvent('delete', 'document_type', deleteTarget.id, { name: deleteTarget.name });
       toast({ title: 'Deleted', description: `"${deleteTarget.name}" removed from library.` });
       setDeleteTarget(null);
     } catch (err: any) {
