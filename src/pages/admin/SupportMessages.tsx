@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, MessageCircle, Inbox } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { SupportQueueFilters } from '@/components/admin/support/SupportQueueFilters';
 import { SupportMessageRow } from '@/components/admin/support/SupportMessageRow';
@@ -156,8 +156,8 @@ export default function SupportMessages() {
         {/* Header */}
         <div>
           <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-            <Inbox className="h-5 w-5 text-primary" />
-            Support Inbox
+            <MessageCircle className="h-5 w-5 text-primary" />
+            Support Messages
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage and respond to customer support requests

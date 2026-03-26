@@ -293,8 +293,11 @@ export default function FeatureRequests() {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold">Feature Requests</h1>
-            <p className="text-xs text-muted-foreground">Review and manage user feature requests</p>
+            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              Feature Requests
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Review and manage user feature requests</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => { setLoading(true); fetchRequests(); }} className="gap-1.5 self-start">
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
