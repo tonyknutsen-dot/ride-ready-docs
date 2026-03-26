@@ -430,7 +430,7 @@ export default function CheckItemSubmissions() {
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-1">
           <Library className="w-5 h-5 text-primary" />
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Library Intake Queue</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Check Intake Queue</h1>
         </div>
         <p className="text-sm text-muted-foreground max-w-xl">
           Review user-created check items for inclusion in the shared library. Users can already use their own items privately — this queue is for promoting items to the global library.

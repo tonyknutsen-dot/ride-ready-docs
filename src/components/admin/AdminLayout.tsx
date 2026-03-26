@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { AdminBreadcrumb } from './AdminBreadcrumb';
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -18,6 +19,8 @@ interface PendingCounts {
   supportMessages: number;
   bugReports: number;
   featureRequests: number;
+  checkIntake: number;
+  riskIntake: number;
 }
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
@@ -30,16 +33,20 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     supportMessages: 0,
     bugReports: 0,
     featureRequests: 0,
+    checkIntake: 0,
+    riskIntake: 0,
   });
 
   useEffect(() => {
     const fetchPendingCounts = async () => {
-      const [rideRes, docRes, supportRes, bugRes, featureRes] = await Promise.all([
+      const [rideRes, docRes, supportRes, bugRes, featureRes, checkRes, riskRes] = await Promise.all([
         supabase.from('ride_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('document_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('support_messages').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         (supabase as any).from('bug_reports').select('id', { count: 'exact', head: true }).in('status', ['new', 'in_progress']),
         (supabase as any).from('feature_requests').select('id', { count: 'exact', head: true }).in('status', ['pending', 'in_review']),
+        (supabase as any).from('user_submitted_check_items').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        (supabase as any).from('user_submitted_risk_items').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       ]);
 
       setPendingCounts({
@@ -48,6 +55,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         supportMessages: supportRes.count || 0,
         bugReports: bugRes.count || 0,
         featureRequests: featureRes.count || 0,
+        checkIntake: checkRes.count || 0,
+        riskIntake: riskRes.count || 0,
       });
     };
 
@@ -71,15 +80,20 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       ],
     },
     {
-      label: 'Requests & Approvals',
+      label: 'Shared Libraries',
       items: [
-        { name: 'Library Intake Queue', href: '/admin/check-items', icon: FileText, count: 0 },
         { name: 'Check Library', href: '/admin/check-library', icon: Library, count: 0 },
-        { name: 'Equipment Type Requests', href: '/admin/ride-requests', icon: Layers, count: pendingCounts.rideRequests },
+        { name: 'Check Intake Queue', href: '/admin/check-items', icon: FileText, count: pendingCounts.checkIntake },
+        { name: 'Risk Library', href: '/admin/risk-items', icon: Shield, count: pendingCounts.riskIntake },
         { name: 'Equipment Type Library', href: '/admin/equipment-type-library', icon: Package, count: 0 },
-        { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
         { name: 'Document Type Library', href: '/admin/document-type-library', icon: FolderOpen, count: 0 },
-        { name: 'Risk Library Intake', href: '/admin/risk-items', icon: Activity, count: 0 },
+      ],
+    },
+    {
+      label: 'Requests',
+      items: [
+        { name: 'Equipment Type Requests', href: '/admin/ride-requests', icon: Layers, count: pendingCounts.rideRequests },
+        { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
       ],
     },
     {
@@ -107,7 +121,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   const NavigationContent = () => (
     <nav className="p-4 space-y-4">
-      {navigationGroups.map((group, groupIndex) => (
+      {navigationGroups.map((group) => (
         <div key={group.label ?? 'top'}>
           {group.label && (
             <p className="px-3 mb-1 text-[9px] uppercase tracking-widest text-muted-foreground/60 font-semibold">

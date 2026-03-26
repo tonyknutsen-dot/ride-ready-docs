@@ -6,24 +6,26 @@ const routeLabels: Record<string, string> = {
   '/admin': 'Dashboard',
   '/admin/bug-reports': 'Bug Reports',
   '/admin/early-access': 'Early Access Signups',
-  '/admin/check-items': 'Library Intake Queue',
+  '/admin/check-items': 'Check Intake Queue',
+  '/admin/check-library': 'Check Library',
   '/admin/ride-requests': 'Equipment Type Requests',
+  '/admin/equipment-type-library': 'Equipment Type Library',
   '/admin/document-requests': 'Document Type Requests',
   '/admin/document-type-library': 'Document Type Library',
+  '/admin/risk-items': 'Risk Library Intake',
   '/admin/support': 'Support Messages',
   '/admin/support-access': 'Support Access Grants',
   '/admin/users': 'User Management',
   '/admin/audit-logs': 'Audit Logs',
   '/admin/security': 'Rate Limits & Blocks',
   '/admin/payments': 'Payments & Billing',
-  '/admin/risk-items': 'Risk Library Intake',
+  '/admin/feature-requests': 'Feature Requests',
 };
 
 export function AdminBreadcrumb() {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  // Don't show breadcrumb on main admin dashboard
   if (currentPath === '/admin') {
     return null;
   }

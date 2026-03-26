@@ -409,7 +409,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           toast({ title: 'Error updating item', description: error.message, variant: 'destructive' });
         } else {
           await submitCustomItems();
-          toast({ title: 'Success', description: 'Risk item updated' });
+          toast({ title: 'Risk item updated' });
           setShowItemDialog(false);
           setEditingItem(null);
           resetItemForm();
@@ -429,7 +429,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           toast({ title: 'Error adding item', description: error.message, variant: 'destructive' });
         } else {
           await submitCustomItems();
-          toast({ title: 'Success', description: 'Risk item added' });
+          toast({ title: 'Added to your risk assessment', description: useCustomHazard || useCustomControls ? 'Submitted for shared library review' : undefined });
           setShowItemDialog(false);
           resetItemForm();
           setUseManualRiskOverride(false);
@@ -1797,7 +1797,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           className="min-h-[80px]"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Custom hazards are submitted for review and may be added to the library for others to use.
+                          Custom hazards are added to your assessment immediately. They may also be promoted to the shared library after review.
                         </p>
                       </div>
                     ) : (
@@ -1879,7 +1879,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           className="min-h-[80px]"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Custom controls are submitted for review and may be added to the library for others to use.
+                          Custom controls are added to your assessment immediately. They may also be promoted to the shared library after review.
                         </p>
                       </div>
                     ) : (
