@@ -146,7 +146,7 @@ serve(async (req: Request) => {
             .replace(/\{\{name\}\}/g, contact.name || "Valued Customer")
             .replace(/\{\{company\}\}/g, contact.company_name || "")
             .replace(/\{\{email\}\}/g, contact.email)
-            .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
+            .replace(/\{\{website_url\}\}/g, "https://ride-ready-docs.lovable.app")
             .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
         };
 

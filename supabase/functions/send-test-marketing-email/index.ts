@@ -90,7 +90,7 @@ serve(async (req: Request) => {
         .replace(/\{\{company\}\}/g, "Test Company")
         .replace(/\{\{email\}\}/g, testEmail)
         .replace(/\{\{unsubscribe_url\}\}/g, "#unsubscribe-test")
-        .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
+        .replace(/\{\{website_url\}\}/g, "https://ride-ready-docs.lovable.app")
         .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
     };
 
