@@ -1879,7 +1879,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           className="min-h-[80px]"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Custom controls are submitted for review and may be added to the library for others to use.
+                          Custom controls are added to your assessment immediately. They may also be promoted to the shared library after review.
                         </p>
                       </div>
                     ) : (
