@@ -12,7 +12,6 @@ Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
 
   try {
-    // Validate authorization
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
@@ -30,19 +29,18 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Verify user and get their ID
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      console.error('Auth error:', claimsError);
+    // Use getUser() — the standard, reliable auth verification method
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+
+    if (userError || !userData?.user) {
+      console.error('Auth error:', userError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = userData.user.id;
     console.log('User ID:', userId);
 
     // Create service role client for admin operations
@@ -118,12 +116,12 @@ Deno.serve(async (req) => {
       if (existingEmails.has(emailLower)) {
         console.log('Skipping duplicate email:', signup.email);
         skipped++;
-        // Still mark as imported since it exists
+        // Still mark as imported since it exists in marketing
         importedIds.push(signup.id);
         continue;
       }
 
-      // Insert into marketing_contacts
+      // Insert into marketing_contacts with the admin's user_id
       const { error: insertError } = await adminClient
         .from('marketing_contacts')
         .insert({
@@ -142,11 +140,11 @@ Deno.serve(async (req) => {
         console.log('Imported:', signup.email);
         imported++;
         importedIds.push(signup.id);
-        existingEmails.add(emailLower); // Prevent duplicates within batch
+        existingEmails.add(emailLower);
       }
     }
 
-    // Update imported_to_marketing_at for successfully processed signups
+    // Only mark as imported AFTER successful DB writes
     if (importedIds.length > 0) {
       const { error: updateError } = await adminClient
         .from('early_access_signups')
