@@ -329,10 +329,12 @@ export default function DocumentTypeLibrary() {
   const onSaved = useCallback((dt: DocType, isNew: boolean) => {
     if (isNew) {
       setTypes(prev => [...prev, dt]);
+      logEvent('create', 'document_type', dt.id, { name: dt.name });
     } else {
       setTypes(prev => prev.map(t => t.id === dt.id ? dt : t));
+      logEvent('update', 'document_type', dt.id, { name: dt.name });
     }
-  }, []);
+  }, [logEvent]);
 
   /* ─── Menu action handler with clean handoff ─── */
   const handleMenuAction = useCallback((action: () => void) => {
