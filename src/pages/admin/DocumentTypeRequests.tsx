@@ -45,12 +45,12 @@ interface DuplicateMatch {
   reasons: string[];
 }
 
-function findDuplicateMatches(name: string): DuplicateMatch[] {
-  if (!name || name.length < 2) return [];
+function findDuplicateMatches(name: string, existingTypes: { id: string; name: string; category: string }[]): DuplicateMatch[] {
+  if (!name || name.length < 2 || existingTypes.length === 0) return [];
   const lower = name.toLowerCase().trim();
   const tokens = lower.split(/\s+/);
 
-  return EXISTING_DOC_TYPES
+  return existingTypes
     .map(dt => {
       const dtLower = dt.name.toLowerCase();
       const reasons: string[] = [];
