@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, Sparkles, Search, Download, Mail, Users, Loader2, UserPlus, Check } from 'lucide-react';
+import { RefreshCw, Sparkles, Search, Download, Mail, Users, Loader2, UserPlus, Check, RotateCw } from 'lucide-react';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EarlyAccessSignup {
   id: string;
@@ -23,12 +24,15 @@ interface EarlyAccessSignup {
 export default function EarlyAccessSignups() {
   const { toast } = useToast();
   const { logEvent } = useAuditLog();
+  const { user } = useAuth();
   const [signups, setSignups] = useState<EarlyAccessSignup[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [importing, setImporting] = useState<string | null>(null);
   const [importingAll, setImportingAll] = useState(false);
+  const [verifiedEmails, setVerifiedEmails] = useState<Set<string>>(new Set());
+  const [verifying, setVerifying] = useState(false);
 
   const fetchSignups = async () => {
     try {
@@ -55,6 +59,29 @@ export default function EarlyAccessSignups() {
   useEffect(() => {
     fetchSignups();
   }, []);
+
+  // Verify which imported signups actually have marketing contacts
+  useEffect(() => {
+    if (!user || signups.length === 0) return;
+    const importedEmails = signups
+      .filter(s => s.imported_to_marketing_at)
+      .map(s => s.email.toLowerCase());
+    if (importedEmails.length === 0) return;
+
+    const verifyContacts = async () => {
+      try {
+        const { data } = await supabase
+          .from('marketing_contacts')
+          .select('email')
+          .eq('user_id', user.id)
+          .in('email', importedEmails);
+        setVerifiedEmails(new Set((data || []).map(c => c.email.toLowerCase())));
+      } catch (err) {
+        console.error('Failed to verify marketing contacts:', err);
+      }
+    };
+    verifyContacts();
+  }, [user, signups]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -107,6 +134,16 @@ export default function EarlyAccessSignups() {
   const handleImportSingle = async (signup: EarlyAccessSignup) => {
     setImporting(signup.id);
     try {
+      // For already-imported signups that need retry, clear the flag first
+      if (signup.imported_to_marketing_at) {
+        // The edge function skips signups with imported_to_marketing_at set,
+        // so we clear it to allow re-import
+        await supabase
+          .from('early_access_signups')
+          .update({ imported_to_marketing_at: null })
+          .eq('id', signup.id);
+      }
+
       const result = await importToMarketing([signup.id]);
       
       if (result.imported > 0) {
@@ -332,10 +369,29 @@ export default function EarlyAccessSignups() {
                           </TableCell>
                           <TableCell className="text-right">
                             {signup.imported_to_marketing_at ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">
-                                <Check className="h-3 w-3 mr-1" />
-                                In Marketing
-                              </Badge>
+                              verifiedEmails.has(signup.email.toLowerCase()) ? (
+                                <Badge variant="outline" className="text-green-600 border-green-600">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  In Marketing
+                                </Badge>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-amber-600 border-amber-500"
+                                  onClick={() => handleImportSingle(signup)}
+                                  disabled={importing === signup.id}
+                                >
+                                  {importing === signup.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <RotateCw className="h-3 w-3 mr-1" />
+                                      Retry
+                                    </>
+                                  )}
+                                </Button>
+                              )
                             ) : (
                               <Button
                                 size="sm"
@@ -378,10 +434,29 @@ export default function EarlyAccessSignups() {
                           {format(new Date(signup.created_at), 'dd MMM yyyy HH:mm')}
                         </p>
                         {signup.imported_to_marketing_at ? (
-                          <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
-                            <Check className="h-3 w-3 mr-1" />
-                            In Marketing
-                          </Badge>
+                          verifiedEmails.has(signup.email.toLowerCase()) ? (
+                            <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                              <Check className="h-3 w-3 mr-1" />
+                              In Marketing
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-amber-600 border-amber-500 h-7 text-xs"
+                              onClick={() => handleImportSingle(signup)}
+                              disabled={importing === signup.id}
+                            >
+                              {importing === signup.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <RotateCw className="h-3 w-3 mr-1" />
+                                  Retry
+                                </>
+                              )}
+                            </Button>
+                          )
                         ) : (
                           <Button
                             size="sm"
