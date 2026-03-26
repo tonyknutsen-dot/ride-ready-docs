@@ -412,7 +412,7 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
       {/* Document count */}
       <p className="text-xs text-muted-foreground px-1">
         {filtered.length === totalCount
-          ? `${totalCount} global document${totalCount !== 1 ? 's' : ''}`
+          ? `${totalCount} shared insurance document${totalCount !== 1 ? 's' : ''}`
           : `Showing ${filtered.length} of ${totalCount}`}
       </p>
 
