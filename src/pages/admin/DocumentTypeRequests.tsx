@@ -511,8 +511,8 @@ export default function DocumentTypeRequests() {
 
   /* ─── Duplicate matches per pending request ─── */
   const getMatches = useCallback((req: DocTypeRequest) => {
-    return findDuplicateMatches(req.document_type_name);
-  }, []);
+    return findDuplicateMatches(req.document_type_name, existingTypesForMatching);
+  }, [existingTypesForMatching]);
 
   const tabs: { key: StatusTab; label: string }[] = [
     { key: 'pending', label: 'Pending' },
