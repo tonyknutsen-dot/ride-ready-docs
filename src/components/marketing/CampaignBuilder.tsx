@@ -244,15 +244,15 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             )}
             {isMobile ? (
               <CollapsibleContent>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
-                  <span>Provider</span>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
+                  <span className="font-medium">Provider</span>
                   <span className="text-foreground">Resend</span>
-                  <span>From name</span>
+                  <span className="font-medium">From name</span>
                   <span className="text-foreground">Your company name</span>
-                  <span>From email</span>
-                  <span className="text-foreground">info@ridereadydocs.com</span>
-                  <span>Reply-to</span>
-                  <span className="text-foreground">{user?.email || "your login email"}</span>
+                  <span className="font-medium">From email</span>
+                  <span className="text-foreground break-all">info@ridereadydocs.com</span>
+                  <span className="font-medium">Reply-to</span>
+                  <span className="text-foreground break-all">{user?.email || "your login email"}</span>
                 </div>
               </CollapsibleContent>
             ) : (
