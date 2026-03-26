@@ -22,6 +22,7 @@ interface EarlyAccessSignup {
 
 export default function EarlyAccessSignups() {
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [signups, setSignups] = useState<EarlyAccessSignup[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
