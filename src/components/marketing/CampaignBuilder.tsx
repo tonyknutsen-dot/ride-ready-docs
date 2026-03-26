@@ -219,20 +219,22 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Sending Identity — collapsed on mobile */}
       <Collapsible open={isMobile ? identityOpen : true} onOpenChange={setIdentityOpen}>
         <Card className="border-dashed">
           <CardContent className="py-2.5 px-3 md:py-3 md:px-4">
             {isMobile ? (
-              <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-left gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate">
-                    Sending from: <span className="font-medium text-foreground">Your company</span> / <span className="font-medium text-foreground">info@ridereadydocs.com</span>
-                  </span>
+                  <div className="text-xs min-w-0">
+                    <span className="text-muted-foreground">From: </span>
+                    <span className="font-medium text-foreground">Your company</span>
+                    <span className="text-muted-foreground block truncate">info@ridereadydocs.com</span>
+                  </div>
                 </div>
-                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${identityOpen ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200 ${identityOpen ? "rotate-180" : ""}`} />
               </CollapsibleTrigger>
             ) : (
               <div className="flex items-center gap-2 mb-2">
@@ -242,15 +244,15 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             )}
             {isMobile ? (
               <CollapsibleContent>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
-                  <span>Provider</span>
+                <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
+                  <span className="font-medium">Provider</span>
                   <span className="text-foreground">Resend</span>
-                  <span>From name</span>
+                  <span className="font-medium">From name</span>
                   <span className="text-foreground">Your company name</span>
-                  <span>From email</span>
-                  <span className="text-foreground">info@ridereadydocs.com</span>
-                  <span>Reply-to</span>
-                  <span className="text-foreground">{user?.email || "your login email"}</span>
+                  <span className="font-medium">From email</span>
+                  <span className="text-foreground break-all">info@ridereadydocs.com</span>
+                  <span className="font-medium">Reply-to</span>
+                  <span className="text-foreground break-all">{user?.email || "your login email"}</span>
                 </div>
               </CollapsibleContent>
             ) : (
@@ -323,9 +325,9 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       {/* Recipients */}
       <Card>
         <CardHeader className="pb-3 md:pb-4 px-3 md:px-6 pt-4 md:pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <CardTitle className="text-base md:text-lg">Recipients</CardTitle>
-            <Badge variant="secondary" className="text-xs">{selectedRecipients.length}</Badge>
+            <Badge variant="secondary" className="text-xs tabular-nums">{selectedRecipients.length}</Badge>
           </div>
           <CardDescription className="text-xs md:text-sm">
             Select who receives this campaign
@@ -420,34 +422,46 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
         </div>
       )}
 
-      {/* Campaign Actions */}
-      <div className="flex flex-col md:flex-row gap-2">
-        <Button
-          variant="outline"
-          onClick={() => setShowPreview(true)}
-          disabled={!content}
-          className="w-full md:w-auto"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Preview
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setShowTestDialog(true)}
-          disabled={!subject || !content}
-          className="w-full md:w-auto"
-        >
-          <FlaskConical className="h-4 w-4 mr-2" />
-          Send Test
-        </Button>
-        <Button
-          onClick={handleSendCampaign}
-          disabled={sending || selectedRecipients.length === 0 || !campaignName || !subject || !content}
-          className="w-full md:flex-1"
-        >
-          <Send className="h-4 w-4 mr-2" />
-          {sending ? "Sending..." : `Send to ${selectedRecipients.length} Recipients`}
-        </Button>
+      {/* Pre-send summary + Campaign Actions */}
+      <div className="space-y-2">
+        {isMobile && (
+          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/60 text-xs">
+            <span className="text-muted-foreground">
+              Recipients: <span className="font-semibold text-foreground tabular-nums">{selectedRecipients.length}</span>
+            </span>
+            <span className="text-muted-foreground">
+              From: <span className="font-medium text-foreground">info@ridereadydocs.com</span>
+            </span>
+          </div>
+        )}
+        <div className="flex flex-col md:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowPreview(true)}
+            disabled={!content}
+            className="w-full md:w-auto disabled:opacity-40 disabled:border-border"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowTestDialog(true)}
+            disabled={!subject || !content}
+            className="w-full md:w-auto disabled:opacity-40 disabled:border-border"
+          >
+            <FlaskConical className="h-4 w-4 mr-2" />
+            Send Test
+          </Button>
+          <Button
+            onClick={handleSendCampaign}
+            disabled={sending || selectedRecipients.length === 0 || !campaignName || !subject || !content}
+            className="w-full md:flex-1 disabled:opacity-40"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {sending ? "Sending..." : `Send to ${selectedRecipients.length} Recipients`}
+          </Button>
+        </div>
       </div>
 
       <CampaignPreview
