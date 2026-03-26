@@ -80,7 +80,7 @@ serve(async (req: Request) => {
       .single();
 
     const currentYear = new Date().getFullYear();
-    const senderName = profile?.company_name || "Ride Ready Docs";
+    const senderName = "Ride Ready Docs";
 
     // Personalize with test placeholders
     const personalizedSubject = `[TEST] ${subject}`

@@ -260,11 +260,11 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                 <span>Provider</span>
                 <span className="text-foreground">Resend</span>
                 <span>From name</span>
-                <span className="text-foreground">Your company name</span>
+                <span className="text-foreground">Ride Ready Docs</span>
                 <span>From email</span>
                 <span className="text-foreground">info@ridereadydocs.com</span>
                 <span>Reply-to</span>
-                <span className="text-foreground">{user?.email || "your login email"}</span>
+                <span className="text-foreground">info@ridereadydocs.com</span>
               </div>
             )}
           </CardContent>
