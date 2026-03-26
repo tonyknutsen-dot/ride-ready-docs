@@ -49,7 +49,7 @@ export const CATEGORY_ORDER = [
 
 /** Category colour coding config for grouped document sections. */
 export const CATEGORY_STYLES: Record<string, { iconBg: string; iconColor: string; borderColor: string }> = {
-  "🌐 Global Documents":        { iconBg: "bg-blue-100",   iconColor: "text-blue-700",   borderColor: "border-blue-200" },
+  "🛡️ Shared Insurance":         { iconBg: "bg-blue-100",   iconColor: "text-blue-700",   borderColor: "border-blue-200" },
   "📜 Inspection Reports":      { iconBg: "bg-indigo-100", iconColor: "text-indigo-700", borderColor: "border-indigo-200" },
   "✅ Check Records":           { iconBg: "bg-emerald-100",iconColor: "text-emerald-700",borderColor: "border-emerald-200" },
   "🔬 NDT":                     { iconBg: "bg-purple-100", iconColor: "text-purple-700", borderColor: "border-purple-200" },
@@ -101,7 +101,7 @@ export const groupByType = (docs: Document[], isGlobal: boolean, categoryMap?: R
   
   if (!isGlobal && globalDocs.length > 0) {
     const globalDocGroups = groupDocumentsByName(globalDocs);
-    result.unshift({ type: "🌐 Global Documents", items: globalDocGroups });
+    result.unshift({ type: "🛡️ Shared Insurance", items: globalDocGroups });
   }
   
   return result;
