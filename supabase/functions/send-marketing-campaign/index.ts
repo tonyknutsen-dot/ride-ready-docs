@@ -193,6 +193,7 @@ serve(async (req: Request) => {
           from: profile?.company_name 
             ? `${profile.company_name} <info@ridereadydocs.com>` 
             : "Ride Ready Docs <info@ridereadydocs.com>",
+          reply_to: user.email || undefined,
           to: [contact.email],
           subject: personalizedSubject,
           html: htmlContent,
