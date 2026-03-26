@@ -205,11 +205,11 @@ const Documents = () => {
                 <div className="p-1.5 bg-primary/10 rounded-lg">
                   <FolderOpen className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <h2 className="text-xs font-semibold text-primary uppercase tracking-wider">
+                <h2 className="text-xs font-bold text-primary uppercase tracking-wider">
                   Equipment Documents
                 </h2>
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[11px] font-medium text-foreground/50">
                   {ridesWithDocs.reduce((sum, r) => sum + r.document_count, 0)} files
                 </span>
               </div>
