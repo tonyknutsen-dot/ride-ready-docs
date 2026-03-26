@@ -161,11 +161,27 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       const { data, error } = await supabase
         .from('ride_categories')
         .select('*')
+        .eq('is_archived', false)
         .order('name');
 
       if (error) {
         console.error('Error loading categories:', error);
       } else {
+        // In edit mode, ensure the current category is included even if archived
+        if (isEditMode && ride?.category_id) {
+          const currentIncluded = (data || []).some(c => c.id === ride.category_id);
+          if (!currentIncluded) {
+            const { data: current } = await supabase
+              .from('ride_categories')
+              .select('*')
+              .eq('id', ride.category_id)
+              .single();
+            if (current) {
+              setCategories([...(data || []), current]);
+              return;
+            }
+          }
+        }
         setCategories(data || []);
       }
     } catch (error) {
