@@ -28,6 +28,7 @@ import {
   isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
   getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile,
 } from '@/utils/documentHelpers';
+import { useDocumentTypes } from '@/hooks/useDocumentTypes';
 
 type Document = Tables<'documents'>;
 
@@ -51,6 +52,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { labelMap, categoryMap } = useDocumentTypes();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
@@ -390,8 +392,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const isExpiringSoon = isDocExpiringSoon;
   const isExpired = isDocExpired;
   const formatFileSize = sharedFormatFileSize;
-  const getDocumentTypeDisplay = getDocTypeLabel;
-  const prettyType = getDocGroupCategory;
+  const getDocumentTypeDisplay = (type: string) => getDocTypeLabel(type, labelMap);
+  const prettyType = (type: string) => getDocGroupCategory(type, categoryMap);
 
   // Grouping, versions, and cleanup now use shared extracted modules
   // (groupDocumentsByName, groupByType, getAllOlderVersions, getOlderVersionsStorageSize
@@ -483,7 +485,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   );
 
   if (grouped) {
-    const groupedDocs = groupByType(documents, isGlobal);
+    const groupedDocs = groupByType(documents, isGlobal, categoryMap);
     const olderVersionsCount = getAllOlderVersions(documents).length;
     const olderVersionsSize = getOlderVersionsStorageSize(documents);
     

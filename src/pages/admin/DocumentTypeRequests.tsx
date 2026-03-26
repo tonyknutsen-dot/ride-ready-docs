@@ -13,43 +13,13 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useDocumentTypes, type DocumentType } from '@/hooks/useDocumentTypes';
 import {
   CheckCircle, XCircle, Clock, Search, AlertTriangle, FileText, ShieldCheck, Link2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-/* ─── Known document types (mirrors DocumentUpload.tsx) ─── */
-
-const EXISTING_DOC_TYPES: { id: string; name: string; category: string }[] = [
-  { id: 'declaration_of_compliance', name: 'Annual Inspection Certificate', category: 'Inspection / Test' },
-  { id: 'electrical_inspection', name: 'Electrical Inspection', category: 'Inspection / Test' },
-  { id: 'inservice_inspection', name: 'In-Service Inspection', category: 'Inspection / Test' },
-  { id: 'initial_test_report', name: 'Initial Test Report', category: 'Inspection / Test' },
-  { id: 'ndt_report', name: 'NDT Report', category: 'Inspection / Test' },
-  { id: 'daily_check', name: 'Daily Check Record', category: 'Inspection / Test' },
-  { id: 'monthly_check', name: 'Monthly Check Record', category: 'Inspection / Test' },
-  { id: 'yearly_check', name: 'Yearly Check Record', category: 'Inspection / Test' },
-  { id: 'insurance', name: 'Insurance Document', category: 'Insurance & Certificates' },
-  { id: 'safety_certificate', name: 'Safety Certificate', category: 'Insurance & Certificates' },
-  { id: 'doc_certificate', name: 'Declaration of Conformity', category: 'Insurance & Certificates' },
-  { id: 'pssr_certificate', name: 'PSSR Certificate', category: 'Insurance & Certificates' },
-  { id: 'loler_certificate', name: 'LOLER Certificate', category: 'Insurance & Certificates' },
-  { id: 'puwer_certificate', name: 'PUWER Certificate', category: 'Insurance & Certificates' },
-  { id: 'certificate', name: 'Other Certificate', category: 'Insurance & Certificates' },
-  { id: 'operator_manual', name: 'Operator Manual', category: 'Manual / Procedure' },
-  { id: 'controller_manual', name: 'Controller Manual', category: 'Manual / Procedure' },
-  { id: 'build_up_down', name: 'Build Up & Down Procedure', category: 'Manual / Procedure' },
-  { id: 'emergency_action_plan', name: 'Emergency Action Plan', category: 'Manual / Procedure' },
-  { id: 'evacuation_plan', name: 'Evacuation Plan', category: 'Manual / Procedure' },
-  { id: 'risk_assessment', name: 'Risk Assessment', category: 'Manual / Procedure' },
-  { id: 'method_statement', name: 'Method Statement', category: 'Manual / Procedure' },
-  { id: 'maintenance_report', name: 'Maintenance Report', category: 'Maintenance' },
-  { id: 'maintenance_log', name: 'Maintenance Log', category: 'Maintenance' },
-  { id: 'design_review', name: 'Design Review Report', category: 'Other' },
-  { id: 'conformity_design', name: 'Conformity to Design', category: 'Other' },
-  { id: 'ndt_schedule', name: 'NDT Schedule', category: 'Other' },
-  { id: 'other', name: 'Other Document', category: 'Other' },
-];
+/* ─── Types use live document_types table via useDocumentTypes hook ─── */
 
 /* ─── Types ─── */
 
@@ -75,12 +45,12 @@ interface DuplicateMatch {
   reasons: string[];
 }
 
-function findDuplicateMatches(name: string): DuplicateMatch[] {
-  if (!name || name.length < 2) return [];
+function findDuplicateMatches(name: string, existingTypes: { id: string; name: string; category: string }[]): DuplicateMatch[] {
+  if (!name || name.length < 2 || existingTypes.length === 0) return [];
   const lower = name.toLowerCase().trim();
   const tokens = lower.split(/\s+/);
 
-  return EXISTING_DOC_TYPES
+  return existingTypes
     .map(dt => {
       const dtLower = dt.name.toLowerCase();
       const reasons: string[] = [];
@@ -196,12 +166,13 @@ function DuplicateStatusBanner({ matches }: { matches: DuplicateMatch[] }) {
 /* ─── Link to Existing Dialog ─── */
 
 const LinkExistingDialog = memo(function LinkExistingDialog({
-  request, open, onClose, onLinked,
+  request, open, onClose, onLinked, existingTypes,
 }: {
   request: DocTypeRequest | null;
   open: boolean;
   onClose: () => void;
   onLinked: (id: string) => void;
+  existingTypes: { id: string; name: string; category: string }[];
 }) {
   const [matchedId, setMatchedId] = useState('');
   const [note, setNote] = useState('');
@@ -211,12 +182,12 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
 
   const suggestedMatches = useMemo(() => {
     if (!request) return [];
-    return findDuplicateMatches(request.document_type_name);
-  }, [request]);
+    return findDuplicateMatches(request.document_type_name, existingTypes);
+  }, [request, existingTypes]);
 
   const filteredTypes = useMemo(() => {
     const suggestedIds = new Set(suggestedMatches.map(m => m.docType.id));
-    let types = EXISTING_DOC_TYPES.filter(t => !suggestedIds.has(t.id));
+    let types = existingTypes.filter(t => !suggestedIds.has(t.id));
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       types = types.filter(t => t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
@@ -224,7 +195,7 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
     return types;
   }, [suggestedMatches, searchTerm]);
 
-  const selectedType = EXISTING_DOC_TYPES.find(t => t.id === matchedId);
+  const selectedType = existingTypes.find(t => t.id === matchedId);
 
   useEffect(() => {
     if (request && open) {
@@ -238,7 +209,7 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
     if (!request) return;
     setSaving(true);
     try {
-      const matched = EXISTING_DOC_TYPES.find(t => t.id === matchedId);
+      const matched = existingTypes.find(t => t.id === matchedId);
       const adminNote = matched
         ? `Linked to existing type: ${matched.name} (${matched.category})${note ? '. ' + note : ''}`
         : note || 'Linked to existing type';
@@ -372,6 +343,13 @@ export default function DocumentTypeRequests() {
   const [approving, setApproving] = useState(false);
 
   const { toast } = useToast();
+
+  // Live document types from DB for duplicate detection and linking
+  const { allTypes: liveDocTypes } = useDocumentTypes();
+  const existingTypesForMatching = useMemo(() =>
+    liveDocTypes.map(t => ({ id: t.type_key, name: t.name, category: t.category })),
+    [liveDocTypes]
+  );
   const { logEvent } = useAuditLog();
 
   const fetchData = useCallback(async () => {
@@ -533,8 +511,8 @@ export default function DocumentTypeRequests() {
 
   /* ─── Duplicate matches per pending request ─── */
   const getMatches = useCallback((req: DocTypeRequest) => {
-    return findDuplicateMatches(req.document_type_name);
-  }, []);
+    return findDuplicateMatches(req.document_type_name, existingTypesForMatching);
+  }, [existingTypesForMatching]);
 
   const tabs: { key: StatusTab; label: string }[] = [
     { key: 'pending', label: 'Pending' },
@@ -725,6 +703,7 @@ export default function DocumentTypeRequests() {
         open={!!linkTarget}
         onClose={() => setLinkTarget(null)}
         onLinked={onLinked}
+        existingTypes={existingTypesForMatching}
       />
     </AdminLayout>
   );
