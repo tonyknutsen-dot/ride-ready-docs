@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,16 @@ import { Send, Eye, Users, Tag, Info, FlaskConical, CheckCircle2, ChevronDown, M
 import { CampaignPreview } from "./CampaignPreview";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const AVAILABLE_TOKENS = [
+  { token: "{{first_name}}", label: "First Name", sample: "John" },
+  { token: "{{name}}", label: "Name", sample: "John Doe" },
+  { token: "{{company}}", label: "Company", sample: "Acme Corp" },
+  { token: "{{email}}", label: "Email", sample: "john@example.com" },
+  { token: "{{unsubscribe_url}}", label: "Unsubscribe", sample: "#unsubscribe" },
+  { token: "{{website_url}}", label: "Website", sample: "https://ridereadydocs.com" },
+  { token: "{{support_email}}", label: "Support", sample: "info@ridereadydocs.com" },
+];
 
 interface MarketingContact {
   id: string;
