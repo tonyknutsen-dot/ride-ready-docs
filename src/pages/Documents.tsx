@@ -138,15 +138,15 @@ const Documents = () => {
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-5 space-y-4">
+      <main className="container mx-auto px-4 py-4 space-y-3">
         {/* Upload hint */}
-        <Alert className="border-info/30 bg-info/5">
+        <Alert className="border-info/30 bg-info/5 py-2.5">
           <Upload className="h-4 w-4 text-info" />
           <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-sm">To upload documents, go to a specific ride or equipment page.</span>
-            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info">
+            <span className="text-xs">To upload documents, go to a specific equipment page.</span>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info text-xs">
               <Link to="/rides" className="flex items-center gap-1">
-                Go to Rides <ArrowRight className="h-3 w-3" />
+                Equipment <ArrowRight className="h-3 w-3" />
               </Link>
             </Button>
           </AlertDescription>
@@ -161,35 +161,33 @@ const Documents = () => {
           </div>
         ) : (
           <>
-            {/* Global Documents Section - Prominent info-themed card */}
+            {/* Global Documents Section */}
             {globalDocCount > 0 && (
-              <div className="rounded-2xl border-2 border-info/40 bg-gradient-to-br from-info/15 via-info/10 to-info/5 overflow-hidden shadow-sm">
+              <div className="rounded-xl border border-info/30 bg-info/5 overflow-hidden">
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-between p-4 h-auto rounded-none hover:bg-info/10"
+                      className="w-full justify-between px-3.5 py-3 h-auto rounded-none hover:bg-info/10"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-info/25 rounded-xl border border-info/30">
-                          <Globe className="h-5 w-5 text-info" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-info/20 rounded-lg">
+                          <Globe className="h-4 w-4 text-info" />
                         </div>
                         <div className="text-left">
-                          <div className="font-semibold text-foreground flex items-center gap-2">
-                            🌐 Global Documents
-                          </div>
-                          <div className="text-xs text-info/80">Shared across all your equipment</div>
+                          <div className="text-sm font-semibold text-foreground">Global Documents</div>
+                          <div className="text-[11px] text-muted-foreground">Shared across all equipment</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-info text-info-foreground border-0 shadow-sm">
-                          {globalDocCount} file{globalDocCount !== 1 ? 's' : ''}
+                        <Badge variant="secondary" className="text-xs">
+                          {globalDocCount}
                         </Badge>
-                        <ChevronDown className="h-4 w-4 text-info transition-transform group-data-[state=open]:rotate-180" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
                       </div>
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="px-4 pb-4">
+                  <CollapsibleContent className="px-3 pb-3 border-t border-info/20">
                     <DocumentList 
                       key={`global-${refreshKey}`}
                       isGlobal
@@ -203,22 +201,22 @@ const Documents = () => {
 
             {/* Equipment Documents Section Header */}
             {ridesWithDocs.length > 0 && (
-              <div className="flex items-center gap-3 pt-6 pb-2">
-                <div className="p-1.5 bg-primary/15 rounded-lg">
-                  <FolderOpen className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-2.5 pt-4 pb-1">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <FolderOpen className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">
+                <h2 className="text-xs font-semibold text-primary uppercase tracking-wider">
                   Equipment Documents
                 </h2>
-                <div className="flex-1 h-px bg-primary/20" />
-                <span className="text-xs text-muted-foreground">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[11px] text-muted-foreground">
                   {ridesWithDocs.reduce((sum, r) => sum + r.document_count, 0)} files
                 </span>
               </div>
             )}
 
-            {/* Equipment folders - distinct card style */}
-            <div className="space-y-2">
+            {/* Equipment folders */}
+            <div className="space-y-1.5">
               {ridesWithDocs.map(ride => (
                 <Collapsible 
                   key={ride.id} 
@@ -228,30 +226,30 @@ const Documents = () => {
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-between p-4 h-auto border border-border rounded-xl bg-card hover:border-primary/40 hover:bg-primary/5 transition-all"
+                      className="w-full justify-between px-3 py-2.5 h-auto border border-border rounded-lg bg-card hover:border-primary/30 transition-all"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-lg">
-                          <FolderOpen className="h-5 w-5 text-primary" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 bg-muted rounded-md">
+                          <FolderOpen className="h-4 w-4 text-primary" />
                         </div>
-                        <div className="text-left">
-                          <div className="font-semibold text-foreground">{ride.ride_name}</div>
-                          <div className="text-xs text-muted-foreground">{ride.category_name}</div>
+                        <div className="text-left min-w-0">
+                          <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
+                          <div className="text-[11px] text-muted-foreground">{ride.category_name}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {ride.document_count > 0 ? (
-                          <Badge variant="outline" className="bg-background text-foreground border-border">
-                            {ride.document_count} file{ride.document_count !== 1 ? 's' : ''}
+                          <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+                            {ride.document_count}
                           </Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">Empty</span>
+                          <span className="text-[11px] text-muted-foreground">—</span>
                         )}
-                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
                       </div>
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-3 px-2">
+                  <CollapsibleContent className="pt-2 px-1 border-t border-border/40 mt-1">
                     <DocumentList 
                       key={`${ride.id}-${refreshKey}`}
                       rideId={ride.id}
@@ -267,13 +265,13 @@ const Documents = () => {
 
             {/* Empty state */}
             {ridesWithDocs.length === 0 && globalDocCount === 0 && (
-              <div className="py-12 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-info/20 mx-auto flex items-center justify-center mb-4">
-                  <FileText className="h-10 w-10 text-primary" />
+              <div className="py-10 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted mx-auto flex items-center justify-center mb-3">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold mt-4">No documents yet</h3>
-                <p className="text-muted-foreground">
-                  Upload documents from individual ride pages
+                <h3 className="text-base font-semibold">No documents yet</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload documents from individual equipment pages
                 </p>
               </div>
             )}
