@@ -28,6 +28,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
   const uploadMutation = useOptimisticDocumentUpload();
+  const { groupedActive, activeTypes } = useDocumentTypes();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState(prefillDocType || '');
   const [documentName, setDocumentName] = useState(prefillDocName || '');
@@ -38,8 +39,6 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
   const [isGlobal, setIsGlobal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  const documentTypes = getDocumentTypes();
 
   useEffect(() => {
     if (documentName && documentType && user) {
