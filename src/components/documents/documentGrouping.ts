@@ -101,7 +101,7 @@ export const groupByType = (docs: Document[], isGlobal: boolean, categoryMap?: R
   
   if (!isGlobal && globalDocs.length > 0) {
     const globalDocGroups = groupDocumentsByName(globalDocs);
-    result.unshift({ type: "🌐 Global Documents", items: globalDocGroups });
+    result.unshift({ type: "🛡️ Shared Insurance", items: globalDocGroups });
   }
   
   return result;
