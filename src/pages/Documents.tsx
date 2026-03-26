@@ -161,35 +161,33 @@ const Documents = () => {
           </div>
         ) : (
           <>
-            {/* Global Documents Section - Prominent info-themed card */}
+            {/* Global Documents Section */}
             {globalDocCount > 0 && (
-              <div className="rounded-2xl border-2 border-info/40 bg-gradient-to-br from-info/15 via-info/10 to-info/5 overflow-hidden shadow-sm">
+              <div className="rounded-xl border border-info/30 bg-info/5 overflow-hidden">
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-between p-4 h-auto rounded-none hover:bg-info/10"
+                      className="w-full justify-between px-3.5 py-3 h-auto rounded-none hover:bg-info/10"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-info/25 rounded-xl border border-info/30">
-                          <Globe className="h-5 w-5 text-info" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 bg-info/20 rounded-lg">
+                          <Globe className="h-4 w-4 text-info" />
                         </div>
                         <div className="text-left">
-                          <div className="font-semibold text-foreground flex items-center gap-2">
-                            🌐 Global Documents
-                          </div>
-                          <div className="text-xs text-info/80">Shared across all your equipment</div>
+                          <div className="text-sm font-semibold text-foreground">Global Documents</div>
+                          <div className="text-[11px] text-muted-foreground">Shared across all equipment</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-info text-info-foreground border-0 shadow-sm">
-                          {globalDocCount} file{globalDocCount !== 1 ? 's' : ''}
+                        <Badge variant="secondary" className="text-xs">
+                          {globalDocCount}
                         </Badge>
-                        <ChevronDown className="h-4 w-4 text-info transition-transform group-data-[state=open]:rotate-180" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
                       </div>
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="px-4 pb-4">
+                  <CollapsibleContent className="px-3 pb-3 border-t border-info/20">
                     <DocumentList 
                       key={`global-${refreshKey}`}
                       isGlobal
@@ -203,15 +201,15 @@ const Documents = () => {
 
             {/* Equipment Documents Section Header */}
             {ridesWithDocs.length > 0 && (
-              <div className="flex items-center gap-3 pt-6 pb-2">
-                <div className="p-1.5 bg-primary/15 rounded-lg">
-                  <FolderOpen className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-2.5 pt-4 pb-1">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <FolderOpen className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">
+                <h2 className="text-xs font-semibold text-primary uppercase tracking-wider">
                   Equipment Documents
                 </h2>
-                <div className="flex-1 h-px bg-primary/20" />
-                <span className="text-xs text-muted-foreground">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[11px] text-muted-foreground">
                   {ridesWithDocs.reduce((sum, r) => sum + r.document_count, 0)} files
                 </span>
               </div>
