@@ -164,7 +164,7 @@ serve(async (req: Request) => {
   <div style="${emailStyles.container}">
     <!-- Header -->
     <div style="${emailStyles.header}">
-      <div style="margin-bottom: 16px;">${logoSvg}</div>
+      ${logoHtml}
     </div>
     
     <!-- Content -->
