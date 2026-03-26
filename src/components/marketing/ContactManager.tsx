@@ -93,11 +93,14 @@ export const ContactManager = () => {
           .eq("id", editingContact.id);
 
         if (error) throw error;
+        logEvent('update', 'marketing_contact', editingContact.id, { email: contactData.email });
         toast.success("Contact updated successfully");
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from("marketing_contacts")
-          .insert(contactData);
+          .insert(contactData)
+          .select('id')
+          .single();
 
         if (error) {
           if (error.code === "23505") {
@@ -105,6 +108,9 @@ export const ContactManager = () => {
             return;
           }
           throw error;
+        }
+        if (inserted) {
+          logEvent('create', 'marketing_contact', inserted.id, { email: contactData.email, source: 'manual' });
         }
         toast.success("Contact added successfully");
       }
