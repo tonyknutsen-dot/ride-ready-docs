@@ -87,18 +87,13 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         { name: 'Risk Library', href: '/admin/risk-library', icon: Shield, count: 0 },
         { name: 'Risk Intake Queue', href: '/admin/risk-items', icon: AlertTriangle, count: pendingCounts.riskIntake },
         { name: 'Equipment Type Library', href: '/admin/equipment-type-library', icon: Package, count: 0 },
-        { name: 'Document Type Library', href: '/admin/document-type-library', icon: FolderOpen, count: 0 },
-      ],
-    },
-    {
-      label: 'Requests',
-      items: [
         { name: 'Equipment Type Requests', href: '/admin/ride-requests', icon: Layers, count: pendingCounts.rideRequests },
+        { name: 'Document Type Library', href: '/admin/document-type-library', icon: FolderOpen, count: 0 },
         { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
       ],
     },
     {
-      label: 'Users',
+      label: 'Admin Access',
       items: [
         { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
         { name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 },
@@ -107,8 +102,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     {
       label: 'Security',
       items: [
+        { name: 'Security Dashboard', href: '/admin/security', icon: Activity, count: 0 },
         { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
-        { name: 'Rate Limits & Blocks', href: '/admin/security', icon: Activity, count: 0 },
       ],
     },
     {
