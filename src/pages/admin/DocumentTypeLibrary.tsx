@@ -231,6 +231,7 @@ export default function DocumentTypeLibrary() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
