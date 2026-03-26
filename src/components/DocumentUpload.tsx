@@ -122,7 +122,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
       : '1.0';
 
     // Auto-enable repeat annually for insurance/certificate types with expiry
-    const repeatAnnually = expiryDate ? AUTO_REPEAT_TYPES.has(documentType) : false;
+    const repeatAnnually = expiryDate ? AUTO_REPEAT_TYPE_KEYS.has(documentType) : false;
 
     uploadMutation.mutate(
       {
