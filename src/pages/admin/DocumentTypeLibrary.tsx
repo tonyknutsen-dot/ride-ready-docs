@@ -285,6 +285,7 @@ export default function DocumentTypeLibrary() {
         .eq('id', dt.id);
       if (error) throw error;
       setTypes(prev => prev.map(t => t.id === dt.id ? { ...t, is_active: newActive } : t));
+      logEvent(newActive ? 'unarchive' : 'archive', 'document_type', dt.id, { name: dt.name });
       toast({ title: newActive ? 'Restored' : 'Archived', description: `"${dt.name}" ${newActive ? 'restored to active' : 'archived'}.` });
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
