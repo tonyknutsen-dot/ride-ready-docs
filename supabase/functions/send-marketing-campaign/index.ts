@@ -150,11 +150,13 @@ serve(async (req: Request) => {
             .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
         };
 
-        const personalizedSubject = personalizeText(campaign.subject);
-        const personalizedContent = personalizeText(campaign.html_content);
-
         // Build unsubscribe URL
         const unsubscribeUrl = `${baseUrl}/functions/v1/handle-unsubscribe?token=${contact.unsubscribe_token}`;
+
+        const personalizedSubject = personalizeText(campaign.subject)
+          .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl);
+        const personalizedContent = personalizeText(campaign.html_content)
+          .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl);
 
         // Build branded HTML email
         const htmlContent = `
