@@ -28,6 +28,7 @@ interface MarketingContact {
 
 export const ContactManager = () => {
   const { user } = useAuth();
+  const { logEvent } = useAuditLog();
   const [contacts, setContacts] = useState<MarketingContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
