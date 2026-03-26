@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Plus, Upload, Search, Trash2, Edit, Mail, MailX, Users } from "lucide-react";
 import { CSVImportDialog } from "./CSVImportDialog";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface MarketingContact {
   id: string;
