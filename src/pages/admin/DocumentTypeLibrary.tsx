@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import {
   FileText, Plus, Search, MoreVertical, Pencil, Archive, ArchiveRestore,
   Trash2, AlertTriangle, CheckCircle, FolderOpen,
@@ -230,6 +231,7 @@ export default function DocumentTypeLibrary() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -283,6 +285,7 @@ export default function DocumentTypeLibrary() {
         .eq('id', dt.id);
       if (error) throw error;
       setTypes(prev => prev.map(t => t.id === dt.id ? { ...t, is_active: newActive } : t));
+      logEvent(newActive ? 'unarchive' : 'archive', 'document_type', dt.id, { name: dt.name });
       toast({ title: newActive ? 'Restored' : 'Archived', description: `"${dt.name}" ${newActive ? 'restored to active' : 'archived'}.` });
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -312,6 +315,7 @@ export default function DocumentTypeLibrary() {
         .eq('id', deleteTarget.id);
       if (error) throw error;
       setTypes(prev => prev.filter(t => t.id !== deleteTarget.id));
+      logEvent('delete', 'document_type', deleteTarget.id, { name: deleteTarget.name });
       toast({ title: 'Deleted', description: `"${deleteTarget.name}" removed from library.` });
       setDeleteTarget(null);
     } catch (err: any) {
@@ -325,10 +329,12 @@ export default function DocumentTypeLibrary() {
   const onSaved = useCallback((dt: DocType, isNew: boolean) => {
     if (isNew) {
       setTypes(prev => [...prev, dt]);
+      logEvent('create', 'document_type', dt.id, { name: dt.name });
     } else {
       setTypes(prev => prev.map(t => t.id === dt.id ? dt : t));
+      logEvent('update', 'document_type', dt.id, { name: dt.name });
     }
-  }, []);
+  }, [logEvent]);
 
   /* ─── Menu action handler with clean handoff ─── */
   const handleMenuAction = useCallback((action: () => void) => {

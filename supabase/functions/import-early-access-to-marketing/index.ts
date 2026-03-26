@@ -154,6 +154,31 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('Update timestamp error:', updateError);
       }
+
+      // Write audit log entries for each import
+      const auditEntries = importedIds.map(signupId => {
+        const signup = signups.find(s => s.id === signupId);
+        return {
+          user_id: userId,
+          action: 'create',
+          resource_type: 'marketing_contact',
+          resource_id: signupId,
+          details: {
+            source: 'early_access_import',
+            email: signup?.email || 'unknown',
+            imported: imported,
+            skipped: skipped,
+          },
+        };
+      });
+
+      const { error: auditError } = await adminClient
+        .from('audit_logs')
+        .insert(auditEntries);
+
+      if (auditError) {
+        console.error('Audit log error:', auditError);
+      }
     }
 
     console.log('Import complete:', { imported, skipped, errors });

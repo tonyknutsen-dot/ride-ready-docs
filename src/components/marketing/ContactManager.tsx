@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Plus, Upload, Search, Trash2, Edit, Mail, MailX, Users } from "lucide-react";
 import { CSVImportDialog } from "./CSVImportDialog";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface MarketingContact {
   id: string;
@@ -27,6 +28,7 @@ interface MarketingContact {
 
 export const ContactManager = () => {
   const { user } = useAuth();
+  const { logEvent } = useAuditLog();
   const [contacts, setContacts] = useState<MarketingContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,11 +93,14 @@ export const ContactManager = () => {
           .eq("id", editingContact.id);
 
         if (error) throw error;
+        logEvent('update', 'marketing_contact', editingContact.id, { email: contactData.email });
         toast.success("Contact updated successfully");
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from("marketing_contacts")
-          .insert(contactData);
+          .insert(contactData)
+          .select('id')
+          .single();
 
         if (error) {
           if (error.code === "23505") {
@@ -103,6 +108,9 @@ export const ContactManager = () => {
             return;
           }
           throw error;
+        }
+        if (inserted) {
+          logEvent('create', 'marketing_contact', inserted.id, { email: contactData.email, source: 'manual' });
         }
         toast.success("Contact added successfully");
       }
@@ -131,12 +139,14 @@ export const ContactManager = () => {
 
   const handleDelete = async (contactId: string) => {
     try {
+      const contact = contacts.find(c => c.id === contactId);
       const { error } = await supabase
         .from("marketing_contacts")
         .delete()
         .eq("id", contactId);
 
       if (error) throw error;
+      logEvent('delete', 'marketing_contact', contactId, { email: contact?.email });
       toast.success("Contact deleted");
       fetchContacts();
     } catch (error: any) {
