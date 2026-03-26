@@ -82,7 +82,7 @@ export const RequestRideTypeDialog = ({ open, onOpenChange }: RequestRideTypeDia
       if (error) throw error;
 
       toast({
-        title: "Request Submitted",
+        title: "Request submitted for review",
         description: `Your request for "${validatedData.name}" has been sent for review.`,
       });
 

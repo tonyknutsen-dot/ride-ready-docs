@@ -409,7 +409,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           toast({ title: 'Error updating item', description: error.message, variant: 'destructive' });
         } else {
           await submitCustomItems();
-          toast({ title: 'Success', description: 'Risk item updated' });
+          toast({ title: 'Risk item updated' });
           setShowItemDialog(false);
           setEditingItem(null);
           resetItemForm();

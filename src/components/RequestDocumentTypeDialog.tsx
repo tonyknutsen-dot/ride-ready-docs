@@ -63,8 +63,8 @@ const RequestDocumentTypeDialog = ({ trigger }: RequestDocumentTypeDialogProps) 
       if (error) throw error;
 
       toast({
-        title: "Request Sent",
-        description: "Your document type request has been sent for review. We'll add it to the system soon!",
+        title: "Request submitted for review",
+        description: "We'll review your request and add it to the system if approved.",
       });
 
       // Reset form
