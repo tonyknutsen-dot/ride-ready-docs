@@ -136,16 +136,22 @@ serve(async (req: Request) => {
       if (!contact) continue;
 
       try {
-        // Personalize content
-        const personalizedSubject = campaign.subject
-          .replace(/\{\{name\}\}/g, contact.name || "Valued Customer")
-          .replace(/\{\{company\}\}/g, contact.company_name || "")
-          .replace(/\{\{email\}\}/g, contact.email);
+        // Derive first_name from name
+        const firstName = contact.name ? contact.name.split(" ")[0] : "";
 
-        const personalizedContent = campaign.html_content
-          .replace(/\{\{name\}\}/g, contact.name || "Valued Customer")
-          .replace(/\{\{company\}\}/g, contact.company_name || "")
-          .replace(/\{\{email\}\}/g, contact.email);
+        // Personalize content with fallback logic
+        const personalizeText = (text: string): string => {
+          return text
+            .replace(/\{\{first_name\}\}/g, firstName || contact.name || "there")
+            .replace(/\{\{name\}\}/g, contact.name || "Valued Customer")
+            .replace(/\{\{company\}\}/g, contact.company_name || "")
+            .replace(/\{\{email\}\}/g, contact.email)
+            .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
+            .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
+        };
+
+        const personalizedSubject = personalizeText(campaign.subject);
+        const personalizedContent = personalizeText(campaign.html_content);
 
         // Build unsubscribe URL
         const unsubscribeUrl = `${baseUrl}/functions/v1/handle-unsubscribe?token=${contact.unsubscribe_token}`;
