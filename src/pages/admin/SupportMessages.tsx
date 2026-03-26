@@ -156,8 +156,8 @@ export default function SupportMessages() {
         {/* Header */}
         <div>
           <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-            <Inbox className="h-5 w-5 text-primary" />
-            Support Inbox
+            <MessageCircle className="h-5 w-5 text-primary" />
+            Support Messages
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Manage and respond to customer support requests

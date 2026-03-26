@@ -741,8 +741,11 @@ export default function UserManagement() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">User Management</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <Users className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              User Management
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Manage user accounts and roles
             </p>
           </div>
