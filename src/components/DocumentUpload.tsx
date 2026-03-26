@@ -12,62 +12,7 @@ import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
-
-// Simplified showmen-friendly categories
-const DOCUMENT_CATEGORIES = {
-  'Inspection / Test': [
-    { id: 'declaration_of_compliance', name: 'Annual Inspection Certificate' },
-    { id: 'electrical_inspection', name: 'Electrical Inspection' },
-    { id: 'inservice_inspection', name: 'In-Service Inspection' },
-    { id: 'initial_test_report', name: 'Initial Test Report' },
-    { id: 'ndt_report', name: 'NDT Report' },
-    { id: 'daily_check', name: 'Daily Check Record' },
-    { id: 'monthly_check', name: 'Monthly Check Record' },
-    { id: 'yearly_check', name: 'Yearly Check Record' },
-  ],
-  'Insurance & Certificates': [
-    { id: 'insurance', name: 'Insurance Document', suggestGlobal: true },
-    { id: 'safety_certificate', name: 'Safety Certificate' },
-    { id: 'doc_certificate', name: 'Declaration of Conformity' },
-    { id: 'pssr_certificate', name: 'PSSR Certificate' },
-    { id: 'loler_certificate', name: 'LOLER Certificate' },
-    { id: 'puwer_certificate', name: 'PUWER Certificate' },
-    { id: 'certificate', name: 'Other Certificate' },
-  ],
-  'Manual / Procedure': [
-    { id: 'operator_manual', name: 'Operator Manual' },
-    { id: 'controller_manual', name: 'Controller Manual' },
-    { id: 'build_up_down', name: 'Build Up & Down Procedure' },
-    { id: 'emergency_action_plan', name: 'Emergency Action Plan' },
-    { id: 'evacuation_plan', name: 'Evacuation Plan' },
-    { id: 'risk_assessment', name: 'Risk Assessment' },
-    { id: 'method_statement', name: 'Method Statement' },
-  ],
-  'Maintenance': [
-    { id: 'maintenance_report', name: 'Maintenance Report' },
-    { id: 'maintenance_log', name: 'Maintenance Log' },
-  ],
-  'Other': [
-    { id: 'design_review', name: 'Design Review Report' },
-    { id: 'conformity_design', name: 'Conformity to Design' },
-    { id: 'ndt_schedule', name: 'NDT Schedule' },
-    { id: 'other', name: 'Other Document' },
-  ],
-};
-
-// Flatten for select dropdown
-const getDocumentTypes = () => {
-  const types: Array<{ id: string; name: string; category: string; suggestGlobal?: boolean }> = [];
-  Object.entries(DOCUMENT_CATEGORIES).forEach(([category, items]) => {
-    items.forEach(item => {
-      types.push({ ...item, category });
-    });
-  });
-  return types;
-};
-
-// Auto-expiry categories (insurance, certificates)
-const AUTO_REPEAT_TYPES = new Set(['insurance', 'safety_certificate', 'doc_certificate', 'pssr_certificate', 'loler_certificate', 'puwer_certificate', 'certificate', 'declaration_of_compliance']);
+import { useDocumentTypes, AUTO_REPEAT_TYPE_KEYS, SUGGEST_GLOBAL_TYPE_KEYS } from '@/hooks/useDocumentTypes';
 
 interface DocumentUploadProps {
   rideId?: string;
