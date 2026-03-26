@@ -144,7 +144,7 @@ const RiskItemSubmissions = () => {
   }, [submissions]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">
@@ -156,7 +156,7 @@ const RiskItemSubmissions = () => {
         </p>
       </div>
 
-      {/* KPI Summary — 2-col grid on mobile */}
+      {/* KPI Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         <button
           onClick={() => setFilter('pending')}
@@ -166,59 +166,57 @@ const RiskItemSubmissions = () => {
               : 'hover:border-primary/40 bg-card'
           }`}
         >
-          <span className="text-[11px] font-semibold text-foreground/50 uppercase tracking-wider leading-tight block mb-1">
+          <span className="text-[11px] font-bold text-foreground/65 uppercase tracking-wider leading-tight block mb-1">
             Awaiting Review
           </span>
           <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{counts.pending}</span>
         </button>
         <div className="rounded-xl border p-3.5 bg-card">
-          <span className="text-[11px] font-semibold text-foreground/50 uppercase tracking-wider leading-tight block mb-1">
+          <span className="text-[11px] font-bold text-foreground/65 uppercase tracking-wider leading-tight block mb-1">
             Hazards
           </span>
           <span className="text-2xl font-bold text-destructive">{counts.hazards}</span>
         </div>
         <div className="rounded-xl border p-3.5 bg-card col-span-2 sm:col-span-1">
-          <span className="text-[11px] font-semibold text-foreground/50 uppercase tracking-wider leading-tight block mb-1">
+          <span className="text-[11px] font-bold text-foreground/65 uppercase tracking-wider leading-tight block mb-1">
             Controls
           </span>
           <span className="text-2xl font-bold text-green-600 dark:text-green-400">{counts.controls}</span>
         </div>
       </div>
 
-      {/* Filters — two rows on mobile */}
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
-            <SelectTrigger className="flex-1 h-9 text-sm">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Awaiting Review</SelectItem>
-              <SelectItem value="approved">In Library</SelectItem>
-              <SelectItem value="rejected">Not Added</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
-            <SelectTrigger className="flex-1 h-9 text-sm">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="hazard">Hazards</SelectItem>
-              <SelectItem value="control">Controls</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={loadSubmissions}
-            disabled={loading}
-            className="h-9 w-9 shrink-0"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
+      {/* Filters */}
+      <div className="flex items-center gap-1.5">
+        <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+          <SelectTrigger className="flex-1 h-9 text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Awaiting Review</SelectItem>
+            <SelectItem value="approved">In Library</SelectItem>
+            <SelectItem value="rejected">Not Added</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+          <SelectTrigger className="flex-1 h-9 text-sm">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="hazard">Hazards</SelectItem>
+            <SelectItem value="control">Controls</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={loadSubmissions}
+          disabled={loading}
+          className="h-9 w-9 min-w-0 min-h-0 px-0 shrink-0"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {/* Submissions List */}
@@ -235,7 +233,7 @@ const RiskItemSubmissions = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {submissions.map((submission) => (
             <SubmissionCard
               key={submission.id}
@@ -282,13 +280,13 @@ function SubmissionCard({
   const isProcessing = processing === submission.id;
 
   const borderColor = submission.status === 'pending'
-    ? 'border-l-yellow-500'
+    ? 'border-l-yellow-400'
     : submission.status === 'approved'
-    ? 'border-l-green-500'
-    : 'border-l-red-400';
+    ? 'border-l-green-400'
+    : 'border-l-red-300';
 
   return (
-    <Card className={`border-l-4 ${borderColor} hover:shadow-none hover:translate-y-0`}>
+    <Card className={`border-l-[3px] ${borderColor} hover:shadow-none hover:translate-y-0`}>
       <CardContent className="px-3.5 pt-3.5 pb-3">
         {/* Badge row */}
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
