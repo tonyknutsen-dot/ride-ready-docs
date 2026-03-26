@@ -9,6 +9,7 @@ const routeLabels: Record<string, string> = {
   '/admin/check-items': 'Library Intake Queue',
   '/admin/ride-requests': 'Equipment Type Requests',
   '/admin/document-requests': 'Document Type Requests',
+  '/admin/document-type-library': 'Document Type Library',
   '/admin/support': 'Support Messages',
   '/admin/support-access': 'Support Access Grants',
   '/admin/users': 'User Management',
