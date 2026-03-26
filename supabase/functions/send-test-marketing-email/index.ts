@@ -136,7 +136,7 @@ serve(async (req: Request) => {
     const emailResponse = await resend.emails.send({
       from: fromAddress,
       to: [testEmail],
-      reply_to: user.email || undefined,
+      reply_to: "info@ridereadydocs.com",
       subject: personalizedSubject,
       html: htmlContent,
     });
