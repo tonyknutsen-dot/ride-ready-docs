@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, MessageCircle, Inbox } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { SupportQueueFilters } from '@/components/admin/support/SupportQueueFilters';
 import { SupportMessageRow } from '@/components/admin/support/SupportMessageRow';
