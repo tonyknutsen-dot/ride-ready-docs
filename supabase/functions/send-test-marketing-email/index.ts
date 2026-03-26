@@ -58,7 +58,7 @@ serve(async (req: Request) => {
 
     // Stricter rate limit for test sends
     const rateLimitKey = getClientIdentifier(req, "send-test-marketing-email", user.id);
-    const rateLimitResult = await checkRateLimit(rateLimitKey, "standard");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     if (!rateLimitResult.allowed) {
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }

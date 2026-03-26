@@ -497,8 +497,8 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             </div>
             <div className="p-2.5 rounded-lg bg-muted text-[11px] space-y-1">
               <p className="text-muted-foreground"><span className="font-medium text-foreground">Subject:</span> [TEST] {subject || "(empty)"}</p>
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">From:</span> Your company &lt;info@ridereadydocs.com&gt;</p>
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">Reply-to:</span> {user?.email || "your login email"}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">From:</span> Ride Ready Docs &lt;info@ridereadydocs.com&gt;</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Reply-to:</span> info@ridereadydocs.com</p>
             </div>
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
               <Button variant="outline" onClick={() => setShowTestDialog(false)} className="w-full sm:w-auto">
