@@ -485,7 +485,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   );
 
   if (grouped) {
-    const groupedDocs = groupByType(documents, isGlobal);
+    const groupedDocs = groupByType(documents, isGlobal, categoryMap);
     const olderVersionsCount = getAllOlderVersions(documents).length;
     const olderVersionsSize = getOlderVersionsStorageSize(documents);
     
