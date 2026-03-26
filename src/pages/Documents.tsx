@@ -215,8 +215,8 @@ const Documents = () => {
               </div>
             )}
 
-            {/* Equipment folders - distinct card style */}
-            <div className="space-y-2">
+            {/* Equipment folders */}
+            <div className="space-y-1.5">
               {ridesWithDocs.map(ride => (
                 <Collapsible 
                   key={ride.id} 
@@ -226,30 +226,30 @@ const Documents = () => {
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full justify-between p-4 h-auto border border-border rounded-xl bg-card hover:border-primary/40 hover:bg-primary/5 transition-all"
+                      className="w-full justify-between px-3 py-2.5 h-auto border border-border rounded-lg bg-card hover:border-primary/30 transition-all"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted rounded-lg">
-                          <FolderOpen className="h-5 w-5 text-primary" />
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 bg-muted rounded-md">
+                          <FolderOpen className="h-4 w-4 text-primary" />
                         </div>
-                        <div className="text-left">
-                          <div className="font-semibold text-foreground">{ride.ride_name}</div>
-                          <div className="text-xs text-muted-foreground">{ride.category_name}</div>
+                        <div className="text-left min-w-0">
+                          <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
+                          <div className="text-[11px] text-muted-foreground">{ride.category_name}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {ride.document_count > 0 ? (
-                          <Badge variant="outline" className="bg-background text-foreground border-border">
-                            {ride.document_count} file{ride.document_count !== 1 ? 's' : ''}
+                          <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+                            {ride.document_count}
                           </Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">Empty</span>
+                          <span className="text-[11px] text-muted-foreground">—</span>
                         )}
-                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
                       </div>
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-3 px-2">
+                  <CollapsibleContent className="pt-2 px-1 border-t border-border/40 mt-1">
                     <DocumentList 
                       key={`${ride.id}-${refreshKey}`}
                       rideId={ride.id}
