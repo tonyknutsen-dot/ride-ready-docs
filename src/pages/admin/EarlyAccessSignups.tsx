@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw, Sparkles, Search, Download, Mail, Users, Loader2, UserPlus, Check } from 'lucide-react';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
 
 interface EarlyAccessSignup {
