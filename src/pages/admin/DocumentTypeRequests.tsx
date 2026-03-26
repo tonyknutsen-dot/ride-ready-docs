@@ -166,12 +166,13 @@ function DuplicateStatusBanner({ matches }: { matches: DuplicateMatch[] }) {
 /* ─── Link to Existing Dialog ─── */
 
 const LinkExistingDialog = memo(function LinkExistingDialog({
-  request, open, onClose, onLinked,
+  request, open, onClose, onLinked, existingTypes,
 }: {
   request: DocTypeRequest | null;
   open: boolean;
   onClose: () => void;
   onLinked: (id: string) => void;
+  existingTypes: { id: string; name: string; category: string }[];
 }) {
   const [matchedId, setMatchedId] = useState('');
   const [note, setNote] = useState('');
