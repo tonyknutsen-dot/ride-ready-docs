@@ -234,7 +234,7 @@ const Documents = () => {
                         </div>
                         <div className="text-left min-w-0">
                           <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
-                          <div className="text-[11px] text-muted-foreground">{ride.category_name}</div>
+                          <div className="text-[11px] font-medium text-foreground/55">{ride.category_name}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
