@@ -46,12 +46,15 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
     }
   }, [documentName, documentType, rideId, user]);
 
-  // Auto-suggest global for insurance documents
+  // Only insurance can be global — auto-set and lock for insurance, reset for all others
+  const isInsuranceType = documentType === 'insurance';
   useEffect(() => {
-    if (SUGGEST_GLOBAL_TYPE_KEYS.has(documentType) && !rideId) {
+    if (isInsuranceType && !rideId) {
       setIsGlobal(true);
+    } else if (!isInsuranceType) {
+      setIsGlobal(false);
     }
-  }, [documentType, rideId]);
+  }, [documentType, rideId, isInsuranceType]);
 
   const loadExistingDocuments = async () => {
     if (!user || !documentName || !documentType) return;
