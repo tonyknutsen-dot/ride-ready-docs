@@ -127,7 +127,7 @@ serve(async (req: Request) => {
         Sent by ${escapeHtml(senderName)}<br><br>
         © ${currentYear} Ride Ready Docs. All rights reserved.<br>
         Professional compliance management for amusement equipment.<br><br>
-        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="https://ride-ready-docs.lovable.app" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
         <span style="color: ${brandColors.textLight};">Unsubscribe</span>
       </p>
     </div>
