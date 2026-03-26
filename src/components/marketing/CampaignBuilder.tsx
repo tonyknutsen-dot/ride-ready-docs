@@ -68,11 +68,45 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
 
+  // Refs for token insertion
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+  const lastFocusedField = useRef<"subject" | "content">("content");
+
   // Test send
   const [showTestDialog, setShowTestDialog] = useState(false);
   const [testEmail, setTestEmail] = useState(user?.email || "");
   const [sendingTest, setSendingTest] = useState(false);
   const [lastTestResult, setLastTestResult] = useState<TestSendResult | null>(null);
+
+  const insertToken = (token: string) => {
+    const field = lastFocusedField.current;
+    if (field === "subject") {
+      const el = subjectRef.current;
+      if (el) {
+        const start = el.selectionStart ?? subject.length;
+        const end = el.selectionEnd ?? subject.length;
+        const newVal = subject.slice(0, start) + token + subject.slice(end);
+        setSubject(newVal);
+        requestAnimationFrame(() => {
+          el.focus();
+          el.setSelectionRange(start + token.length, start + token.length);
+        });
+      }
+    } else {
+      const el = contentRef.current;
+      if (el) {
+        const start = el.selectionStart ?? content.length;
+        const end = el.selectionEnd ?? content.length;
+        const newVal = content.slice(0, start) + token + content.slice(end);
+        setContent(newVal);
+        requestAnimationFrame(() => {
+          el.focus();
+          el.setSelectionRange(start + token.length, start + token.length);
+        });
+      }
+    }
+  };
 
   const fetchContacts = useCallback(async () => {
     if (!user) return;
