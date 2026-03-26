@@ -28,6 +28,7 @@ import {
   isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
   getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile,
 } from '@/utils/documentHelpers';
+import { useDocumentTypes } from '@/hooks/useDocumentTypes';
 
 type Document = Tables<'documents'>;
 
