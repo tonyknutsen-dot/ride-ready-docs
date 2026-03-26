@@ -139,12 +139,14 @@ export const ContactManager = () => {
 
   const handleDelete = async (contactId: string) => {
     try {
+      const contact = contacts.find(c => c.id === contactId);
       const { error } = await supabase
         .from("marketing_contacts")
         .delete()
         .eq("id", contactId);
 
       if (error) throw error;
+      logEvent('delete', 'marketing_contact', contactId, { email: contact?.email });
       toast.success("Contact deleted");
       fetchContacts();
     } catch (error: any) {
