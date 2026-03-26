@@ -422,34 +422,46 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
         </div>
       )}
 
-      {/* Campaign Actions */}
-      <div className="flex flex-col md:flex-row gap-2">
-        <Button
-          variant="outline"
-          onClick={() => setShowPreview(true)}
-          disabled={!content}
-          className="w-full md:w-auto"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Preview
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => setShowTestDialog(true)}
-          disabled={!subject || !content}
-          className="w-full md:w-auto"
-        >
-          <FlaskConical className="h-4 w-4 mr-2" />
-          Send Test
-        </Button>
-        <Button
-          onClick={handleSendCampaign}
-          disabled={sending || selectedRecipients.length === 0 || !campaignName || !subject || !content}
-          className="w-full md:flex-1"
-        >
-          <Send className="h-4 w-4 mr-2" />
-          {sending ? "Sending..." : `Send to ${selectedRecipients.length} Recipients`}
-        </Button>
+      {/* Pre-send summary + Campaign Actions */}
+      <div className="space-y-2">
+        {isMobile && (
+          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/60 text-xs">
+            <span className="text-muted-foreground">
+              Recipients: <span className="font-semibold text-foreground tabular-nums">{selectedRecipients.length}</span>
+            </span>
+            <span className="text-muted-foreground">
+              From: <span className="font-medium text-foreground">info@ridereadydocs.com</span>
+            </span>
+          </div>
+        )}
+        <div className="flex flex-col md:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowPreview(true)}
+            disabled={!content}
+            className="w-full md:w-auto disabled:opacity-40 disabled:border-border"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowTestDialog(true)}
+            disabled={!subject || !content}
+            className="w-full md:w-auto disabled:opacity-40 disabled:border-border"
+          >
+            <FlaskConical className="h-4 w-4 mr-2" />
+            Send Test
+          </Button>
+          <Button
+            onClick={handleSendCampaign}
+            disabled={sending || selectedRecipients.length === 0 || !campaignName || !subject || !content}
+            className="w-full md:flex-1 disabled:opacity-40"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {sending ? "Sending..." : `Send to ${selectedRecipients.length} Recipients`}
+          </Button>
+        </div>
       </div>
 
       <CampaignPreview
