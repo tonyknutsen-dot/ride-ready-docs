@@ -302,13 +302,13 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
               <SelectValue placeholder="What type of document?" />
             </SelectTrigger>
             <SelectContent className="max-h-80">
-              {Object.entries(DOCUMENT_CATEGORIES).map(([category, items]) => (
+              {Object.entries(groupedActive).map(([category, items]) => (
                 <div key={category}>
                   <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 sticky top-0 border-b border-border/50">
                     {category}
                   </div>
                   {items.map((item) => (
-                    <SelectItem key={item.id} value={item.id} className="pl-4">
+                    <SelectItem key={item.type_key} value={item.type_key} className="pl-4">
                       {item.name}
                     </SelectItem>
                   ))}
