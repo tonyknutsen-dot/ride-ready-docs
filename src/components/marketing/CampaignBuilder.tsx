@@ -266,6 +266,25 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Campaign Form */}
       <div className="lg:col-span-2 space-y-4">
+        {/* Sending Identity */}
+        <Card className="border-dashed">
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Sending Identity</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>Provider</span>
+              <span className="text-foreground">Resend</span>
+              <span>From name</span>
+              <span className="text-foreground">Your company name</span>
+              <span>From email</span>
+              <span className="text-foreground">info@ridereadydocs.com</span>
+              <span>Reply-to</span>
+              <span className="text-foreground">{user?.email || "your login email"}</span>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Create Campaign</CardTitle>
