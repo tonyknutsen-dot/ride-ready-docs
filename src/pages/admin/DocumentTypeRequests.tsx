@@ -182,8 +182,8 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
 
   const suggestedMatches = useMemo(() => {
     if (!request) return [];
-    return findDuplicateMatches(request.document_type_name);
-  }, [request]);
+    return findDuplicateMatches(request.document_type_name, existingTypes);
+  }, [request, existingTypes]);
 
   const filteredTypes = useMemo(() => {
     const suggestedIds = new Set(suggestedMatches.map(m => m.docType.id));
