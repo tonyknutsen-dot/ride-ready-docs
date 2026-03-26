@@ -392,8 +392,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const isExpiringSoon = isDocExpiringSoon;
   const isExpired = isDocExpired;
   const formatFileSize = sharedFormatFileSize;
-  const getDocumentTypeDisplay = getDocTypeLabel;
-  const prettyType = getDocGroupCategory;
+  const getDocumentTypeDisplay = (type: string) => getDocTypeLabel(type, labelMap);
+  const prettyType = (type: string) => getDocGroupCategory(type, categoryMap);
 
   // Grouping, versions, and cleanup now use shared extracted modules
   // (groupDocumentsByName, groupByType, getAllOlderVersions, getOlderVersionsStorageSize
