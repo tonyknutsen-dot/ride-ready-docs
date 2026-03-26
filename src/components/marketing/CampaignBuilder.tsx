@@ -230,7 +230,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                   <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <div className="text-xs min-w-0">
                     <span className="text-muted-foreground">From: </span>
-                    <span className="font-medium text-foreground">Your company</span>
+                    <span className="font-medium text-foreground">Ride Ready Docs</span>
                     <span className="text-muted-foreground block truncate">info@ridereadydocs.com</span>
                   </div>
                 </div>
@@ -247,12 +247,12 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                 <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
                   <span className="font-medium">Provider</span>
                   <span className="text-foreground">Resend</span>
-                  <span className="font-medium">From name</span>
-                  <span className="text-foreground">Your company name</span>
-                  <span className="font-medium">From email</span>
-                  <span className="text-foreground break-all">info@ridereadydocs.com</span>
-                  <span className="font-medium">Reply-to</span>
-                  <span className="text-foreground break-all">{user?.email || "your login email"}</span>
+                   <span className="font-medium">From name</span>
+                   <span className="text-foreground">Ride Ready Docs</span>
+                   <span className="font-medium">From email</span>
+                   <span className="text-foreground break-all">info@ridereadydocs.com</span>
+                   <span className="font-medium">Reply-to</span>
+                   <span className="text-foreground break-all">info@ridereadydocs.com</span>
                 </div>
               </CollapsibleContent>
             ) : (
@@ -260,11 +260,11 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                 <span>Provider</span>
                 <span className="text-foreground">Resend</span>
                 <span>From name</span>
-                <span className="text-foreground">Your company name</span>
+                <span className="text-foreground">Ride Ready Docs</span>
                 <span>From email</span>
                 <span className="text-foreground">info@ridereadydocs.com</span>
                 <span>Reply-to</span>
-                <span className="text-foreground">{user?.email || "your login email"}</span>
+                <span className="text-foreground">info@ridereadydocs.com</span>
               </div>
             )}
           </CardContent>

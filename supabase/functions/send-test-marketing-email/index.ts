@@ -80,7 +80,7 @@ serve(async (req: Request) => {
       .single();
 
     const currentYear = new Date().getFullYear();
-    const senderName = profile?.company_name || "Ride Ready Docs";
+    const senderName = "Ride Ready Docs";
 
     // Personalize with test placeholders
     const personalizedSubject = `[TEST] ${subject}`
@@ -136,7 +136,7 @@ serve(async (req: Request) => {
     const emailResponse = await resend.emails.send({
       from: fromAddress,
       to: [testEmail],
-      reply_to: user.email || undefined,
+      reply_to: "info@ridereadydocs.com",
       subject: personalizedSubject,
       html: htmlContent,
     });
@@ -150,7 +150,7 @@ serve(async (req: Request) => {
         sentAt: new Date().toISOString(),
         fromName: senderName,
         fromEmail: "info@ridereadydocs.com",
-        replyTo: user.email,
+        replyTo: "info@ridereadydocs.com",
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
