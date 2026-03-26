@@ -193,7 +193,7 @@ const RiskItemSubmissions = () => {
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-1">
           <Library className="w-5 h-5 text-primary" />
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Risk Library Intake</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Risk Intake Queue</h1>
         </div>
         <p className="text-sm text-muted-foreground max-w-xl">
           Review user-created hazards and controls for inclusion in the shared risk library. Users can already use their own items privately.

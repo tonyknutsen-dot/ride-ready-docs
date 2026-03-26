@@ -589,6 +589,18 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/admin/risk-library" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <RiskLibrary />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/admin/risk-items" 
                 element={
                   <ProtectedRoute>
