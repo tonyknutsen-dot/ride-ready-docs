@@ -219,7 +219,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3 md:space-y-6">
       {/* Sending Identity — collapsed on mobile */}
       <Collapsible open={isMobile ? identityOpen : true} onOpenChange={setIdentityOpen}>
         <Card className="border-dashed">
