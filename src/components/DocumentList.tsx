@@ -52,6 +52,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { labelMap, categoryMap } = useDocumentTypes();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
