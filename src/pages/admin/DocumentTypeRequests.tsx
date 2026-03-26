@@ -195,7 +195,7 @@ const LinkExistingDialog = memo(function LinkExistingDialog({
     return types;
   }, [suggestedMatches, searchTerm]);
 
-  const selectedType = EXISTING_DOC_TYPES.find(t => t.id === matchedId);
+  const selectedType = existingTypes.find(t => t.id === matchedId);
 
   useEffect(() => {
     if (request && open) {
