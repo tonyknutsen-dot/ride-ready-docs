@@ -319,7 +319,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
         {/* Last test send indicator */}
         {lastTestResult && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-muted/50 text-sm">
-            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
             <span className="text-muted-foreground">
               Test sent to <span className="font-medium text-foreground">{lastTestResult.sentTo}</span>
               {" · "}
