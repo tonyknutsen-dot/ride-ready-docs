@@ -27,7 +27,10 @@ type ResourceType =
   | 'staff'
   | 'session'
   | 'ride_category'
-  | 'check_library_item';
+  | 'check_library_item'
+  | 'marketing_contact'
+  | 'document_type'
+  | 'equipment_type';
 
 interface AuditDetails {
   [key: string]: any;
