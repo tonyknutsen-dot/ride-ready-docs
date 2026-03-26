@@ -429,7 +429,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           toast({ title: 'Error adding item', description: error.message, variant: 'destructive' });
         } else {
           await submitCustomItems();
-          toast({ title: 'Success', description: 'Risk item added' });
+          toast({ title: 'Added to your risk assessment', description: useCustomHazard || useCustomControls ? 'Submitted for shared library review' : undefined });
           setShowItemDialog(false);
           resetItemForm();
           setUseManualRiskOverride(false);
