@@ -78,6 +78,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         { name: 'Equipment Type Requests', href: '/admin/ride-requests', icon: Layers, count: pendingCounts.rideRequests },
         { name: 'Equipment Type Library', href: '/admin/equipment-type-library', icon: Package, count: 0 },
         { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
+        { name: 'Document Type Library', href: '/admin/document-type-library', icon: FolderOpen, count: 0 },
         { name: 'Risk Library Intake', href: '/admin/risk-items', icon: Activity, count: 0 },
       ],
     },
