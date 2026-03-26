@@ -225,14 +225,16 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
         <Card className="border-dashed">
           <CardContent className="py-2.5 px-3 md:py-3 md:px-4">
             {isMobile ? (
-              <CollapsibleTrigger className="flex items-center justify-between w-full text-left">
+              <CollapsibleTrigger className="flex items-center justify-between w-full text-left gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate">
-                    Sending from: <span className="font-medium text-foreground">Your company</span> / <span className="font-medium text-foreground">info@ridereadydocs.com</span>
-                  </span>
+                  <div className="text-xs min-w-0">
+                    <span className="text-muted-foreground">From: </span>
+                    <span className="font-medium text-foreground">Your company</span>
+                    <span className="text-muted-foreground block truncate">info@ridereadydocs.com</span>
+                  </div>
                 </div>
-                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform ${identityOpen ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200 ${identityOpen ? "rotate-180" : ""}`} />
               </CollapsibleTrigger>
             ) : (
               <div className="flex items-center gap-2 mb-2">
