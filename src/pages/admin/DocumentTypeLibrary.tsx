@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import {
   FileText, Plus, Search, MoreVertical, Pencil, Archive, ArchiveRestore,
   Trash2, AlertTriangle, CheckCircle, FolderOpen,
