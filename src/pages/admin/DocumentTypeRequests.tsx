@@ -703,6 +703,7 @@ export default function DocumentTypeRequests() {
         open={!!linkTarget}
         onClose={() => setLinkTarget(null)}
         onLinked={onLinked}
+        existingTypes={existingTypesForMatching}
       />
     </AdminLayout>
   );
