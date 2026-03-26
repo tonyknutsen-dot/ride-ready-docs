@@ -84,7 +84,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Check Library', href: '/admin/check-library', icon: Library, count: 0 },
         { name: 'Check Intake Queue', href: '/admin/check-items', icon: FileText, count: pendingCounts.checkIntake },
-        { name: 'Risk Library', href: '/admin/risk-items', icon: Shield, count: pendingCounts.riskIntake },
+        { name: 'Risk Library', href: '/admin/risk-library', icon: Shield, count: 0 },
+        { name: 'Risk Intake Queue', href: '/admin/risk-items', icon: AlertTriangle, count: pendingCounts.riskIntake },
         { name: 'Equipment Type Library', href: '/admin/equipment-type-library', icon: Package, count: 0 },
         { name: 'Document Type Library', href: '/admin/document-type-library', icon: FolderOpen, count: 0 },
       ],
