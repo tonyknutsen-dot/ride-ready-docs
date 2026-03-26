@@ -138,15 +138,15 @@ const Documents = () => {
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-5 space-y-4">
+      <main className="container mx-auto px-4 py-4 space-y-3">
         {/* Upload hint */}
-        <Alert className="border-info/30 bg-info/5">
+        <Alert className="border-info/30 bg-info/5 py-2.5">
           <Upload className="h-4 w-4 text-info" />
           <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-sm">To upload documents, go to a specific ride or equipment page.</span>
-            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info">
+            <span className="text-xs">To upload documents, go to a specific equipment page.</span>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info text-xs">
               <Link to="/rides" className="flex items-center gap-1">
-                Go to Rides <ArrowRight className="h-3 w-3" />
+                Equipment <ArrowRight className="h-3 w-3" />
               </Link>
             </Button>
           </AlertDescription>
