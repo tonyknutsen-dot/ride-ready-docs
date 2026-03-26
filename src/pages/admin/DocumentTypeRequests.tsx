@@ -19,38 +19,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-/* ─── Known document types (mirrors DocumentUpload.tsx) ─── */
-
-const EXISTING_DOC_TYPES: { id: string; name: string; category: string }[] = [
-  { id: 'declaration_of_compliance', name: 'Annual Inspection Certificate', category: 'Inspection / Test' },
-  { id: 'electrical_inspection', name: 'Electrical Inspection', category: 'Inspection / Test' },
-  { id: 'inservice_inspection', name: 'In-Service Inspection', category: 'Inspection / Test' },
-  { id: 'initial_test_report', name: 'Initial Test Report', category: 'Inspection / Test' },
-  { id: 'ndt_report', name: 'NDT Report', category: 'Inspection / Test' },
-  { id: 'daily_check', name: 'Daily Check Record', category: 'Inspection / Test' },
-  { id: 'monthly_check', name: 'Monthly Check Record', category: 'Inspection / Test' },
-  { id: 'yearly_check', name: 'Yearly Check Record', category: 'Inspection / Test' },
-  { id: 'insurance', name: 'Insurance Document', category: 'Insurance & Certificates' },
-  { id: 'safety_certificate', name: 'Safety Certificate', category: 'Insurance & Certificates' },
-  { id: 'doc_certificate', name: 'Declaration of Conformity', category: 'Insurance & Certificates' },
-  { id: 'pssr_certificate', name: 'PSSR Certificate', category: 'Insurance & Certificates' },
-  { id: 'loler_certificate', name: 'LOLER Certificate', category: 'Insurance & Certificates' },
-  { id: 'puwer_certificate', name: 'PUWER Certificate', category: 'Insurance & Certificates' },
-  { id: 'certificate', name: 'Other Certificate', category: 'Insurance & Certificates' },
-  { id: 'operator_manual', name: 'Operator Manual', category: 'Manual / Procedure' },
-  { id: 'controller_manual', name: 'Controller Manual', category: 'Manual / Procedure' },
-  { id: 'build_up_down', name: 'Build Up & Down Procedure', category: 'Manual / Procedure' },
-  { id: 'emergency_action_plan', name: 'Emergency Action Plan', category: 'Manual / Procedure' },
-  { id: 'evacuation_plan', name: 'Evacuation Plan', category: 'Manual / Procedure' },
-  { id: 'risk_assessment', name: 'Risk Assessment', category: 'Manual / Procedure' },
-  { id: 'method_statement', name: 'Method Statement', category: 'Manual / Procedure' },
-  { id: 'maintenance_report', name: 'Maintenance Report', category: 'Maintenance' },
-  { id: 'maintenance_log', name: 'Maintenance Log', category: 'Maintenance' },
-  { id: 'design_review', name: 'Design Review Report', category: 'Other' },
-  { id: 'conformity_design', name: 'Conformity to Design', category: 'Other' },
-  { id: 'ndt_schedule', name: 'NDT Schedule', category: 'Other' },
-  { id: 'other', name: 'Other Document', category: 'Other' },
-];
+/* ─── Types use live document_types table via useDocumentTypes hook ─── */
 
 /* ─── Types ─── */
 
