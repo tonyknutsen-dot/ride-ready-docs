@@ -105,6 +105,11 @@ export const getCompactOverdue = (daysOverdue: number): { chip: string; detail: 
 
 /* ─── Friendly type labels ─── */
 
+/**
+ * LEGACY fallback map. The live source of truth is the document_types table
+ * accessed via useDocumentTypes() hook. This map ensures old records with
+ * type keys not in the DB still display correctly.
+ */
 export const DOC_TYPE_LABELS: Record<string, string> = {
   insurance: 'Insurance',
   safety_certificate: 'Safety Certificate',
@@ -138,14 +143,41 @@ export const DOC_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
-export const getDocTypeLabel = (type: string): string =>
-  DOC_TYPE_LABELS[type] || type;
+/**
+ * Get a friendly label for a document type key.
+ * Accepts an optional live labelMap from useDocumentTypes() for DB-sourced labels.
+ * Falls back to the hardcoded DOC_TYPE_LABELS for legacy compatibility.
+ */
+export const getDocTypeLabel = (type: string, liveLabelMap?: Record<string, string>): string => {
+  if (liveLabelMap && liveLabelMap[type]) return liveLabelMap[type];
+  return DOC_TYPE_LABELS[type] || type;
+};
 
 /* ─── Document group display categories ─── */
 
-export const getDocGroupCategory = (raw: string): string => {
+/**
+ * Map a document type key to a display group category.
+ * Accepts an optional live categoryMap from useDocumentTypes() for DB-sourced categories.
+ */
+export const getDocGroupCategory = (raw: string, liveCategoryMap?: Record<string, string>): string => {
   const t = raw.trim().toLowerCase();
 
+  // Try live DB category first
+  if (liveCategoryMap) {
+    const dbCategory = liveCategoryMap[t];
+    if (dbCategory) {
+      const CATEGORY_TO_GROUP: Record<string, string> = {
+        'Inspection / Test': '📜 Inspection Reports',
+        'Insurance & Certificates': '🛡️ Insurance & Certificates',
+        'Manual / Procedure': '📖 Manuals & Procedures',
+        'Maintenance': '🔧 Maintenance',
+        'Other': '📁 Other',
+      };
+      return CATEGORY_TO_GROUP[dbCategory] || `📁 ${dbCategory}`;
+    }
+  }
+
+  // Fallback: hardcoded grouping for legacy/unknown types
   if (t === 'doc' || t === 'declaration_of_compliance') return '📜 Inspection Reports';
   if (t === 'electrical_inspection' || t === 'inservice_inspection' || t === 'initial_test_report') return '📜 Inspection Reports';
   if (t === 'check record' || t === 'check_record' || t.includes('safety check')) return '✅ Check Records';
