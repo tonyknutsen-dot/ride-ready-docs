@@ -505,7 +505,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
               <p><strong>Subject:</strong> [TEST] {subject || "(empty)"}</p>
               <p><strong>From:</strong> Your company name &lt;info@ridereadydocs.com&gt;</p>
               <p><strong>Reply-to:</strong> {user?.email || "your login email"}</p>
-              <p><strong>Tokens:</strong> {{`name`}} → "Test Recipient", {{`company`}} → "Test Company"</p>
+              <p><strong>Tokens:</strong> {`{{name}}`} → "Test Recipient", {`{{company}}`} → "Test Company"</p>
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowTestDialog(false)}>
