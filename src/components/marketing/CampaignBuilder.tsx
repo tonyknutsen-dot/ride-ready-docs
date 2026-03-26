@@ -247,12 +247,12 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
                 <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-2.5 pt-2.5 border-t">
                   <span className="font-medium">Provider</span>
                   <span className="text-foreground">Resend</span>
-                  <span className="font-medium">From name</span>
-                  <span className="text-foreground">Your company name</span>
-                  <span className="font-medium">From email</span>
-                  <span className="text-foreground break-all">info@ridereadydocs.com</span>
-                  <span className="font-medium">Reply-to</span>
-                  <span className="text-foreground break-all">{user?.email || "your login email"}</span>
+                   <span className="font-medium">From name</span>
+                   <span className="text-foreground">Ride Ready Docs</span>
+                   <span className="font-medium">From email</span>
+                   <span className="text-foreground break-all">info@ridereadydocs.com</span>
+                   <span className="font-medium">Reply-to</span>
+                   <span className="text-foreground break-all">info@ridereadydocs.com</span>
                 </div>
               </CollapsibleContent>
             ) : (
