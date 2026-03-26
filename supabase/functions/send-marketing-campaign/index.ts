@@ -146,7 +146,7 @@ serve(async (req: Request) => {
             .replace(/\{\{name\}\}/g, contact.name || "Valued Customer")
             .replace(/\{\{company\}\}/g, contact.company_name || "")
             .replace(/\{\{email\}\}/g, contact.email)
-            .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
+            .replace(/\{\{website_url\}\}/g, "https://ride-ready-docs.lovable.app")
             .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
         };
 
@@ -188,7 +188,7 @@ serve(async (req: Request) => {
         ${profile?.company_name ? `Sent by ${escapeHtml(profile.company_name)}<br><br>` : ""}
         © ${currentYear} Ride Ready Docs. All rights reserved.<br>
         Professional compliance management for amusement equipment.<br><br>
-        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="https://ride-ready-docs.lovable.app" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
         <a href="${unsubscribeUrl}" style="${emailStyles.footerLink}">Unsubscribe</a>
       </p>
     </div>
