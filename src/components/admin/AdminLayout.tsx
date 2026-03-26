@@ -178,14 +178,14 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="py-4">
-                  <div className="px-4 mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Shield className="h-6 w-6 text-primary" />
-                      <h2 className="text-lg font-semibold">Admin Panel</h2>
-                    </div>
+              <SheetContent side="left" className="w-64 p-0 flex flex-col">
+                <div className="px-4 pt-4 pb-2 shrink-0">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="h-6 w-6 text-primary" />
+                    <h2 className="text-lg font-semibold">Admin Panel</h2>
                   </div>
+                </div>
+                <div className="flex-1 overflow-y-auto overscroll-contain">
                   <NavigationContent />
                 </div>
               </SheetContent>
