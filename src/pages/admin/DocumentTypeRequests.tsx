@@ -343,6 +343,13 @@ export default function DocumentTypeRequests() {
   const [approving, setApproving] = useState(false);
 
   const { toast } = useToast();
+
+  // Live document types from DB for duplicate detection and linking
+  const { allTypes: liveDocTypes } = useDocumentTypes();
+  const existingTypesForMatching = useMemo(() =>
+    liveDocTypes.map(t => ({ id: t.type_key, name: t.name, category: t.category })),
+    [liveDocTypes]
+  );
   const { logEvent } = useAuditLog();
 
   const fetchData = useCallback(async () => {
