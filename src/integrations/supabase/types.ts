@@ -124,34 +124,61 @@ export type Database = {
       audit_logs: {
         Row: {
           action: string
+          after_data: Json | null
+          before_data: Json | null
+          changed_fields: string[] | null
+          context_hint: string | null
           created_at: string
           details: Json | null
+          equipment_id: string | null
+          equipment_name: string | null
           id: string
           ip_address: string | null
+          organisation_name: string | null
+          reason: string | null
           resource_id: string | null
           resource_type: string
+          result: string | null
           user_agent: string | null
           user_id: string
         }
         Insert: {
           action: string
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_fields?: string[] | null
+          context_hint?: string | null
           created_at?: string
           details?: Json | null
+          equipment_id?: string | null
+          equipment_name?: string | null
           id?: string
           ip_address?: string | null
+          organisation_name?: string | null
+          reason?: string | null
           resource_id?: string | null
           resource_type: string
+          result?: string | null
           user_agent?: string | null
           user_id: string
         }
         Update: {
           action?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_fields?: string[] | null
+          context_hint?: string | null
           created_at?: string
           details?: Json | null
+          equipment_id?: string | null
+          equipment_name?: string | null
           id?: string
           ip_address?: string | null
+          organisation_name?: string | null
+          reason?: string | null
           resource_id?: string | null
           resource_type?: string
+          result?: string | null
           user_agent?: string | null
           user_id?: string
         }
@@ -3819,15 +3846,34 @@ export type Database = {
         Returns: boolean
       }
       is_tester: { Args: { _user_id: string }; Returns: boolean }
-      log_audit_event: {
-        Args: {
-          p_action: string
-          p_details?: Json
-          p_resource_id?: string
-          p_resource_type: string
-        }
-        Returns: string
-      }
+      log_audit_event:
+        | {
+            Args: {
+              p_action: string
+              p_details?: Json
+              p_resource_id?: string
+              p_resource_type: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_action: string
+              p_after_data?: Json
+              p_before_data?: Json
+              p_changed_fields?: string[]
+              p_context_hint?: string
+              p_details?: Json
+              p_equipment_id?: string
+              p_equipment_name?: string
+              p_organisation_name?: string
+              p_reason?: string
+              p_resource_id?: string
+              p_resource_type: string
+              p_result?: string
+            }
+            Returns: string
+          }
       staff_can_access_feature: {
         Args: { _feature: string; _user_id: string }
         Returns: boolean
