@@ -335,6 +335,12 @@ export default function CheckItemSubmissions() {
         .eq('id', rejectTarget.id);
       if (error) throw error;
       toast({ title: "Not added to library", description: "The user can still use this item in their own checks." });
+      logEvent('reject', 'check_intake', rejectTarget.id, { label: rejectTarget.label }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library' },
+        reason: rejectReason || 'Not suitable for shared library',
+        contextHint: 'admin check intake rejection',
+      });
       updateSubmissionLocally(rejectTarget.id, { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library', reviewed_at: new Date().toISOString() });
       closeMobileActionMenu();
       setRejectTarget(null);
