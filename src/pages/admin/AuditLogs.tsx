@@ -555,6 +555,7 @@ const AuditLogs = () => {
     actionFilter !== 'all',
     resultFilter !== 'all',
     !hideRoutineAuth,
+    !hideOrphanRows,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
