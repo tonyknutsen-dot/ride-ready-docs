@@ -46,7 +46,7 @@ export const emailStyles = {
   `,
   header: `
     background: linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.primaryLight} 100%);
-    padding: 14px 32px;
+    padding: 16px 24px;
     text-align: center;
   `,
   headerTitle: `
