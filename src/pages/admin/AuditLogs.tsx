@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  History, RefreshCw, Search, Users, FileText, LogIn, Download, Shield,
-  AlertTriangle, ChevronRight, Loader2, ChevronDown,
+  History, RefreshCw, Search, Users, Download, Shield,
+  AlertTriangle, ChevronRight, Loader2, ChevronDown, FileDown,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,23 +20,28 @@ import {
   getTargetName,
   getEventFamily,
   getResourceLabel,
+  getContextHint,
   ACTION_VERBS,
   RESULT_VARIANTS,
   EVENT_FAMILIES,
+  HIGH_PRIORITY_ACTIONS,
+  HIGH_PRIORITY_RESULTS,
 } from '@/components/admin/AuditDetailDrawer';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // ── KPI Card ──
 
-function KpiCard({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
+function KpiCard({ label, value, icon: Icon, accent }: { label: string; value: number; icon: React.ElementType; accent?: boolean }) {
   return (
-    <Card className="p-3">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <Icon className="h-4 w-4 text-primary" />
+    <Card className={`p-3 ${accent && value > 0 ? 'border-destructive/30 bg-destructive/5' : ''}`}>
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${accent && value > 0 ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+          <Icon className={`h-4 w-4 ${accent && value > 0 ? 'text-destructive' : 'text-primary'}`} />
         </div>
         <div className="min-w-0">
           <p className="text-lg font-bold leading-tight">{value}</p>
-          <p className="text-[11px] text-muted-foreground leading-tight truncate">{label}</p>
+          <p className="text-[11px] text-muted-foreground leading-tight">{label}</p>
         </div>
       </div>
     </Card>
@@ -50,30 +55,34 @@ function ResultBadge({ result }: { result: string }) {
   return <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${rv.className}`}>{rv.label}</Badge>;
 }
 
-// ── Family options ──
+// ── Family options – finer split ──
 
 const FAMILY_OPTIONS = [
   { value: 'all', label: 'All Families' },
   { value: 'Authentication', label: 'Authentication' },
   { value: 'Documents', label: 'Documents' },
-  { value: 'Checks & Records', label: 'Checks & Records' },
-  { value: 'Libraries & Requests', label: 'Libraries & Requests' },
+  { value: 'Checks', label: 'Checks' },
+  { value: 'Libraries', label: 'Libraries' },
+  { value: 'Requests', label: 'Requests' },
   { value: 'Marketing', label: 'Marketing' },
   { value: 'Equipment', label: 'Equipment' },
-  { value: 'User & Access', label: 'User & Access' },
+  { value: 'Security', label: 'Security' },
+  { value: 'Billing', label: 'Billing' },
   { value: 'System', label: 'System' },
 ];
 
 const ACTION_OPTIONS = [
   'all', 'login', 'logout', 'lock', 'unlock', 'failed_unlock',
   'view', 'download', 'share', 'export',
-  'create', 'update', 'delete', 'archive', 'unarchive', 'support_view',
+  'create', 'update', 'delete', 'archive', 'unarchive',
+  'approve', 'reject', 'import', 'send',
+  'support_view',
 ];
 
-const RESULT_OPTIONS = ['all', 'success', 'failed', 'blocked'];
+const RESULT_OPTIONS = ['all', 'success', 'failed', 'blocked', 'denied'];
 
 const DATE_OPTIONS = [
-  { value: '1', label: 'Last 24h' },
+  { value: '1', label: 'Last 24 hours' },
   { value: '7', label: 'Last 7 days' },
   { value: '30', label: 'Last 30 days' },
   { value: '90', label: 'Last 90 days' },
@@ -86,7 +95,7 @@ const AuditLogs = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [logs, setLogs] = useState<AuditEntry[]>([]);
-  const [stats, setStats] = useState({ events: 0, users: 0, failed: 0, logins: 0, highRisk: 0, admin: 0 });
+  const [stats, setStats] = useState({ events: 0, users: 0, failed: 0, highRisk: 0 });
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
@@ -120,7 +129,7 @@ const AuditLogs = () => {
     data?.forEach(p => {
       newMap.set(p.user_id, {
         name: p.controller_name || p.company_name || 'Unknown',
-        email: '', // email not in profiles table for security
+        email: '',
       });
     });
     setProfileMap(newMap);
@@ -130,36 +139,20 @@ const AuditLogs = () => {
   const fetchStats = async () => {
     const yesterday = subDays(new Date(), 1).toISOString();
 
-    const [totalRes, uniqueRes, loginRes, failedRes] = await Promise.all([
+    const [totalRes, uniqueRes, failedRes, highRiskRes] = await Promise.all([
       supabase.from('audit_logs').select('id', { count: 'exact', head: true }).gte('created_at', yesterday),
       supabase.from('audit_logs').select('user_id').gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true }).eq('action', 'login').gte('created_at', yesterday),
       supabase.from('audit_logs').select('id', { count: 'exact', head: true }).eq('action', 'failed_unlock').gte('created_at', yesterday),
+      supabase.from('audit_logs').select('id', { count: 'exact', head: true }).in('action', ['delete', 'support_view', 'failed_unlock']).gte('created_at', yesterday),
     ]);
 
     const uniqueUserIds = new Set(uniqueRes.data?.map(d => d.user_id) || []);
 
-    // Count high-risk actions (delete, support_view, failed_unlock)
-    const { count: highRiskCount } = await supabase
-      .from('audit_logs')
-      .select('id', { count: 'exact', head: true })
-      .in('action', ['delete', 'support_view', 'failed_unlock'])
-      .gte('created_at', yesterday);
-
-    // Count admin actions (support_view + actions on library types)
-    const { count: adminCount } = await supabase
-      .from('audit_logs')
-      .select('id', { count: 'exact', head: true })
-      .in('resource_type', ['check_library_item', 'risk_library', 'document_type', 'equipment_type'])
-      .gte('created_at', yesterday);
-
     setStats({
       events: totalRes.count || 0,
       users: uniqueUserIds.size,
-      failed: (failedRes.count || 0),
-      logins: loginRes.count || 0,
-      highRisk: highRiskCount || 0,
-      admin: adminCount || 0,
+      failed: failedRes.count || 0,
+      highRisk: highRiskRes.count || 0,
     });
   };
 
@@ -177,7 +170,6 @@ const AuditLogs = () => {
 
       if (actionFilter !== 'all') query = query.eq('action', actionFilter);
 
-      // Family filter maps to resource_types
       if (familyFilter !== 'all') {
         const matchingTypes = Object.entries(EVENT_FAMILIES)
           .filter(([, family]) => family === familyFilter)
@@ -191,8 +183,6 @@ const AuditLogs = () => {
       if (error) throw error;
 
       const rawLogs = data || [];
-
-      // Fetch profiles
       const uniqueUserIds = [...new Set(rawLogs.map(l => l.user_id))];
       const pMap = await fetchProfiles(uniqueUserIds);
 
@@ -245,9 +235,9 @@ const AuditLogs = () => {
     return true;
   });
 
-  // Export
+  // CSV Export
   const handleExportCSV = () => {
-    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target Type', 'Target Name', 'Result', 'IP Address'];
+    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target Type', 'Target Name', 'Result', 'Context', 'IP Address'];
     const rows = filteredLogs.map(log => [
       format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
       log.actor_name || '',
@@ -256,6 +246,7 @@ const AuditLogs = () => {
       getResourceLabel(log.resource_type),
       getTargetName(log),
       getEventResult(log),
+      getContextHint(log) || '',
       log.ip_address || '',
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -263,12 +254,49 @@ const AuditLogs = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `audit-log-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = `audit-trail-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
+  // PDF Export
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    doc.setFontSize(16);
+    doc.text('Audit Trail', 14, 18);
+    doc.setFontSize(9);
+    doc.text(`Exported ${format(new Date(), 'dd MMM yyyy HH:mm')} — ${filteredLogs.length} events`, 14, 25);
+
+    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context'];
+    const rows = filteredLogs.map(log => [
+      format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
+      log.actor_name || '',
+      ACTION_VERBS[log.action] || log.action,
+      getEventFamily(log),
+      `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
+      getEventResult(log),
+      getContextHint(log) || '',
+    ]);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [headers],
+      body: rows,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [30, 58, 95] },
+    });
+
+    doc.save(`audit-trail-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
   const activeFilterCount = [familyFilter !== 'all', actionFilter !== 'all', resultFilter !== 'all'].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setFamilyFilter('all');
+    setActionFilter('all');
+    setResultFilter('all');
+    setSearchTerm('');
+  };
 
   if (loading) {
     return (
@@ -294,24 +322,25 @@ const AuditLogs = () => {
               Platform-wide activity and compliance audit log
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex">
-              <Download className="h-4 w-4 mr-1" /> CSV
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex h-8 text-xs">
+              <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <Button variant="outline" size="sm" onClick={handleExportPDF} className="hidden sm:flex h-8 text-xs">
+              <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
+            </Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-2 grid-cols-3 md:grid-cols-6">
+        {/* KPI Cards – 4 primary on mobile, 2x2 grid */}
+        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
           <KpiCard label="Events (24h)" value={stats.events} icon={History} />
-          <KpiCard label="Active Users" value={stats.users} icon={Users} />
-          <KpiCard label="Failed / Blocked" value={stats.failed} icon={AlertTriangle} />
-          <KpiCard label="Logins" value={stats.logins} icon={LogIn} />
-          <KpiCard label="High-Risk" value={stats.highRisk} icon={Shield} />
-          <KpiCard label="Admin Actions" value={stats.admin} icon={FileText} />
+          <KpiCard label="Active Users (24h)" value={stats.users} icon={Users} />
+          <KpiCard label="Failed / Blocked" value={stats.failed} icon={AlertTriangle} accent />
+          <KpiCard label="High-Risk Actions" value={stats.highRisk} icon={Shield} accent />
         </div>
 
         {/* Search + Date + Filters */}
@@ -327,7 +356,7 @@ const AuditLogs = () => {
               />
             </div>
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="w-[110px] h-9 text-xs flex-shrink-0">
+              <SelectTrigger className="w-[130px] h-9 text-xs flex-shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -343,14 +372,14 @@ const AuditLogs = () => {
                 <ChevronDown className={`h-3 w-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
                 Filters
                 {activeFilterCount > 0 && (
-                  <Badge variant="default" className="ml-1 h-4 px-1 text-[10px]">{activeFilterCount}</Badge>
+                  <Badge variant="default" className="ml-1 h-4 px-1.5 text-[10px]">{activeFilterCount}</Badge>
                 )}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="flex gap-2 flex-wrap pt-1">
                 <Select value={familyFilter} onValueChange={setFamilyFilter}>
-                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectTrigger className="w-[130px] h-8 text-xs">
                     <SelectValue placeholder="Family" />
                   </SelectTrigger>
                   <SelectContent>
@@ -378,11 +407,7 @@ const AuditLogs = () => {
                   </SelectContent>
                 </Select>
                 {activeFilterCount > 0 && (
-                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => {
-                    setFamilyFilter('all');
-                    setActionFilter('all');
-                    setResultFilter('all');
-                  }}>Clear</Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearFilters}>Clear all</Button>
                 )}
               </div>
             </CollapsibleContent>
@@ -390,9 +415,12 @@ const AuditLogs = () => {
         </div>
 
         {/* Mobile export */}
-        <div className="sm:hidden">
-          <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={handleExportCSV}>
-            <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
+        <div className="flex gap-2 sm:hidden">
+          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportCSV}>
+            <Download className="h-3.5 w-3.5 mr-1" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportPDF}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
           </Button>
         </div>
 
@@ -404,6 +432,9 @@ const AuditLogs = () => {
                 <History className="h-10 w-10 text-muted-foreground/30 mx-auto" />
                 <p className="text-sm font-medium text-muted-foreground">No audit events matched these filters.</p>
                 <p className="text-xs text-muted-foreground/70">Try adjusting your search or date range.</p>
+                {(activeFilterCount > 0 || searchTerm) && (
+                  <Button variant="outline" size="sm" className="mt-2 text-xs" onClick={clearFilters}>Reset Filters</Button>
+                )}
               </div>
             </Card>
           ) : (
@@ -411,33 +442,41 @@ const AuditLogs = () => {
               const result = getEventResult(log);
               const targetName = getTargetName(log);
               const family = getEventFamily(log);
+              const contextHint = getContextHint(log);
+              const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
 
               return (
                 <button
                   key={log.id}
                   onClick={() => { setSelectedEntry(log); setDrawerOpen(true); }}
-                  className="w-full text-left rounded-lg border bg-card p-3 hover:bg-accent/50 transition-colors group"
+                  className={`w-full text-left rounded-lg border bg-card p-3 hover:bg-accent/50 transition-colors group ${isHighPriority ? 'border-l-[3px] border-l-destructive/60' : ''}`}
                 >
                   <div className="flex items-start gap-2.5">
-                    {/* Left: content */}
-                    <div className="flex-1 min-w-0 space-y-1">
-                      {/* Actor + verb + target */}
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      {/* Line 1: Actor + action verb + record type */}
                       <p className="text-sm leading-snug">
                         <span className="font-semibold">{log.actor_name}</span>
                         <span className="text-muted-foreground">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
-                        <span className="text-muted-foreground">{getResourceLabel(log.resource_type).toLowerCase()}{' '}</span>
-                        <span className="font-medium truncate">{targetName !== '—' ? `"${targetName}"` : ''}</span>
+                        <span className="text-foreground/70">{getResourceLabel(log.resource_type).toLowerCase()}</span>
                       </p>
-                      {/* Meta row */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {/* Line 2: Target name */}
+                      {targetName !== '—' && (
+                        <p className="text-sm font-medium truncate">{targetName}</p>
+                      )}
+                      {/* Context hint */}
+                      {contextHint && (
+                        <p className="text-[11px] text-muted-foreground italic">{contextHint}</p>
+                      )}
+                      {/* Line 3: Timestamp + family + result */}
+                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                         <span className="text-[11px] text-muted-foreground">
                           {format(new Date(log.created_at), 'dd MMM yyyy HH:mm')}
                         </span>
+                        <span className="text-muted-foreground/40 text-[10px]">•</span>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
                         <ResultBadge result={result} />
                       </div>
                     </div>
-                    {/* Right: chevron */}
                     <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground mt-0.5 flex-shrink-0" />
                   </div>
                 </button>

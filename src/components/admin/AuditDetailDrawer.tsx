@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { User, Clock, Globe, Monitor, FileText, ArrowRight } from 'lucide-react';
+import { User, Clock, Globe, FileText, ArrowRight } from 'lucide-react';
 
 export interface AuditEntry {
   id: string;
@@ -24,19 +24,19 @@ export const EVENT_FAMILIES: Record<string, string> = {
   session: 'Authentication',
   document: 'Documents',
   documents: 'Documents',
-  check: 'Checks & Records',
-  check_library_item: 'Libraries & Requests',
-  risk_assessment: 'Checks & Records',
-  risk_library: 'Libraries & Requests',
+  check: 'Checks',
+  check_library_item: 'Libraries',
+  risk_assessment: 'Checks',
+  risk_library: 'Libraries',
   marketing_contact: 'Marketing',
-  document_type: 'Libraries & Requests',
-  equipment_type: 'Libraries & Requests',
+  document_type: 'Requests',
+  equipment_type: 'Requests',
   ride: 'Equipment',
-  ride_category: 'Libraries & Requests',
-  defect: 'Checks & Records',
-  maintenance: 'Checks & Records',
-  staff: 'User & Access',
-  profile: 'User & Access',
+  ride_category: 'Requests',
+  defect: 'Checks',
+  maintenance: 'Checks',
+  staff: 'Security',
+  profile: 'Security',
 };
 
 export const ACTION_VERBS: Record<string, string> = {
@@ -55,6 +55,12 @@ export const ACTION_VERBS: Record<string, string> = {
   archive: 'archived',
   unarchive: 'restored',
   support_view: 'viewed via support access',
+  approve: 'approved',
+  reject: 'rejected',
+  import: 'imported',
+  send: 'sent',
+  subscribe: 'subscribed',
+  unsubscribe: 'unsubscribed',
 };
 
 export const RESULT_VARIANTS: Record<string, { label: string; className: string }> = {
@@ -65,6 +71,13 @@ export const RESULT_VARIANTS: Record<string, { label: string; className: string 
   warning: { label: 'Warning', className: 'bg-amber-500/10 text-amber-700 border-amber-500/20' },
   info: { label: 'Info', className: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
 };
+
+/** Actions that deserve stronger visual treatment in the list */
+export const HIGH_PRIORITY_ACTIONS = new Set([
+  'delete', 'failed_unlock', 'support_view', 'approve', 'reject',
+]);
+
+export const HIGH_PRIORITY_RESULTS = new Set(['failed', 'blocked', 'denied']);
 
 export function getEventResult(entry: AuditEntry): string {
   if (entry.action === 'failed_unlock') return 'failed';
@@ -84,6 +97,22 @@ export function getEventFamily(entry: AuditEntry): string {
 
 export function getResourceLabel(type: string): string {
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/** Derive a short context hint for the event */
+export function getContextHint(entry: AuditEntry): string | null {
+  const d = entry.details || {};
+  if (d.source === 'early_access') return 'from early access signup';
+  if (d.source === 'csv_import') return 'from CSV import';
+  if (d.source === 'manual') return 'manual add';
+  if (d.source === 'admin') return 'via admin panel';
+  if (d.source === 'request_approval') return 'from request approval';
+  if (d.source === 'campaign') return 'via marketing campaign';
+  if (d.source) return `via ${d.source}`;
+  if (entry.action === 'failed_unlock') return 'failed password';
+  if (entry.action === 'support_view') return 'support access session';
+  if (entry.resource_type === 'marketing_contact' && entry.action === 'create') return 'manual add';
+  return null;
 }
 
 function parseBrowser(ua: string | null): string {
@@ -154,8 +183,8 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const family = getEventFamily(entry);
   const targetName = getTargetName(entry);
   const details = entry.details || {};
+  const contextHint = getContextHint(entry);
 
-  // Extract known fields from details, show rest as extra
   const knownKeys = new Set(['name', 'document_name', 'email', 'ride_name', 'ride', 'title', 'label', 'type', 'check_item_text', 'source', 'result', 'blocked', 'before', 'after', 'skipped', 'imported']);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
 
@@ -179,6 +208,9 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
               {getResourceLabel(entry.resource_type).toLowerCase()}{' '}
               <span className="font-semibold">"{targetName}"</span>
             </p>
+            {contextHint && (
+              <p className="text-xs text-muted-foreground italic">{contextHint}</p>
+            )}
           </div>
 
           <Separator />
@@ -205,6 +237,7 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             <DetailRow label="Result" value={<Badge variant="outline" className={`text-xs ${rv.className}`}>{rv.label}</Badge>} />
             <DetailRow label="Timestamp" value={format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")} />
             <DetailRow label="Source" value={details.source} />
+            {contextHint && <DetailRow label="Context" value={contextHint} />}
           </div>
 
           <Separator />
