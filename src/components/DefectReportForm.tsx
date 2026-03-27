@@ -134,6 +134,8 @@ const DefectReportForm = ({
         });
       }
 
+      logEvent('create', 'defect', undefined, { ride: rideName, severity, description: description.trim().substring(0, 100) });
+
       toast({
         title: "Defect reported",
         description: severity === 'stop_operation'
