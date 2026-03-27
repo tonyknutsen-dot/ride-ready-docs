@@ -66,7 +66,7 @@ export const emailStyles = {
     padding: 32px 32px 28px;
   `,
   footer: `
-    padding: 20px 32px;
+    padding: 14px 32px 16px;
     border-top: 1px solid ${brandColors.border};
     text-align: center;
   `,
@@ -74,7 +74,7 @@ export const emailStyles = {
     color: ${brandColors.textMuted};
     font-size: 11px;
     margin: 0;
-    line-height: 1.7;
+    line-height: 1.5;
   `,
   footerLink: `
     color: ${brandColors.textLight};
