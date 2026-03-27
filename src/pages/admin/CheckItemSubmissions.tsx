@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, Search, Loader2, Sparkles, Clock, CheckCircle2, XCircle, Copy, Inbox, MoreVertical, Library, BookOpen, Globe, Target } from 'lucide-react';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
