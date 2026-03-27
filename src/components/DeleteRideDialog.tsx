@@ -162,6 +162,12 @@ export const DeleteRideDialog = ({ ride, onDeleted, trigger }: DeleteRideDialogP
 
       if (error) throw error;
 
+      logEvent('delete', 'ride', ride.id, { 
+        name: ride.ride_name,
+        documents: associatedData.documents.length,
+        checks: associatedData.checks,
+      });
+
       toast({
         title: "Equipment deleted",
         description: `${ride.ride_name} and all associated data have been permanently deleted.`,

@@ -189,6 +189,9 @@ const DefectClosureDialog = ({
 
       if (error) throw error;
 
+      logEvent('close', 'defect', defect.id, { 
+        ride: rideName, severity: defect.severity, reason: closureReason 
+      });
       toast({ title: 'Defect closed', description: `Defect on ${rideName} has been closed.` });
 
       queryClient.invalidateQueries({ queryKey: ['open-critical-defects'] });

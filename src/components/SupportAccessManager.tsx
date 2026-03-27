@@ -87,6 +87,8 @@ export const SupportAccessManager = () => {
 
       if (error) throw error;
 
+      logEvent('grant', 'support_access', undefined, { reason: reason.trim(), duration_hours: parseInt(duration) });
+
       toast({
         title: 'Access Granted',
         description: `Support team can now view your documents for ${hours <= 24 ? `${hours} hours` : `${hours / 24} days`}`,

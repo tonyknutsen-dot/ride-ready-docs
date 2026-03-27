@@ -182,6 +182,11 @@ const DefectReportDialog = ({
         });
       }
 
+      logEvent('create', 'defect', undefined, { 
+        ride: effectiveRideName, severity, 
+        description: description.trim().substring(0, 100) 
+      });
+
       toast({
         title: "Defect reported",
         description: severity === 'stop_operation'
