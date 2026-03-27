@@ -373,7 +373,18 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             variant: "destructive",
           });
         } else {
-          logEvent('create', 'ride', newRide?.id, { name: validatedData.ride_name });
+          logEvent('create', 'ride', newRide?.id, { name: validatedData.ride_name }, {
+            after: {
+              ride_name: validatedData.ride_name,
+              category_id: validatedData.category_id,
+              manufacturer: validatedData.manufacturer || null,
+              year_manufactured: validatedData.year_manufactured || null,
+              serial_number: validatedData.serial_number || null,
+            },
+            equipmentId: newRide?.id,
+            equipmentName: validatedData.ride_name,
+            contextHint: 'equipment create form',
+          });
           // Upload photo if provided
           if (photoFile && newRide?.id && user) {
             try {

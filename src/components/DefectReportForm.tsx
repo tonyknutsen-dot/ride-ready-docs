@@ -134,7 +134,16 @@ const DefectReportForm = ({
         });
       }
 
-      logEvent('create', 'defect', undefined, { ride: rideName, severity, description: description.trim().substring(0, 100) });
+      logEvent('create', 'defect', undefined, { 
+        ride: rideName, severity, description: description.trim().substring(0, 100),
+        location: locationOnRide.trim() || null,
+        photos: photoPaths.length,
+        check_id: checkId || null,
+      }, {
+        after: { severity, status: 'open', description: description.trim().substring(0, 200), location_on_ride: locationOnRide.trim() || null },
+        equipmentName: rideName,
+        contextHint: checkId ? `from ${checkFrequency || 'check'}` : 'standalone defect report',
+      });
 
       toast({
         title: "Defect reported",
