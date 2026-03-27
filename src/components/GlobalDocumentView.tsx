@@ -94,6 +94,7 @@ interface GlobalDocumentViewProps {
 const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentViewProps) => {
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
