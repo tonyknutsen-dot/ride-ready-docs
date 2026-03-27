@@ -181,14 +181,15 @@ const AuditLogs = () => {
 
     const newMap = new Map(profileMap);
     data?.forEach(p => {
-      newMap.set(p.user_id, {
-        name: p.controller_name || p.company_name || 'Unknown user',
-        email: '',
-      });
+      // Use controller_name first, then company_name, then a clear unnamed label
+      const displayName = p.controller_name || p.company_name || 'Unnamed user';
+      newMap.set(p.user_id, { name: displayName, email: '' });
     });
+    // IDs with no profile row = service-role / edge function / deleted user
+    // Mark them distinctly so resolvePerformedBy can handle them
     missing.forEach(id => {
       if (!newMap.has(id)) {
-        newMap.set(id, { name: 'System', email: '' });
+        newMap.set(id, { name: '__no_profile__', email: '' });
       }
     });
     setProfileMap(newMap);
