@@ -93,7 +93,11 @@ export const ContactManager = () => {
           .eq("id", editingContact.id);
 
         if (error) throw error;
-        logEvent('update', 'marketing_contact', editingContact.id, { email: contactData.email });
+        logEvent('update', 'marketing_contact', editingContact.id, { email: contactData.email }, {
+          before: { email: editingContact.email, name: editingContact.name, company_name: editingContact.company_name, tags: editingContact.tags },
+          after: { email: contactData.email, name: contactData.name, company_name: contactData.company_name, tags: tagsArray },
+          contextHint: 'manual edit',
+        });
         toast.success("Contact updated successfully");
       } else {
         const { data: inserted, error } = await supabase
