@@ -274,8 +274,7 @@ export function generateEmailWrapper(title: string, subtitle: string, content: s
       <!-- Footer -->
       <div style="${emailStyles.footer}">
         <p style="${emailStyles.footerText}">
-          &copy; ${currentYear} Ride Ready Docs<br>
-          Professional compliance management for amusement equipment<br><br>
+          ${footerLogoHtml}Sent by Ride Ready Docs &middot; &copy; ${currentYear}<br>
           <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> &middot; 
           <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
         </p>
