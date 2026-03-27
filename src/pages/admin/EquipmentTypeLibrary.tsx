@@ -313,7 +313,12 @@ export default function EquipmentTypeLibrary() {
       toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
-    logEvent(newArchived ? 'archive' : 'unarchive', 'ride_category', item.id, { name: item.name });
+    logEvent(newArchived ? 'archive' : 'unarchive', 'ride_category', item.id, { name: item.name }, {
+      before: { is_archived: !newArchived },
+      after: { is_archived: newArchived },
+      changedFields: ['is_archived'],
+      contextHint: 'admin equipment type library',
+    });
     toast({ title: newArchived ? 'Archived' : 'Unarchived', description: `"${item.name}" ${newArchived ? 'archived' : 'restored'}.` });
     fetchTypes();
   }, [toast, logEvent, fetchTypes]);
