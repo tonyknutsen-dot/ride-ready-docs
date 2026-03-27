@@ -244,6 +244,7 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
     try {
       await supabase.storage.from('ride-documents').remove([doc.file_path]);
       await supabase.from('documents').delete().eq('id', doc.id);
+      logEvent('delete', 'document', doc.id, { name: doc.document_name });
       toast({ title: 'Document deleted' });
       onDocumentDeleted();
     } catch (err: any) {
