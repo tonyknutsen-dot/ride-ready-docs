@@ -67,6 +67,7 @@ interface TestSendResult {
 export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { logEvent } = useAuditLog();
   const [contacts, setContacts] = useState<MarketingContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
