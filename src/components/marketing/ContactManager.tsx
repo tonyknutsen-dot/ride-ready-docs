@@ -150,7 +150,10 @@ export const ContactManager = () => {
         .eq("id", contactId);
 
       if (error) throw error;
-      logEvent('delete', 'marketing_contact', contactId, { email: contact?.email });
+      logEvent('delete', 'marketing_contact', contactId, { email: contact?.email }, {
+        before: { email: contact?.email, name: contact?.name, is_subscribed: contact?.is_subscribed },
+        contextHint: 'manual deletion',
+      });
       toast.success("Contact deleted");
       fetchContacts();
     } catch (error: any) {
