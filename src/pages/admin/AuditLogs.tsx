@@ -82,13 +82,25 @@ function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] |
     .join('\n');
 }
 
-/** Resolve display name for actor: real user name or "System (automated)" */
+/**
+ * Resolve display name for actor.
+ * Rule: every audit row written via the client-side useAuditLog hook has a real
+ * auth.uid() user_id → that is a REAL person and must never display as "System".
+ * "System (automated)" is reserved for rows where the user_id genuinely has no
+ * profile (service-role edge functions, migrations, seeded proof events).
+ */
 function resolvePerformedBy(log: AuditEntry): string {
   const name = log.actor_name;
-  if (name && name !== 'System' && name !== 'Unknown' && name !== 'Unknown user') return name;
+
+  // If we resolved a real name from the profiles table, always show it
+  if (name && name !== '__no_profile__') return name;
+
+  // No profile found for this user_id — distinguish system vs unknown user
   const trigger = getTriggerType(log);
   if (trigger === 'Automation' || trigger === 'Seeded proof') return 'System (automated)';
-  return name || 'System';
+
+  // A user_id existed but had no profile — likely service-role or deleted user
+  return 'System';
 }
 
 // ── Family options ──
@@ -169,14 +181,15 @@ const AuditLogs = () => {
 
     const newMap = new Map(profileMap);
     data?.forEach(p => {
-      newMap.set(p.user_id, {
-        name: p.controller_name || p.company_name || 'Unknown user',
-        email: '',
-      });
+      // Use controller_name first, then company_name, then a clear unnamed label
+      const displayName = p.controller_name || p.company_name || 'Unnamed user';
+      newMap.set(p.user_id, { name: displayName, email: '' });
     });
+    // IDs with no profile row = service-role / edge function / deleted user
+    // Mark them distinctly so resolvePerformedBy can handle them
     missing.forEach(id => {
       if (!newMap.has(id)) {
-        newMap.set(id, { name: 'System', email: '' });
+        newMap.set(id, { name: '__no_profile__', email: '' });
       }
     });
     setProfileMap(newMap);
@@ -243,7 +256,7 @@ const AuditLogs = () => {
         before_data: log.before_data as Record<string, any> | null,
         after_data: log.after_data as Record<string, any> | null,
         changed_fields: log.changed_fields as string[] | null,
-        actor_name: pMap.get(log.user_id)?.name || 'System',
+        actor_name: pMap.get(log.user_id)?.name || '__no_profile__',
         actor_email: pMap.get(log.user_id)?.email || '',
       }));
 
