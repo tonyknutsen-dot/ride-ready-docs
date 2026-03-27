@@ -78,25 +78,21 @@ export function useAuditLog() {
       const changedFields = options?.changedFields
         || computeChangedFields(options?.before, options?.after);
 
-      const params: Record<string, any> = {
+      const { error } = await supabase.rpc('log_audit_event', {
         p_action: action,
         p_resource_type: resourceType,
         p_resource_id: resourceId || null,
-        p_details: details || {},
-      };
-
-      // Only pass extended params if provided (avoids issues with old function signature during deployment)
-      if (options?.before) params.p_before_data = options.before;
-      if (options?.after) params.p_after_data = options.after;
-      if (changedFields) params.p_changed_fields = changedFields;
-      if (options?.organisationName) params.p_organisation_name = options.organisationName;
-      if (options?.equipmentId) params.p_equipment_id = options.equipmentId;
-      if (options?.equipmentName) params.p_equipment_name = options.equipmentName;
-      if (options?.result) params.p_result = options.result;
-      if (options?.contextHint) params.p_context_hint = options.contextHint;
-      if (options?.reason) params.p_reason = options.reason;
-
-      const { error } = await supabase.rpc('log_audit_event', params);
+        p_details: (details || {}) as any,
+        p_before_data: (options?.before || null) as any,
+        p_after_data: (options?.after || null) as any,
+        p_changed_fields: changedFields || null,
+        p_organisation_name: options?.organisationName || null,
+        p_equipment_id: options?.equipmentId || null,
+        p_equipment_name: options?.equipmentName || null,
+        p_result: options?.result || 'success',
+        p_context_hint: options?.contextHint || null,
+        p_reason: options?.reason || null,
+      } as any);
 
       if (error) {
         console.error('Failed to log audit event:', error);
