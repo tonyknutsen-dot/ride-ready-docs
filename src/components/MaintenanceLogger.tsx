@@ -19,6 +19,7 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { compressImage } from '@/utils/imageCompression';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
