@@ -59,6 +59,7 @@ interface LibraryMatch {
 
 export default function CheckItemSubmissions() {
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryMatch[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string; category_group: string }[]>([]);
