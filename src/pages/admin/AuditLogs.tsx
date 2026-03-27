@@ -655,6 +655,12 @@ const AuditLogs = () => {
               >
                 {hideRoutineAuth ? 'Logins hidden' : 'Showing logins'}
               </button>
+              <button
+                onClick={() => setHideOrphanRows(h => !h)}
+                className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideOrphanRows ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
+              >
+                {hideOrphanRows ? 'Orphan rows hidden' : 'Showing all rows'}
+              </button>
               <div className="ml-auto">
                 <AuditLegend />
               </div>
