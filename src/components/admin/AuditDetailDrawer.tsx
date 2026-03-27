@@ -365,6 +365,17 @@ function ChangesTable({ entry }: { entry: AuditEntry }) {
   );
 }
 
+function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <Icon className="h-3 w-3" /> {title}
+      </h4>
+      {children}
+    </div>
+  );
+}
+
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '—' || value === '') return null;
   return (
