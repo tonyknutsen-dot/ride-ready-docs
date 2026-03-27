@@ -231,7 +231,7 @@ const handler = async (req: Request): Promise<Response> => {
     const companyName = profile?.company_name || organisation.name;
 
     // Build invite URL
-    const baseUrl = "https://ride-ready-docs.lovable.app";
+    const baseUrl = "https://ridereadydocs.com";
     const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
 
     // Build feature list for email

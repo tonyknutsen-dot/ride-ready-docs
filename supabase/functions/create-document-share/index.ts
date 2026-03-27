@@ -138,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate the download page URL
-    const downloadPageUrl = `https://ride-ready-docs.lovable.app/shared/${shareToken}`;
+    const downloadPageUrl = `https://ridereadydocs.com/shared/${shareToken}`;
 
     // Group documents by ride for email
     const docsByRide = documents.reduce((acc, doc) => {

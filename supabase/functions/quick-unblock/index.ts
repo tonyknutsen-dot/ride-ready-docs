@@ -141,7 +141,7 @@ function generateHtmlResponse(success: boolean, message: string, blockedIp?: any
         ${detailsSection}
         
         <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-          <a href="https://ride-ready-docs.lovable.app/admin/security" 
+          <a href="https://ridereadydocs.com/admin/security" 
              style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">
             Go to Security Dashboard
           </a>
