@@ -209,7 +209,7 @@ export const useSubscription = () => {
           tierPrice: getTierPrice(currentTier),
           cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
           cancelAt: data.cancel_at ?? null,
-          wasPaidCustomer: !!data.stripe_customer_id,
+          wasPaidCustomer: !!data.stripe_customer_id_encrypted,
           pendingSubscriptionPlan: data.pending_subscription_plan ?? null,
           pendingChangeEffectiveDate: data.pending_change_effective_date ?? null,
         };
