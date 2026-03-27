@@ -55,6 +55,48 @@ function ResultBadge({ result }: { result: string }) {
   return <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${rv.className}`}>{rv.label}</Badge>;
 }
 
+function hasStructuredEvidence(log: AuditEntry) {
+  return Boolean(
+    log.before_data ||
+    log.after_data ||
+    log.changed_fields?.length ||
+    log.reason ||
+    log.organisation_name ||
+    log.equipment_name
+  );
+}
+
+function getStructuredEvidenceSummary(log: AuditEntry) {
+  const parts: string[] = [];
+  if (log.changed_fields?.length) parts.push(`${log.changed_fields.length} field change${log.changed_fields.length !== 1 ? 's' : ''}`);
+  if (log.reason) parts.push(`Reason: ${log.reason}`);
+  if (log.organisation_name) parts.push(`Org: ${log.organisation_name}`);
+  if (log.equipment_name) parts.push(`Equipment: ${log.equipment_name}`);
+  return parts.slice(0, 2).join(' • ');
+}
+
+function formatExportValue(value: unknown) {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.map(formatExportValue).join(', ');
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] | null) {
+  if (!snapshot) return '';
+  const selectedKeys = keys?.length ? keys.filter((key) => key in snapshot) : Object.keys(snapshot);
+  return selectedKeys
+    .filter((key) => snapshot[key] !== undefined)
+    .map((key) => `${key}: ${formatExportValue(snapshot[key]) || '—'}`)
+    .join('\n');
+}
+
 // ── Family options ──
 
 const FAMILY_OPTIONS = [
@@ -286,7 +328,7 @@ const AuditLogs = () => {
     URL.revokeObjectURL(url);
   };
 
-  // PDF Export — summary report
+  // PDF Export — summary or detailed report
   const handleExportPDF = (detailed = false) => {
     const doc = new jsPDF({ orientation: 'landscape' });
     const now = new Date();
@@ -294,7 +336,7 @@ const AuditLogs = () => {
     // Title
     doc.setFontSize(18);
     doc.setTextColor(30, 58, 95);
-    doc.text(detailed ? 'Detailed Audit Trail Report' : 'Audit Trail Report', 14, 18);
+    doc.text(detailed ? 'Detailed Audit Trail Report' : 'Summary Audit Trail Report', 14, 18);
 
     // Meta line
     doc.setFontSize(9);
@@ -321,7 +363,7 @@ const AuditLogs = () => {
     doc.text(`Total filtered events: ${filteredLogs.length}`, 14, kpiY + 5);
 
     if (detailed) {
-      // Detailed: wider columns with change data
+      // Detailed: overview table first
       const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Equipment', 'Org', 'Changed Fields', 'Reason'];
       const rows = filteredLogs.map(log => [
         format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
@@ -363,6 +405,60 @@ const AuditLogs = () => {
           }
         },
       });
+
+      let currentY = ((doc as any).lastAutoTable?.finalY || (kpiY + 10)) + 10;
+
+      filteredLogs.forEach((log, index) => {
+        const summary = `${log.actor_name || 'Unknown'} ${ACTION_VERBS[log.action] || log.action} ${getResourceLabel(log.resource_type).toLowerCase()} "${getTargetName(log)}"`;
+        const sectionRows = [
+          ['Timestamp', format(new Date(log.created_at), 'dd MMM yyyy HH:mm:ss')],
+          ['Actor', log.actor_name || ''],
+          ['Actor ID', log.user_id],
+          ['Action', ACTION_VERBS[log.action] || log.action],
+          ['Family', getEventFamily(log)],
+          ['Target', `${getResourceLabel(log.resource_type)} — ${getTargetName(log)}`],
+          ['Record ID', log.resource_id || ''],
+          ['Result', getEventResult(log)],
+          ['Source / Context', [log.details?.source, getContextHint(log)].filter(Boolean).join(' • ')],
+          ['Organisation', log.organisation_name || ''],
+          ['Equipment', log.equipment_name || ''],
+          ['Equipment ID', log.equipment_id || ''],
+          ['Reason', log.reason || ''],
+          ['Changed fields', log.changed_fields?.join(', ') || ''],
+          ['Before', formatSnapshot(log.before_data, log.changed_fields)],
+          ['After', formatSnapshot(log.after_data, log.changed_fields)],
+        ].filter(([, value]) => String(value || '').trim().length > 0);
+
+        if (currentY > doc.internal.pageSize.height - 45) {
+          doc.addPage();
+          currentY = 18;
+        }
+
+        doc.setFontSize(11);
+        doc.setTextColor(30, 58, 95);
+        doc.text(`Event ${index + 1}`, 14, currentY);
+        currentY += 5;
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        const wrappedSummary = doc.splitTextToSize(summary, doc.internal.pageSize.width - 28);
+        doc.text(wrappedSummary, 14, currentY);
+        currentY += wrappedSummary.length * 4 + 2;
+
+        autoTable(doc, {
+          startY: currentY,
+          body: sectionRows,
+          theme: 'grid',
+          styles: { fontSize: 7, cellPadding: 2, valign: 'top' },
+          columnStyles: {
+            0: { cellWidth: 42, fontStyle: 'bold' },
+            1: { cellWidth: doc.internal.pageSize.width - 62 },
+          },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          margin: { left: 14, right: 14 },
+        });
+
+        currentY = ((doc as any).lastAutoTable?.finalY || currentY) + 8;
+      });
     } else {
       // Summary table
       const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context', 'Equipment'];
@@ -397,10 +493,10 @@ const AuditLogs = () => {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Ride Ready Docs — ${detailed ? 'Detailed ' : ''}Audit Trail — Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Ride Ready Docs — ${detailed ? 'Detailed' : 'Summary'} Audit Trail — Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 8);
     }
 
-    doc.save(`audit-trail-${detailed ? 'detailed-' : ''}${format(now, 'yyyy-MM-dd')}.pdf`);
+    doc.save(`audit-trail-${detailed ? 'detailed' : 'summary'}-${format(now, 'yyyy-MM-dd')}.pdf`);
   };
 
   const activeFilterCount = [
@@ -447,7 +543,7 @@ const AuditLogs = () => {
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExportPDF(false)} className="hidden sm:flex h-8 text-xs">
-              <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
+              <FileDown className="h-3.5 w-3.5 mr-1" /> Summary PDF
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExportPDF(true)} className="hidden sm:flex h-8 text-xs">
               <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed PDF
@@ -547,12 +643,15 @@ const AuditLogs = () => {
         </div>
 
         {/* Mobile export */}
-        <div className="flex gap-2 sm:hidden">
-          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportCSV}>
+        <div className="grid grid-cols-1 gap-2 sm:hidden">
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" /> CSV
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => handleExportPDF(false)}>
-            <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleExportPDF(false)}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> Summary PDF
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleExportPDF(true)}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed PDF
           </Button>
         </div>
 
@@ -577,6 +676,8 @@ const AuditLogs = () => {
               const contextHint = getContextHint(log);
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
               const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
+              const structuredSummary = getStructuredEvidenceSummary(log);
+              const hasRichEvidence = hasStructuredEvidence(log);
 
               return (
                 <button
@@ -596,6 +697,9 @@ const AuditLogs = () => {
                       {targetName !== '—' && (
                         <p className="text-sm font-medium truncate">{targetName}</p>
                       )}
+                      {hasRichEvidence && structuredSummary && (
+                        <p className="text-[11px] text-primary truncate">{structuredSummary}</p>
+                      )}
                       {/* Context hint */}
                       {contextHint && (
                         <p className="text-[11px] text-muted-foreground italic">{contextHint}</p>
@@ -609,8 +713,13 @@ const AuditLogs = () => {
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
                         <ResultBadge result={result} />
                         {hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-blue-400/30 text-blue-600">
-                            Δ {log.changed_fields?.length || ''}
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 bg-primary/5 text-primary">
+                            Δ {log.changed_fields?.length || '?'} changes
+                          </Badge>
+                        )}
+                        {hasRichEvidence && !hasChanges && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 bg-primary/5 text-primary">
+                            Rich payload
                           </Badge>
                         )}
                         {log.equipment_name && (
