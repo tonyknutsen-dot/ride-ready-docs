@@ -667,7 +667,11 @@ export default function RideTypeRequests() {
 
   /* ─── Optimistic update callbacks ─── */
   const onApproved = useCallback((id: string, catName: string, catGroup: string) => {
-    logEvent('create', 'ride' as any, id, { action: 'approve_type_request', created_category: catName, category_group: catGroup });
+    logEvent('approve', 'equipment_type_request', id, { created_category: catName, category_group: catGroup }, {
+      before: { status: 'pending' },
+      after: { status: 'approved', created_category: catName, category_group: catGroup },
+      contextHint: 'admin equipment type request approval',
+    });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
     setExistingCategories(prev => [...prev, { id: crypto.randomUUID(), name: catName, category_group: catGroup }]);
   }, [logEvent]);
