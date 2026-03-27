@@ -256,7 +256,7 @@ const AuditLogs = () => {
         before_data: log.before_data as Record<string, any> | null,
         after_data: log.after_data as Record<string, any> | null,
         changed_fields: log.changed_fields as string[] | null,
-        actor_name: pMap.get(log.user_id)?.name || 'System',
+        actor_name: pMap.get(log.user_id)?.name || '__no_profile__',
         actor_email: pMap.get(log.user_id)?.email || '',
       }));
 
