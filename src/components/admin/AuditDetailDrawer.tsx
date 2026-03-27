@@ -419,9 +419,10 @@ function AuditLegend() {
             </div>
           </div>
           <div>
-            <p className="font-semibold text-foreground mb-1">Δ Badge</p>
+            <p className="font-semibold text-foreground mb-1">Change Tracking</p>
             <p className="text-muted-foreground">
-              Shows this event contains field-level change data. The number indicates how many fields were changed.
+              Events with <span className="font-medium text-foreground">"X fields changed"</span> contain 
+              field-level before/after data. Open the detail drawer to see exactly what changed.
             </p>
           </div>
         </div>
