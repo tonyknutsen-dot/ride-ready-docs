@@ -164,12 +164,19 @@ export const ContactManager = () => {
 
   const handleResubscribe = async (contactId: string) => {
     try {
+      const contact = contacts.find(c => c.id === contactId);
       const { error } = await supabase
         .from("marketing_contacts")
         .update({ is_subscribed: true, unsubscribed_at: null })
         .eq("id", contactId);
 
       if (error) throw error;
+      logEvent('update', 'marketing_contact', contactId, { email: contact?.email, action: 'resubscribe' }, {
+        before: { is_subscribed: false },
+        after: { is_subscribed: true, unsubscribed_at: null },
+        changedFields: ['is_subscribed', 'unsubscribed_at'],
+        contextHint: 'manual resubscribe',
+      });
       toast.success("Contact resubscribed");
       fetchContacts();
     } catch (error: any) {

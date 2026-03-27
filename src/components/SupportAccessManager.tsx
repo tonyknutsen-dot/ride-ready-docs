@@ -125,7 +125,12 @@ export const SupportAccessManager = () => {
 
       if (error) throw error;
 
-      logEvent('revoke', 'support_access', grantId);
+      logEvent('revoke', 'support_access', grantId, undefined, {
+        before: { status: 'active' },
+        after: { status: 'revoked', revoked_at: new Date().toISOString() },
+        changedFields: ['status', 'revoked_at'],
+        contextHint: 'user-initiated revocation',
+      });
 
       toast({
         title: 'Access Revoked',
