@@ -74,8 +74,8 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   
   // Campaign form
   const [campaignName, setCampaignName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [content, setContent] = useState("");
+  const [subject, setSubject] = useState("Updates from Ride Ready Docs");
+  const [content, setContent] = useState(DEFAULT_CONTENT);
   
   // Recipient selection
   const [selectionMode, setSelectionMode] = useState<"all" | "tags" | "custom">("all");

@@ -152,9 +152,9 @@ export const logoHtml = `
   <img 
     src="${LOGO_URL}" 
     alt="Ride Ready Docs" 
-    width="44" 
-    height="44" 
-    style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);"
+    width="36" 
+    height="36" 
+    style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);"
   />
 `;
 
