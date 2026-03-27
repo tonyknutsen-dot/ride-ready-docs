@@ -19,6 +19,7 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { compressImage } from '@/utils/imageCompression';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -179,6 +180,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
+  const { logEvent } = useAuditLog();
 
   const [formData, setFormData] = useState({
     maintenance_date: new Date(),
@@ -394,6 +396,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         }
       }
 
+      logEvent('create', 'maintenance', undefined, { ride: ride.ride_name, type: formData.maintenance_type });
       toast({ title: "Maintenance Record Logged", description: "Record saved successfully." });
 
       setFormData({

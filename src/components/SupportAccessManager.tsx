@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Key, Clock, Shield, AlertTriangle, Check, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow, format, addHours, addDays } from 'date-fns';
@@ -26,6 +27,7 @@ interface SupportGrant {
 export const SupportAccessManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [loading, setLoading] = useState(true);
   const [grants, setGrants] = useState<SupportGrant[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,6 +87,8 @@ export const SupportAccessManager = () => {
 
       if (error) throw error;
 
+      logEvent('grant', 'support_access', undefined, { reason: reason.trim(), duration_hours: parseInt(duration) });
+
       toast({
         title: 'Access Granted',
         description: `Support team can now view your documents for ${hours <= 24 ? `${hours} hours` : `${hours / 24} days`}`,
@@ -117,6 +121,8 @@ export const SupportAccessManager = () => {
         .eq('id', grantId);
 
       if (error) throw error;
+
+      logEvent('revoke', 'support_access', grantId);
 
       toast({
         title: 'Access Revoked',

@@ -39,6 +39,7 @@ import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import PDFViewer from '@/components/PDFViewer';
 import ImageViewer from '@/components/ImageViewer';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
 
@@ -68,6 +69,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const { effectiveUserId } = useEffectiveUserId();
   const { isStaff } = useStaff();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,6 +217,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     try {
       await supabase.storage.from('ride-documents').remove([doc.file_path]);
       await supabase.from('documents').delete().eq('id', doc.id);
+      logEvent('delete', 'document', doc.id, { name: doc.document_name, ride: rideName });
       toast({ title: 'Document deleted' });
       onDocumentDeleted();
     } catch (err: any) {

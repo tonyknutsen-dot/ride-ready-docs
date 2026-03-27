@@ -13,12 +13,31 @@ type AuditAction =
   | 'login'
   | 'logout'
   | 'archive'
-  | 'unarchive';
+  | 'unarchive'
+  | 'approve'
+  | 'reject'
+  | 'link'
+  | 'send'
+  | 'import'
+  | 'upload'
+  | 'replace'
+  | 'complete'
+  | 'close'
+  | 'reopen'
+  | 'grant'
+  | 'revoke'
+  | 'request'
+  | 'reset_password'
+  | 'subscribe'
+  | 'unsubscribe'
+  | 'block'
+  | 'unblock';
 
 type ResourceType = 
   | 'document'
   | 'ride'
   | 'check'
+  | 'check_template'
   | 'defect'
   | 'maintenance'
   | 'risk_assessment'
@@ -29,8 +48,21 @@ type ResourceType =
   | 'ride_category'
   | 'check_library_item'
   | 'marketing_contact'
+  | 'marketing_campaign'
   | 'document_type'
-  | 'equipment_type';
+  | 'equipment_type'
+  | 'equipment_type_request'
+  | 'document_type_request'
+  | 'check_intake'
+  | 'risk_intake'
+  | 'support_access'
+  | 'compliance_event'
+  | 'inspection_record'
+  | 'wind_log'
+  | 'pressure_reading'
+  | 'document_share'
+  | 'subscription'
+  | 'blocked_ip';
 
 interface AuditDetails {
   [key: string]: any;
@@ -48,7 +80,6 @@ export function useAuditLog() {
     if (!user) return;
 
     try {
-      // Use the RPC function to log the event
       const { error } = await supabase.rpc('log_audit_event', {
         p_action: action,
         p_resource_type: resourceType,
@@ -82,7 +113,7 @@ export function useAuditLog() {
   }, [logEvent]);
 
   const logCheckComplete = useCallback((checkId: string, rideName?: string, checkType?: string) => {
-    return logEvent('create', 'check', checkId, { ride: rideName, type: checkType });
+    return logEvent('complete', 'check', checkId, { ride: rideName, type: checkType });
   }, [logEvent]);
 
   return {

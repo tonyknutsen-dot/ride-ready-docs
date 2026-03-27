@@ -19,6 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { compressImage } from '@/utils/imageCompression';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 interface Defect {
   id: string;
@@ -71,6 +72,7 @@ const DefectClosureDialog = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
+  const { logEvent } = useAuditLog();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -187,6 +189,9 @@ const DefectClosureDialog = ({
 
       if (error) throw error;
 
+      logEvent('close', 'defect', defect.id, { 
+        ride: rideName, severity: defect.severity, reason: closureReason 
+      });
       toast({ title: 'Defect closed', description: `Defect on ${rideName} has been closed.` });
 
       queryClient.invalidateQueries({ queryKey: ['open-critical-defects'] });

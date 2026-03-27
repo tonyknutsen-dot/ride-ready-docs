@@ -13,6 +13,7 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
 
@@ -52,6 +53,7 @@ const DefectReportForm = ({
   const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
+  const { logEvent } = useAuditLog();
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -131,6 +133,8 @@ const DefectReportForm = ({
           related_table: 'defects',
         });
       }
+
+      logEvent('create', 'defect', undefined, { ride: rideName, severity, description: description.trim().substring(0, 100) });
 
       toast({
         title: "Defect reported",

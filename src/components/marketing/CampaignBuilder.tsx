@@ -17,6 +17,7 @@ import { Send, Eye, Users, Tag, Info, FlaskConical, CheckCircle2, ChevronDown, M
 import { CampaignPreview } from "./CampaignPreview";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 const PERSONALISATION_TOKENS = [
   { token: "{{first_name}}", label: "First Name", sample: "John" },
@@ -66,6 +67,7 @@ interface TestSendResult {
 export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { logEvent } = useAuditLog();
   const [contacts, setContacts] = useState<MarketingContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -188,6 +190,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       const result = response.data as TestSendResult;
       setLastTestResult(result);
       setShowTestDialog(false);
+      logEvent('send', 'marketing_campaign', undefined, { type: 'test', to: testEmail.trim(), subject: subject.trim() });
       toast.success(`Test email sent to ${testEmail.trim()}`);
     } catch (error: any) {
       console.error("Test send error:", error);
@@ -238,6 +241,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       });
       if (response.error) throw new Error(response.error.message || "Failed to send campaign");
 
+      logEvent('send', 'marketing_campaign', campaign.id, { type: 'live', recipients: selectedRecipients.length, subject: subject.trim() });
       toast.success(`Campaign sent to ${selectedRecipients.length} recipients!`);
       setCampaignName("");
       setSubject("");

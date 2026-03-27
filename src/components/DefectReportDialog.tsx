@@ -15,6 +15,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 
@@ -68,6 +69,7 @@ const DefectReportDialog = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
+  const { logEvent } = useAuditLog();
   const { isStaff: isStaffContext } = useStaff();
 
   const needsRideSelection = !rideId;
@@ -179,6 +181,11 @@ const DefectReportDialog = ({
           related_table: 'defects',
         });
       }
+
+      logEvent('create', 'defect', undefined, { 
+        ride: effectiveRideName, severity, 
+        description: description.trim().substring(0, 100) 
+      });
 
       toast({
         title: "Defect reported",

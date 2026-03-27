@@ -16,6 +16,7 @@ import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS } from '@/hooks/
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type RideCategory = Tables<'ride_categories'>;
 
@@ -44,6 +45,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const { isStaff, permissionLevel } = useStaff();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { logEvent } = useAuditLog();
   const { subscription, loading: subscriptionLoading } = useSubscription();
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -280,6 +282,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             variant: "destructive",
           });
         } else {
+          logEvent('update', 'ride', ride.id, { name: validatedData.ride_name });
           // Upload photo if provided
           if (photoFile && user) {
               try {
@@ -352,6 +355,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             variant: "destructive",
           });
         } else {
+          logEvent('create', 'ride', newRide?.id, { name: validatedData.ride_name });
           // Upload photo if provided
           if (photoFile && newRide?.id && user) {
             try {

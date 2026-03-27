@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Ride } from '@/types/ride';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 interface DeleteRideDialogProps {
   ride: Ride;
@@ -38,6 +39,7 @@ interface AssociatedData {
 export const DeleteRideDialog = ({ ride, onDeleted, trigger }: DeleteRideDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [associatedData, setAssociatedData] = useState<AssociatedData>({
@@ -159,6 +161,12 @@ export const DeleteRideDialog = ({ ride, onDeleted, trigger }: DeleteRideDialogP
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      logEvent('delete', 'ride', ride.id, { 
+        name: ride.ride_name,
+        documents: associatedData.documents.length,
+        checks: associatedData.checks,
+      });
 
       toast({
         title: "Equipment deleted",
