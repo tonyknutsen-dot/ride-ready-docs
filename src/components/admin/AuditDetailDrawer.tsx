@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { User, Clock, Globe, FileText, ArrowRight } from 'lucide-react';
+import { User, Clock, Globe, FileText, ArrowRight, Building2, Wrench, MessageSquare } from 'lucide-react';
 
 export interface AuditEntry {
   id: string;
@@ -14,6 +14,17 @@ export interface AuditEntry {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
+  // Structured columns
+  before_data?: Record<string, any> | null;
+  after_data?: Record<string, any> | null;
+  changed_fields?: string[] | null;
+  organisation_name?: string | null;
+  equipment_id?: string | null;
+  equipment_name?: string | null;
+  result?: string | null;
+  context_hint?: string | null;
+  reason?: string | null;
+  // Enriched client-side
   actor_name?: string;
   actor_email?: string;
 }
@@ -98,7 +109,6 @@ export const RESULT_VARIANTS: Record<string, { label: string; className: string 
   info: { label: 'Info', className: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
 };
 
-/** Actions that deserve stronger visual treatment in the list */
 export const HIGH_PRIORITY_ACTIONS = new Set([
   'delete', 'failed_unlock', 'support_view', 'approve', 'reject',
 ]);
@@ -106,9 +116,12 @@ export const HIGH_PRIORITY_ACTIONS = new Set([
 export const HIGH_PRIORITY_RESULTS = new Set(['failed', 'blocked', 'denied']);
 
 export function getEventResult(entry: AuditEntry): string {
+  // Prefer the structured column first
+  if (entry.result && entry.result !== 'success') return entry.result;
   if (entry.action === 'failed_unlock') return 'failed';
   if (entry.details?.result) return entry.details.result;
   if (entry.details?.blocked) return 'blocked';
+  if (entry.result) return entry.result;
   return 'success';
 }
 
@@ -125,8 +138,9 @@ export function getResourceLabel(type: string): string {
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-/** Derive a short context hint for the event */
+/** Derive a short context hint – prefer the structured column */
 export function getContextHint(entry: AuditEntry): string | null {
+  if (entry.context_hint) return entry.context_hint;
   const d = entry.details || {};
   if (d.source === 'early_access') return 'from early access signup';
   if (d.source === 'csv_import') return 'from CSV import';
@@ -152,27 +166,36 @@ function parseBrowser(ua: string | null): string {
 
 // ── Before/After Display ──
 
-function BeforeAfterSection({ details }: { details: Record<string, any> }) {
-  const before = details?.before;
-  const after = details?.after;
+function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
+  // Use structured columns first, fall back to details.before/after
+  const before = entry.before_data || entry.details?.before;
+  const after = entry.after_data || entry.details?.after;
   if (!before && !after) return null;
 
-  const allKeys = [...new Set([...Object.keys(before || {}), ...Object.keys(after || {})])];
-  const changedKeys = allKeys.filter(k => JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k]));
+  // Use structured changed_fields if available, otherwise compute
+  let changedKeys: string[];
+  if (entry.changed_fields && entry.changed_fields.length > 0) {
+    changedKeys = entry.changed_fields;
+  } else {
+    const allKeys = [...new Set([...Object.keys(before || {}), ...Object.keys(after || {})])];
+    changedKeys = allKeys.filter(k => JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k]));
+  }
 
   if (changedKeys.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Changes</h4>
+      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+        <Wrench className="h-3 w-3" /> Changes ({changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''})
+      </h4>
       <div className="space-y-1.5">
         {changedKeys.map(key => (
           <div key={key} className="rounded-lg border p-2.5 bg-muted/30 text-sm">
-            <p className="font-medium text-xs text-muted-foreground mb-1">{key.replace(/_/g, ' ')}</p>
+            <p className="font-medium text-xs text-muted-foreground mb-1 capitalize">{key.replace(/_/g, ' ')}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="line-through text-destructive/70 text-xs">{String(before?.[key] ?? '—')}</span>
+              <span className="line-through text-destructive/70 text-xs break-all">{String(before?.[key] ?? '—')}</span>
               <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium text-xs">{String(after?.[key] ?? '—')}</span>
+              <span className="font-medium text-xs break-all">{String(after?.[key] ?? '—')}</span>
             </div>
           </div>
         ))}
@@ -211,8 +234,15 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const details = entry.details || {};
   const contextHint = getContextHint(entry);
 
-  const knownKeys = new Set(['name', 'document_name', 'email', 'ride_name', 'ride', 'title', 'label', 'type', 'check_item_text', 'source', 'result', 'blocked', 'before', 'after', 'skipped', 'imported']);
+  const knownKeys = new Set([
+    'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
+    'label', 'type', 'check_item_text', 'source', 'result', 'blocked',
+    'before', 'after', 'skipped', 'imported',
+  ]);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
+
+  const hasContext = entry.organisation_name || entry.equipment_name;
+  const hasChanges = entry.before_data || entry.after_data || details.before || details.after;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -278,6 +308,34 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             <DetailRow label="Record ID" value={entry.resource_id} />
           </div>
 
+          {/* Context: org / equipment */}
+          {hasContext && (
+            <>
+              <Separator />
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <Building2 className="h-3 w-3" /> Context
+                </h4>
+                <DetailRow label="Organisation" value={entry.organisation_name} />
+                <DetailRow label="Equipment" value={entry.equipment_name} />
+                {entry.equipment_id && <DetailRow label="Equipment ID" value={entry.equipment_id} />}
+              </div>
+            </>
+          )}
+
+          {/* Reason / comment */}
+          {entry.reason && (
+            <>
+              <Separator />
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <MessageSquare className="h-3 w-3" /> Reason
+                </h4>
+                <p className="text-sm bg-muted/30 rounded-lg border p-2.5">{entry.reason}</p>
+              </div>
+            </>
+          )}
+
           {/* Security info */}
           {(entry.ip_address || entry.user_agent) && (
             <>
@@ -293,13 +351,13 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             </>
           )}
 
-          {/* Before/After */}
-          {details.before || details.after ? (
+          {/* Before/After Changes */}
+          {hasChanges && (
             <>
               <Separator />
-              <BeforeAfterSection details={details} />
+              <BeforeAfterSection entry={entry} />
             </>
-          ) : null}
+          )}
 
           {/* Extra details */}
           {extraDetails.length > 0 && (

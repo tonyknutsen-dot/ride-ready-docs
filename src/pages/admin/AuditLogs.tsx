@@ -55,7 +55,7 @@ function ResultBadge({ result }: { result: string }) {
   return <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${rv.className}`}>{rv.label}</Badge>;
 }
 
-// ── Family options – finer split ──
+// ── Family options ──
 
 const FAMILY_OPTIONS = [
   { value: 'all', label: 'All Families' },
@@ -68,6 +68,7 @@ const FAMILY_OPTIONS = [
   { value: 'Equipment', label: 'Equipment' },
   { value: 'Security', label: 'Security' },
   { value: 'Billing', label: 'Billing' },
+  { value: 'Compliance', label: 'Compliance' },
   { value: 'System', label: 'System' },
 ];
 
@@ -76,6 +77,8 @@ const ACTION_OPTIONS = [
   'view', 'download', 'share', 'export',
   'create', 'update', 'delete', 'archive', 'unarchive',
   'approve', 'reject', 'import', 'send',
+  'grant', 'revoke', 'complete', 'close',
+  'subscribe', 'unsubscribe', 'block', 'unblock',
   'support_view',
 ];
 
@@ -87,6 +90,10 @@ const DATE_OPTIONS = [
   { value: '30', label: 'Last 30 days' },
   { value: '90', label: 'Last 90 days' },
 ];
+
+// Default view excludes routine auth noise
+const DEFAULT_EXCLUDED_FAMILIES = new Set<string>();
+// We don't exclude by default anymore, but provide a quick toggle
 
 // ── Page ──
 
@@ -105,6 +112,7 @@ const AuditLogs = () => {
   const [actionFilter, setActionFilter] = useState('all');
   const [resultFilter, setResultFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('7');
+  const [hideRoutineAuth, setHideRoutineAuth] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Detail drawer
@@ -142,8 +150,12 @@ const AuditLogs = () => {
     const [totalRes, uniqueRes, failedRes, highRiskRes] = await Promise.all([
       supabase.from('audit_logs').select('id', { count: 'exact', head: true }).gte('created_at', yesterday),
       supabase.from('audit_logs').select('user_id').gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true }).eq('action', 'failed_unlock').gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true }).in('action', ['delete', 'support_view', 'failed_unlock']).gte('created_at', yesterday),
+      supabase.from('audit_logs').select('id', { count: 'exact', head: true })
+        .or('action.eq.failed_unlock,result.eq.failed,result.eq.blocked')
+        .gte('created_at', yesterday),
+      supabase.from('audit_logs').select('id', { count: 'exact', head: true })
+        .in('action', ['delete', 'support_view', 'failed_unlock', 'approve', 'reject', 'grant', 'revoke', 'block'])
+        .gte('created_at', yesterday),
     ]);
 
     const uniqueUserIds = new Set(uniqueRes.data?.map(d => d.user_id) || []);
@@ -189,6 +201,9 @@ const AuditLogs = () => {
       const enriched: AuditEntry[] = rawLogs.map(log => ({
         ...log,
         details: log.details as Record<string, any> | null,
+        before_data: log.before_data as Record<string, any> | null,
+        after_data: log.after_data as Record<string, any> | null,
+        changed_fields: log.changed_fields as string[] | null,
         actor_name: pMap.get(log.user_id)?.name || 'Unknown',
         actor_email: pMap.get(log.user_id)?.email || '',
       }));
@@ -221,15 +236,23 @@ const AuditLogs = () => {
     toast({ title: 'Refreshed', description: 'Audit logs updated' });
   };
 
-  // Client-side filters: search + result
+  // Client-side filters: search + result + routine auth toggle
+  const ROUTINE_AUTH_ACTIONS = new Set(['login', 'logout', 'lock', 'unlock']);
+
   const filteredLogs = logs.filter(log => {
     if (resultFilter !== 'all' && getEventResult(log) !== resultFilter) return false;
+    // Hide routine auth unless viewing Authentication family or auth toggle is off
+    if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
+      return false;
+    }
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       const haystack = [
         log.actor_name, log.action, log.resource_type,
-        getTargetName(log), JSON.stringify(log.details),
-      ].join(' ').toLowerCase();
+        getTargetName(log), log.equipment_name, log.organisation_name,
+        log.context_hint, log.reason,
+        JSON.stringify(log.details),
+      ].filter(Boolean).join(' ').toLowerCase();
       if (!haystack.includes(s)) return false;
     }
     return true;
@@ -237,7 +260,7 @@ const AuditLogs = () => {
 
   // CSV Export
   const handleExportCSV = () => {
-    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target Type', 'Target Name', 'Result', 'Context', 'IP Address'];
+    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target Type', 'Target Name', 'Result', 'Context', 'Equipment', 'Organisation', 'Changed Fields', 'Reason', 'IP Address'];
     const rows = filteredLogs.map(log => [
       format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
       log.actor_name || '',
@@ -247,6 +270,10 @@ const AuditLogs = () => {
       getTargetName(log),
       getEventResult(log),
       getContextHint(log) || '',
+      log.equipment_name || '',
+      log.organisation_name || '',
+      log.changed_fields?.join(', ') || '',
+      log.reason || '',
       log.ip_address || '',
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -259,15 +286,42 @@ const AuditLogs = () => {
     URL.revokeObjectURL(url);
   };
 
-  // PDF Export
+  // PDF Export — richer report
   const handleExportPDF = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
-    doc.setFontSize(16);
-    doc.text('Audit Trail', 14, 18);
-    doc.setFontSize(9);
-    doc.text(`Exported ${format(new Date(), 'dd MMM yyyy HH:mm')} — ${filteredLogs.length} events`, 14, 25);
+    const now = new Date();
 
-    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context'];
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(30, 58, 95);
+    doc.text('Audit Trail Report', 14, 18);
+
+    // Meta line
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}`, 14, 25);
+    doc.text(`Date Range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}`, 14, 30);
+
+    // Active filters
+    const activeFilters: string[] = [];
+    if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
+    if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
+    if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
+    if (hideRoutineAuth) activeFilters.push('Routine auth hidden');
+    if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
+    if (activeFilters.length > 0) {
+      doc.text(`Filters: ${activeFilters.join(' | ')}`, 14, 35);
+    }
+
+    // KPI summary
+    const kpiY = activeFilters.length > 0 ? 42 : 37;
+    doc.setFontSize(8);
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Events (24h): ${stats.events}   |   Active Users: ${stats.users}   |   Failed/Blocked: ${stats.failed}   |   High-Risk: ${stats.highRisk}`, 14, kpiY);
+    doc.text(`Total filtered events: ${filteredLogs.length}`, 14, kpiY + 5);
+
+    // Table
+    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context', 'Equipment'];
     const rows = filteredLogs.map(log => [
       format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
       log.actor_name || '',
@@ -276,25 +330,46 @@ const AuditLogs = () => {
       `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
       getEventResult(log),
       getContextHint(log) || '',
+      log.equipment_name || '',
     ]);
 
     autoTable(doc, {
-      startY: 30,
+      startY: kpiY + 10,
       head: [headers],
       body: rows,
       styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [30, 58, 95] },
+      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        5: { cellWidth: 18 },
+      },
     });
 
-    doc.save(`audit-trail-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Ride Ready Docs — Audit Trail — Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 8);
+    }
+
+    doc.save(`audit-trail-${format(now, 'yyyy-MM-dd')}.pdf`);
   };
 
-  const activeFilterCount = [familyFilter !== 'all', actionFilter !== 'all', resultFilter !== 'all'].filter(Boolean).length;
+  const activeFilterCount = [
+    familyFilter !== 'all',
+    actionFilter !== 'all',
+    resultFilter !== 'all',
+    !hideRoutineAuth,
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
     setFamilyFilter('all');
     setActionFilter('all');
     setResultFilter('all');
+    setHideRoutineAuth(true);
     setSearchTerm('');
   };
 
@@ -335,7 +410,7 @@ const AuditLogs = () => {
           </div>
         </div>
 
-        {/* KPI Cards – 4 primary on mobile, 2x2 grid */}
+        {/* KPI Cards */}
         <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
           <KpiCard label="Events (24h)" value={stats.events} icon={History} />
           <KpiCard label="Active Users (24h)" value={stats.users} icon={Users} />
@@ -349,7 +424,7 @@ const AuditLogs = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search actor, action, target…"
+                placeholder="Search actor, action, target, equipment…"
                 className="pl-9 h-9 text-sm"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -367,15 +442,24 @@ const AuditLogs = () => {
 
           {/* Collapsible filters */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 px-2">
-                <ChevronDown className={`h-3 w-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
-                Filters
-                {activeFilterCount > 0 && (
-                  <Badge variant="default" className="ml-1 h-4 px-1.5 text-[10px]">{activeFilterCount}</Badge>
-                )}
-              </Button>
-            </CollapsibleTrigger>
+            <div className="flex items-center gap-2">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 px-2">
+                  <ChevronDown className={`h-3 w-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <Badge variant="default" className="ml-1 h-4 px-1.5 text-[10px]">{activeFilterCount}</Badge>
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              {/* Routine auth toggle – visible at top level */}
+              <button
+                onClick={() => setHideRoutineAuth(h => !h)}
+                className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideRoutineAuth ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
+              >
+                {hideRoutineAuth ? 'Logins hidden' : 'Showing logins'}
+              </button>
+            </div>
             <CollapsibleContent>
               <div className="flex gap-2 flex-wrap pt-1">
                 <Select value={familyFilter} onValueChange={setFamilyFilter}>
@@ -444,6 +528,7 @@ const AuditLogs = () => {
               const family = getEventFamily(log);
               const contextHint = getContextHint(log);
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
+              const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
 
               return (
                 <button
@@ -467,7 +552,7 @@ const AuditLogs = () => {
                       {contextHint && (
                         <p className="text-[11px] text-muted-foreground italic">{contextHint}</p>
                       )}
-                      {/* Line 3: Timestamp + family + result */}
+                      {/* Line 3: Timestamp + family + result + change indicator */}
                       <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                         <span className="text-[11px] text-muted-foreground">
                           {format(new Date(log.created_at), 'dd MMM yyyy HH:mm')}
@@ -475,6 +560,14 @@ const AuditLogs = () => {
                         <span className="text-muted-foreground/40 text-[10px]">•</span>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
                         <ResultBadge result={result} />
+                        {hasChanges && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-blue-400/30 text-blue-600">
+                            Δ {log.changed_fields?.length || ''}
+                          </Badge>
+                        )}
+                        {log.equipment_name && (
+                          <span className="text-[10px] text-muted-foreground/60 truncate max-w-[120px]">⚙ {log.equipment_name}</span>
+                        )}
                       </div>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground mt-0.5 flex-shrink-0" />
