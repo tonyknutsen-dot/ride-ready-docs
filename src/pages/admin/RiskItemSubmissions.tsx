@@ -148,6 +148,12 @@ const RiskItemSubmissions = () => {
       if (error) throw error;
 
       toast({ title: 'Not added to library', description: 'The user can still use this item privately.' });
+      logEvent('reject', 'risk_intake', submission.id, { label: submission.label, item_type: submission.item_type }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: adminNotes[submission.id] || null },
+        reason: adminNotes[submission.id] || undefined,
+        contextHint: 'admin risk intake rejection',
+      });
       closeMobileActionMenu();
       loadSubmissions(true);
     } catch (error: any) {
