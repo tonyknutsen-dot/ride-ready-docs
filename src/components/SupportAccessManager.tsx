@@ -27,6 +27,7 @@ interface SupportGrant {
 export const SupportAccessManager = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [loading, setLoading] = useState(true);
   const [grants, setGrants] = useState<SupportGrant[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
