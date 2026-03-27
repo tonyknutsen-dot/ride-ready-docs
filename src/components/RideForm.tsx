@@ -355,6 +355,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             variant: "destructive",
           });
         } else {
+          logEvent('create', 'ride', newRide?.id, { name: validatedData.ride_name });
           // Upload photo if provided
           if (photoFile && newRide?.id && user) {
             try {
