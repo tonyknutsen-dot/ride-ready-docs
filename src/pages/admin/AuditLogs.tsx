@@ -367,6 +367,7 @@ const AuditLogs = () => {
       if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
       if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
       if (hideRoutineAuth) activeFilters.push('Routine auth hidden');
+      if (hideOrphanRows) activeFilters.push('Orphan/system rows hidden');
       if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
       if (activeFilters.length > 0) {
         doc.setFontSize(8);
