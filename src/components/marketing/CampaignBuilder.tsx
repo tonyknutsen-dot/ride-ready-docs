@@ -18,15 +18,29 @@ import { CampaignPreview } from "./CampaignPreview";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const AVAILABLE_TOKENS = [
+const PERSONALISATION_TOKENS = [
   { token: "{{first_name}}", label: "First Name", sample: "John" },
   { token: "{{name}}", label: "Name", sample: "John Doe" },
   { token: "{{company}}", label: "Company", sample: "Acme Corp" },
   { token: "{{email}}", label: "Email", sample: "john@example.com" },
-  { token: "{{unsubscribe_url}}", label: "Unsubscribe", sample: "#unsubscribe" },
-  { token: "{{website_url}}", label: "Website", sample: "https://ridereadydocs.com" },
-  { token: "{{support_email}}", label: "Support", sample: "info@ridereadydocs.com" },
 ];
+
+const UTILITY_TOKENS = [
+  { token: "{{website_url}}", label: "Website URL", sample: "https://ridereadydocs.com" },
+  { token: "{{support_email}}", label: "Support Email", sample: "info@ridereadydocs.com" },
+  { token: "{{unsubscribe_url}}", label: "Unsubscribe URL", sample: "#unsubscribe" },
+];
+
+const DEFAULT_CONTENT = `Dear {{first_name}},
+
+Thank you for your continued trust in our compliance management services. We wanted to share some important updates that may benefit your operations.
+
+Keeping your equipment documentation current is essential for safety and regulatory compliance. Our platform makes it simple to stay on top of inspections, certifications, and maintenance records.
+
+If you have any questions or need assistance, please don't hesitate to reach out.
+
+Kind regards,
+The Ride Ready Docs Team`;
 
 interface MarketingContact {
   id: string;
