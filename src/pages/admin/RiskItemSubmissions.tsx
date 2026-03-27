@@ -117,6 +117,12 @@ const RiskItemSubmissions = () => {
       if (updateError) throw updateError;
 
       toast({ title: 'Added to library', description: `"${submission.label}" is now in the shared risk library.` });
+      logEvent('approve', 'risk_intake', submission.id, { label: submission.label, item_type: submission.item_type }, {
+        before: { status: 'pending' },
+        after: { status: 'approved', admin_notes: adminNotes[submission.id] || null },
+        reason: adminNotes[submission.id] || undefined,
+        contextHint: 'admin risk intake approval',
+      });
       closeMobileActionMenu();
       loadSubmissions(true);
     } catch (error: any) {
