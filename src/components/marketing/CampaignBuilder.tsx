@@ -190,7 +190,9 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       const result = response.data as TestSendResult;
       setLastTestResult(result);
       setShowTestDialog(false);
-      logEvent('send', 'marketing_campaign', undefined, { type: 'test', to: testEmail.trim(), subject: subject.trim() });
+      logEvent('send', 'marketing_campaign', undefined, { type: 'test', to: testEmail.trim(), subject: subject.trim() }, {
+        contextHint: 'test email send',
+      });
       toast.success(`Test email sent to ${testEmail.trim()}`);
     } catch (error: any) {
       console.error("Test send error:", error);
