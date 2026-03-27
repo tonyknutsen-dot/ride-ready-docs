@@ -15,6 +15,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 
