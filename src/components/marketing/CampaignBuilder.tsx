@@ -18,15 +18,29 @@ import { CampaignPreview } from "./CampaignPreview";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const AVAILABLE_TOKENS = [
+const PERSONALISATION_TOKENS = [
   { token: "{{first_name}}", label: "First Name", sample: "John" },
   { token: "{{name}}", label: "Name", sample: "John Doe" },
   { token: "{{company}}", label: "Company", sample: "Acme Corp" },
   { token: "{{email}}", label: "Email", sample: "john@example.com" },
-  { token: "{{unsubscribe_url}}", label: "Unsubscribe", sample: "#unsubscribe" },
-  { token: "{{website_url}}", label: "Website", sample: "https://ridereadydocs.com" },
-  { token: "{{support_email}}", label: "Support", sample: "info@ridereadydocs.com" },
 ];
+
+const UTILITY_TOKENS = [
+  { token: "{{website_url}}", label: "Website URL", sample: "https://ridereadydocs.com" },
+  { token: "{{support_email}}", label: "Support Email", sample: "info@ridereadydocs.com" },
+  { token: "{{unsubscribe_url}}", label: "Unsubscribe URL", sample: "#unsubscribe" },
+];
+
+const DEFAULT_CONTENT = `Dear {{first_name}},
+
+Thank you for your continued trust in our compliance management services. We wanted to share some important updates that may benefit your operations.
+
+Keeping your equipment documentation current is essential for safety and regulatory compliance. Our platform makes it simple to stay on top of inspections, certifications, and maintenance records.
+
+If you have any questions or need assistance, please don't hesitate to reach out.
+
+Kind regards,
+The Ride Ready Docs Team`;
 
 interface MarketingContact {
   id: string;
@@ -60,8 +74,8 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
   
   // Campaign form
   const [campaignName, setCampaignName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [content, setContent] = useState("");
+  const [subject, setSubject] = useState("Updates from Ride Ready Docs");
+  const [content, setContent] = useState(DEFAULT_CONTENT);
   
   // Recipient selection
   const [selectionMode, setSelectionMode] = useState<"all" | "tags" | "custom">("all");
@@ -361,22 +375,43 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
             />
           </div>
 
-          <div className="space-y-2 p-2.5 md:p-3 bg-muted rounded-lg">
-            <div className="flex items-center gap-1.5">
-              <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground font-medium">Tap a token to insert:</span>
+          <div className="space-y-2.5 p-2.5 md:p-3 bg-muted rounded-lg">
+            <div>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Tag className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">Personalisation</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {PERSONALISATION_TOKENS.map(({ token, label }) => (
+                  <button
+                    key={token}
+                    type="button"
+                    onClick={() => insertToken(token)}
+                    className="inline-flex items-center px-2 py-1 rounded-md bg-background border border-border text-xs font-mono text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {AVAILABLE_TOKENS.map(({ token, label }) => (
-                <button
-                  key={token}
-                  type="button"
-                  onClick={() => insertToken(token)}
-                  className="inline-flex items-center px-2 py-1 rounded-md bg-background border border-border text-xs font-mono text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer"
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="pt-1.5 border-t border-border/50">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Info className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">Links &amp; Utility</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {UTILITY_TOKENS.map(({ token, label }) => (
+                  <button
+                    key={token}
+                    type="button"
+                    onClick={() => insertToken(token)}
+                    className="inline-flex items-center px-2 py-1 rounded-md bg-background border border-dashed border-muted-foreground/30 text-xs font-mono text-muted-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground/70 mt-1">Website &amp; unsubscribe links are already in the footer. Only insert here if needed in the body.</p>
             </div>
           </div>
         </CardContent>

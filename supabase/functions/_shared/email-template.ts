@@ -46,7 +46,7 @@ export const emailStyles = {
   `,
   header: `
     background: linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.primaryLight} 100%);
-    padding: 20px 32px;
+    padding: 14px 32px;
     text-align: center;
   `,
   headerTitle: `
@@ -66,7 +66,7 @@ export const emailStyles = {
     padding: 32px 32px 28px;
   `,
   footer: `
-    padding: 20px 32px;
+    padding: 14px 32px 16px;
     border-top: 1px solid ${brandColors.border};
     text-align: center;
   `,
@@ -74,7 +74,7 @@ export const emailStyles = {
     color: ${brandColors.textMuted};
     font-size: 11px;
     margin: 0;
-    line-height: 1.7;
+    line-height: 1.5;
   `,
   footerLink: `
     color: ${brandColors.textLight};
@@ -152,9 +152,9 @@ export const logoHtml = `
   <img 
     src="${LOGO_URL}" 
     alt="Ride Ready Docs" 
-    width="44" 
-    height="44" 
-    style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);"
+    width="36" 
+    height="36" 
+    style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);"
   />
 `;
 
