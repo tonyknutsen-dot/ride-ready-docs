@@ -289,7 +289,11 @@ export default function EquipmentTypeLibrary() {
         toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
-      logEvent('update', 'ride_category', dialogItem.id, { name: data.name });
+      logEvent('update', 'ride_category', dialogItem.id, { name: data.name }, {
+        before: { name: dialogItem.name, category_group: dialogItem.category_group, description: dialogItem.description, is_billable: dialogItem.is_billable, admin_notes: dialogItem.admin_notes },
+        after: { name: data.name, category_group: data.categoryGroup, description: data.description, is_billable: data.isBillable, admin_notes: data.adminNotes },
+        contextHint: 'admin equipment type library',
+      });
       toast({ title: 'Updated', description: `"${data.name}" has been updated.` });
     }
     setDialogOpen(false);
