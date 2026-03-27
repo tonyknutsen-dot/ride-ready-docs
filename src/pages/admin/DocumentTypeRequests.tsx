@@ -406,7 +406,13 @@ export default function DocumentTypeRequests() {
       setApproving(false);
 
       // Fire-and-forget email
-      logEvent('update', 'document' as any, target.id, { action: 'approve_doc_type_request', name: target.document_type_name });
+      logEvent('approve', 'document_type_request', target.id, { name: target.document_type_name, created_type_key: typeKey }, {
+        before: { status: 'pending' },
+        after: { status: 'approved', admin_notes: note || null },
+        changedFields: ['status', 'admin_notes'],
+        reason: note || undefined,
+        contextHint: 'admin document type request approval',
+      });
       supabase.functions.invoke('get-user-email', { body: { userId: target.user_id } })
         .then(({ data: emailData }) => {
           if (emailData?.email) {
@@ -452,7 +458,13 @@ export default function DocumentTypeRequests() {
       setRejecting(false);
 
       // Fire-and-forget email + audit
-      logEvent('update', 'document' as any, target.id, { action: 'reject_doc_type_request', name: target.document_type_name });
+      logEvent('reject', 'document_type_request', target.id, { name: target.document_type_name }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: note },
+        changedFields: ['status', 'admin_notes'],
+        reason: note,
+        contextHint: 'admin document type request rejection',
+      });
       supabase.functions.invoke('get-user-email', { body: { userId: target.user_id } })
         .then(({ data: emailData }) => {
           if (emailData?.email) {
@@ -475,7 +487,12 @@ export default function DocumentTypeRequests() {
 
   /* ─── Linked callback ─── */
   const onLinked = useCallback((id: string) => {
-    logEvent('update', 'document' as any, id, { action: 'link_doc_type_request' });
+    logEvent('link', 'document_type_request', id, { action: 'linked to existing type' }, {
+      before: { status: 'pending' },
+      after: { status: 'linked' },
+      changedFields: ['status'],
+      contextHint: 'admin linked to existing document type',
+    });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'linked' } : r));
   }, [logEvent]);
 

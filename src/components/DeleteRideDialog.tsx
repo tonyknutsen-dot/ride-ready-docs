@@ -164,8 +164,20 @@ export const DeleteRideDialog = ({ ride, onDeleted, trigger }: DeleteRideDialogP
 
       logEvent('delete', 'ride', ride.id, { 
         name: ride.ride_name,
-        documents: associatedData.documents.length,
-        checks: associatedData.checks,
+        documents_deleted: associatedData.documents.length,
+        checks_deleted: associatedData.checks,
+        maintenance_deleted: associatedData.maintenanceRecords,
+        defects_deleted: associatedData.defects,
+        total_items_deleted: totalItems,
+      }, {
+        before: {
+          ride_name: ride.ride_name,
+          category: ride.ride_categories?.name,
+          category_group: ride.ride_categories?.category_group,
+        },
+        equipmentId: ride.id,
+        equipmentName: ride.ride_name,
+        contextHint: 'permanent deletion with cascade',
       });
 
       toast({

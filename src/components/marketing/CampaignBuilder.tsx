@@ -190,7 +190,9 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       const result = response.data as TestSendResult;
       setLastTestResult(result);
       setShowTestDialog(false);
-      logEvent('send', 'marketing_campaign', undefined, { type: 'test', to: testEmail.trim(), subject: subject.trim() });
+      logEvent('send', 'marketing_campaign', undefined, { type: 'test', to: testEmail.trim(), subject: subject.trim() }, {
+        contextHint: 'test email send',
+      });
       toast.success(`Test email sent to ${testEmail.trim()}`);
     } catch (error: any) {
       console.error("Test send error:", error);
@@ -241,7 +243,10 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       });
       if (response.error) throw new Error(response.error.message || "Failed to send campaign");
 
-      logEvent('send', 'marketing_campaign', campaign.id, { type: 'live', recipients: selectedRecipients.length, subject: subject.trim() });
+      logEvent('send', 'marketing_campaign', campaign.id, { type: 'live', recipients: selectedRecipients.length, subject: subject.trim() }, {
+        after: { status: 'sent', recipient_count: selectedRecipients.length, sent_at: new Date().toISOString() },
+        contextHint: 'live campaign send',
+      });
       toast.success(`Campaign sent to ${selectedRecipients.length} recipients!`);
       setCampaignName("");
       setSubject("");

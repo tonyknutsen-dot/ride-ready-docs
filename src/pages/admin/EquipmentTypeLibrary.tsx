@@ -270,7 +270,10 @@ export default function EquipmentTypeLibrary() {
         toast({ title: 'Could not create type', description: 'This type could not be created due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
-      logEvent('create', 'ride_category', undefined, { name: data.name, group: data.categoryGroup });
+      logEvent('create', 'ride_category', undefined, { name: data.name, group: data.categoryGroup }, {
+        after: { name: data.name, category_group: data.categoryGroup, description: data.description, is_billable: data.isBillable },
+        contextHint: 'admin equipment type library',
+      });
       toast({ title: 'Created', description: `"${data.name}" added to equipment types.` });
     } else if (dialogItem) {
       const { error } = await (supabase as any).from('ride_categories').update({
@@ -286,7 +289,11 @@ export default function EquipmentTypeLibrary() {
         toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
-      logEvent('update', 'ride_category', dialogItem.id, { name: data.name });
+      logEvent('update', 'ride_category', dialogItem.id, { name: data.name }, {
+        before: { name: dialogItem.name, category_group: dialogItem.category_group, description: dialogItem.description, is_billable: dialogItem.is_billable, admin_notes: dialogItem.admin_notes },
+        after: { name: data.name, category_group: data.categoryGroup, description: data.description, is_billable: data.isBillable, admin_notes: data.adminNotes },
+        contextHint: 'admin equipment type library',
+      });
       toast({ title: 'Updated', description: `"${data.name}" has been updated.` });
     }
     setDialogOpen(false);
@@ -306,7 +313,12 @@ export default function EquipmentTypeLibrary() {
       toast({ title: 'Could not update type', description: 'This type could not be updated due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
-    logEvent(newArchived ? 'archive' : 'unarchive', 'ride_category', item.id, { name: item.name });
+    logEvent(newArchived ? 'archive' : 'unarchive', 'ride_category', item.id, { name: item.name }, {
+      before: { is_archived: !newArchived },
+      after: { is_archived: newArchived },
+      changedFields: ['is_archived'],
+      contextHint: 'admin equipment type library',
+    });
     toast({ title: newArchived ? 'Archived' : 'Unarchived', description: `"${item.name}" ${newArchived ? 'archived' : 'restored'}.` });
     fetchTypes();
   }, [toast, logEvent, fetchTypes]);
@@ -338,7 +350,10 @@ export default function EquipmentTypeLibrary() {
       toast({ title: 'Could not delete type', description: 'This type could not be deleted due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
-    logEvent('delete', 'ride_category', deleteTarget.id, { name: deleteTarget.name });
+    logEvent('delete', 'ride_category', deleteTarget.id, { name: deleteTarget.name }, {
+      before: { name: deleteTarget.name, category_group: deleteTarget.category_group, source: deleteTarget.source },
+      contextHint: 'admin permanent deletion',
+    });
     toast({ title: 'Deleted', description: `"${deleteTarget.name}" permanently removed.` });
     setDeleteTarget(null);
     fetchTypes();

@@ -244,7 +244,10 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
     try {
       await supabase.storage.from('ride-documents').remove([doc.file_path]);
       await supabase.from('documents').delete().eq('id', doc.id);
-      logEvent('delete', 'document', doc.id, { name: doc.document_name });
+      logEvent('delete', 'document', doc.id, { name: doc.document_name }, {
+        before: { document_name: doc.document_name, document_type: doc.document_type, file_path: doc.file_path },
+        contextHint: 'permanent global document deletion',
+      });
       toast({ title: 'Document deleted' });
       onDocumentDeleted();
     } catch (err: any) {

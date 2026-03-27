@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { Check, X, AlertTriangle, Shield, Loader2, Clock, CheckCircle2, XCircle, Library, ChevronDown, ChevronUp, Inbox, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,6 +29,7 @@ interface RiskItemSubmission {
 }
 
 const RiskItemSubmissions = () => {
+  const { logEvent } = useAuditLog();
   const [submissions, setSubmissions] = useState<RiskItemSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<{ status: string; type: string }>({ status: 'pending', type: 'all' });
@@ -115,6 +117,12 @@ const RiskItemSubmissions = () => {
       if (updateError) throw updateError;
 
       toast({ title: 'Added to library', description: `"${submission.label}" is now in the shared risk library.` });
+      logEvent('approve', 'risk_intake', submission.id, { label: submission.label, item_type: submission.item_type }, {
+        before: { status: 'pending' },
+        after: { status: 'approved', admin_notes: adminNotes[submission.id] || null },
+        reason: adminNotes[submission.id] || undefined,
+        contextHint: 'admin risk intake approval',
+      });
       closeMobileActionMenu();
       loadSubmissions(true);
     } catch (error: any) {
@@ -140,6 +148,12 @@ const RiskItemSubmissions = () => {
       if (error) throw error;
 
       toast({ title: 'Not added to library', description: 'The user can still use this item privately.' });
+      logEvent('reject', 'risk_intake', submission.id, { label: submission.label, item_type: submission.item_type }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: adminNotes[submission.id] || null },
+        reason: adminNotes[submission.id] || undefined,
+        contextHint: 'admin risk intake rejection',
+      });
       closeMobileActionMenu();
       loadSubmissions(true);
     } catch (error: any) {

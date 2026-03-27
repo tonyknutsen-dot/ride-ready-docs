@@ -190,7 +190,14 @@ const DefectClosureDialog = ({
       if (error) throw error;
 
       logEvent('close', 'defect', defect.id, { 
-        ride: rideName, severity: defect.severity, reason: closureReason 
+        ride: rideName, severity: defect.severity,
+      }, {
+        before: { status: defect.status, severity: defect.severity },
+        after: { status: 'resolved', resolved_by: resolvedByValue, closure_reason: closureReason },
+        changedFields: ['status', 'resolved_at', 'resolved_by', 'resolution_notes'],
+        equipmentName: rideName,
+        reason: reasonLabel,
+        contextHint: `closed by ${resolvedByValue || 'unknown'}`,
       });
       toast({ title: 'Defect closed', description: `Defect on ${rideName} has been closed.` });
 

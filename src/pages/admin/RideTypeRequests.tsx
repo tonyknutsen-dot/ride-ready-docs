@@ -638,7 +638,13 @@ export default function RideTypeRequests() {
       setRejecting(false);
 
       // Fire-and-forget: email + audit (non-blocking)
-      logEvent('update', 'ride' as any, target.id, { action: 'reject_type_request', name: target.name });
+      logEvent('reject', 'equipment_type_request', target.id, { name: target.name }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: note },
+        changedFields: ['status', 'admin_notes'],
+        reason: note,
+        contextHint: 'admin equipment type request rejection',
+      });
       supabase.functions.invoke('get-user-email', { body: { userId: target.user_id } })
         .then(({ data: emailData }) => {
           if (emailData?.email) {
@@ -661,13 +667,21 @@ export default function RideTypeRequests() {
 
   /* ─── Optimistic update callbacks ─── */
   const onApproved = useCallback((id: string, catName: string, catGroup: string) => {
-    logEvent('create', 'ride' as any, id, { action: 'approve_type_request', created_category: catName, category_group: catGroup });
+    logEvent('approve', 'equipment_type_request', id, { created_category: catName, category_group: catGroup }, {
+      before: { status: 'pending' },
+      after: { status: 'approved', created_category: catName, category_group: catGroup },
+      contextHint: 'admin equipment type request approval',
+    });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
     setExistingCategories(prev => [...prev, { id: crypto.randomUUID(), name: catName, category_group: catGroup }]);
   }, [logEvent]);
 
   const onLinked = useCallback((id: string) => {
-    logEvent('update', 'ride' as any, id, { action: 'link_type_request' });
+    logEvent('link', 'equipment_type_request', id, { action: 'linked to existing type' }, {
+      before: { status: 'pending' },
+      after: { status: 'duplicate' },
+      contextHint: 'admin linked to existing equipment type',
+    });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'duplicate' } : r));
   }, [logEvent]);
 

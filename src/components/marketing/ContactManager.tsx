@@ -93,7 +93,11 @@ export const ContactManager = () => {
           .eq("id", editingContact.id);
 
         if (error) throw error;
-        logEvent('update', 'marketing_contact', editingContact.id, { email: contactData.email });
+        logEvent('update', 'marketing_contact', editingContact.id, { email: contactData.email }, {
+          before: { email: editingContact.email, name: editingContact.name, company_name: editingContact.company_name, tags: editingContact.tags },
+          after: { email: contactData.email, name: contactData.name, company_name: contactData.company_name, tags: tagsArray },
+          contextHint: 'manual edit',
+        });
         toast.success("Contact updated successfully");
       } else {
         const { data: inserted, error } = await supabase
@@ -146,7 +150,10 @@ export const ContactManager = () => {
         .eq("id", contactId);
 
       if (error) throw error;
-      logEvent('delete', 'marketing_contact', contactId, { email: contact?.email });
+      logEvent('delete', 'marketing_contact', contactId, { email: contact?.email }, {
+        before: { email: contact?.email, name: contact?.name, is_subscribed: contact?.is_subscribed },
+        contextHint: 'manual deletion',
+      });
       toast.success("Contact deleted");
       fetchContacts();
     } catch (error: any) {
@@ -157,12 +164,19 @@ export const ContactManager = () => {
 
   const handleResubscribe = async (contactId: string) => {
     try {
+      const contact = contacts.find(c => c.id === contactId);
       const { error } = await supabase
         .from("marketing_contacts")
         .update({ is_subscribed: true, unsubscribed_at: null })
         .eq("id", contactId);
 
       if (error) throw error;
+      logEvent('update', 'marketing_contact', contactId, { email: contact?.email, action: 'resubscribe' }, {
+        before: { is_subscribed: false },
+        after: { is_subscribed: true, unsubscribed_at: null },
+        changedFields: ['is_subscribed', 'unsubscribed_at'],
+        contextHint: 'manual resubscribe',
+      });
       toast.success("Contact resubscribed");
       fetchContacts();
     } catch (error: any) {

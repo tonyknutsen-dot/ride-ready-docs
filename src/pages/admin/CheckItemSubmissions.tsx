@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, Search, Loader2, Sparkles, Clock, CheckCircle2, XCircle, Copy, Inbox, MoreVertical, Library, BookOpen, Globe, Target } from 'lucide-react';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import {
@@ -58,6 +59,7 @@ interface LibraryMatch {
 
 export default function CheckItemSubmissions() {
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [allSubmissions, setAllSubmissions] = useState<Submission[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryMatch[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string; category_group: string }[]>([]);
@@ -305,6 +307,12 @@ export default function CheckItemSubmissions() {
       if (updateError) throw updateError;
 
       toast({ title: "Added to library", description: `"${approvalData.label.trim()}" is now available in the shared library.` });
+      logEvent('approve', 'check_intake', selectedSubmission.id, { label: approvalData.label.trim(), frequency: freq }, {
+        before: { status: 'pending' },
+        after: { status: 'approved', admin_notes: approvalData.admin_notes || null },
+        reason: approvalData.admin_notes || undefined,
+        contextHint: 'admin check intake approval',
+      });
       updateSubmissionLocally(selectedSubmission.id, { status: 'approved', admin_notes: approvalData.admin_notes || null, reviewed_at: new Date().toISOString() });
       closeMobileActionMenu();
       setSelectedSubmission(null);
@@ -327,6 +335,12 @@ export default function CheckItemSubmissions() {
         .eq('id', rejectTarget.id);
       if (error) throw error;
       toast({ title: "Not added to library", description: "The user can still use this item in their own checks." });
+      logEvent('reject', 'check_intake', rejectTarget.id, { label: rejectTarget.label }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library' },
+        reason: rejectReason || 'Not suitable for shared library',
+        contextHint: 'admin check intake rejection',
+      });
       updateSubmissionLocally(rejectTarget.id, { status: 'rejected', admin_notes: rejectReason || 'Not suitable for shared library', reviewed_at: new Date().toISOString() });
       closeMobileActionMenu();
       setRejectTarget(null);

@@ -217,7 +217,11 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     try {
       await supabase.storage.from('ride-documents').remove([doc.file_path]);
       await supabase.from('documents').delete().eq('id', doc.id);
-      logEvent('delete', 'document', doc.id, { name: doc.document_name, ride: rideName });
+      logEvent('delete', 'document', doc.id, { name: doc.document_name, ride: rideName }, {
+        before: { document_name: doc.document_name, document_type: doc.document_type, file_path: doc.file_path },
+        equipmentName: rideName,
+        contextHint: 'permanent file deletion',
+      });
       toast({ title: 'Document deleted' });
       onDocumentDeleted();
     } catch (err: any) {

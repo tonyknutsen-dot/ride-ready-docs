@@ -282,7 +282,25 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             variant: "destructive",
           });
         } else {
-          logEvent('update', 'ride', ride.id, { name: validatedData.ride_name });
+          logEvent('update', 'ride', ride.id, { name: validatedData.ride_name }, {
+            before: {
+              ride_name: ride.ride_name,
+              category_id: ride.category_id,
+              manufacturer: ride.manufacturer,
+              year_manufactured: ride.year_manufactured,
+              serial_number: ride.serial_number,
+            },
+            after: {
+              ride_name: validatedData.ride_name,
+              category_id: validatedData.category_id,
+              manufacturer: validatedData.manufacturer || null,
+              year_manufactured: validatedData.year_manufactured || null,
+              serial_number: validatedData.serial_number || null,
+            },
+            equipmentId: ride.id,
+            equipmentName: validatedData.ride_name,
+            contextHint: 'equipment edit form',
+          });
           // Upload photo if provided
           if (photoFile && user) {
               try {
@@ -355,7 +373,18 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             variant: "destructive",
           });
         } else {
-          logEvent('create', 'ride', newRide?.id, { name: validatedData.ride_name });
+          logEvent('create', 'ride', newRide?.id, { name: validatedData.ride_name }, {
+            after: {
+              ride_name: validatedData.ride_name,
+              category_id: validatedData.category_id,
+              manufacturer: validatedData.manufacturer || null,
+              year_manufactured: validatedData.year_manufactured || null,
+              serial_number: validatedData.serial_number || null,
+            },
+            equipmentId: newRide?.id,
+            equipmentName: validatedData.ride_name,
+            contextHint: 'equipment create form',
+          });
           // Upload photo if provided
           if (photoFile && newRide?.id && user) {
             try {

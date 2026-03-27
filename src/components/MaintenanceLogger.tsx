@@ -396,7 +396,24 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         }
       }
 
-      logEvent('create', 'maintenance', undefined, { ride: ride.ride_name, type: formData.maintenance_type });
+      logEvent('create', 'maintenance', undefined, { 
+        ride: ride.ride_name, type: formData.maintenance_type,
+        performed_by: formData.performed_by,
+        has_linked_defect: !!formData.linked_defect_id,
+        attachments: documentIds.length,
+      }, {
+        after: {
+          maintenance_type: formData.maintenance_type,
+          description: formData.description.substring(0, 200),
+          performed_by: formData.performed_by,
+          parts_replaced: formData.parts_replaced || null,
+          cost: formData.cost || null,
+          linked_defect_id: formData.linked_defect_id || null,
+        },
+        equipmentId: ride.id,
+        equipmentName: ride.ride_name,
+        contextHint: formData.linked_defect_id ? 'linked to defect' : 'standalone maintenance',
+      });
       toast({ title: "Maintenance Record Logged", description: "Record saved successfully." });
 
       setFormData({

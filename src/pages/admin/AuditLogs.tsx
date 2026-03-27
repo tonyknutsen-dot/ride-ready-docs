@@ -286,15 +286,15 @@ const AuditLogs = () => {
     URL.revokeObjectURL(url);
   };
 
-  // PDF Export — richer report
-  const handleExportPDF = () => {
+  // PDF Export — summary report
+  const handleExportPDF = (detailed = false) => {
     const doc = new jsPDF({ orientation: 'landscape' });
     const now = new Date();
 
     // Title
     doc.setFontSize(18);
     doc.setTextColor(30, 58, 95);
-    doc.text('Audit Trail Report', 14, 18);
+    doc.text(detailed ? 'Detailed Audit Trail Report' : 'Audit Trail Report', 14, 18);
 
     // Meta line
     doc.setFontSize(9);
@@ -320,31 +320,76 @@ const AuditLogs = () => {
     doc.text(`Events (24h): ${stats.events}   |   Active Users: ${stats.users}   |   Failed/Blocked: ${stats.failed}   |   High-Risk: ${stats.highRisk}`, 14, kpiY);
     doc.text(`Total filtered events: ${filteredLogs.length}`, 14, kpiY + 5);
 
-    // Table
-    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context', 'Equipment'];
-    const rows = filteredLogs.map(log => [
-      format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
-      log.actor_name || '',
-      ACTION_VERBS[log.action] || log.action,
-      getEventFamily(log),
-      `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
-      getEventResult(log),
-      getContextHint(log) || '',
-      log.equipment_name || '',
-    ]);
+    if (detailed) {
+      // Detailed: wider columns with change data
+      const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Equipment', 'Org', 'Changed Fields', 'Reason'];
+      const rows = filteredLogs.map(log => [
+        format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
+        log.actor_name || '',
+        ACTION_VERBS[log.action] || log.action,
+        getEventFamily(log),
+        `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
+        getEventResult(log),
+        log.equipment_name || '',
+        log.organisation_name || '',
+        log.changed_fields?.join(', ') || '',
+        log.reason || '',
+      ]);
 
-    autoTable(doc, {
-      startY: kpiY + 10,
-      head: [headers],
-      body: rows,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [30, 58, 95], textColor: 255 },
-      alternateRowStyles: { fillColor: [245, 247, 250] },
-      columnStyles: {
-        0: { cellWidth: 30 },
-        5: { cellWidth: 18 },
-      },
-    });
+      autoTable(doc, {
+        startY: kpiY + 10,
+        head: [headers],
+        body: rows,
+        styles: { fontSize: 6, cellPadding: 1.5 },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        columnStyles: {
+          0: { cellWidth: 26 },
+          5: { cellWidth: 14 },
+          8: { cellWidth: 35 },
+          9: { cellWidth: 30 },
+        },
+        didDrawCell: (data: any) => {
+          // Highlight failed/blocked/denied rows
+          if (data.section === 'body' && data.column.index === 5) {
+            const val = data.cell.raw;
+            if (val === 'failed' || val === 'blocked' || val === 'denied') {
+              doc.setFillColor(255, 230, 230);
+              doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+              doc.setTextColor(180, 20, 20);
+              doc.setFontSize(6);
+              doc.text(String(val), data.cell.x + 1.5, data.cell.y + data.cell.height / 2 + 1.5);
+            }
+          }
+        },
+      });
+    } else {
+      // Summary table
+      const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context', 'Equipment'];
+      const rows = filteredLogs.map(log => [
+        format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
+        log.actor_name || '',
+        ACTION_VERBS[log.action] || log.action,
+        getEventFamily(log),
+        `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
+        getEventResult(log),
+        getContextHint(log) || '',
+        log.equipment_name || '',
+      ]);
+
+      autoTable(doc, {
+        startY: kpiY + 10,
+        head: [headers],
+        body: rows,
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          5: { cellWidth: 18 },
+        },
+      });
+    }
 
     // Footer
     const pageCount = doc.getNumberOfPages();
@@ -352,10 +397,10 @@ const AuditLogs = () => {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Ride Ready Docs — Audit Trail — Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`Ride Ready Docs — ${detailed ? 'Detailed ' : ''}Audit Trail — Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 8);
     }
 
-    doc.save(`audit-trail-${format(now, 'yyyy-MM-dd')}.pdf`);
+    doc.save(`audit-trail-${detailed ? 'detailed-' : ''}${format(now, 'yyyy-MM-dd')}.pdf`);
   };
 
   const activeFilterCount = [
@@ -401,8 +446,11 @@ const AuditLogs = () => {
             <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex h-8 text-xs">
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPDF} className="hidden sm:flex h-8 text-xs">
+            <Button variant="outline" size="sm" onClick={() => handleExportPDF(false)} className="hidden sm:flex h-8 text-xs">
               <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportPDF(true)} className="hidden sm:flex h-8 text-xs">
+              <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed PDF
             </Button>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -503,7 +551,7 @@ const AuditLogs = () => {
           <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" /> CSV
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportPDF}>
+          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => handleExportPDF(false)}>
             <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
           </Button>
         </div>

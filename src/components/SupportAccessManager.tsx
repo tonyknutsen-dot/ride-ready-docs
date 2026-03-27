@@ -87,7 +87,10 @@ export const SupportAccessManager = () => {
 
       if (error) throw error;
 
-      logEvent('grant', 'support_access', undefined, { reason: reason.trim(), duration_hours: parseInt(duration) });
+      logEvent('grant', 'support_access', undefined, { reason: reason.trim(), duration_hours: parseInt(duration) }, {
+        after: { access_scope: 'read_only', expires_at: expiresAt.toISOString(), reason: reason.trim() },
+        contextHint: `${hours <= 24 ? `${hours}h` : `${hours / 24}d`} read-only access`,
+      });
 
       toast({
         title: 'Access Granted',
@@ -122,7 +125,12 @@ export const SupportAccessManager = () => {
 
       if (error) throw error;
 
-      logEvent('revoke', 'support_access', grantId);
+      logEvent('revoke', 'support_access', grantId, undefined, {
+        before: { status: 'active' },
+        after: { status: 'revoked', revoked_at: new Date().toISOString() },
+        changedFields: ['status', 'revoked_at'],
+        contextHint: 'user-initiated revocation',
+      });
 
       toast({
         title: 'Access Revoked',
