@@ -563,6 +563,7 @@ const AuditLogs = () => {
     setActionFilter('all');
     setResultFilter('all');
     setHideRoutineAuth(true);
+    setHideOrphanRows(true);
     setSearchTerm('');
   };
 
