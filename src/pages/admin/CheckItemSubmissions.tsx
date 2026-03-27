@@ -307,6 +307,12 @@ export default function CheckItemSubmissions() {
       if (updateError) throw updateError;
 
       toast({ title: "Added to library", description: `"${approvalData.label.trim()}" is now available in the shared library.` });
+      logEvent('approve', 'check_intake', selectedSubmission.id, { label: approvalData.label.trim(), frequency: freq }, {
+        before: { status: 'pending' },
+        after: { status: 'approved', admin_notes: approvalData.admin_notes || null },
+        reason: approvalData.admin_notes || undefined,
+        contextHint: 'admin check intake approval',
+      });
       updateSubmissionLocally(selectedSubmission.id, { status: 'approved', admin_notes: approvalData.admin_notes || null, reviewed_at: new Date().toISOString() });
       closeMobileActionMenu();
       setSelectedSubmission(null);
