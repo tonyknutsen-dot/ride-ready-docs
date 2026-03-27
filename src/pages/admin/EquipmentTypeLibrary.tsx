@@ -270,7 +270,10 @@ export default function EquipmentTypeLibrary() {
         toast({ title: 'Could not create type', description: 'This type could not be created due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
         throw error;
       }
-      logEvent('create', 'ride_category', undefined, { name: data.name, group: data.categoryGroup });
+      logEvent('create', 'ride_category', undefined, { name: data.name, group: data.categoryGroup }, {
+        after: { name: data.name, category_group: data.categoryGroup, description: data.description, is_billable: data.isBillable },
+        contextHint: 'admin equipment type library',
+      });
       toast({ title: 'Created', description: `"${data.name}" added to equipment types.` });
     } else if (dialogItem) {
       const { error } = await (supabase as any).from('ride_categories').update({
