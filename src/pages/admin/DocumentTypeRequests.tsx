@@ -487,7 +487,12 @@ export default function DocumentTypeRequests() {
 
   /* ─── Linked callback ─── */
   const onLinked = useCallback((id: string) => {
-    logEvent('update', 'document' as any, id, { action: 'link_doc_type_request' });
+    logEvent('link', 'document_type_request', id, { action: 'linked to existing type' }, {
+      before: { status: 'pending' },
+      after: { status: 'linked' },
+      changedFields: ['status'],
+      contextHint: 'admin linked to existing document type',
+    });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'linked' } : r));
   }, [logEvent]);
 

@@ -350,7 +350,10 @@ export default function EquipmentTypeLibrary() {
       toast({ title: 'Could not delete type', description: 'This type could not be deleted due to an admin permission rule. The technical error has been logged.', variant: 'destructive' });
       return;
     }
-    logEvent('delete', 'ride_category', deleteTarget.id, { name: deleteTarget.name });
+    logEvent('delete', 'ride_category', deleteTarget.id, { name: deleteTarget.name }, {
+      before: { name: deleteTarget.name, category_group: deleteTarget.category_group, source: deleteTarget.source },
+      contextHint: 'admin permanent deletion',
+    });
     toast({ title: 'Deleted', description: `"${deleteTarget.name}" permanently removed.` });
     setDeleteTarget(null);
     fetchTypes();

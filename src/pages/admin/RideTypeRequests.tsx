@@ -677,7 +677,11 @@ export default function RideTypeRequests() {
   }, [logEvent]);
 
   const onLinked = useCallback((id: string) => {
-    logEvent('update', 'ride' as any, id, { action: 'link_type_request' });
+    logEvent('link', 'equipment_type_request', id, { action: 'linked to existing type' }, {
+      before: { status: 'pending' },
+      after: { status: 'duplicate' },
+      contextHint: 'admin linked to existing equipment type',
+    });
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'duplicate' } : r));
   }, [logEvent]);
 
