@@ -72,6 +72,7 @@ const DefectClosureDialog = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
+  const { logEvent } = useAuditLog();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
