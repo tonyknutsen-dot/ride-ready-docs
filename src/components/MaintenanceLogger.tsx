@@ -180,6 +180,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
+  const { logEvent } = useAuditLog();
 
   const [formData, setFormData] = useState({
     maintenance_date: new Date(),
