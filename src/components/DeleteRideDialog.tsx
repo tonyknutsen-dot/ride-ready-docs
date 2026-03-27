@@ -39,6 +39,7 @@ interface AssociatedData {
 export const DeleteRideDialog = ({ ride, onDeleted, trigger }: DeleteRideDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [associatedData, setAssociatedData] = useState<AssociatedData>({

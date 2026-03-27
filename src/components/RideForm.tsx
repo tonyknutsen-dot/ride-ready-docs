@@ -45,6 +45,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const { isStaff, permissionLevel } = useStaff();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { logEvent } = useAuditLog();
   const { subscription, loading: subscriptionLoading } = useSubscription();
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
