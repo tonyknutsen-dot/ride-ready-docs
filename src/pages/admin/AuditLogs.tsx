@@ -92,15 +92,14 @@ function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] |
 function resolvePerformedBy(log: AuditEntry): string {
   const name = log.actor_name;
 
-  // If we resolved a real name from the profiles table, always show it
   if (name && name !== '__no_profile__') return name;
 
-  // No profile found for this user_id — distinguish system vs unknown user
   const trigger = getTriggerType(log);
-  if (trigger === 'Automation' || trigger === 'Seeded proof') return 'System (automated)';
+  if (trigger === 'Automation' || trigger === 'Seeded proof' || trigger === 'Workflow') {
+    return 'System';
+  }
 
-  // A user_id existed but had no profile — likely service-role or deleted user
-  return 'System';
+  return 'Unknown user';
 }
 
 // ── Family options ──
@@ -185,8 +184,8 @@ const AuditLogs = () => {
       const displayName = p.controller_name || p.company_name || 'Unnamed user';
       newMap.set(p.user_id, { name: displayName, email: '' });
     });
-    // IDs with no profile row = service-role / edge function / deleted user
-    // Mark them distinctly so resolvePerformedBy can handle them
+      // IDs with no profile row = service-role / edge function / deleted user.
+      // Keep the sentinel internal only; UI must never render it directly.
     missing.forEach(id => {
       if (!newMap.has(id)) {
         newMap.set(id, { name: '__no_profile__', email: '' });
@@ -256,7 +255,7 @@ const AuditLogs = () => {
         before_data: log.before_data as Record<string, any> | null,
         after_data: log.after_data as Record<string, any> | null,
         changed_fields: log.changed_fields as string[] | null,
-        actor_name: pMap.get(log.user_id)?.name || '__no_profile__',
+        actor_name: pMap.get(log.user_id)?.name || '',
         actor_email: pMap.get(log.user_id)?.email || '',
       }));
 
@@ -298,7 +297,7 @@ const AuditLogs = () => {
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       const haystack = [
-        log.actor_name, log.action, log.resource_type,
+          resolvePerformedBy(log), log.action, log.resource_type,
         getTargetName(log), log.equipment_name, log.organisation_name,
         log.context_hint, log.reason,
         JSON.stringify(log.details),
@@ -725,7 +724,7 @@ const AuditLogs = () => {
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
               const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
               const performer = resolvePerformedBy(log);
-              const isRealUser = performer !== 'System' && performer !== 'System (automated)';
+               const isRealUser = performer !== 'System' && performer !== 'Unknown user';
               const triggerType = getTriggerType(log);
 
               return (
@@ -761,7 +760,7 @@ const AuditLogs = () => {
                             Δ{log.changed_fields?.length || ''}
                           </Badge>
                         )}
-                        {triggerType !== 'User action' && (
+                         {triggerType !== 'User action' && (
                           <span className="text-[10px] text-muted-foreground/60 italic">{triggerType}</span>
                         )}
                       </div>
