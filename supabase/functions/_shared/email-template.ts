@@ -147,7 +147,21 @@ export const emailStyles = {
   `,
 };
 
-// Logo as HTML img tag — compact for header
+// Text-first branded header for marketing emails
+export const brandHeaderHtml = `
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+    <tr>
+      <td style="text-align:center; vertical-align:middle;">
+        <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px;">Ride Ready Docs</span>
+      </td>
+    </tr>
+  </table>
+`;
+
+// Small inline logo for footer (optional, kept small and crisp)
+export const footerLogoHtml = `<img src="${LOGO_URL}" alt="Ride Ready Docs" width="20" height="20" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:4px;" />`;
+
+// Legacy exports kept for non-marketing transactional emails
 export const logoHtml = `
   <img 
     src="${LOGO_URL}" 
@@ -156,22 +170,6 @@ export const logoHtml = `
     height="36" 
     style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25);"
   />
-`;
-
-// Legacy SVG logo (kept for fallback)
-export const logoSvg = `
-<svg width="180" height="40" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e4a8f"/>
-      <stop offset="100%" style="stop-color:#2563eb"/>
-    </linearGradient>
-  </defs>
-  <circle cx="20" cy="20" r="18" fill="url(#logoGradient)"/>
-  <path d="M12 20 L18 26 L28 14" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="48" y="26" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#1e4a8f">Ride Ready</text>
-  <text x="147" y="26" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#f59e0b">Docs</text>
-</svg>
 `;
 
 /**
