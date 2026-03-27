@@ -17,6 +17,7 @@ import { Send, Eye, Users, Tag, Info, FlaskConical, CheckCircle2, ChevronDown, M
 import { CampaignPreview } from "./CampaignPreview";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 const PERSONALISATION_TOKENS = [
   { token: "{{first_name}}", label: "First Name", sample: "John" },
