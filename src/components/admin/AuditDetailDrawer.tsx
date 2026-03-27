@@ -2,7 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { User, Clock, Globe, FileText, ArrowRight, Building2, Wrench, MessageSquare } from 'lucide-react';
+import { User, Clock, Globe, FileText, ArrowRight, Building2, Wrench, MessageSquare, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
 
 export interface AuditEntry {
   id: string;
@@ -119,15 +120,15 @@ export const RESULT_VARIANTS: Record<string, { label: string; className: string 
  * - Security-sensitive: support_view, failed_unlock
  */
 export const HIGH_PRIORITY_ACTIONS = new Set([
-  'delete',         // Irreversible data removal
-  'failed_unlock',  // Security — brute force indicator
-  'support_view',   // Privileged access — support viewing user data
-  'approve',        // Approval gate — changes live state
-  'reject',         // Approval gate — blocks a request
-  'grant',          // Access escalation — grants privileges
-  'revoke',         // Access change — removes privileges
-  'block',          // Security — blocks IP or user
-  'unblock',        // Security — lifts block
+  'delete',
+  'failed_unlock',
+  'support_view',
+  'approve',
+  'reject',
+  'grant',
+  'revoke',
+  'block',
+  'unblock',
 ]);
 
 /**
@@ -137,10 +138,17 @@ export const HIGH_PRIORITY_ACTIONS = new Set([
 export const HIGH_PRIORITY_RESULTS = new Set(['failed', 'blocked', 'denied']);
 
 /**
- * SOURCE LABELS: Standardised human-readable source categories.
- * Used for consistent display across list rows, drawer, and PDF.
+ * TRIGGER TYPE LABELS: Classifies how/why the event was initiated.
+ * Replaces the old "Source" concept for clarity.
+ *
+ * - User action: a real user clicked/submitted something
+ * - Admin action: an admin performed an administrative operation
+ * - Automation: system-triggered (webhook, cron, edge function)
+ * - Workflow: part of an approval/processing pipeline
+ * - Bulk import: CSV or batch import
+ * - Seeded proof: manually inserted for testing/validation
  */
-const SOURCE_LABELS: Record<string, string> = {
+const TRIGGER_TYPE_MAP: Record<string, string> = {
   // Manual user actions
   'RideForm': 'User action',
   'DefectClosureDialog': 'User action',
@@ -162,15 +170,17 @@ const SOURCE_LABELS: Record<string, string> = {
   'CheckLibrary': 'Admin action',
   'admin': 'Admin action',
   // Workflow / automated
-  'early_access': 'Automated import',
+  'early_access': 'Automation',
   'csv_import': 'Bulk import',
-  'request_approval': 'Workflow approval',
-  'campaign': 'Campaign send',
-  'manual': 'Manual entry',
+  'request_approval': 'Workflow',
+  'campaign': 'Automation',
+  'manual': 'User action',
   // System
-  'stripe_webhook': 'System event',
-  'edge_function': 'System event',
-  'system': 'System event',
+  'stripe_webhook': 'Automation',
+  'edge_function': 'Automation',
+  'system': 'Automation',
+  // Seeded
+  'seeded_proof': 'Seeded proof',
 };
 
 export function getEventResult(entry: AuditEntry): string {
@@ -195,25 +205,65 @@ export function getResourceLabel(type: string): string {
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-/** Derive a short context hint – prefer structured column, then standardise source */
-export function getContextHint(entry: AuditEntry): string | null {
+/**
+ * Get the trigger type — how the event was initiated.
+ * Replaces the old getSourceCategory for clarity.
+ */
+export function getTriggerType(entry: AuditEntry): string {
+  const source = entry.details?.source;
+  // Check for seeded proof events
+  if (source === 'seeded_proof' || entry.details?.seeded) return 'Seeded proof';
+  if (source && TRIGGER_TYPE_MAP[source]) return TRIGGER_TYPE_MAP[source];
+  // Infer from action/resource
+  if (['login', 'logout', 'lock', 'unlock', 'failed_unlock'].includes(entry.action)) return 'Automation';
+  if (entry.resource_type === 'subscription') return 'Automation';
+  return 'User action';
+}
+
+/** @deprecated Use getTriggerType instead */
+export function getSourceCategory(entry: AuditEntry): string {
+  return getTriggerType(entry);
+}
+
+/**
+ * Get the source page/process — where in the app the action occurred.
+ */
+export function getSourcePage(entry: AuditEntry): string | null {
   if (entry.context_hint) return entry.context_hint;
   const d = entry.details || {};
-  if (d.source && SOURCE_LABELS[d.source]) return SOURCE_LABELS[d.source];
-  if (d.source) return `via ${d.source}`;
-  if (entry.action === 'failed_unlock') return 'Security event';
+  const source = d.source;
+  // Map component names to friendly page names
+  const PAGE_MAP: Record<string, string> = {
+    'RideForm': 'Equipment detail',
+    'DefectClosureDialog': 'Defect register',
+    'DefectReportDialog': 'Defect register',
+    'ContactManager': 'Marketing contacts',
+    'SupportAccessManager': 'Settings / Support access',
+    'GlobalDocumentView': 'Documents',
+    'RideDocumentView': 'Equipment documents',
+    'CampaignBuilder': 'Marketing campaigns',
+    'DocumentUpload': 'Document upload',
+    'MaintenanceLogger': 'Maintenance log',
+    'CheckItemSubmissions': 'Admin / Check intake',
+    'RiskItemSubmissions': 'Admin / Risk intake',
+    'RideTypeRequests': 'Admin / Equipment type requests',
+    'DocumentTypeLibrary': 'Admin / Document type library',
+    'EquipmentTypeLibrary': 'Admin / Equipment type library',
+    'RiskLibrary': 'Admin / Risk library',
+    'CheckLibrary': 'Admin / Check library',
+    'admin': 'Admin panel',
+  };
+  if (source && PAGE_MAP[source]) return PAGE_MAP[source];
+  if (source) return source;
+  if (d.module) return d.module;
+  if (entry.action === 'failed_unlock') return 'Lock screen';
   if (entry.action === 'support_view') return 'Support access session';
   return null;
 }
 
-/** Get standardised source category label */
-export function getSourceCategory(entry: AuditEntry): string {
-  const source = entry.details?.source;
-  if (source && SOURCE_LABELS[source]) return SOURCE_LABELS[source];
-  // Infer from action/resource
-  if (['login', 'logout', 'lock', 'unlock', 'failed_unlock'].includes(entry.action)) return 'System event';
-  if (entry.resource_type === 'subscription') return 'System event';
-  return 'User action';
+/** @deprecated Use getSourcePage instead */
+export function getContextHint(entry: AuditEntry): string | null {
+  return getSourcePage(entry);
 }
 
 function parseBrowser(ua: string | null): string {
@@ -315,6 +365,63 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
+// ── Legend Dialog ──
+
+function AuditLegend() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <HelpCircle className="h-3.5 w-3.5" />
+        <span>Legend</span>
+      </button>
+      {open && (
+        <div className="rounded-lg border bg-card p-3 space-y-3 text-xs animate-in fade-in-0 slide-in-from-top-1">
+          <div>
+            <p className="font-semibold text-foreground mb-1">Results</p>
+            <div className="space-y-0.5 text-muted-foreground">
+              <p><span className="text-emerald-600 font-medium">Success</span> — Action completed normally</p>
+              <p><span className="text-red-600 font-medium">Failed</span> — Action attempted but did not succeed</p>
+              <p><span className="text-red-600 font-medium">Blocked</span> — Action was prevented by a security rule</p>
+              <p><span className="text-amber-600 font-medium">Denied</span> — Action was rejected due to permissions</p>
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold text-foreground mb-1">High-Risk Actions</p>
+            <p className="text-muted-foreground">
+              Events with a <span className="text-destructive font-medium">red left edge</span> are high-risk: 
+              delete, approve, reject, grant, revoke, block, unblock, failed unlock, or support access views.
+            </p>
+          </div>
+          <div>
+            <p className="font-semibold text-foreground mb-1">Trigger Types</p>
+            <div className="space-y-0.5 text-muted-foreground">
+              <p><span className="font-medium text-foreground">User action</span> — A logged-in user performed this</p>
+              <p><span className="font-medium text-foreground">Admin action</span> — An admin performed this in the admin panel</p>
+              <p><span className="font-medium text-foreground">Automation</span> — System-triggered (webhook, cron, login flow)</p>
+              <p><span className="font-medium text-foreground">Workflow</span> — Part of an approval or processing pipeline</p>
+              <p><span className="font-medium text-foreground">Bulk import</span> — CSV or batch data import</p>
+              <p><span className="font-medium text-foreground">Seeded proof</span> — Manually inserted for audit validation</p>
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold text-foreground mb-1">Δ Badge</p>
+            <p className="text-muted-foreground">
+              Shows this event contains field-level change data. The number indicates how many fields were changed.
+            </p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export { AuditLegend };
+
 // ── Drawer ──
 
 interface Props {
@@ -331,18 +438,22 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const family = getEventFamily(entry);
   const targetName = getTargetName(entry);
   const details = entry.details || {};
-  const contextHint = getContextHint(entry);
   const changedKeys = getChangedKeys(entry);
   const before = entry.before_data || details.before;
   const after = entry.after_data || details.after;
   const siteContext = details.site_name || details.site || details.location || details.site_id;
-  const sourceCategory = getSourceCategory(entry);
+  const triggerType = getTriggerType(entry);
+  const sourcePage = getSourcePage(entry);
+
+  // Determine if the actor is a real user vs system/automation
+  const isRealUser = entry.actor_name && entry.actor_name !== 'System' && entry.actor_name !== 'Unknown';
+  const performedBy = isRealUser ? entry.actor_name : (triggerType === 'Automation' ? 'System (automated)' : entry.actor_name || 'System');
 
   const knownKeys = new Set([
     'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
     'label', 'type', 'check_item_text', 'source', 'result', 'blocked',
     'before', 'after', 'skipped', 'imported', 'site_name', 'site', 'location', 'site_id',
-    'module',
+    'module', 'seeded',
   ]);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
 
@@ -354,7 +465,7 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
       .map(([key, value]) => [key.replace(/_/g, ' '), formatValue(value)] as const),
   ].filter(([, value]) => !isEmptyValue(value));
 
-  const hasContext = entry.organisation_name || entry.equipment_name || siteContext || contextHint;
+  const hasContext = entry.organisation_name || entry.equipment_name || siteContext;
   const hasChanges = before || after || changedKeys.length > 0;
 
   return (
@@ -372,34 +483,35 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
                 <Badge variant="secondary" className="text-xs">{family}</Badge>
-                <Badge variant="outline" className="text-[10px] border-border/60">{sourceCategory}</Badge>
                 {changedKeys.length > 0 && (
                   <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
-                    Δ {changedKeys.length}
+                    Δ {changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''}
                   </Badge>
                 )}
               </div>
               <p className="text-sm font-medium leading-relaxed">
-                {entry.actor_name || 'System'}{' '}
+                <span className={isRealUser ? 'font-semibold' : 'text-muted-foreground italic'}>{performedBy}</span>{' '}
                 <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
                 {getResourceLabel(entry.resource_type).toLowerCase()}{' '}
                 <span className="font-semibold">"{targetName}"</span>
               </p>
-              {contextHint && (
-                <p className="text-xs text-muted-foreground italic">{contextHint}</p>
+              {sourcePage && (
+                <p className="text-xs text-muted-foreground">
+                  via <span className="font-medium">{sourcePage}</span>
+                </p>
               )}
             </div>
           </div>
 
           <Separator />
 
-          {/* Actor */}
+          {/* Performed by */}
           <div className="space-y-1">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-              <User className="h-3 w-3" /> Actor
+              <User className="h-3 w-3" /> Performed by
             </h4>
-            <DetailRow label="Name" value={entry.actor_name || 'System'} />
-            <DetailRow label="Email" value={entry.actor_email} />
+            <DetailRow label="Name" value={performedBy} />
+            {entry.actor_email && <DetailRow label="Email" value={entry.actor_email} />}
             <DetailRow label="User ID" value={entry.user_id?.slice(0, 12) + '…'} />
           </div>
 
@@ -414,9 +526,8 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             <DetailRow label="Action" value={ACTION_VERBS[entry.action] || entry.action} />
             <DetailRow label="Result" value={<Badge variant="outline" className={`text-xs ${rv.className}`}>{rv.label}</Badge>} />
             <DetailRow label="Timestamp" value={format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")} />
-            <DetailRow label="Source" value={sourceCategory} />
-            {details.module && <DetailRow label="Module" value={details.module} />}
-            {contextHint && <DetailRow label="Context" value={contextHint} />}
+            <DetailRow label="Trigger type" value={triggerType} />
+            {sourcePage && <DetailRow label="Source page" value={sourcePage} />}
           </div>
 
           <Separator />

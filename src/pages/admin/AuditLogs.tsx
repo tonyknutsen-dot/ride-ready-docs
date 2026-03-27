@@ -15,13 +15,14 @@ import { formatDistanceToNow, format, subDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   AuditDetailDrawer,
+  AuditLegend,
   AuditEntry,
   getEventResult,
   getTargetName,
   getEventFamily,
   getResourceLabel,
-  getContextHint,
-  getSourceCategory,
+  getSourcePage,
+  getTriggerType,
   ACTION_VERBS,
   RESULT_VARIANTS,
   EVENT_FAMILIES,
@@ -81,6 +82,15 @@ function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] |
     .join('\n');
 }
 
+/** Resolve display name for actor: real user name or "System (automated)" */
+function resolvePerformedBy(log: AuditEntry): string {
+  const name = log.actor_name;
+  if (name && name !== 'System' && name !== 'Unknown' && name !== 'Unknown user') return name;
+  const trigger = getTriggerType(log);
+  if (trigger === 'Automation' || trigger === 'Seeded proof') return 'System (automated)';
+  return name || 'System';
+}
+
 // ── Family options ──
 
 const FAMILY_OPTIONS = [
@@ -117,10 +127,6 @@ const DATE_OPTIONS = [
   { value: '90', label: 'Last 90 days' },
 ];
 
-/**
- * HIGH-RISK ACTIONS for KPI query — must match HIGH_PRIORITY_ACTIONS in AuditDetailDrawer.
- * These are: delete, support_view, failed_unlock, approve, reject, grant, revoke, block, unblock
- */
 const HIGH_RISK_ACTION_LIST = [...HIGH_PRIORITY_ACTIONS];
 
 // ── Page ──
@@ -168,7 +174,6 @@ const AuditLogs = () => {
         email: '',
       });
     });
-    // Mark any user IDs still not found (no profile row) as "System"
     missing.forEach(id => {
       if (!newMap.has(id)) {
         newMap.set(id, { name: 'System', email: '' });
@@ -292,17 +297,17 @@ const AuditLogs = () => {
 
   // CSV Export
   const handleExportCSV = () => {
-    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Source', 'Target Type', 'Target Name', 'Result', 'Context', 'Equipment', 'Organisation', 'Changed Fields', 'Reason', 'IP Address'];
+    const headers = ['Timestamp', 'Performed by', 'Action', 'Family', 'Trigger type', 'Source page', 'Target Type', 'Target Name', 'Result', 'Equipment', 'Organisation', 'Changed Fields', 'Reason', 'IP Address'];
     const rows = filteredLogs.map(log => [
       format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
-      log.actor_name || 'System',
+      resolvePerformedBy(log),
       ACTION_VERBS[log.action] || log.action,
       getEventFamily(log),
-      getSourceCategory(log),
+      getTriggerType(log),
+      getSourcePage(log) || '',
       getResourceLabel(log.resource_type),
       getTargetName(log),
       getEventResult(log),
-      getContextHint(log) || '',
       log.equipment_name || '',
       log.organisation_name || '',
       log.changed_fields?.join(', ') || '',
@@ -322,22 +327,24 @@ const AuditLogs = () => {
   // ── PDF Export ──
   const handleExportPDF = (detailed = false) => {
     const now = new Date();
+    const navy = [30, 58, 95] as const;
 
     if (detailed) {
-      // DETAILED PDF — portrait, mobile-readable, one event per section
+      // DETAILED PDF — portrait, one event per section, stronger formatting
       const doc = new jsPDF({ orientation: 'portrait' });
       const pageW = doc.internal.pageSize.width;
+      const pageH = doc.internal.pageSize.height;
       const margin = 14;
       const contentW = pageW - margin * 2;
 
-      // Title page
-      doc.setFontSize(20);
-      doc.setTextColor(30, 58, 95);
-      doc.text('Detailed Audit Trail Report', margin, 22);
+      // Title
+      doc.setFontSize(18);
+      doc.setTextColor(...navy);
+      doc.text('Detailed Audit Trail', margin, 22);
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}`, margin, 30);
-      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}  •  ${filteredLogs.length} events`, margin, 36);
+      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}  •  ${filteredLogs.length} events`, margin, 30);
+      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}`, margin, 36);
 
       const activeFilters: string[] = [];
       if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
@@ -346,61 +353,63 @@ const AuditLogs = () => {
       if (hideRoutineAuth) activeFilters.push('Routine auth hidden');
       if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
       if (activeFilters.length > 0) {
+        doc.setFontSize(8);
         doc.text(`Filters: ${activeFilters.join(' | ')}`, margin, 42);
       }
 
-      // KPI summary box
+      // KPI
       let startY = activeFilters.length > 0 ? 50 : 44;
       doc.setFontSize(9);
       doc.setTextColor(60, 60, 60);
       doc.text(`Events (24h): ${stats.events}  |  Active Users: ${stats.users}  |  Failed/Blocked: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, startY);
-      startY += 8;
+      startY += 10;
 
-      // Each event as its own section
+      // Each event
       filteredLogs.forEach((log, index) => {
         const result = getEventResult(log);
         const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
+        const performer = resolvePerformedBy(log);
 
-        // Page break check
-        if (startY > doc.internal.pageSize.height - 60) {
+        // Page break check — need at least 55mm for a section
+        if (startY > pageH - 55) {
           doc.addPage();
           startY = 18;
         }
 
-        // Event heading with accent
+        // Event heading bar
+        const headingH = 9;
         if (isHighPriority) {
-          doc.setFillColor(255, 235, 235);
-          doc.rect(margin, startY - 5, contentW, 8, 'F');
-          doc.setDrawColor(220, 50, 50);
-          doc.rect(margin, startY - 5, 2, 8, 'F');
+          doc.setFillColor(255, 230, 230);
+          doc.rect(margin, startY - 6, contentW, headingH, 'F');
+          doc.setFillColor(220, 50, 50);
+          doc.rect(margin, startY - 6, 2.5, headingH, 'F');
+        } else {
+          doc.setFillColor(240, 244, 248);
+          doc.rect(margin, startY - 6, contentW, headingH, 'F');
+          doc.setFillColor(...navy);
+          doc.rect(margin, startY - 6, 2.5, headingH, 'F');
         }
 
-        doc.setFontSize(11);
-        doc.setTextColor(30, 58, 95);
-        doc.text(`Event ${index + 1}: ${ACTION_VERBS[log.action] || log.action}`, margin + 4, startY);
-        startY += 6;
+        doc.setFontSize(10);
+        doc.setTextColor(...navy);
+        const actionLabel = ACTION_VERBS[log.action] || log.action;
+        doc.text(`${performer} ${actionLabel} ${getResourceLabel(log.resource_type).toLowerCase()}`, margin + 5, startY);
+        startY += headingH + 2;
 
-        // Summary line
-        doc.setFontSize(9);
-        doc.setTextColor(40, 40, 40);
-        const summary = `${log.actor_name || 'System'} ${ACTION_VERBS[log.action] || log.action} ${getResourceLabel(log.resource_type).toLowerCase()} "${getTargetName(log)}"`;
-        const wrappedSummary = doc.splitTextToSize(summary, contentW - 8);
-        doc.text(wrappedSummary, margin + 4, startY);
-        startY += wrappedSummary.length * 4.5 + 2;
-
-        // Event detail rows
+        // Detail rows
         const sectionRows = [
           ['Timestamp', format(new Date(log.created_at), 'dd MMM yyyy HH:mm:ss')],
-          ['Actor', log.actor_name || 'System'],
-          ['Action', ACTION_VERBS[log.action] || log.action],
+          ['Performed by', performer],
+          ['Action', actionLabel],
           ['Family', getEventFamily(log)],
-          ['Source', getSourceCategory(log)],
+          ['Trigger type', getTriggerType(log)],
+          ['Source page', getSourcePage(log) || ''],
           ['Target', `${getResourceLabel(log.resource_type)} — ${getTargetName(log)}`],
           ['Result', getEventResult(log)],
           ['Organisation', log.organisation_name || ''],
           ['Equipment', log.equipment_name || ''],
           ['Reason', log.reason || ''],
-          ['Changed Fields', log.changed_fields?.join(', ') || ''],
+          ['Changed fields', log.changed_fields?.join(', ') || ''],
           ['Before', formatSnapshot(log.before_data, log.changed_fields)],
           ['After', formatSnapshot(log.after_data, log.changed_fields)],
         ].filter(([, value]) => String(value || '').trim().length > 0);
@@ -408,17 +417,29 @@ const AuditLogs = () => {
         autoTable(doc, {
           startY,
           body: sectionRows,
-          theme: 'grid',
-          styles: { fontSize: 8, cellPadding: 3, valign: 'top' },
+          theme: 'plain',
+          styles: { fontSize: 8, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, valign: 'top', lineColor: [220, 225, 230], lineWidth: 0.3 },
           columnStyles: {
-            0: { cellWidth: 36, fontStyle: 'bold', textColor: [80, 80, 80] },
-            1: { cellWidth: contentW - 36 },
+            0: { cellWidth: 32, fontStyle: 'bold', textColor: [80, 80, 80] },
+            1: { cellWidth: contentW - 32 },
           },
-          alternateRowStyles: { fillColor: [248, 250, 252] },
+          alternateRowStyles: { fillColor: [250, 251, 253] },
           margin: { left: margin, right: margin },
+          didDrawCell: (data: any) => {
+            // Highlight result cells for failed/blocked
+            if (data.section === 'body' && data.row.index >= 0) {
+              const row = sectionRows[data.row.index];
+              if (row && row[0] === 'Result' && data.column.index === 1) {
+                const val = String(row[1]).toLowerCase();
+                if (val === 'failed' || val === 'blocked' || val === 'denied') {
+                  doc.setTextColor(180, 20, 20);
+                }
+              }
+            }
+          },
         });
 
-        startY = ((doc as any).lastAutoTable?.finalY || startY) + 10;
+        startY = ((doc as any).lastAutoTable?.finalY || startY) + 12;
       });
 
       // Footer
@@ -427,30 +448,32 @@ const AuditLogs = () => {
         doc.setPage(i);
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Ride Ready Docs — Detailed Audit Trail — Page ${i} of ${pageCount}`, margin, doc.internal.pageSize.height - 8);
+        doc.text(`Ride Ready Docs — Detailed Audit Trail — Page ${i} of ${pageCount}`, margin, pageH - 8);
       }
 
       doc.save(`audit-trail-detailed-${format(now, 'yyyy-MM-dd')}.pdf`);
     } else {
-      // SUMMARY PDF — portrait, mobile-readable, fewer columns, larger text
+      // SUMMARY PDF — portrait, readable, larger text
       const doc = new jsPDF({ orientation: 'portrait' });
       const margin = 14;
+      const pageH = doc.internal.pageSize.height;
 
       doc.setFontSize(18);
-      doc.setTextColor(30, 58, 95);
-      doc.text('Summary Audit Trail Report', margin, 20);
+      doc.setTextColor(...navy);
+      doc.text('Audit Trail Summary', margin, 22);
 
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}`, margin, 28);
-      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}  •  ${filteredLogs.length} events`, margin, 34);
+      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}  •  ${filteredLogs.length} events`, margin, 30);
+      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}`, margin, 36);
 
       const activeFilters: string[] = [];
       if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
       if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
       if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
       if (activeFilters.length > 0) {
-        doc.text(`Filters: ${activeFilters.join(' | ')}`, margin, 40);
+        doc.setFontSize(8);
+        doc.text(`Filters: ${activeFilters.join(' | ')}`, margin, 42);
       }
 
       let kpiY = activeFilters.length > 0 ? 48 : 42;
@@ -458,40 +481,40 @@ const AuditLogs = () => {
       doc.setTextColor(60, 60, 60);
       doc.text(`Events (24h): ${stats.events}  |  Users: ${stats.users}  |  Failed: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, kpiY);
 
-      // Summary table — 5 columns for readability
-      const headers = ['Time', 'Actor', 'Action & Target', 'Result', 'Source'];
+      // Summary table — 5 columns, larger font
+      const headers = ['Time', 'Performed by', 'Action & Target', 'Result', 'Trigger'];
       const rows = filteredLogs.map(log => [
         format(new Date(log.created_at), 'dd/MM HH:mm'),
-        log.actor_name || 'System',
+        resolvePerformedBy(log),
         `${ACTION_VERBS[log.action] || log.action} ${getResourceLabel(log.resource_type).toLowerCase()}\n${getTargetName(log)}`,
         getEventResult(log),
-        getSourceCategory(log),
+        getTriggerType(log),
       ]);
 
       autoTable(doc, {
-        startY: kpiY + 6,
+        startY: kpiY + 8,
         head: [headers],
         body: rows,
-        styles: { fontSize: 8, cellPadding: 2.5, valign: 'top' },
-        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 8.5, cellPadding: 3, valign: 'top' },
+        headStyles: { fillColor: [...navy], textColor: 255, fontSize: 9, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 247, 250] },
         columnStyles: {
           0: { cellWidth: 22 },
-          1: { cellWidth: 32 },
-          2: { cellWidth: 75 },
+          1: { cellWidth: 34 },
+          2: { cellWidth: 72 },
           3: { cellWidth: 18 },
           4: { cellWidth: 30 },
         },
         margin: { left: margin, right: margin },
         didDrawCell: (data: any) => {
           if (data.section === 'body' && data.column.index === 3) {
-            const val = data.cell.raw;
+            const val = String(data.cell.raw).toLowerCase();
             if (val === 'failed' || val === 'blocked' || val === 'denied') {
               doc.setFillColor(255, 230, 230);
               doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
               doc.setTextColor(180, 20, 20);
-              doc.setFontSize(8);
-              doc.text(String(val), data.cell.x + 1.5, data.cell.y + data.cell.height / 2 + 1.5);
+              doc.setFontSize(8.5);
+              doc.text(String(data.cell.raw), data.cell.x + 1.5, data.cell.y + data.cell.height / 2 + 1.5);
             }
           }
         },
@@ -503,7 +526,7 @@ const AuditLogs = () => {
         doc.setPage(i);
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Ride Ready Docs — Summary Audit Trail — Page ${i} of ${pageCount}`, margin, doc.internal.pageSize.height - 8);
+        doc.text(`Ride Ready Docs — Audit Trail Summary — Page ${i} of ${pageCount}`, margin, pageH - 8);
       }
 
       doc.save(`audit-trail-summary-${format(now, 'yyyy-MM-dd')}.pdf`);
@@ -595,7 +618,7 @@ const AuditLogs = () => {
             </Select>
           </div>
 
-          {/* Collapsible filters */}
+          {/* Collapsible filters + legend */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
             <div className="flex items-center gap-2">
               <CollapsibleTrigger asChild>
@@ -613,6 +636,9 @@ const AuditLogs = () => {
               >
                 {hideRoutineAuth ? 'Logins hidden' : 'Showing logins'}
               </button>
+              <div className="ml-auto">
+                <AuditLegend />
+              </div>
             </div>
             <CollapsibleContent>
               <div className="flex gap-2 flex-wrap pt-1">
@@ -685,7 +711,9 @@ const AuditLogs = () => {
               const family = getEventFamily(log);
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
               const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
-              const sourceLabel = getSourceCategory(log);
+              const performer = resolvePerformedBy(log);
+              const isRealUser = performer !== 'System' && performer !== 'System (automated)';
+              const triggerType = getTriggerType(log);
 
               return (
                 <button
@@ -695,9 +723,11 @@ const AuditLogs = () => {
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-0.5">
-                      {/* Line 1: Actor + action + record type */}
+                      {/* Line 1: Performer + action + record type */}
                       <p className="text-sm leading-snug">
-                        <span className="font-semibold">{log.actor_name || 'System'}</span>
+                        <span className={isRealUser ? 'font-semibold' : 'text-muted-foreground italic font-medium'}>
+                          {performer}
+                        </span>
                         <span className="text-muted-foreground">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
                         <span className="text-foreground/70">{getResourceLabel(log.resource_type).toLowerCase()}</span>
                       </p>
@@ -705,7 +735,7 @@ const AuditLogs = () => {
                       {targetName !== '—' && (
                         <p className="text-[13px] font-medium truncate text-foreground/90">{targetName}</p>
                       )}
-                      {/* Line 3: Badges — compact */}
+                      {/* Line 3: Compact metadata */}
                       <div className="flex items-center gap-1 flex-wrap pt-0.5">
                         <span className="text-[11px] text-muted-foreground">
                           {format(new Date(log.created_at), 'dd MMM HH:mm')}
@@ -717,6 +747,9 @@ const AuditLogs = () => {
                           <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/20 text-primary">
                             Δ{log.changed_fields?.length || ''}
                           </Badge>
+                        )}
+                        {triggerType !== 'User action' && (
+                          <span className="text-[10px] text-muted-foreground/60 italic">{triggerType}</span>
                         )}
                       </div>
                     </div>
