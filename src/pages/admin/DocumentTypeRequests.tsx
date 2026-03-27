@@ -406,7 +406,13 @@ export default function DocumentTypeRequests() {
       setApproving(false);
 
       // Fire-and-forget email
-      logEvent('update', 'document' as any, target.id, { action: 'approve_doc_type_request', name: target.document_type_name });
+      logEvent('approve', 'document_type_request', target.id, { name: target.document_type_name, created_type_key: typeKey }, {
+        before: { status: 'pending' },
+        after: { status: 'approved', admin_notes: note || null },
+        changedFields: ['status', 'admin_notes'],
+        reason: note || undefined,
+        contextHint: 'admin document type request approval',
+      });
       supabase.functions.invoke('get-user-email', { body: { userId: target.user_id } })
         .then(({ data: emailData }) => {
           if (emailData?.email) {
