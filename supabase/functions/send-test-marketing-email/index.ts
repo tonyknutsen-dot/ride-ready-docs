@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
-import { brandColors, emailStyles, logoHtml, escapeHtml } from "../_shared/email-template.ts";
+import { brandColors, buildMarketingEmail, buildCtaButton, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
@@ -56,7 +56,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // Stricter rate limit for test sends
     const rateLimitKey = getClientIdentifier(req, "send-test-marketing-email", user.id);
     const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     if (!rateLimitResult.allowed) {
@@ -72,14 +71,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // Get user profile for sender info
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("company_name")
-      .eq("user_id", user.id)
-      .single();
-
-    const currentYear = new Date().getFullYear();
     const senderName = "Ride Ready Docs";
 
     // Personalize with test placeholders
@@ -97,55 +88,27 @@ serve(async (req: Request) => {
     const personalizedSubject = `[TEST] ${personalizeText(subject)}`;
     const personalizedContent = personalizeText(content);
 
-    // Build the exact same branded HTML as the real campaign sender
-    const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>${escapeHtml(personalizedSubject)}</title>
-</head>
-<body style="${emailStyles.body}">
-  <div style="${emailStyles.container}">
-    <!-- Header -->
-    <div style="${emailStyles.header}">
-      ${logoHtml}
-    </div>
-    
-    <!-- Content -->
-    <div style="${emailStyles.content}">
-      <div style="line-height: 1.8; color: ${brandColors.text};">
+    const bodyHtml = `
+      <div style="line-height: 1.7; color: ${brandColors.text}; font-size: 15px;">
         ${textToHtml(personalizedContent)}
       </div>
-    </div>
-    
-    <!-- Footer -->
-    <div style="${emailStyles.footer}">
-      <p style="${emailStyles.footerText}">
-        Sent by ${escapeHtml(senderName)}<br><br>
-        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
-        Professional compliance management for amusement equipment.<br><br>
-        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
-        <span style="color: ${brandColors.textLight};">Unsubscribe</span>
-      </p>
-    </div>
-  </div>
-</body>
-</html>`;
+    `;
+
+    const htmlContent = buildMarketingEmail({
+      subject: personalizedSubject,
+      bodyHtml,
+      footerCompany: senderName,
+    });
 
     const fromAddress = `${senderName} <info@ridereadydocs.com>`;
 
-    const emailResponse = await resend.emails.send({
+    await resend.emails.send({
       from: fromAddress,
       to: [testEmail],
       reply_to: "info@ridereadydocs.com",
       subject: personalizedSubject,
       html: htmlContent,
     });
-
-    console.log(`Test email sent to ${testEmail}:`, emailResponse);
 
     return new Response(
       JSON.stringify({

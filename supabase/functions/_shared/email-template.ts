@@ -14,9 +14,11 @@ export const brandColors = {
   danger: '#dc2626',
   text: '#1f2937',
   textLight: '#6b7280',
-  background: '#f9fafb',
+  textMuted: '#9ca3af',
+  background: '#f3f4f6',
   white: '#ffffff',
   border: '#e5e7eb',
+  borderLight: '#f3f4f6',
 };
 
 export const emailStyles = {
@@ -27,16 +29,24 @@ export const emailStyles = {
     margin: 0;
     padding: 0;
     background-color: ${brandColors.background};
+    -webkit-text-size-adjust: 100%;
+  `,
+  outerWrap: `
+    width: 100%;
+    background-color: ${brandColors.background};
+    padding: 24px 0;
   `,
   container: `
-    max-width: 600px;
+    max-width: 560px;
     margin: 0 auto;
-    padding: 20px;
+    background-color: ${brandColors.white};
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
   `,
   header: `
     background: linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.primaryLight} 100%);
-    padding: 30px 40px;
-    border-radius: 12px 12px 0 0;
+    padding: 20px 32px;
     text-align: center;
   `,
   headerTitle: `
@@ -53,43 +63,37 @@ export const emailStyles = {
     font-weight: 400;
   `,
   content: `
-    background: ${brandColors.white};
-    padding: 40px;
-    border: 1px solid ${brandColors.border};
-    border-top: none;
+    padding: 32px 32px 28px;
   `,
   footer: `
-    background: ${brandColors.background};
-    padding: 30px 40px;
-    border: 1px solid ${brandColors.border};
-    border-top: none;
-    border-radius: 0 0 12px 12px;
+    padding: 20px 32px;
+    border-top: 1px solid ${brandColors.border};
     text-align: center;
   `,
   footerText: `
-    color: ${brandColors.textLight};
-    font-size: 12px;
+    color: ${brandColors.textMuted};
+    font-size: 11px;
     margin: 0;
-    line-height: 1.8;
+    line-height: 1.7;
   `,
   footerLink: `
-    color: ${brandColors.primary};
-    text-decoration: none;
+    color: ${brandColors.textLight};
+    text-decoration: underline;
   `,
   button: `
     display: inline-block;
     background: linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.primaryLight} 100%);
-    color: white;
-    padding: 14px 32px;
+    color: #ffffff;
+    padding: 12px 28px;
     border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
     text-align: center;
-    margin: 20px 0;
+    mso-padding-alt: 12px 28px;
   `,
   card: `
-    background: ${brandColors.background};
+    background: ${brandColors.borderLight};
     border: 1px solid ${brandColors.border};
     border-radius: 8px;
     padding: 20px;
@@ -126,7 +130,7 @@ export const emailStyles = {
   divider: `
     border: none;
     border-top: 1px solid ${brandColors.border};
-    margin: 30px 0;
+    margin: 24px 0;
   `,
   label: `
     font-size: 11px;
@@ -143,14 +147,14 @@ export const emailStyles = {
   `,
 };
 
-// Logo as HTML img tag for better email client compatibility
+// Logo as HTML img tag — compact for header
 export const logoHtml = `
   <img 
     src="${LOGO_URL}" 
     alt="Ride Ready Docs" 
-    width="80" 
-    height="80" 
-    style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 16px;"
+    width="44" 
+    height="44" 
+    style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);"
   />
 `;
 
@@ -170,6 +174,79 @@ export const logoSvg = `
 </svg>
 `;
 
+/**
+ * Build a complete branded marketing email HTML wrapper.
+ * Content should already be HTML (use textToHtml for plain text).
+ */
+export function buildMarketingEmail(opts: {
+  subject: string;
+  bodyHtml: string;
+  footerCompany?: string;
+  unsubscribeUrl?: string;
+}): string {
+  const { subject, bodyHtml, footerCompany, unsubscribeUrl } = opts;
+  const currentYear = new Date().getFullYear();
+  const companyLine = footerCompany ? `Sent by ${escapeHtml(footerCompany)} · ` : '';
+  const unsubLink = unsubscribeUrl
+    ? `<a href="${unsubscribeUrl}" style="${emailStyles.footerLink}">Unsubscribe</a>`
+    : `<span style="color: ${brandColors.textMuted};">Unsubscribe</span>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${escapeHtml(subject)}</title>
+  <!--[if mso]>
+  <style>table,td{font-family:Arial,sans-serif;}</style>
+  <![endif]-->
+</head>
+<body style="${emailStyles.body}">
+  <div style="${emailStyles.outerWrap}">
+    <div style="${emailStyles.container}">
+      <!-- Header -->
+      <div style="${emailStyles.header}">
+        ${logoHtml}
+      </div>
+      
+      <!-- Content -->
+      <div style="${emailStyles.content}">
+        ${bodyHtml}
+      </div>
+      
+      <!-- Footer -->
+      <div style="${emailStyles.footer}">
+        <p style="${emailStyles.footerText}">
+          ${companyLine}&copy; ${currentYear} Ride Ready Docs<br>
+          Professional compliance management for amusement equipment<br><br>
+          <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> &middot; ${unsubLink}
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Build a CTA button block (table-based for email client compatibility).
+ */
+export function buildCtaButton(text: string, url: string): string {
+  return `
+    <div style="text-align: center; margin: 24px 0 8px;">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${url}" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="18%" strokecolor="${brandColors.primary}" fillcolor="${brandColors.primary}">
+      <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">${escapeHtml(text)}</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <a href="${url}" style="${emailStyles.button}" target="_blank">${escapeHtml(text)}</a>
+      <!--<![endif]-->
+    </div>
+  `;
+}
+
 export function generateEmailWrapper(title: string, subtitle: string, content: string, showLogo: boolean = true): string {
   const currentYear = new Date().getFullYear();
   
@@ -183,27 +260,29 @@ export function generateEmailWrapper(title: string, subtitle: string, content: s
   <title>${title}</title>
 </head>
 <body style="${emailStyles.body}">
-  <div style="${emailStyles.container}">
-    <!-- Header -->
-    <div style="${emailStyles.header}">
-      ${showLogo ? logoHtml : ''}
-      <h1 style="${emailStyles.headerTitle}">${title}</h1>
-      ${subtitle ? `<p style="${emailStyles.headerSubtitle}">${subtitle}</p>` : ''}
-    </div>
-    
-    <!-- Content -->
-    <div style="${emailStyles.content}">
-      ${content}
-    </div>
-    
-    <!-- Footer -->
-    <div style="${emailStyles.footer}">
-      <p style="${emailStyles.footerText}">
-        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
-        Professional compliance management for amusement equipment.<br><br>
-        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
-        <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
-      </p>
+  <div style="${emailStyles.outerWrap}">
+    <div style="${emailStyles.container}">
+      <!-- Header -->
+      <div style="${emailStyles.header}">
+        ${showLogo ? logoHtml : ''}
+        <h1 style="${emailStyles.headerTitle}">${title}</h1>
+        ${subtitle ? `<p style="${emailStyles.headerSubtitle}">${subtitle}</p>` : ''}
+      </div>
+      
+      <!-- Content -->
+      <div style="${emailStyles.content}">
+        ${content}
+      </div>
+      
+      <!-- Footer -->
+      <div style="${emailStyles.footer}">
+        <p style="${emailStyles.footerText}">
+          &copy; ${currentYear} Ride Ready Docs<br>
+          Professional compliance management for amusement equipment<br><br>
+          <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> &middot; 
+          <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
+        </p>
+      </div>
     </div>
   </div>
 </body>
@@ -222,4 +301,3 @@ export function escapeHtml(text: string | null | undefined): string {
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
-
