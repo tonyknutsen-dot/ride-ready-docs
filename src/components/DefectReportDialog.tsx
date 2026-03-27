@@ -69,6 +69,7 @@ const DefectReportDialog = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
+  const { logEvent } = useAuditLog();
   const { isStaff: isStaffContext } = useStaff();
 
   const needsRideSelection = !rideId;
