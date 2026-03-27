@@ -158,6 +158,7 @@ const AuditLogs = () => {
   const [resultFilter, setResultFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('7');
   const [hideRoutineAuth, setHideRoutineAuth] = useState(true);
+  const [hideOrphanRows, setHideOrphanRows] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Detail drawer
