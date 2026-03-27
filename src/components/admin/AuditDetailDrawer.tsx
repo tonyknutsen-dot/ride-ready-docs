@@ -14,7 +14,6 @@ export interface AuditEntry {
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
-  // Structured columns
   before_data?: Record<string, any> | null;
   after_data?: Record<string, any> | null;
   changed_fields?: string[] | null;
@@ -24,12 +23,11 @@ export interface AuditEntry {
   result?: string | null;
   context_hint?: string | null;
   reason?: string | null;
-  // Enriched client-side
   actor_name?: string;
   actor_email?: string;
 }
 
-// ── Helpers ──
+// ── Event Families ──
 
 export const EVENT_FAMILIES: Record<string, string> = {
   session: 'Authentication',
@@ -109,14 +107,73 @@ export const RESULT_VARIANTS: Record<string, { label: string; className: string 
   info: { label: 'Info', className: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
 };
 
+/**
+ * HIGH-RISK ACTIONS: Actions that represent destructive, privileged,
+ * or security-sensitive operations. These receive a red left-edge accent
+ * in the list view and count toward the "High-Risk Actions" KPI.
+ *
+ * Criteria for inclusion:
+ * - Irreversible data loss: delete
+ * - Access escalation: grant, revoke, block, unblock
+ * - Approval gate decisions: approve, reject
+ * - Security-sensitive: support_view, failed_unlock
+ */
 export const HIGH_PRIORITY_ACTIONS = new Set([
-  'delete', 'failed_unlock', 'support_view', 'approve', 'reject',
+  'delete',         // Irreversible data removal
+  'failed_unlock',  // Security — brute force indicator
+  'support_view',   // Privileged access — support viewing user data
+  'approve',        // Approval gate — changes live state
+  'reject',         // Approval gate — blocks a request
+  'grant',          // Access escalation — grants privileges
+  'revoke',         // Access change — removes privileges
+  'block',          // Security — blocks IP or user
+  'unblock',        // Security — lifts block
 ]);
 
+/**
+ * HIGH-RISK RESULTS: Any event with these results is flagged
+ * regardless of action type.
+ */
 export const HIGH_PRIORITY_RESULTS = new Set(['failed', 'blocked', 'denied']);
 
+/**
+ * SOURCE LABELS: Standardised human-readable source categories.
+ * Used for consistent display across list rows, drawer, and PDF.
+ */
+const SOURCE_LABELS: Record<string, string> = {
+  // Manual user actions
+  'RideForm': 'User action',
+  'DefectClosureDialog': 'User action',
+  'DefectReportDialog': 'User action',
+  'ContactManager': 'User action',
+  'SupportAccessManager': 'User action',
+  'GlobalDocumentView': 'User action',
+  'RideDocumentView': 'User action',
+  'CampaignBuilder': 'User action',
+  'DocumentUpload': 'User action',
+  'MaintenanceLogger': 'User action',
+  // Admin actions
+  'CheckItemSubmissions': 'Admin action',
+  'RiskItemSubmissions': 'Admin action',
+  'RideTypeRequests': 'Admin action',
+  'DocumentTypeLibrary': 'Admin action',
+  'EquipmentTypeLibrary': 'Admin action',
+  'RiskLibrary': 'Admin action',
+  'CheckLibrary': 'Admin action',
+  'admin': 'Admin action',
+  // Workflow / automated
+  'early_access': 'Automated import',
+  'csv_import': 'Bulk import',
+  'request_approval': 'Workflow approval',
+  'campaign': 'Campaign send',
+  'manual': 'Manual entry',
+  // System
+  'stripe_webhook': 'System event',
+  'edge_function': 'System event',
+  'system': 'System event',
+};
+
 export function getEventResult(entry: AuditEntry): string {
-  // Prefer the structured column first
   if (entry.result && entry.result !== 'success') return entry.result;
   if (entry.action === 'failed_unlock') return 'failed';
   if (entry.details?.result) return entry.details.result;
@@ -138,21 +195,25 @@ export function getResourceLabel(type: string): string {
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-/** Derive a short context hint – prefer the structured column */
+/** Derive a short context hint – prefer structured column, then standardise source */
 export function getContextHint(entry: AuditEntry): string | null {
   if (entry.context_hint) return entry.context_hint;
   const d = entry.details || {};
-  if (d.source === 'early_access') return 'from early access signup';
-  if (d.source === 'csv_import') return 'from CSV import';
-  if (d.source === 'manual') return 'manual add';
-  if (d.source === 'admin') return 'via admin panel';
-  if (d.source === 'request_approval') return 'from request approval';
-  if (d.source === 'campaign') return 'via marketing campaign';
+  if (d.source && SOURCE_LABELS[d.source]) return SOURCE_LABELS[d.source];
   if (d.source) return `via ${d.source}`;
-  if (entry.action === 'failed_unlock') return 'failed password';
-  if (entry.action === 'support_view') return 'support access session';
-  if (entry.resource_type === 'marketing_contact' && entry.action === 'create') return 'manual add';
+  if (entry.action === 'failed_unlock') return 'Security event';
+  if (entry.action === 'support_view') return 'Support access session';
   return null;
+}
+
+/** Get standardised source category label */
+export function getSourceCategory(entry: AuditEntry): string {
+  const source = entry.details?.source;
+  if (source && SOURCE_LABELS[source]) return SOURCE_LABELS[source];
+  // Infer from action/resource
+  if (['login', 'logout', 'lock', 'unlock', 'failed_unlock'].includes(entry.action)) return 'System event';
+  if (entry.resource_type === 'subscription') return 'System event';
+  return 'User action';
 }
 
 function parseBrowser(ua: string | null): string {
@@ -183,43 +244,25 @@ function formatValue(value: unknown): string {
 
 function getChangedKeys(entry: AuditEntry): string[] {
   if (entry.changed_fields?.length) return entry.changed_fields;
-
   const before = entry.before_data || entry.details?.before || {};
   const after = entry.after_data || entry.details?.after || {};
   const allKeys = [...new Set([...Object.keys(before), ...Object.keys(after)])];
-
   return allKeys.filter((key) => JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key]));
 }
 
 function getSnapshotRows(data?: Record<string, any> | null, preferredKeys?: string[]) {
   if (!data) return [];
-
   const keys = preferredKeys?.length
     ? preferredKeys.filter((key) => key in data)
     : Object.keys(data);
-
   return keys
     .filter((key) => !isEmptyValue(data[key]))
-    .map((key) => ({
-      key,
-      label: key.replace(/_/g, ' '),
-      value: formatValue(data[key]),
-    }));
+    .map((key) => ({ key, label: key.replace(/_/g, ' '), value: formatValue(data[key]) }));
 }
 
-function SnapshotSection({
-  title,
-  data,
-  keys,
-}: {
-  title: string;
-  data?: Record<string, any> | null;
-  keys?: string[];
-}) {
+function SnapshotSection({ title, data, keys }: { title: string; data?: Record<string, any> | null; keys?: string[] }) {
   const rows = getSnapshotRows(data, keys);
-
   if (rows.length === 0) return null;
-
   return (
     <div className="space-y-2">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</h4>
@@ -235,13 +278,10 @@ function SnapshotSection({
   );
 }
 
-// ── Before/After Display ──
-
 function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
   const before = entry.before_data || entry.details?.before;
   const after = entry.after_data || entry.details?.after;
   const changedKeys = getChangedKeys(entry);
-
   if (changedKeys.length === 0) return null;
 
   return (
@@ -249,20 +289,13 @@ function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
         <Wrench className="h-3 w-3" /> Changes ({changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''})
       </h4>
-      <div className="flex flex-wrap gap-1.5">
-        {changedKeys.map((key) => (
-          <Badge key={key} variant="outline" className="text-[10px] px-2 py-0.5 border-primary/20 bg-primary/5 text-primary">
-            {key.replace(/_/g, ' ')}
-          </Badge>
-        ))}
-      </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {changedKeys.map(key => (
-          <div key={key} className="rounded-lg border p-2.5 bg-muted/30 text-sm">
-            <p className="font-medium text-xs text-muted-foreground mb-1 capitalize">{key.replace(/_/g, ' ')}</p>
-            <div className="flex items-center gap-2 flex-wrap">
+          <div key={key} className="rounded-lg border p-3 bg-muted/30 text-sm space-y-1.5">
+            <p className="font-semibold text-xs capitalize">{key.replace(/_/g, ' ')}</p>
+            <div className="flex items-start gap-2 flex-wrap">
               <span className="line-through text-destructive/70 text-xs break-all">{formatValue(before?.[key])}</span>
-              <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
               <span className="font-medium text-xs break-all">{formatValue(after?.[key])}</span>
             </div>
           </div>
@@ -271,8 +304,6 @@ function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
     </div>
   );
 }
-
-// ── Detail Row ──
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '—' || value === '') return null;
@@ -305,11 +336,13 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const before = entry.before_data || details.before;
   const after = entry.after_data || details.after;
   const siteContext = details.site_name || details.site || details.location || details.site_id;
+  const sourceCategory = getSourceCategory(entry);
 
   const knownKeys = new Set([
     'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
     'label', 'type', 'check_item_text', 'source', 'result', 'blocked',
     'before', 'after', 'skipped', 'imported', 'site_name', 'site', 'location', 'site_id',
+    'module',
   ]);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
 
@@ -336,20 +369,18 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
           <div className="space-y-2">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Summary</h4>
             <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
                 <Badge variant="secondary" className="text-xs">{family}</Badge>
+                <Badge variant="outline" className="text-[10px] border-border/60">{sourceCategory}</Badge>
                 {changedKeys.length > 0 && (
                   <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
-                    {changedKeys.length} change{changedKeys.length !== 1 ? 's' : ''}
+                    Δ {changedKeys.length}
                   </Badge>
-                )}
-                {entry.reason && (
-                  <Badge variant="outline" className="text-[10px] border-border/80">Reason logged</Badge>
                 )}
               </div>
               <p className="text-sm font-medium leading-relaxed">
-                {entry.actor_name || 'Unknown user'}{' '}
+                {entry.actor_name || 'System'}{' '}
                 <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
                 {getResourceLabel(entry.resource_type).toLowerCase()}{' '}
                 <span className="font-semibold">"{targetName}"</span>
@@ -367,7 +398,7 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
               <User className="h-3 w-3" /> Actor
             </h4>
-            <DetailRow label="Name" value={entry.actor_name} />
+            <DetailRow label="Name" value={entry.actor_name || 'System'} />
             <DetailRow label="Email" value={entry.actor_email} />
             <DetailRow label="User ID" value={entry.user_id?.slice(0, 12) + '…'} />
           </div>
@@ -383,7 +414,8 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             <DetailRow label="Action" value={ACTION_VERBS[entry.action] || entry.action} />
             <DetailRow label="Result" value={<Badge variant="outline" className={`text-xs ${rv.className}`}>{rv.label}</Badge>} />
             <DetailRow label="Timestamp" value={format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")} />
-            <DetailRow label="Source" value={details.source} />
+            <DetailRow label="Source" value={sourceCategory} />
+            {details.module && <DetailRow label="Module" value={details.module} />}
             {contextHint && <DetailRow label="Context" value={contextHint} />}
           </div>
 
@@ -409,7 +441,6 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
                 <DetailRow label="Organisation" value={entry.organisation_name} />
                 <DetailRow label="Site" value={siteContext} />
                 <DetailRow label="Equipment" value={entry.equipment_name} />
-                <DetailRow label="Context hint" value={contextHint} />
               </div>
             </>
           )}
@@ -437,7 +468,6 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
                 </h4>
                 <DetailRow label="IP Address" value={entry.ip_address} />
                 <DetailRow label="Browser" value={parseBrowser(entry.user_agent)} />
-                <DetailRow label="User Agent" value={entry.user_agent} />
               </div>
             </>
           )}
@@ -448,8 +478,8 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
               <Separator />
               <div className="space-y-4">
                 <BeforeAfterSection entry={entry} />
-                <SnapshotSection title="Before" data={before} keys={changedKeys} />
-                <SnapshotSection title="After" data={after} keys={changedKeys} />
+                <SnapshotSection title="Before Snapshot" data={before} keys={changedKeys} />
+                <SnapshotSection title="After Snapshot" data={after} keys={changedKeys} />
               </div>
             </>
           )}
