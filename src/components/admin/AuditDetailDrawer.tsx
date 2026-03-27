@@ -328,7 +328,7 @@ function SnapshotSection({ title, data, keys }: { title: string; data?: Record<s
   );
 }
 
-function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
+function ChangesTable({ entry }: { entry: AuditEntry }) {
   const before = entry.before_data || entry.details?.before;
   const after = entry.after_data || entry.details?.after;
   const changedKeys = getChangedKeys(entry);
@@ -336,21 +336,42 @@ function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-        <Wrench className="h-3 w-3" /> Changes ({changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''})
+      <h4 className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+        What changed ({changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''})
       </h4>
-      <div className="space-y-2">
-        {changedKeys.map(key => (
-          <div key={key} className="rounded-lg border p-3 bg-muted/30 text-sm space-y-1.5">
-            <p className="font-semibold text-xs capitalize">{key.replace(/_/g, ' ')}</p>
-            <div className="flex items-start gap-2 flex-wrap">
-              <span className="line-through text-destructive/70 text-xs break-all">{formatValue(before?.[key])}</span>
-              <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <span className="font-medium text-xs break-all">{formatValue(after?.[key])}</span>
+      <div className="rounded-lg border overflow-hidden">
+        {/* Table header */}
+        <div className="grid grid-cols-[1fr_1fr_1fr] bg-muted/60 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+          <div className="px-2.5 py-1.5">Field</div>
+          <div className="px-2.5 py-1.5">Before</div>
+          <div className="px-2.5 py-1.5">After</div>
+        </div>
+        {/* Table rows */}
+        {changedKeys.map((key, i) => (
+          <div key={key} className={`grid grid-cols-[1fr_1fr_1fr] text-xs ${i % 2 === 0 ? '' : 'bg-muted/20'} ${i < changedKeys.length - 1 ? 'border-b border-border/50' : ''}`}>
+            <div className="px-2.5 py-2 font-medium text-foreground/80 capitalize break-all">
+              {key.replace(/_/g, ' ')}
+            </div>
+            <div className="px-2.5 py-2 text-destructive/70 line-through break-all">
+              {formatValue(before?.[key])}
+            </div>
+            <div className="px-2.5 py-2 text-foreground font-medium break-all">
+              {formatValue(after?.[key])}
             </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <Icon className="h-3 w-3" /> {title}
+      </h4>
+      {children}
     </div>
   );
 }
@@ -409,9 +430,10 @@ function AuditLegend() {
             </div>
           </div>
           <div>
-            <p className="font-semibold text-foreground mb-1">Δ Badge</p>
+            <p className="font-semibold text-foreground mb-1">Change Tracking</p>
             <p className="text-muted-foreground">
-              Shows this event contains field-level change data. The number indicates how many fields were changed.
+              Events with <span className="font-medium text-foreground">"X fields changed"</span> contain 
+              field-level before/after data. Open the detail drawer to see exactly what changed.
             </p>
           </div>
         </div>
@@ -468,157 +490,132 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const hasContext = entry.organisation_name || entry.equipment_name || siteContext;
   const hasChanges = before || after || changedKeys.length > 0;
 
+  const isHighPriority = HIGH_PRIORITY_ACTIONS.has(entry.action) || HIGH_PRIORITY_RESULTS.has(result);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="pb-2">
-          <SheetTitle className="text-base">Audit Event Detail</SheetTitle>
+        <SheetHeader className="pb-1">
+          <SheetTitle className="text-sm font-semibold text-muted-foreground">Audit Record</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 pt-2">
-          {/* Summary */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Summary</h4>
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
-                <Badge variant="secondary" className="text-xs">{family}</Badge>
-                {changedKeys.length > 0 && (
-                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
-                    Δ {changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''}
-                  </Badge>
-                )}
+        <div className="space-y-3 pt-1">
+          {/* ── Summary Card ── */}
+          <div className={`rounded-lg border p-3.5 space-y-2 ${isHighPriority ? 'border-destructive/30 bg-destructive/5' : 'bg-muted/20'}`}>
+            {isHighPriority && (
+              <div className="border-l-[3px] border-l-destructive pl-2 -ml-1 mb-1">
+                <span className="text-[10px] font-bold text-destructive uppercase tracking-wider">High-risk event</span>
               </div>
-              <p className="text-sm font-medium leading-relaxed">
-                <span className={isRealUser ? 'font-semibold' : 'text-muted-foreground italic'}>{performedBy}</span>{' '}
-                <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
-                {getResourceLabel(entry.resource_type).toLowerCase()}{' '}
-                <span className="font-semibold">"{targetName}"</span>
+            )}
+            <p className="text-[15px] font-semibold leading-snug">
+              <span className={isRealUser ? '' : 'text-muted-foreground italic'}>{performedBy}</span>{' '}
+              <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
+              <span className="text-foreground">{getResourceLabel(entry.resource_type).toLowerCase()}</span>
+            </p>
+            {targetName !== '—' && (
+              <p className="text-sm font-medium text-foreground/80">"{targetName}"</p>
+            )}
+            {sourcePage && (
+              <p className="text-xs text-muted-foreground">
+                via <span className="font-medium text-foreground/70">{sourcePage}</span>
               </p>
-              {sourcePage && (
-                <p className="text-xs text-muted-foreground">
-                  via <span className="font-medium">{sourcePage}</span>
-                </p>
+            )}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
+              <Badge variant="secondary" className="text-[10px]">{family}</Badge>
+              {changedKeys.length > 0 && (
+                <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
+                  {changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''} changed
+                </Badge>
               )}
             </div>
           </div>
 
-          <Separator />
-
-          {/* Performed by */}
-          <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-              <User className="h-3 w-3" /> Performed by
-            </h4>
+          {/* ── Performed by ── */}
+          <Section icon={User} title="Performed by">
             <DetailRow label="Name" value={performedBy} />
             {entry.actor_email && <DetailRow label="Email" value={entry.actor_email} />}
             <DetailRow label="User ID" value={entry.user_id?.slice(0, 12) + '…'} />
-          </div>
-
-          <Separator />
-
-          {/* Event */}
-          <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-              <Clock className="h-3 w-3" /> Event
-            </h4>
-            <DetailRow label="Family" value={family} />
-            <DetailRow label="Action" value={ACTION_VERBS[entry.action] || entry.action} />
-            <DetailRow label="Result" value={<Badge variant="outline" className={`text-xs ${rv.className}`}>{rv.label}</Badge>} />
-            <DetailRow label="Timestamp" value={format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")} />
             <DetailRow label="Trigger type" value={triggerType} />
+          </Section>
+
+          {/* ── Event ── */}
+          <Section icon={Clock} title="Event">
+            <DetailRow label="Action" value={ACTION_VERBS[entry.action] || entry.action} />
+            <DetailRow label="Family" value={family} />
+            <DetailRow label="Result" value={<Badge variant="outline" className={`text-[10px] ${rv.className}`}>{rv.label}</Badge>} />
+            <DetailRow label="Timestamp" value={format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")} />
             {sourcePage && <DetailRow label="Source page" value={sourcePage} />}
-          </div>
+          </Section>
 
-          <Separator />
-
-          {/* Target */}
-          <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-              <FileText className="h-3 w-3" /> Target
-            </h4>
+          {/* ── Target ── */}
+          <Section icon={FileText} title="Target">
             <DetailRow label="Type" value={getResourceLabel(entry.resource_type)} />
             <DetailRow label="Name" value={targetName} />
-          </div>
+          </Section>
 
-          {/* Context: org / equipment */}
-          {hasContext && (
-            <>
-              <Separator />
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Building2 className="h-3 w-3" /> Context
-                </h4>
-                <DetailRow label="Organisation" value={entry.organisation_name} />
-                <DetailRow label="Site" value={siteContext} />
-                <DetailRow label="Equipment" value={entry.equipment_name} />
-              </div>
-            </>
-          )}
-
-          {/* Reason / comment */}
+          {/* ── Reason ── */}
           {entry.reason && (
-            <>
-              <Separator />
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <MessageSquare className="h-3 w-3" /> Reason
-                </h4>
-                <p className="text-sm bg-muted/30 rounded-lg border p-2.5">{entry.reason}</p>
-              </div>
-            </>
+            <Section icon={MessageSquare} title="Why this happened">
+              <p className="text-xs bg-muted/30 rounded-md border p-2.5 leading-relaxed">{entry.reason}</p>
+            </Section>
           )}
 
-          {/* Security info */}
-          {(entry.ip_address || entry.user_agent) && (
-            <>
-              <Separator />
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Globe className="h-3 w-3" /> Security
-                </h4>
-                <DetailRow label="IP Address" value={entry.ip_address} />
-                <DetailRow label="Browser" value={parseBrowser(entry.user_agent)} />
-              </div>
-            </>
-          )}
-
-          {/* Before/After Changes */}
+          {/* ── What changed (most prominent) ── */}
           {hasChanges && (
             <>
-              <Separator />
-              <div className="space-y-4">
-                <BeforeAfterSection entry={entry} />
-                <SnapshotSection title="Before Snapshot" data={before} keys={changedKeys} />
-                <SnapshotSection title="After Snapshot" data={after} keys={changedKeys} />
-              </div>
+              <Separator className="my-1" />
+              <ChangesTable entry={entry} />
+              {/* Show before/after snapshots only if no structured change table */}
+              {changedKeys.length === 0 && (
+                <div className="space-y-3">
+                  <SnapshotSection title="Before" data={before} keys={changedKeys} />
+                  <SnapshotSection title="After" data={after} keys={changedKeys} />
+                </div>
+              )}
             </>
           )}
 
-          {/* References */}
+          {/* ── Context ── */}
+          {hasContext && (
+            <Section icon={Building2} title="Context">
+              <DetailRow label="Organisation" value={entry.organisation_name} />
+              <DetailRow label="Site" value={siteContext} />
+              <DetailRow label="Equipment" value={entry.equipment_name} />
+            </Section>
+          )}
+
+          {/* ── Security ── */}
+          {(entry.ip_address || entry.user_agent) && (
+            <Section icon={Globe} title="Security">
+              <DetailRow label="IP Address" value={entry.ip_address} />
+              <DetailRow label="Browser" value={parseBrowser(entry.user_agent)} />
+            </Section>
+          )}
+
+          {/* ── References ── */}
           {referenceEntries.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">References</h4>
+            <div className="space-y-1 pt-1">
+              <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">References</h4>
+              <div className="rounded-md border bg-muted/10 divide-y divide-border/40">
                 {referenceEntries.map(([label, value]) => (
-                  <DetailRow key={label} label={label} value={value} />
+                  <div key={label} className="flex justify-between gap-2 px-2.5 py-1.5">
+                    <span className="text-[11px] text-muted-foreground">{label}</span>
+                    <span className="text-[11px] font-mono text-foreground/70 text-right break-all">{value}</span>
+                  </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
 
-          {/* Extra details */}
+          {/* ── Extra metadata ── */}
           {extraDetails.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Metadata</h4>
-                {extraDetails.map(([key, value]) => (
-                  <DetailRow key={key} label={key.replace(/_/g, ' ')} value={formatValue(value)} />
-                ))}
-              </div>
-            </>
+            <div className="space-y-1 pt-1">
+              <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Metadata</h4>
+              {extraDetails.map(([key, value]) => (
+                <DetailRow key={key} label={key.replace(/_/g, ' ')} value={formatValue(value)} />
+              ))}
+            </div>
           )}
         </div>
       </SheetContent>
