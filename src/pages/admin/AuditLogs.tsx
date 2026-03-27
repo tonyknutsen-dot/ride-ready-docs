@@ -446,8 +446,11 @@ const AuditLogs = () => {
             <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex h-8 text-xs">
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPDF} className="hidden sm:flex h-8 text-xs">
+            <Button variant="outline" size="sm" onClick={() => handleExportPDF(false)} className="hidden sm:flex h-8 text-xs">
               <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportPDF(true)} className="hidden sm:flex h-8 text-xs">
+              <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed PDF
             </Button>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
