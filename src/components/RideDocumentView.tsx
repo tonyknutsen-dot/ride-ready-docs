@@ -69,6 +69,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const { effectiveUserId } = useEffectiveUserId();
   const { isStaff } = useStaff();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
