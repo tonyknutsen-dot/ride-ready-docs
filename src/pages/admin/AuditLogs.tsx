@@ -551,7 +551,7 @@ const AuditLogs = () => {
           <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" /> CSV
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={handleExportPDF}>
+          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => handleExportPDF(false)}>
             <FileDown className="h-3.5 w-3.5 mr-1" /> PDF
           </Button>
         </div>
