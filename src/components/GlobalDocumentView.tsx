@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import PDFViewer from '@/components/PDFViewer';
 import ImageViewer from '@/components/ImageViewer';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
 
