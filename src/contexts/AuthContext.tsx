@@ -344,6 +344,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl
     });
+
+    if (!error) {
+      try {
+        await supabase.rpc('log_audit_event', {
+          p_action: 'reset_password',
+          p_resource_type: 'session',
+          p_resource_id: null,
+          p_details: { email }
+        });
+      } catch (e) {
+        console.error('Failed to log password reset:', e);
+      }
+    }
+
     return { error };
   }, []);
 

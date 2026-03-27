@@ -122,6 +122,8 @@ export const SupportAccessManager = () => {
 
       if (error) throw error;
 
+      logEvent('revoke', 'support_access', grantId);
+
       toast({
         title: 'Access Revoked',
         description: 'Support access has been revoked immediately',
