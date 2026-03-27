@@ -164,22 +164,83 @@ function parseBrowser(ua: string | null): string {
   return ua.slice(0, 40);
 }
 
+function isEmptyValue(value: unknown): boolean {
+  return value === null || value === undefined || value === '';
+}
+
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'string') return value || '—';
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.length ? value.map(formatValue).join(', ') : '—';
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function getChangedKeys(entry: AuditEntry): string[] {
+  if (entry.changed_fields?.length) return entry.changed_fields;
+
+  const before = entry.before_data || entry.details?.before || {};
+  const after = entry.after_data || entry.details?.after || {};
+  const allKeys = [...new Set([...Object.keys(before), ...Object.keys(after)])];
+
+  return allKeys.filter((key) => JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key]));
+}
+
+function getSnapshotRows(data?: Record<string, any> | null, preferredKeys?: string[]) {
+  if (!data) return [];
+
+  const keys = preferredKeys?.length
+    ? preferredKeys.filter((key) => key in data)
+    : Object.keys(data);
+
+  return keys
+    .filter((key) => !isEmptyValue(data[key]))
+    .map((key) => ({
+      key,
+      label: key.replace(/_/g, ' '),
+      value: formatValue(data[key]),
+    }));
+}
+
+function SnapshotSection({
+  title,
+  data,
+  keys,
+}: {
+  title: string;
+  data?: Record<string, any> | null;
+  keys?: string[];
+}) {
+  const rows = getSnapshotRows(data, keys);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</h4>
+      <div className="rounded-lg border bg-muted/20 divide-y divide-border/60">
+        {rows.map((row) => (
+          <div key={row.key} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
+            <span className="text-xs text-muted-foreground capitalize">{row.label}</span>
+            <span className="text-xs font-medium text-right whitespace-pre-wrap break-all max-w-[65%]">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Before/After Display ──
 
 function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
-  // Use structured columns first, fall back to details.before/after
   const before = entry.before_data || entry.details?.before;
   const after = entry.after_data || entry.details?.after;
-  if (!before && !after) return null;
-
-  // Use structured changed_fields if available, otherwise compute
-  let changedKeys: string[];
-  if (entry.changed_fields && entry.changed_fields.length > 0) {
-    changedKeys = entry.changed_fields;
-  } else {
-    const allKeys = [...new Set([...Object.keys(before || {}), ...Object.keys(after || {})])];
-    changedKeys = allKeys.filter(k => JSON.stringify(before?.[k]) !== JSON.stringify(after?.[k]));
-  }
+  const changedKeys = getChangedKeys(entry);
 
   if (changedKeys.length === 0) return null;
 
@@ -188,14 +249,21 @@ function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
         <Wrench className="h-3 w-3" /> Changes ({changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''})
       </h4>
+      <div className="flex flex-wrap gap-1.5">
+        {changedKeys.map((key) => (
+          <Badge key={key} variant="outline" className="text-[10px] px-2 py-0.5 border-primary/20 bg-primary/5 text-primary">
+            {key.replace(/_/g, ' ')}
+          </Badge>
+        ))}
+      </div>
       <div className="space-y-1.5">
         {changedKeys.map(key => (
           <div key={key} className="rounded-lg border p-2.5 bg-muted/30 text-sm">
             <p className="font-medium text-xs text-muted-foreground mb-1 capitalize">{key.replace(/_/g, ' ')}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="line-through text-destructive/70 text-xs break-all">{String(before?.[key] ?? '—')}</span>
+              <span className="line-through text-destructive/70 text-xs break-all">{formatValue(before?.[key])}</span>
               <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="font-medium text-xs break-all">{String(after?.[key] ?? '—')}</span>
+              <span className="font-medium text-xs break-all">{formatValue(after?.[key])}</span>
             </div>
           </div>
         ))}
@@ -207,7 +275,7 @@ function BeforeAfterSection({ entry }: { entry: AuditEntry }) {
 // ── Detail Row ──
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  if (!value || value === '—' || value === '') return null;
+  if (value === null || value === undefined || value === '—' || value === '') return null;
   return (
     <div className="flex justify-between gap-3 py-1.5 text-sm">
       <span className="text-muted-foreground text-xs flex-shrink-0">{label}</span>
@@ -233,16 +301,28 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const targetName = getTargetName(entry);
   const details = entry.details || {};
   const contextHint = getContextHint(entry);
+  const changedKeys = getChangedKeys(entry);
+  const before = entry.before_data || details.before;
+  const after = entry.after_data || details.after;
+  const siteContext = details.site_name || details.site || details.location || details.site_id;
 
   const knownKeys = new Set([
     'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
     'label', 'type', 'check_item_text', 'source', 'result', 'blocked',
-    'before', 'after', 'skipped', 'imported',
+    'before', 'after', 'skipped', 'imported', 'site_name', 'site', 'location', 'site_id',
   ]);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
 
-  const hasContext = entry.organisation_name || entry.equipment_name;
-  const hasChanges = entry.before_data || entry.after_data || details.before || details.after;
+  const referenceEntries = [
+    ['Record ID', entry.resource_id],
+    ['Equipment ID', entry.equipment_id],
+    ...Object.entries(details)
+      .filter(([key, value]) => key !== 'site_id' && /(_id|Id)$/.test(key) && !isEmptyValue(value))
+      .map(([key, value]) => [key.replace(/_/g, ' '), formatValue(value)] as const),
+  ].filter(([, value]) => !isEmptyValue(value));
+
+  const hasContext = entry.organisation_name || entry.equipment_name || siteContext || contextHint;
+  const hasChanges = before || after || changedKeys.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -252,21 +332,32 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
         </SheetHeader>
 
         <div className="space-y-4 pt-2">
-          {/* Summary banner */}
-          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
-              <Badge variant="secondary" className="text-xs">{family}</Badge>
+          {/* Summary */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Summary</h4>
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
+                <Badge variant="secondary" className="text-xs">{family}</Badge>
+                {changedKeys.length > 0 && (
+                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
+                    {changedKeys.length} change{changedKeys.length !== 1 ? 's' : ''}
+                  </Badge>
+                )}
+                {entry.reason && (
+                  <Badge variant="outline" className="text-[10px] border-border/80">Reason logged</Badge>
+                )}
+              </div>
+              <p className="text-sm font-medium leading-relaxed">
+                {entry.actor_name || 'Unknown user'}{' '}
+                <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
+                {getResourceLabel(entry.resource_type).toLowerCase()}{' '}
+                <span className="font-semibold">"{targetName}"</span>
+              </p>
+              {contextHint && (
+                <p className="text-xs text-muted-foreground italic">{contextHint}</p>
+              )}
             </div>
-            <p className="text-sm font-medium mt-1.5">
-              {entry.actor_name || 'Unknown user'}{' '}
-              <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
-              {getResourceLabel(entry.resource_type).toLowerCase()}{' '}
-              <span className="font-semibold">"{targetName}"</span>
-            </p>
-            {contextHint && (
-              <p className="text-xs text-muted-foreground italic">{contextHint}</p>
-            )}
           </div>
 
           <Separator />
@@ -305,7 +396,6 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             </h4>
             <DetailRow label="Type" value={getResourceLabel(entry.resource_type)} />
             <DetailRow label="Name" value={targetName} />
-            <DetailRow label="Record ID" value={entry.resource_id} />
           </div>
 
           {/* Context: org / equipment */}
@@ -317,8 +407,9 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
                   <Building2 className="h-3 w-3" /> Context
                 </h4>
                 <DetailRow label="Organisation" value={entry.organisation_name} />
+                <DetailRow label="Site" value={siteContext} />
                 <DetailRow label="Equipment" value={entry.equipment_name} />
-                {entry.equipment_id && <DetailRow label="Equipment ID" value={entry.equipment_id} />}
+                <DetailRow label="Context hint" value={contextHint} />
               </div>
             </>
           )}
@@ -355,7 +446,24 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
           {hasChanges && (
             <>
               <Separator />
-              <BeforeAfterSection entry={entry} />
+              <div className="space-y-4">
+                <BeforeAfterSection entry={entry} />
+                <SnapshotSection title="Before" data={before} keys={changedKeys} />
+                <SnapshotSection title="After" data={after} keys={changedKeys} />
+              </div>
+            </>
+          )}
+
+          {/* References */}
+          {referenceEntries.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-1">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">References</h4>
+                {referenceEntries.map(([label, value]) => (
+                  <DetailRow key={label} label={label} value={value} />
+                ))}
+              </div>
             </>
           )}
 
@@ -364,9 +472,9 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             <>
               <Separator />
               <div className="space-y-1">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Additional Details</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Metadata</h4>
                 {extraDetails.map(([key, value]) => (
-                  <DetailRow key={key} label={key.replace(/_/g, ' ')} value={typeof value === 'object' ? JSON.stringify(value) : String(value)} />
+                  <DetailRow key={key} label={key.replace(/_/g, ' ')} value={formatValue(value)} />
                 ))}
               </div>
             </>
