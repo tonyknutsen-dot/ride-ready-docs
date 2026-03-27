@@ -29,6 +29,7 @@ interface RiskItemSubmission {
 }
 
 const RiskItemSubmissions = () => {
+  const { logEvent } = useAuditLog();
   const [submissions, setSubmissions] = useState<RiskItemSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<{ status: string; type: string }>({ status: 'pending', type: 'all' });
