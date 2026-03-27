@@ -243,7 +243,10 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
       });
       if (response.error) throw new Error(response.error.message || "Failed to send campaign");
 
-      logEvent('send', 'marketing_campaign', campaign.id, { type: 'live', recipients: selectedRecipients.length, subject: subject.trim() });
+      logEvent('send', 'marketing_campaign', campaign.id, { type: 'live', recipients: selectedRecipients.length, subject: subject.trim() }, {
+        after: { status: 'sent', recipient_count: selectedRecipients.length, sent_at: new Date().toISOString() },
+        contextHint: 'live campaign send',
+      });
       toast.success(`Campaign sent to ${selectedRecipients.length} recipients!`);
       setCampaignName("");
       setSubject("");
