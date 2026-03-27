@@ -19,6 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { compressImage } from '@/utils/imageCompression';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 interface Defect {
   id: string;

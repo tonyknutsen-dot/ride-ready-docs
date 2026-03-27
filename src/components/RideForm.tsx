@@ -16,6 +16,7 @@ import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS } from '@/hooks/
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type RideCategory = Tables<'ride_categories'>;
 
