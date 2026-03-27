@@ -458,7 +458,13 @@ export default function DocumentTypeRequests() {
       setRejecting(false);
 
       // Fire-and-forget email + audit
-      logEvent('update', 'document' as any, target.id, { action: 'reject_doc_type_request', name: target.document_type_name });
+      logEvent('reject', 'document_type_request', target.id, { name: target.document_type_name }, {
+        before: { status: 'pending' },
+        after: { status: 'rejected', admin_notes: note },
+        changedFields: ['status', 'admin_notes'],
+        reason: note,
+        contextHint: 'admin document type request rejection',
+      });
       supabase.functions.invoke('get-user-email', { body: { userId: target.user_id } })
         .then(({ data: emailData }) => {
           if (emailData?.email) {
