@@ -205,7 +205,7 @@ export function buildMarketingEmail(opts: {
     <div style="${emailStyles.container}">
       <!-- Header -->
       <div style="${emailStyles.header}">
-        ${logoHtml}
+        ${brandHeaderHtml}
       </div>
       
       <!-- Content -->
@@ -216,8 +216,7 @@ export function buildMarketingEmail(opts: {
       <!-- Footer -->
       <div style="${emailStyles.footer}">
         <p style="${emailStyles.footerText}">
-          ${companyLine}&copy; ${currentYear} Ride Ready Docs<br>
-          Professional compliance management for amusement equipment<br><br>
+          ${footerLogoHtml}Sent by Ride Ready Docs &middot; &copy; ${currentYear}<br>
           <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> &middot; ${unsubLink}
         </p>
       </div>
