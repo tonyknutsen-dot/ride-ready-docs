@@ -21,6 +21,7 @@ import {
   getEventFamily,
   getResourceLabel,
   getContextHint,
+  getSourceCategory,
   ACTION_VERBS,
   RESULT_VARIANTS,
   EVENT_FAMILIES,
@@ -57,22 +58,9 @@ function ResultBadge({ result }: { result: string }) {
 
 function hasStructuredEvidence(log: AuditEntry) {
   return Boolean(
-    log.before_data ||
-    log.after_data ||
-    log.changed_fields?.length ||
-    log.reason ||
-    log.organisation_name ||
-    log.equipment_name
+    log.before_data || log.after_data || log.changed_fields?.length ||
+    log.reason || log.organisation_name || log.equipment_name
   );
-}
-
-function getStructuredEvidenceSummary(log: AuditEntry) {
-  const parts: string[] = [];
-  if (log.changed_fields?.length) parts.push(`${log.changed_fields.length} field change${log.changed_fields.length !== 1 ? 's' : ''}`);
-  if (log.reason) parts.push(`Reason: ${log.reason}`);
-  if (log.organisation_name) parts.push(`Org: ${log.organisation_name}`);
-  if (log.equipment_name) parts.push(`Equipment: ${log.equipment_name}`);
-  return parts.slice(0, 2).join(' • ');
 }
 
 function formatExportValue(value: unknown) {
@@ -81,11 +69,7 @@ function formatExportValue(value: unknown) {
   if (typeof value === 'string') return value;
   if (typeof value === 'number') return String(value);
   if (Array.isArray(value)) return value.map(formatExportValue).join(', ');
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
+  try { return JSON.stringify(value, null, 2); } catch { return String(value); }
 }
 
 function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] | null) {
@@ -133,9 +117,11 @@ const DATE_OPTIONS = [
   { value: '90', label: 'Last 90 days' },
 ];
 
-// Default view excludes routine auth noise
-const DEFAULT_EXCLUDED_FAMILIES = new Set<string>();
-// We don't exclude by default anymore, but provide a quick toggle
+/**
+ * HIGH-RISK ACTIONS for KPI query — must match HIGH_PRIORITY_ACTIONS in AuditDetailDrawer.
+ * These are: delete, support_view, failed_unlock, approve, reject, grant, revoke, block, unblock
+ */
+const HIGH_RISK_ACTION_LIST = [...HIGH_PRIORITY_ACTIONS];
 
 // ── Page ──
 
@@ -178,9 +164,15 @@ const AuditLogs = () => {
     const newMap = new Map(profileMap);
     data?.forEach(p => {
       newMap.set(p.user_id, {
-        name: p.controller_name || p.company_name || 'Unknown',
+        name: p.controller_name || p.company_name || 'Unknown user',
         email: '',
       });
+    });
+    // Mark any user IDs still not found (no profile row) as "System"
+    missing.forEach(id => {
+      if (!newMap.has(id)) {
+        newMap.set(id, { name: 'System', email: '' });
+      }
     });
     setProfileMap(newMap);
     return newMap;
@@ -196,7 +188,7 @@ const AuditLogs = () => {
         .or('action.eq.failed_unlock,result.eq.failed,result.eq.blocked')
         .gte('created_at', yesterday),
       supabase.from('audit_logs').select('id', { count: 'exact', head: true })
-        .in('action', ['delete', 'support_view', 'failed_unlock', 'approve', 'reject', 'grant', 'revoke', 'block'])
+        .in('action', HIGH_RISK_ACTION_LIST)
         .gte('created_at', yesterday),
     ]);
 
@@ -246,7 +238,7 @@ const AuditLogs = () => {
         before_data: log.before_data as Record<string, any> | null,
         after_data: log.after_data as Record<string, any> | null,
         changed_fields: log.changed_fields as string[] | null,
-        actor_name: pMap.get(log.user_id)?.name || 'Unknown',
+        actor_name: pMap.get(log.user_id)?.name || 'System',
         actor_email: pMap.get(log.user_id)?.email || '',
       }));
 
@@ -278,12 +270,10 @@ const AuditLogs = () => {
     toast({ title: 'Refreshed', description: 'Audit logs updated' });
   };
 
-  // Client-side filters: search + result + routine auth toggle
   const ROUTINE_AUTH_ACTIONS = new Set(['login', 'logout', 'lock', 'unlock']);
 
   const filteredLogs = logs.filter(log => {
     if (resultFilter !== 'all' && getEventResult(log) !== resultFilter) return false;
-    // Hide routine auth unless viewing Authentication family or auth toggle is off
     if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
       return false;
     }
@@ -302,12 +292,13 @@ const AuditLogs = () => {
 
   // CSV Export
   const handleExportCSV = () => {
-    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target Type', 'Target Name', 'Result', 'Context', 'Equipment', 'Organisation', 'Changed Fields', 'Reason', 'IP Address'];
+    const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Source', 'Target Type', 'Target Name', 'Result', 'Context', 'Equipment', 'Organisation', 'Changed Fields', 'Reason', 'IP Address'];
     const rows = filteredLogs.map(log => [
       format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
-      log.actor_name || '',
+      log.actor_name || 'System',
       ACTION_VERBS[log.action] || log.action,
       getEventFamily(log),
+      getSourceCategory(log),
       getResourceLabel(log.resource_type),
       getTargetName(log),
       getEventResult(log),
@@ -328,175 +319,195 @@ const AuditLogs = () => {
     URL.revokeObjectURL(url);
   };
 
-  // PDF Export — summary or detailed report
+  // ── PDF Export ──
   const handleExportPDF = (detailed = false) => {
-    const doc = new jsPDF({ orientation: 'landscape' });
     const now = new Date();
 
-    // Title
-    doc.setFontSize(18);
-    doc.setTextColor(30, 58, 95);
-    doc.text(detailed ? 'Detailed Audit Trail Report' : 'Summary Audit Trail Report', 14, 18);
-
-    // Meta line
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}`, 14, 25);
-    doc.text(`Date Range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}`, 14, 30);
-
-    // Active filters
-    const activeFilters: string[] = [];
-    if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
-    if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
-    if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
-    if (hideRoutineAuth) activeFilters.push('Routine auth hidden');
-    if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
-    if (activeFilters.length > 0) {
-      doc.text(`Filters: ${activeFilters.join(' | ')}`, 14, 35);
-    }
-
-    // KPI summary
-    const kpiY = activeFilters.length > 0 ? 42 : 37;
-    doc.setFontSize(8);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`Events (24h): ${stats.events}   |   Active Users: ${stats.users}   |   Failed/Blocked: ${stats.failed}   |   High-Risk: ${stats.highRisk}`, 14, kpiY);
-    doc.text(`Total filtered events: ${filteredLogs.length}`, 14, kpiY + 5);
-
     if (detailed) {
-      // Detailed: overview table first
-      const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Equipment', 'Org', 'Changed Fields', 'Reason'];
+      // DETAILED PDF — portrait, mobile-readable, one event per section
+      const doc = new jsPDF({ orientation: 'portrait' });
+      const pageW = doc.internal.pageSize.width;
+      const margin = 14;
+      const contentW = pageW - margin * 2;
+
+      // Title page
+      doc.setFontSize(20);
+      doc.setTextColor(30, 58, 95);
+      doc.text('Detailed Audit Trail Report', margin, 22);
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}`, margin, 30);
+      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}  •  ${filteredLogs.length} events`, margin, 36);
+
+      const activeFilters: string[] = [];
+      if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
+      if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
+      if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
+      if (hideRoutineAuth) activeFilters.push('Routine auth hidden');
+      if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
+      if (activeFilters.length > 0) {
+        doc.text(`Filters: ${activeFilters.join(' | ')}`, margin, 42);
+      }
+
+      // KPI summary box
+      let startY = activeFilters.length > 0 ? 50 : 44;
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Events (24h): ${stats.events}  |  Active Users: ${stats.users}  |  Failed/Blocked: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, startY);
+      startY += 8;
+
+      // Each event as its own section
+      filteredLogs.forEach((log, index) => {
+        const result = getEventResult(log);
+        const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
+
+        // Page break check
+        if (startY > doc.internal.pageSize.height - 60) {
+          doc.addPage();
+          startY = 18;
+        }
+
+        // Event heading with accent
+        if (isHighPriority) {
+          doc.setFillColor(255, 235, 235);
+          doc.rect(margin, startY - 5, contentW, 8, 'F');
+          doc.setDrawColor(220, 50, 50);
+          doc.rect(margin, startY - 5, 2, 8, 'F');
+        }
+
+        doc.setFontSize(11);
+        doc.setTextColor(30, 58, 95);
+        doc.text(`Event ${index + 1}: ${ACTION_VERBS[log.action] || log.action}`, margin + 4, startY);
+        startY += 6;
+
+        // Summary line
+        doc.setFontSize(9);
+        doc.setTextColor(40, 40, 40);
+        const summary = `${log.actor_name || 'System'} ${ACTION_VERBS[log.action] || log.action} ${getResourceLabel(log.resource_type).toLowerCase()} "${getTargetName(log)}"`;
+        const wrappedSummary = doc.splitTextToSize(summary, contentW - 8);
+        doc.text(wrappedSummary, margin + 4, startY);
+        startY += wrappedSummary.length * 4.5 + 2;
+
+        // Event detail rows
+        const sectionRows = [
+          ['Timestamp', format(new Date(log.created_at), 'dd MMM yyyy HH:mm:ss')],
+          ['Actor', log.actor_name || 'System'],
+          ['Action', ACTION_VERBS[log.action] || log.action],
+          ['Family', getEventFamily(log)],
+          ['Source', getSourceCategory(log)],
+          ['Target', `${getResourceLabel(log.resource_type)} — ${getTargetName(log)}`],
+          ['Result', getEventResult(log)],
+          ['Organisation', log.organisation_name || ''],
+          ['Equipment', log.equipment_name || ''],
+          ['Reason', log.reason || ''],
+          ['Changed Fields', log.changed_fields?.join(', ') || ''],
+          ['Before', formatSnapshot(log.before_data, log.changed_fields)],
+          ['After', formatSnapshot(log.after_data, log.changed_fields)],
+        ].filter(([, value]) => String(value || '').trim().length > 0);
+
+        autoTable(doc, {
+          startY,
+          body: sectionRows,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 3, valign: 'top' },
+          columnStyles: {
+            0: { cellWidth: 36, fontStyle: 'bold', textColor: [80, 80, 80] },
+            1: { cellWidth: contentW - 36 },
+          },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          margin: { left: margin, right: margin },
+        });
+
+        startY = ((doc as any).lastAutoTable?.finalY || startY) + 10;
+      });
+
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Ride Ready Docs — Detailed Audit Trail — Page ${i} of ${pageCount}`, margin, doc.internal.pageSize.height - 8);
+      }
+
+      doc.save(`audit-trail-detailed-${format(now, 'yyyy-MM-dd')}.pdf`);
+    } else {
+      // SUMMARY PDF — portrait, mobile-readable, fewer columns, larger text
+      const doc = new jsPDF({ orientation: 'portrait' });
+      const margin = 14;
+
+      doc.setFontSize(18);
+      doc.setTextColor(30, 58, 95);
+      doc.text('Summary Audit Trail Report', margin, 20);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}`, margin, 28);
+      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}  •  ${filteredLogs.length} events`, margin, 34);
+
+      const activeFilters: string[] = [];
+      if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
+      if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
+      if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
+      if (activeFilters.length > 0) {
+        doc.text(`Filters: ${activeFilters.join(' | ')}`, margin, 40);
+      }
+
+      let kpiY = activeFilters.length > 0 ? 48 : 42;
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Events (24h): ${stats.events}  |  Users: ${stats.users}  |  Failed: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, kpiY);
+
+      // Summary table — 5 columns for readability
+      const headers = ['Time', 'Actor', 'Action & Target', 'Result', 'Source'];
       const rows = filteredLogs.map(log => [
-        format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
-        log.actor_name || '',
-        ACTION_VERBS[log.action] || log.action,
-        getEventFamily(log),
-        `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
+        format(new Date(log.created_at), 'dd/MM HH:mm'),
+        log.actor_name || 'System',
+        `${ACTION_VERBS[log.action] || log.action} ${getResourceLabel(log.resource_type).toLowerCase()}\n${getTargetName(log)}`,
         getEventResult(log),
-        log.equipment_name || '',
-        log.organisation_name || '',
-        log.changed_fields?.join(', ') || '',
-        log.reason || '',
+        getSourceCategory(log),
       ]);
 
       autoTable(doc, {
-        startY: kpiY + 10,
+        startY: kpiY + 6,
         head: [headers],
         body: rows,
-        styles: { fontSize: 6, cellPadding: 1.5 },
-        headStyles: { fillColor: [30, 58, 95], textColor: 255 },
+        styles: { fontSize: 8, cellPadding: 2.5, valign: 'top' },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontSize: 8 },
         alternateRowStyles: { fillColor: [245, 247, 250] },
         columnStyles: {
-          0: { cellWidth: 26 },
-          5: { cellWidth: 14 },
-          8: { cellWidth: 35 },
-          9: { cellWidth: 30 },
+          0: { cellWidth: 22 },
+          1: { cellWidth: 32 },
+          2: { cellWidth: 75 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 30 },
         },
+        margin: { left: margin, right: margin },
         didDrawCell: (data: any) => {
-          // Highlight failed/blocked/denied rows
-          if (data.section === 'body' && data.column.index === 5) {
+          if (data.section === 'body' && data.column.index === 3) {
             const val = data.cell.raw;
             if (val === 'failed' || val === 'blocked' || val === 'denied') {
               doc.setFillColor(255, 230, 230);
               doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
               doc.setTextColor(180, 20, 20);
-              doc.setFontSize(6);
+              doc.setFontSize(8);
               doc.text(String(val), data.cell.x + 1.5, data.cell.y + data.cell.height / 2 + 1.5);
             }
           }
         },
       });
 
-      let currentY = ((doc as any).lastAutoTable?.finalY || (kpiY + 10)) + 10;
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Ride Ready Docs — Summary Audit Trail — Page ${i} of ${pageCount}`, margin, doc.internal.pageSize.height - 8);
+      }
 
-      filteredLogs.forEach((log, index) => {
-        const summary = `${log.actor_name || 'Unknown'} ${ACTION_VERBS[log.action] || log.action} ${getResourceLabel(log.resource_type).toLowerCase()} "${getTargetName(log)}"`;
-        const sectionRows = [
-          ['Timestamp', format(new Date(log.created_at), 'dd MMM yyyy HH:mm:ss')],
-          ['Actor', log.actor_name || ''],
-          ['Actor ID', log.user_id],
-          ['Action', ACTION_VERBS[log.action] || log.action],
-          ['Family', getEventFamily(log)],
-          ['Target', `${getResourceLabel(log.resource_type)} — ${getTargetName(log)}`],
-          ['Record ID', log.resource_id || ''],
-          ['Result', getEventResult(log)],
-          ['Source / Context', [log.details?.source, getContextHint(log)].filter(Boolean).join(' • ')],
-          ['Organisation', log.organisation_name || ''],
-          ['Equipment', log.equipment_name || ''],
-          ['Equipment ID', log.equipment_id || ''],
-          ['Reason', log.reason || ''],
-          ['Changed fields', log.changed_fields?.join(', ') || ''],
-          ['Before', formatSnapshot(log.before_data, log.changed_fields)],
-          ['After', formatSnapshot(log.after_data, log.changed_fields)],
-        ].filter(([, value]) => String(value || '').trim().length > 0);
-
-        if (currentY > doc.internal.pageSize.height - 45) {
-          doc.addPage();
-          currentY = 18;
-        }
-
-        doc.setFontSize(11);
-        doc.setTextColor(30, 58, 95);
-        doc.text(`Event ${index + 1}`, 14, currentY);
-        currentY += 5;
-        doc.setFontSize(9);
-        doc.setTextColor(60, 60, 60);
-        const wrappedSummary = doc.splitTextToSize(summary, doc.internal.pageSize.width - 28);
-        doc.text(wrappedSummary, 14, currentY);
-        currentY += wrappedSummary.length * 4 + 2;
-
-        autoTable(doc, {
-          startY: currentY,
-          body: sectionRows,
-          theme: 'grid',
-          styles: { fontSize: 7, cellPadding: 2, valign: 'top' },
-          columnStyles: {
-            0: { cellWidth: 42, fontStyle: 'bold' },
-            1: { cellWidth: doc.internal.pageSize.width - 62 },
-          },
-          alternateRowStyles: { fillColor: [248, 250, 252] },
-          margin: { left: 14, right: 14 },
-        });
-
-        currentY = ((doc as any).lastAutoTable?.finalY || currentY) + 8;
-      });
-    } else {
-      // Summary table
-      const headers = ['Timestamp', 'Actor', 'Action', 'Family', 'Target', 'Result', 'Context', 'Equipment'];
-      const rows = filteredLogs.map(log => [
-        format(new Date(log.created_at), 'dd/MM/yyyy HH:mm'),
-        log.actor_name || '',
-        ACTION_VERBS[log.action] || log.action,
-        getEventFamily(log),
-        `${getResourceLabel(log.resource_type)}: ${getTargetName(log)}`,
-        getEventResult(log),
-        getContextHint(log) || '',
-        log.equipment_name || '',
-      ]);
-
-      autoTable(doc, {
-        startY: kpiY + 10,
-        head: [headers],
-        body: rows,
-        styles: { fontSize: 7, cellPadding: 2 },
-        headStyles: { fillColor: [30, 58, 95], textColor: 255 },
-        alternateRowStyles: { fillColor: [245, 247, 250] },
-        columnStyles: {
-          0: { cellWidth: 30 },
-          5: { cellWidth: 18 },
-        },
-      });
+      doc.save(`audit-trail-summary-${format(now, 'yyyy-MM-dd')}.pdf`);
     }
-
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.setTextColor(150, 150, 150);
-      doc.text(`Ride Ready Docs — ${detailed ? 'Detailed' : 'Summary'} Audit Trail — Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 8);
-    }
-
-    doc.save(`audit-trail-${detailed ? 'detailed' : 'summary'}-${format(now, 'yyyy-MM-dd')}.pdf`);
   };
 
   const activeFilterCount = [
@@ -543,10 +554,10 @@ const AuditLogs = () => {
               <Download className="h-3.5 w-3.5 mr-1" /> CSV
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExportPDF(false)} className="hidden sm:flex h-8 text-xs">
-              <FileDown className="h-3.5 w-3.5 mr-1" /> Summary PDF
+              <FileDown className="h-3.5 w-3.5 mr-1" /> Summary
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExportPDF(true)} className="hidden sm:flex h-8 text-xs">
-              <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed PDF
+              <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed
             </Button>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -557,9 +568,9 @@ const AuditLogs = () => {
         {/* KPI Cards */}
         <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
           <KpiCard label="Events (24h)" value={stats.events} icon={History} />
-          <KpiCard label="Active Users (24h)" value={stats.users} icon={Users} />
+          <KpiCard label="Active Users" value={stats.users} icon={Users} />
           <KpiCard label="Failed / Blocked" value={stats.failed} icon={AlertTriangle} accent />
-          <KpiCard label="High-Risk Actions" value={stats.highRisk} icon={Shield} accent />
+          <KpiCard label="High-Risk" value={stats.highRisk} icon={Shield} accent />
         </div>
 
         {/* Search + Date + Filters */}
@@ -568,7 +579,7 @@ const AuditLogs = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search actor, action, target, equipment…"
+                placeholder="Search actor, action, target…"
                 className="pl-9 h-9 text-sm"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -596,7 +607,6 @@ const AuditLogs = () => {
                   )}
                 </Button>
               </CollapsibleTrigger>
-              {/* Routine auth toggle – visible at top level */}
               <button
                 onClick={() => setHideRoutineAuth(h => !h)}
                 className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideRoutineAuth ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
@@ -643,15 +653,15 @@ const AuditLogs = () => {
         </div>
 
         {/* Mobile export */}
-        <div className="grid grid-cols-1 gap-2 sm:hidden">
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExportCSV}>
+        <div className="flex gap-2 sm:hidden overflow-x-auto">
+          <Button variant="outline" size="sm" className="h-8 text-xs flex-shrink-0" onClick={handleExportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" /> CSV
           </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleExportPDF(false)}>
-            <FileDown className="h-3.5 w-3.5 mr-1" /> Summary PDF
+          <Button variant="outline" size="sm" className="h-8 text-xs flex-shrink-0" onClick={() => handleExportPDF(false)}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> Summary
           </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => handleExportPDF(true)}>
-            <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed PDF
+          <Button variant="outline" size="sm" className="h-8 text-xs flex-shrink-0" onClick={() => handleExportPDF(true)}>
+            <FileDown className="h-3.5 w-3.5 mr-1" /> Detailed
           </Button>
         </div>
 
@@ -673,11 +683,9 @@ const AuditLogs = () => {
               const result = getEventResult(log);
               const targetName = getTargetName(log);
               const family = getEventFamily(log);
-              const contextHint = getContextHint(log);
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
               const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
-              const structuredSummary = getStructuredEvidenceSummary(log);
-              const hasRichEvidence = hasStructuredEvidence(log);
+              const sourceLabel = getSourceCategory(log);
 
               return (
                 <button
@@ -685,49 +693,34 @@ const AuditLogs = () => {
                   onClick={() => { setSelectedEntry(log); setDrawerOpen(true); }}
                   className={`w-full text-left rounded-lg border bg-card p-3 hover:bg-accent/50 transition-colors group ${isHighPriority ? 'border-l-[3px] border-l-destructive/60' : ''}`}
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-0.5">
-                      {/* Line 1: Actor + action verb + record type */}
+                      {/* Line 1: Actor + action + record type */}
                       <p className="text-sm leading-snug">
-                        <span className="font-semibold">{log.actor_name}</span>
+                        <span className="font-semibold">{log.actor_name || 'System'}</span>
                         <span className="text-muted-foreground">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
                         <span className="text-foreground/70">{getResourceLabel(log.resource_type).toLowerCase()}</span>
                       </p>
                       {/* Line 2: Target name */}
                       {targetName !== '—' && (
-                        <p className="text-sm font-medium truncate">{targetName}</p>
+                        <p className="text-[13px] font-medium truncate text-foreground/90">{targetName}</p>
                       )}
-                      {hasRichEvidence && structuredSummary && (
-                        <p className="text-[11px] text-primary truncate">{structuredSummary}</p>
-                      )}
-                      {/* Context hint */}
-                      {contextHint && (
-                        <p className="text-[11px] text-muted-foreground italic">{contextHint}</p>
-                      )}
-                      {/* Line 3: Timestamp + family + result + change indicator */}
-                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      {/* Line 3: Badges — compact */}
+                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
                         <span className="text-[11px] text-muted-foreground">
-                          {format(new Date(log.created_at), 'dd MMM yyyy HH:mm')}
+                          {format(new Date(log.created_at), 'dd MMM HH:mm')}
                         </span>
-                        <span className="text-muted-foreground/40 text-[10px]">•</span>
+                        <span className="text-muted-foreground/30 text-[10px]">•</span>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
                         <ResultBadge result={result} />
                         {hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 bg-primary/5 text-primary">
-                            Δ {log.changed_fields?.length || '?'} changes
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/20 text-primary">
+                            Δ{log.changed_fields?.length || ''}
                           </Badge>
-                        )}
-                        {hasRichEvidence && !hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/30 bg-primary/5 text-primary">
-                            Rich payload
-                          </Badge>
-                        )}
-                        {log.equipment_name && (
-                          <span className="text-[10px] text-muted-foreground/60 truncate max-w-[120px]">⚙ {log.equipment_name}</span>
                         )}
                       </div>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground mt-1 flex-shrink-0" />
                   </div>
                 </button>
               );
