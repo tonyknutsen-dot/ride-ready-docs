@@ -346,21 +346,30 @@ const AuditLogs = () => {
     const navy = [30, 58, 95] as const;
 
     if (detailed) {
-      // DETAILED PDF — portrait, one event per section, stronger formatting
+      // DETAILED PDF — professional report format
       const doc = new jsPDF({ orientation: 'portrait' });
       const pageW = doc.internal.pageSize.width;
       const pageH = doc.internal.pageSize.height;
-      const margin = 14;
+      const margin = 16;
       const contentW = pageW - margin * 2;
 
-      // Title
-      doc.setFontSize(18);
-      doc.setTextColor(...navy);
-      doc.text('Detailed Audit Trail', margin, 22);
+      // ── Cover header ──
+      doc.setFillColor(...navy);
+      doc.rect(0, 0, pageW, 38, 'F');
+      doc.setFontSize(20);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Detailed Audit Report', margin, 18);
       doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Generated: ${format(now, 'dd MMM yyyy HH:mm')}  •  ${filteredLogs.length} events`, margin, 30);
-      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}`, margin, 36);
+      doc.text('Ride Ready Docs', margin, 26);
+      doc.setFontSize(8);
+      doc.text(`Generated ${format(now, 'dd MMMM yyyy, HH:mm')}  •  ${filteredLogs.length} events`, margin, 33);
+
+      // ── Report info section ──
+      let startY = 48;
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Date range: Last ${dateFilter} day${dateFilter !== '1' ? 's' : ''}`, margin, startY);
+      startY += 5;
 
       const activeFilters: string[] = [];
       if (familyFilter !== 'all') activeFilters.push(`Family: ${familyFilter}`);
@@ -371,101 +380,177 @@ const AuditLogs = () => {
       if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
       if (activeFilters.length > 0) {
         doc.setFontSize(8);
-        doc.text(`Filters: ${activeFilters.join(' | ')}`, margin, 42);
+        doc.text(`Filters: ${activeFilters.join('  |  ')}`, margin, startY);
+        startY += 5;
       }
 
-      // KPI
-      let startY = activeFilters.length > 0 ? 50 : 44;
-      doc.setFontSize(9);
+      // KPI bar
+      doc.setFillColor(240, 244, 248);
+      doc.rect(margin, startY, contentW, 10, 'F');
+      doc.setFontSize(8);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Events (24h): ${stats.events}  |  Active Users: ${stats.users}  |  Failed/Blocked: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, startY);
-      startY += 10;
+      doc.text(`Events (24h): ${stats.events}     Active Users: ${stats.users}     Failed/Blocked: ${stats.failed}     High-Risk: ${stats.highRisk}`, margin + 4, startY + 6.5);
+      startY += 18;
 
-      // Each event
-      filteredLogs.forEach((log, index) => {
+      // ── Event sections ──
+      filteredLogs.forEach((log) => {
         const result = getEventResult(log);
         const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
         const performer = resolvePerformedBy(log);
+        const actionLabel = ACTION_VERBS[log.action] || log.action;
+        const targetName = getTargetName(log);
+        const hasBeforeAfter = log.before_data || log.after_data;
+        const hasChangedFields = log.changed_fields && log.changed_fields.length > 0;
 
-        // Page break check — need at least 55mm for a section
-        if (startY > pageH - 55) {
+        // Estimate space needed
+        const estimatedHeight = 50 + (hasBeforeAfter ? 30 : 0) + (log.reason ? 8 : 0);
+        if (startY > pageH - estimatedHeight) {
           doc.addPage();
           startY = 18;
         }
 
-        // Event heading bar
-        const headingH = 9;
-        if (isHighPriority) {
-          doc.setFillColor(255, 230, 230);
-          doc.rect(margin, startY - 6, contentW, headingH, 'F');
-          doc.setFillColor(220, 50, 50);
-          doc.rect(margin, startY - 6, 2.5, headingH, 'F');
-        } else {
-          doc.setFillColor(240, 244, 248);
-          doc.rect(margin, startY - 6, contentW, headingH, 'F');
-          doc.setFillColor(...navy);
-          doc.rect(margin, startY - 6, 2.5, headingH, 'F');
-        }
+        // ── Event heading bar ──
+        const headingH = 10;
+        const headingColor = isHighPriority ? [220, 50, 50] : navy;
+        const headingBg = isHighPriority ? [255, 240, 240] : [235, 240, 248];
+        doc.setFillColor(...(headingBg as [number, number, number]));
+        doc.rect(margin, startY, contentW, headingH, 'F');
+        doc.setFillColor(...(headingColor as [number, number, number]));
+        doc.rect(margin, startY, 3, headingH, 'F');
 
         doc.setFontSize(10);
-        doc.setTextColor(...navy);
-        const actionLabel = ACTION_VERBS[log.action] || log.action;
-        doc.text(`${performer} ${actionLabel} ${getResourceLabel(log.resource_type).toLowerCase()}`, margin + 5, startY);
-        startY += headingH + 2;
+        doc.setTextColor(...(headingColor as [number, number, number]));
+        const headingText = `${performer} ${actionLabel} ${getResourceLabel(log.resource_type).toLowerCase()}`;
+        doc.text(headingText, margin + 6, startY + 6.5);
 
-        // Detail rows
-        const sectionRows = [
-          ['Timestamp', format(new Date(log.created_at), 'dd MMM yyyy HH:mm:ss')],
-          ['Performed by', performer],
-          ['Action', actionLabel],
-          ['Family', getEventFamily(log)],
-          ['Trigger type', getTriggerType(log)],
-          ['Source page', getSourcePage(log) || ''],
-          ['Target', `${getResourceLabel(log.resource_type)} — ${getTargetName(log)}`],
-          ['Result', getEventResult(log)],
-          ['Organisation', log.organisation_name || ''],
-          ['Equipment', log.equipment_name || ''],
-          ['Reason', log.reason || ''],
-          ['Changed fields', log.changed_fields?.join(', ') || ''],
-          ['Before', formatSnapshot(log.before_data, log.changed_fields)],
-          ['After', formatSnapshot(log.after_data, log.changed_fields)],
-        ].filter(([, value]) => String(value || '').trim().length > 0);
+        // Timestamp right-aligned
+        doc.setFontSize(7.5);
+        doc.setTextColor(120, 120, 120);
+        const timeStr = format(new Date(log.created_at), 'dd MMM yyyy HH:mm:ss');
+        const timeWidth = doc.getTextWidth(timeStr);
+        doc.text(timeStr, margin + contentW - timeWidth - 3, startY + 6.5);
+        startY += headingH + 4;
 
-        autoTable(doc, {
-          startY,
-          body: sectionRows,
-          theme: 'plain',
-          styles: { fontSize: 8, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, valign: 'top', lineColor: [220, 225, 230], lineWidth: 0.3 },
-          columnStyles: {
-            0: { cellWidth: 32, fontStyle: 'bold', textColor: [80, 80, 80] },
-            1: { cellWidth: contentW - 32 },
-          },
-          alternateRowStyles: { fillColor: [250, 251, 253] },
-          margin: { left: margin, right: margin },
-          didDrawCell: (data: any) => {
-            // Highlight result cells for failed/blocked
-            if (data.section === 'body' && data.row.index >= 0) {
-              const row = sectionRows[data.row.index];
-              if (row && row[0] === 'Result' && data.column.index === 1) {
-                const val = String(row[1]).toLowerCase();
-                if (val === 'failed' || val === 'blocked' || val === 'denied') {
-                  doc.setTextColor(180, 20, 20);
-                }
+        // ── Summary grid — 2-column layout ──
+        const gridLeft = margin + 2;
+        const gridMid = margin + contentW / 2;
+        doc.setFontSize(7.5);
+
+        const drawField = (label: string, value: string, x: number, y: number) => {
+          doc.setTextColor(130, 130, 130);
+          doc.text(label, x, y);
+          doc.setTextColor(40, 40, 40);
+          doc.text(value || '—', x + 28, y);
+        };
+
+        drawField('Performed by', performer, gridLeft, startY);
+        drawField('Result', result, gridMid, startY);
+        startY += 5;
+        drawField('Trigger type', getTriggerType(log), gridLeft, startY);
+        drawField('Source page', getSourcePage(log) || '—', gridMid, startY);
+        startY += 5;
+        drawField('Family', getEventFamily(log), gridLeft, startY);
+        if (targetName !== '—') {
+          drawField('Target', targetName, gridMid, startY);
+        }
+        startY += 5;
+
+        if (log.organisation_name || log.equipment_name) {
+          if (log.organisation_name) drawField('Organisation', log.organisation_name, gridLeft, startY);
+          if (log.equipment_name) drawField('Equipment', log.equipment_name, gridMid, startY);
+          startY += 5;
+        }
+
+        // ── Reason ──
+        if (log.reason) {
+          startY += 2;
+          doc.setFontSize(7.5);
+          doc.setTextColor(130, 130, 130);
+          doc.text('Reason:', gridLeft, startY);
+          doc.setTextColor(40, 40, 40);
+          const reasonLines = doc.splitTextToSize(log.reason, contentW - 30);
+          doc.text(reasonLines, gridLeft + 28, startY);
+          startY += reasonLines.length * 4;
+        }
+
+        // ── Changes table ──
+        if (hasChangedFields || hasBeforeAfter) {
+          startY += 3;
+          doc.setFontSize(8);
+          doc.setTextColor(...navy);
+          doc.text('Changes', gridLeft, startY);
+          startY += 2;
+
+          if (hasChangedFields && log.before_data && log.after_data) {
+            const changeRows = log.changed_fields!.map(field => [
+              field,
+              formatExportValue(log.before_data?.[field]) || '—',
+              formatExportValue(log.after_data?.[field]) || '—',
+            ]);
+
+            autoTable(doc, {
+              startY,
+              head: [['Field', 'Before', 'After']],
+              body: changeRows,
+              theme: 'grid',
+              styles: { fontSize: 7.5, cellPadding: 2, valign: 'top', lineColor: [210, 215, 220], lineWidth: 0.2 },
+              headStyles: { fillColor: [240, 244, 248], textColor: [...navy], fontStyle: 'bold', lineWidth: 0.2 },
+              columnStyles: {
+                0: { cellWidth: 35, fontStyle: 'bold', textColor: [80, 80, 80] },
+                1: { cellWidth: (contentW - 35) / 2 },
+                2: { cellWidth: (contentW - 35) / 2 },
+              },
+              margin: { left: margin, right: margin },
+            });
+            startY = ((doc as any).lastAutoTable?.finalY || startY) + 4;
+          } else {
+            // Show before/after as snapshot blocks
+            if (log.before_data) {
+              const snap = formatSnapshot(log.before_data, log.changed_fields);
+              if (snap) {
+                doc.setFontSize(7.5);
+                doc.setTextColor(130, 130, 130);
+                doc.text('Before:', gridLeft, startY);
+                doc.setTextColor(60, 60, 60);
+                const snapLines = doc.splitTextToSize(snap, contentW - 30);
+                doc.text(snapLines, gridLeft + 28, startY);
+                startY += snapLines.length * 3.5 + 3;
               }
             }
-          },
-        });
+            if (log.after_data) {
+              const snap = formatSnapshot(log.after_data, log.changed_fields);
+              if (snap) {
+                doc.setFontSize(7.5);
+                doc.setTextColor(130, 130, 130);
+                doc.text('After:', gridLeft, startY);
+                doc.setTextColor(60, 60, 60);
+                const snapLines = doc.splitTextToSize(snap, contentW - 30);
+                doc.text(snapLines, gridLeft + 28, startY);
+                startY += snapLines.length * 3.5 + 3;
+              }
+            }
+          }
+        }
 
-        startY = ((doc as any).lastAutoTable?.finalY || startY) + 12;
+        // Separator line
+        startY += 2;
+        doc.setDrawColor(220, 225, 230);
+        doc.setLineWidth(0.3);
+        doc.line(margin, startY, margin + contentW, startY);
+        startY += 8;
       });
 
       // Footer
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.2);
+        doc.line(margin, pageH - 14, margin + contentW, pageH - 14);
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Ride Ready Docs — Detailed Audit Trail — Page ${i} of ${pageCount}`, margin, pageH - 8);
+        doc.text(`Ride Ready Docs  •  Detailed Audit Report  •  Confidential`, margin, pageH - 9);
+        doc.text(`Page ${i} of ${pageCount}`, margin + contentW - doc.getTextWidth(`Page ${i} of ${pageCount}`), pageH - 9);
       }
 
       doc.save(`audit-trail-detailed-${format(now, 'yyyy-MM-dd')}.pdf`);
@@ -769,8 +854,10 @@ const AuditLogs = () => {
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
                         <ResultBadge result={result} />
                         {hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/20 text-primary">
-                            Δ{log.changed_fields?.length || ''}
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/20 text-primary">
+                            {log.changed_fields?.length
+                              ? `${log.changed_fields.length} field${log.changed_fields.length > 1 ? 's' : ''} changed`
+                              : 'Changes recorded'}
                           </Badge>
                         )}
                          {triggerType !== 'User action' && (
