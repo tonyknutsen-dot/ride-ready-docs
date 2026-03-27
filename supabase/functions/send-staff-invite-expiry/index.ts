@@ -79,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
         const expiresAt = new Date(invite.expires_at);
         const hoursRemaining = Math.ceil((expiresAt.getTime() - now.getTime()) / (60 * 60 * 1000));
 
-        const baseUrl = "https://ride-ready-docs.lovable.app";
+        const baseUrl = "https://ridereadydocs.com";
         const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
 
         // Send expiry reminder email

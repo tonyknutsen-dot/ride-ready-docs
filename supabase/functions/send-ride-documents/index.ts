@@ -332,7 +332,7 @@ const handler = async (req: Request): Promise<Response> => {
           throw new Error("Failed to create document share items");
         }
 
-        const downloadPageUrl = `https://ride-ready-docs.lovable.app/shared/${shareToken}`;
+        const downloadPageUrl = `https://ridereadydocs.com/shared/${shareToken}`;
         const expiryDateFormatted = expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
         shareData = { shareId: share.id, shareToken, downloadUrl: downloadPageUrl };

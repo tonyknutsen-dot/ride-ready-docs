@@ -162,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Build invite URL using published URL
-    const baseUrl = "https://ride-ready-docs.lovable.app";
+    const baseUrl = "https://ridereadydocs.com";
     const inviteUrl = `${baseUrl}/tester-invite/${invite.invite_token}`;
 
     // Send email

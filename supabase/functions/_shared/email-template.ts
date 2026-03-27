@@ -201,7 +201,7 @@ export function generateEmailWrapper(title: string, subtitle: string, content: s
       <p style="${emailStyles.footerText}">
         © ${currentYear} Ride Ready Docs. All rights reserved.<br>
         Professional compliance management for amusement equipment.<br><br>
-        <a href="https://ride-ready-docs.lovable.app" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
         <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
       </p>
     </div>

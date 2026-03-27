@@ -6,7 +6,7 @@ const ALLOWED_ORIGINS = [
   'https://www.ridereadydocs.co.uk',
   'https://ridereadydocs.com',
   'https://www.ridereadydocs.com',
-  'https://ride-ready-docs.lovable.app',
+  'https://ridereadydocs.com',
   'http://localhost:5173',  // Vite dev server
   'http://localhost:8910',  // Lovable preview
   'http://localhost:3000',  // Alternative dev port

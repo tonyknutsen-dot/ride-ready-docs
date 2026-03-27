@@ -577,7 +577,7 @@ function generateAlertEmail(
                   </p>
                   
                   <div style="margin-top: 24px; text-align: center;">
-                    <a href="https://ride-ready-docs.lovable.app/admin/security" 
+                    <a href="https://ridereadydocs.com/admin/security" 
                        style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">
                       Open Security Dashboard
                     </a>
