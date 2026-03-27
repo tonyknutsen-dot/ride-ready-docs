@@ -158,6 +158,7 @@ const AuditLogs = () => {
   const [resultFilter, setResultFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('7');
   const [hideRoutineAuth, setHideRoutineAuth] = useState(true);
+  const [hideOrphanRows, setHideOrphanRows] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Detail drawer
@@ -294,6 +295,9 @@ const AuditLogs = () => {
     if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
       return false;
     }
+    if (hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id))) {
+      return false;
+    }
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       const haystack = [
@@ -363,6 +367,7 @@ const AuditLogs = () => {
       if (actionFilter !== 'all') activeFilters.push(`Action: ${actionFilter}`);
       if (resultFilter !== 'all') activeFilters.push(`Result: ${resultFilter}`);
       if (hideRoutineAuth) activeFilters.push('Routine auth hidden');
+      if (hideOrphanRows) activeFilters.push('Orphan/system rows hidden');
       if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
       if (activeFilters.length > 0) {
         doc.setFontSize(8);
@@ -550,6 +555,7 @@ const AuditLogs = () => {
     actionFilter !== 'all',
     resultFilter !== 'all',
     !hideRoutineAuth,
+    !hideOrphanRows,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -557,6 +563,7 @@ const AuditLogs = () => {
     setActionFilter('all');
     setResultFilter('all');
     setHideRoutineAuth(true);
+    setHideOrphanRows(true);
     setSearchTerm('');
   };
 
@@ -647,6 +654,12 @@ const AuditLogs = () => {
                 className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideRoutineAuth ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
               >
                 {hideRoutineAuth ? 'Logins hidden' : 'Showing logins'}
+              </button>
+              <button
+                onClick={() => setHideOrphanRows(h => !h)}
+                className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideOrphanRows ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
+              >
+                {hideOrphanRows ? 'Orphan rows hidden' : 'Showing all rows'}
               </button>
               <div className="ml-auto">
                 <AuditLegend />
