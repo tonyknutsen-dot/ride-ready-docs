@@ -769,8 +769,10 @@ const AuditLogs = () => {
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
                         <ResultBadge result={result} />
                         {hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/20 text-primary">
-                            Δ{log.changed_fields?.length || ''}
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/20 text-primary">
+                            {log.changed_fields?.length
+                              ? `${log.changed_fields.length} field${log.changed_fields.length > 1 ? 's' : ''} changed`
+                              : 'Changes recorded'}
                           </Badge>
                         )}
                          {triggerType !== 'User action' && (
