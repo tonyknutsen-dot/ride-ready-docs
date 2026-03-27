@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
-import { brandColors, emailStyles, logoHtml, escapeHtml } from "../_shared/email-template.ts";
+import { brandColors, emailStyles, buildMarketingEmail, buildCtaButton, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
@@ -11,18 +11,15 @@ function textToHtml(text: string): string {
 }
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
 
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
 
-  // Check if IP is blocked
   const clientIp = getClientIp(req);
   const blockResult = await checkIpBlocked(clientIp);
   if (blockResult.isBlocked) {
-    console.log(`Blocked IP ${clientIp} attempted to access send-marketing-campaign`);
     return createBlockedIpResponse(blockResult, corsHeaders);
   }
 
@@ -31,7 +28,6 @@ serve(async (req: Request) => {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
   if (!resendApiKey) {
-    console.error("RESEND_API_KEY not configured");
     return new Response(
       JSON.stringify({ error: "Email service not configured" }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -42,7 +38,6 @@ serve(async (req: Request) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -62,15 +57,12 @@ serve(async (req: Request) => {
       );
     }
 
-    // Rate limiting - batch email operations get stricter limits
     const rateLimitKey = getClientIdentifier(req, "send-marketing-campaign", user.id);
     const rateLimitResult = await checkRateLimit(rateLimitKey, "batch");
     if (!rateLimitResult.allowed) {
-      console.log(`Rate limit exceeded for user ${user.id}`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
-    // Get request body
     const { campaignId } = await req.json();
 
     if (!campaignId) {
@@ -80,7 +72,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // Fetch campaign
     const { data: campaign, error: campaignError } = await supabase
       .from("email_campaigns")
       .select("*")
@@ -89,57 +80,42 @@ serve(async (req: Request) => {
       .single();
 
     if (campaignError || !campaign) {
-      console.error("Campaign fetch error:", campaignError);
       return new Response(
         JSON.stringify({ error: "Campaign not found" }),
         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Get user profile for sender info
     const { data: profile } = await supabase
       .from("profiles")
       .select("company_name")
       .eq("user_id", user.id)
       .single();
 
-    // Fetch recipients with contact details
     const { data: recipients, error: recipientsError } = await supabase
       .from("campaign_recipients")
       .select(`
         id,
         contact:marketing_contacts(
-          id,
-          email,
-          name,
-          company_name,
-          unsubscribe_token
+          id, email, name, company_name, unsubscribe_token
         )
       `)
       .eq("campaign_id", campaignId)
       .eq("status", "pending");
 
-    if (recipientsError) {
-      console.error("Recipients fetch error:", recipientsError);
-      throw recipientsError;
-    }
-
-    console.log(`Sending campaign ${campaignId} to ${recipients?.length || 0} recipients`);
+    if (recipientsError) throw recipientsError;
 
     let sentCount = 0;
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace("/rest/v1", "") || supabaseUrl;
-    const currentYear = new Date().getFullYear();
 
-    // Process recipients
     for (const recipient of recipients || []) {
       const contact = Array.isArray(recipient.contact) ? recipient.contact[0] : recipient.contact;
       if (!contact) continue;
 
       try {
-        // Derive first_name from name
         const firstName = contact.name ? contact.name.split(" ")[0] : "";
+        const unsubscribeUrl = `${baseUrl}/functions/v1/handle-unsubscribe?token=${contact.unsubscribe_token}`;
 
-        // Personalize content with fallback logic
         const personalizeText = (text: string): string => {
           return text
             .replace(/\{\{first_name\}\}/g, firstName || contact.name || "there")
@@ -147,57 +123,27 @@ serve(async (req: Request) => {
             .replace(/\{\{company\}\}/g, contact.company_name || "")
             .replace(/\{\{email\}\}/g, contact.email)
             .replace(/\{\{website_url\}\}/g, "https://ridereadydocs.com")
-            .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com");
+            .replace(/\{\{support_email\}\}/g, "info@ridereadydocs.com")
+            .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl);
         };
 
-        // Build unsubscribe URL
-        const unsubscribeUrl = `${baseUrl}/functions/v1/handle-unsubscribe?token=${contact.unsubscribe_token}`;
+        const personalizedSubject = personalizeText(campaign.subject);
+        const personalizedContent = personalizeText(campaign.html_content);
 
-        const personalizedSubject = personalizeText(campaign.subject)
-          .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl);
-        const personalizedContent = personalizeText(campaign.html_content)
-          .replace(/\{\{unsubscribe_url\}\}/g, unsubscribeUrl);
+        const bodyHtml = `
+          <div style="line-height: 1.7; color: ${brandColors.text}; font-size: 15px;">
+            ${textToHtml(personalizedContent)}
+          </div>
+        `;
 
-        // Build branded HTML email
-        const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>${escapeHtml(personalizedSubject)}</title>
-</head>
-<body style="${emailStyles.body}">
-  <div style="${emailStyles.container}">
-    <!-- Header -->
-    <div style="${emailStyles.header}">
-      ${logoHtml}
-    </div>
-    
-    <!-- Content -->
-    <div style="${emailStyles.content}">
-      <div style="line-height: 1.8; color: ${brandColors.text};">
-        ${textToHtml(personalizedContent)}
-      </div>
-    </div>
-    
-    <!-- Footer -->
-    <div style="${emailStyles.footer}">
-      <p style="${emailStyles.footerText}">
-        ${profile?.company_name ? `Sent by ${escapeHtml(profile.company_name)}<br><br>` : ""}
-        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
-        Professional compliance management for amusement equipment.<br><br>
-        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
-        <a href="${unsubscribeUrl}" style="${emailStyles.footerLink}">Unsubscribe</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>`;
+        const htmlContent = buildMarketingEmail({
+          subject: personalizedSubject,
+          bodyHtml,
+          footerCompany: profile?.company_name || undefined,
+          unsubscribeUrl,
+        });
 
-        // Send email
-        const emailResponse = await resend.emails.send({
+        await resend.emails.send({
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           reply_to: "info@ridereadydocs.com",
           to: [contact.email],
@@ -205,9 +151,6 @@ serve(async (req: Request) => {
           html: htmlContent,
         });
 
-        console.log(`Email sent to ${contact.email}:`, emailResponse);
-
-        // Update recipient status
         await supabase
           .from("campaign_recipients")
           .update({ status: "sent", sent_at: new Date().toISOString() })
@@ -216,8 +159,6 @@ serve(async (req: Request) => {
         sentCount++;
       } catch (emailError: any) {
         console.error(`Failed to send to ${contact.email}:`, emailError);
-
-        // Update recipient with error
         await supabase
           .from("campaign_recipients")
           .update({ 
@@ -228,7 +169,6 @@ serve(async (req: Request) => {
       }
     }
 
-    // Update campaign status
     await supabase
       .from("email_campaigns")
       .update({ 
@@ -238,14 +178,8 @@ serve(async (req: Request) => {
       })
       .eq("id", campaignId);
 
-    console.log(`Campaign ${campaignId} completed: ${sentCount} sent`);
-
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        sent: sentCount,
-        total: recipients?.length || 0
-      }),
+      JSON.stringify({ success: true, sent: sentCount, total: recipients?.length || 0 }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
