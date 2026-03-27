@@ -395,6 +395,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         }
       }
 
+      logEvent('create', 'maintenance', undefined, { ride: ride.ride_name, type: formData.maintenance_type });
       toast({ title: "Maintenance Record Logged", description: "Record saved successfully." });
 
       setFormData({
