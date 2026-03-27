@@ -829,7 +829,7 @@ const AuditLogs = () => {
                 <button
                   key={log.id}
                   onClick={() => { setSelectedEntry(log); setDrawerOpen(true); }}
-                  className={`w-full text-left rounded-lg border bg-card p-3 hover:bg-accent/50 transition-colors group ${isHighPriority ? 'border-l-[3px] border-l-destructive/60' : ''}`}
+                  className={`w-full text-left rounded-lg border bg-card p-3 hover:bg-accent/50 transition-colors group ${isHighPriority ? 'border-l-[3px] border-l-destructive bg-destructive/[0.03]' : ''}`}
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-0.5">
