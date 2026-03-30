@@ -66,6 +66,7 @@ const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
   const [reports, setReports] = useState<Tables<'documents'>[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const load = async () => {
