@@ -611,7 +611,7 @@ const AuditLogs = () => {
       let kpiY = activeFilters.length > 0 ? 48 : 42;
       doc.setFontSize(9);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Events (24h): ${stats.events}  |  Users: ${stats.users}  |  Failed: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, kpiY);
+      doc.text(`Visible events: ${visibleStats.events}  |  Users: ${visibleStats.users}  |  Failed: ${visibleStats.failed}  |  High-Risk: ${visibleStats.highRisk}`, margin, kpiY);
 
       // Summary table — 5 columns, larger font
       const headers = ['Time', 'Performed by', 'Action & Target', 'Result', 'Trigger'];
