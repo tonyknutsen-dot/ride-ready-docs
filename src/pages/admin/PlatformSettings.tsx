@@ -334,7 +334,7 @@ export default function PlatformSettings() {
               <Layers className="h-4 w-4 text-primary" />
               Feature Flags
             </CardTitle>
-            <CardDescription>Toggle platform features. Some flags may not yet actively control live behaviour — they are persisted for future consumption.</CardDescription>
+            <CardDescription>Toggle platform features. These flags actively control sidebar visibility, route access, and feature availability across the app.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="divide-y divide-border">
