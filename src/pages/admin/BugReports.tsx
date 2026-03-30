@@ -195,12 +195,17 @@ const BugReports = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
+      // Support comma-separated statuses from URL params
+      const urlStatuses = searchParams.get('status')?.split(',').filter(Boolean);
       let query = (supabase as any)
         .from('bug_reports')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (statusFilter !== 'all') {
+      if (urlStatuses && urlStatuses.length > 1 && statusFilter === urlStatuses[0]) {
+        // Multi-status from dashboard deep-link
+        query = query.in('status', urlStatuses);
+      } else if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
       if (severityFilter !== 'all') {
