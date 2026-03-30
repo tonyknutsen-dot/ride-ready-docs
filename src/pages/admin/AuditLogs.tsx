@@ -878,34 +878,33 @@ const AuditLogs = () => {
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-0.5">
                       {/* Line 1: Performer + action + record type */}
-                      <p className="text-sm leading-snug">
-                        <span className={isRealUser ? 'font-semibold' : 'text-muted-foreground italic font-medium'}>
+                      <p className="text-[13px] leading-snug">
+                        <span className={`font-bold ${isRealUser ? 'text-foreground' : 'text-muted-foreground italic'}`}>
                           {performer}
                         </span>
-                        <span className="text-muted-foreground">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
-                        <span className="text-foreground/70">{getResourceLabel(log.resource_type).toLowerCase()}</span>
+                        <span className="text-foreground/60 font-medium">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
+                        <span className="text-foreground/70 font-medium">{getResourceLabel(log.resource_type).toLowerCase()}</span>
                       </p>
                       {/* Line 2: Target name */}
                       {targetName !== '—' && (
-                        <p className="text-[13px] font-medium truncate text-foreground/90">{targetName}</p>
+                        <p className="text-[13px] font-semibold truncate text-foreground/85">{targetName}</p>
                       )}
                       {/* Line 3: Compact metadata */}
-                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
-                        <span className="text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                        <span className="text-[10px] text-muted-foreground/70">
                           {format(new Date(log.created_at), 'dd MMM HH:mm')}
                         </span>
-                        <span className="text-muted-foreground/30 text-[10px]">•</span>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
+                        <Badge variant="secondary" className="text-[9px] px-1 py-0 h-[14px]">{family}</Badge>
                         <ResultBadge result={result} />
                         {hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/20 text-primary">
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-[14px] border-primary/30 bg-primary/10 text-primary font-semibold">
                             {log.changed_fields?.length
                               ? `${log.changed_fields.length} field${log.changed_fields.length > 1 ? 's' : ''} changed`
                               : 'Changes recorded'}
                           </Badge>
                         )}
-                         {triggerType !== 'User action' && (
-                          <span className="text-[10px] text-muted-foreground/60 italic">{triggerType}</span>
+                        {triggerType !== 'User action' && (
+                          <span className="text-[9px] text-muted-foreground/50 italic">{triggerType}</span>
                         )}
                       </div>
                     </div>
