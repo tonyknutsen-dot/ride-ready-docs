@@ -334,7 +334,7 @@ export default function PlatformSettings() {
               <Globe className="h-4 w-4 text-primary" />
               Access &amp; Growth Toggles
             </CardTitle>
-            <CardDescription>Control public-facing and operational access features.</CardDescription>
+            <CardDescription>Control app entry points and admin tooling availability.</CardDescription>
           </CardHeader>
           <CardContent className="divide-y divide-border">
             {ACCESS_KEYS.map(k => <ToggleRow key={k} settingKey={k} />)}
