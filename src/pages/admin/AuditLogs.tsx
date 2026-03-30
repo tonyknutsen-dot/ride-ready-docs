@@ -147,7 +147,7 @@ const AuditLogs = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [logs, setLogs] = useState<AuditEntry[]>([]);
-  const [stats, setStats] = useState({ events: 0, users: 0, failed: 0, highRisk: 0 });
+  
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
