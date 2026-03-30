@@ -308,7 +308,9 @@ serve(async (req: Request) => {
 
     if (emailError) {
       console.error("[MONITOR] Failed to send alert email:", emailError);
+      await logEmailSend({ template_name: 'rate-limit-alert', recipient_email: 'info@ridereadydocs.com', status: 'failed', error_message: emailError.message });
     } else {
+      await logEmailSend({ template_name: 'rate-limit-alert', recipient_email: 'info@ridereadydocs.com', subject: `Rate Limit Abuse Detected`, status: 'sent', metadata: { patterns_count: patterns.length, blocked_count: blockedIpsWithTokens.length } });
       console.log("[MONITOR] Alert email sent successfully");
     }
 

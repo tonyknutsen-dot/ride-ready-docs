@@ -193,9 +193,10 @@ serve(async (req) => {
         html: userEmailHtml,
       });
       console.log(`Confirmation email sent to ${trimmedEmail}`);
+      await logEmailSend({ template_name: 'early-access-signup', recipient_email: trimmedEmail, subject: "You're on the Ride Ready Docs Early Access List!", status: 'sent' });
     } catch (emailError) {
       console.error("Failed to send user confirmation email:", emailError);
-      // Don't fail the request - signup is still recorded
+      await logEmailSend({ template_name: 'early-access-signup', recipient_email: trimmedEmail, status: 'failed', error_message: (emailError as any)?.message });
     }
 
     // Send notification email to admin
