@@ -36,7 +36,7 @@ import InspectionManager from './InspectionManager';
 import DefectReportDialog from './DefectReportDialog';
 import { FeatureGate } from './FeatureGate';
 import RideForm from './RideForm';
-import ImageViewer from './ImageViewer';
+import DocumentViewer from './DocumentViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
 import { lazy, Suspense } from 'react';
 import CriticalDefectBanner from './CriticalDefectBanner';
