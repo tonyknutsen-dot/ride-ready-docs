@@ -275,7 +275,12 @@ export const PreviousReportsSection = ({
   const [sendDocName, setSendDocName] = useState('');
 
   const handleView = (reportId: string) => {
-    navigate(`/documents/${reportId}`);
+    void openDocumentById({
+      documentId: reportId,
+      navigate,
+      sourceComponent: 'PreviousReportsSection',
+      toast,
+    });
   };
 
   const handleDownload = async (filePath: string, fileName: string) => {

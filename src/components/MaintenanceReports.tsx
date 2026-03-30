@@ -84,7 +84,12 @@ const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
   }, [rideId]);
 
   const handleView = (reportId: string) => {
-    navigate(`/documents/${reportId}`);
+    void openDocumentById({
+      documentId: reportId,
+      navigate,
+      sourceComponent: 'MaintenanceReports.GeneratedReportsList',
+      toast,
+    });
   };
 
   if (loadingReports) return null;

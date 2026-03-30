@@ -111,7 +111,12 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const handleViewSavedDocument = () => {
     if (!savedDocId) return;
     onOpenChange(false);
-    navigate(`/documents/${savedDocId}`);
+    void openDocumentById({
+      documentId: savedDocId,
+      navigate,
+      sourceComponent: 'ExportActionsDialog',
+      toast,
+    });
   };
 
   const handleCopyLink = async () => {

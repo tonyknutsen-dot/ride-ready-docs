@@ -405,8 +405,12 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   };
 
   const handleViewPdf = (doc: RideDocument) => {
-    // Navigate to the full document viewer page
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'CompletedComplianceTab',
+      toast,
+    });
   };
 
   const handleDownload = async (doc: RideDocument) => {

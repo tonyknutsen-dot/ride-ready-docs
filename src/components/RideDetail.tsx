@@ -416,7 +416,18 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             {/* Photo */}
               {photoUrl ? (
-                <div className="relative h-36 bg-muted cursor-pointer" onClick={() => photoDocumentId && navigate(`/documents/${photoDocumentId}`)}>
+                <div
+                  className="relative h-36 bg-muted cursor-pointer"
+                  onClick={() => {
+                    if (!photoDocumentId) return;
+                    void openDocumentById({
+                      documentId: photoDocumentId,
+                      navigate,
+                      sourceComponent: 'RideDetail.photo',
+                      toast,
+                    });
+                  }}
+                >
                 <img src={photoUrl} alt={ride.ride_name} className="w-full h-full object-cover" />
               </div>
             ) : (
