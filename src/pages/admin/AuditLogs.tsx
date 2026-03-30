@@ -91,12 +91,13 @@ function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] |
  */
 function resolvePerformedBy(log: AuditEntry): string {
   const name = log.actor_name;
+  const SENTINELS = ['__no_profile__', ''];
 
-  if (name && name !== '__no_profile__') return name;
+  if (name && !SENTINELS.includes(name)) return name;
 
   const trigger = getTriggerType(log);
   if (trigger === 'Automation' || trigger === 'Seeded proof' || trigger === 'Workflow') {
-    return 'System';
+    return 'System (automated)';
   }
 
   return 'Unknown user';
@@ -189,7 +190,7 @@ const AuditLogs = () => {
       // Keep the sentinel internal only; UI must never render it directly.
     missing.forEach(id => {
       if (!newMap.has(id)) {
-        newMap.set(id, { name: '__no_profile__', email: '' });
+        newMap.set(id, { name: '', email: '' });
       }
     });
     setProfileMap(newMap);
@@ -285,7 +286,7 @@ const AuditLogs = () => {
     if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
       return false;
     }
-    if (hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id))) {
+    if (hideOrphanRows && (!log.actor_name || log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id))) {
       return false;
     }
     return true;
@@ -313,7 +314,7 @@ const AuditLogs = () => {
     if (!isHighlighted) return false;
 
     const hiddenByRoutineAuth = hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session';
-    const hiddenByOrphan = hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id));
+    const hiddenByOrphan = hideOrphanRows && (!log.actor_name || log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id));
 
     return hiddenByRoutineAuth || hiddenByOrphan;
   }).length, [baseFilteredLogs, hideRoutineAuth, familyFilter, hideOrphanRows]);
@@ -860,7 +861,7 @@ const AuditLogs = () => {
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
               const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
               const performer = resolvePerformedBy(log);
-               const isRealUser = performer !== 'System' && performer !== 'Unknown user';
+               const isRealUser = performer !== 'System' && performer !== 'System (automated)' && performer !== 'Unknown user';
               const triggerType = getTriggerType(log);
 
               return (

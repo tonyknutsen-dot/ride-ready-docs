@@ -468,8 +468,21 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   const sourcePage = getSourcePage(entry);
 
   // Determine if the actor is a real user vs system/automation
-  const isRealUser = entry.actor_name && entry.actor_name !== 'System' && entry.actor_name !== 'Unknown';
-  const performedBy = isRealUser ? entry.actor_name : (triggerType === 'Automation' ? 'System (automated)' : entry.actor_name || 'System');
+  // Never expose sentinel values like __no_profile__ to end users
+  const SENTINEL_NAMES = ['__no_profile__', '', 'Unknown'];
+  const rawName = entry.actor_name;
+  const hasRealName = rawName && !SENTINEL_NAMES.includes(rawName) && rawName !== 'System';
+  let performedBy: string;
+  if (hasRealName) {
+    performedBy = rawName;
+  } else if (triggerType === 'Automation' || triggerType === 'Seeded proof' || triggerType === 'Workflow') {
+    performedBy = 'System (automated)';
+  } else if (triggerType === 'User action') {
+    performedBy = 'Unknown user';
+  } else {
+    performedBy = 'System';
+  }
+  const isRealUser = hasRealName;
 
   const knownKeys = new Set([
     'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
@@ -496,7 +509,7 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="pb-0">
-          <SheetTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Audit Record</SheetTitle>
+          <SheetTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Audit Event Detail</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4 pt-2">
