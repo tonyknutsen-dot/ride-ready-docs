@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedPdf, cachePdf, createCachedPdfUrl, fetchPdfBlob } from '@/lib/pdfCache';
 import { useAuth } from '@/contexts/AuthContext';
-import PdfCanvasViewer from '@/components/PdfCanvasViewer';
+
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
