@@ -348,7 +348,7 @@ export default function PlatformSettings() {
               <Layers className="h-4 w-4 text-primary" />
               Feature Flags
             </CardTitle>
-            <CardDescription>Toggle platform features. These flags actively control sidebar visibility, route access, and feature availability across the app.</CardDescription>
+            <CardDescription>These flags control visibility and access for the linked admin pages. Disabling a flag hides its sidebar link, dashboard card, and blocks direct route access.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="divide-y divide-border">
