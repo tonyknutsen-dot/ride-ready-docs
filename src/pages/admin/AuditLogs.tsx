@@ -861,7 +861,7 @@ const AuditLogs = () => {
               const isHighPriority = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
               const hasChanges = !!(log.changed_fields?.length || log.before_data || log.after_data);
               const performer = resolvePerformedBy(log);
-               const isRealUser = performer !== 'System' && performer !== 'Unknown user';
+               const isRealUser = performer !== 'System' && performer !== 'System (automated)' && performer !== 'Unknown user';
               const triggerType = getTriggerType(log);
 
               return (
