@@ -27,6 +27,7 @@ interface PendingCounts {
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isOn } = usePlatformSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCounts, setPendingCounts] = useState<PendingCounts>({
     rideRequests: 0,
