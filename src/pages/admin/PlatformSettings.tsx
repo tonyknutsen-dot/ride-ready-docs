@@ -420,7 +420,7 @@ export default function PlatformSettings() {
               <Save className="h-3.5 w-3.5 mr-1" />
               Save Release Notes
             </Button>
-            {settings['release_note_title']?.updated_at && settings['release_note_title'].updated_at !== settings['release_note_title']?.value && (
+            {settings['release_note_title']?.updated_by && (
               <p className="text-xs text-muted-foreground">
                 Last updated: {new Date(settings['release_note_title'].updated_at).toLocaleString()}
               </p>
@@ -446,20 +446,21 @@ export default function PlatformSettings() {
                   const details = log.details as any || {};
                   return (
                     <div key={log.id} className="py-2.5 text-sm">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-xs">{details.label || details.key || 'Setting'}</span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                           {new Date(log.created_at).toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex gap-2 mt-0.5 text-xs text-muted-foreground">
+                      <div className="flex flex-col gap-0.5 mt-0.5 text-xs text-muted-foreground">
                         {details.old_value !== undefined && (
                           <span>
-                            <span className="line-through">{details.old_value || '(empty)'}</span>
+                            <span className="line-through">{String(details.old_value) || '(empty)'}</span>
                             {' → '}
-                            <span className="text-foreground">{details.new_value || '(empty)'}</span>
+                            <span className="text-foreground">{String(details.new_value) || '(empty)'}</span>
                           </span>
                         )}
+                        <span className="text-[10px]">by {log.user_id?.slice(0, 8) ?? 'unknown'}…</span>
                       </div>
                     </div>
                   );
