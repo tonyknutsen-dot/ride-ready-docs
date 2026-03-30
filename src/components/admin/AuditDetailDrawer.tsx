@@ -405,10 +405,10 @@ function AuditLegend() {
           <div>
             <p className="font-semibold text-foreground mb-1">Results</p>
             <div className="space-y-0.5 text-muted-foreground">
-              <p><span className="text-emerald-600 font-medium">Success</span> — Action completed normally</p>
-              <p><span className="text-red-600 font-medium">Failed</span> — Action attempted but did not succeed</p>
-              <p><span className="text-red-600 font-medium">Blocked</span> — Action was prevented by a security rule</p>
-              <p><span className="text-amber-600 font-medium">Denied</span> — Action was rejected due to permissions</p>
+              <p><span className="text-primary font-medium">Success</span> — Action completed normally</p>
+              <p><span className="text-destructive font-medium">Failed</span> — Action attempted but did not succeed</p>
+              <p><span className="text-destructive font-medium">Blocked</span> — Action was prevented by a security rule</p>
+              <p><span className="text-destructive/80 font-medium">Denied</span> — Action was rejected due to permissions</p>
             </div>
           </div>
           <div>
