@@ -255,7 +255,6 @@ const AuditLogs = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetchStats();
     fetchLogs(true);
   }, [actionFilter, familyFilter, dateFilter]);
 
