@@ -100,18 +100,20 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
         const page = await pdfDoc.getPage(1);
         const viewport = page.getViewport({ scale: 1 });
 
-        // Try multiple width sources — dialog may not have laid out containerRef yet
-        let availableWidth = 0;
-        if (containerRef.current && containerRef.current.clientWidth > 50) {
+        const isMobile = window.innerWidth < 640;
+
+        // On mobile, use nearly the full screen width minus minimal padding (4px each side)
+        // On desktop, measure the container or fall back to a reasonable width
+        let availableWidth: number;
+        if (isMobile) {
+          availableWidth = window.innerWidth - 8;
+        } else if (containerRef.current && containerRef.current.clientWidth > 50) {
           availableWidth = containerRef.current.clientWidth - 16;
         } else {
-          // Fallback: use viewport width minus modal chrome (padding, borders)
-          availableWidth = window.innerWidth - 24;
+          availableWidth = window.innerWidth - 48;
         }
 
         const fitScale = availableWidth / viewport.width;
-        // On mobile, never open unreadably small
-        const isMobile = window.innerWidth < 640;
         const minScale = isMobile ? MOBILE_MIN_FIT_SCALE : MIN_ZOOM;
         const clampedScale = Math.max(minScale, Math.min(MAX_ZOOM, fitScale));
 
@@ -124,7 +126,7 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
     };
 
     // Wait for dialog layout to settle before measuring
-    const timer = setTimeout(computeFitWidth, 80);
+    const timer = setTimeout(computeFitWidth, 120);
     return () => clearTimeout(timer);
   }, [pdfDoc, fitWidth]);
 
