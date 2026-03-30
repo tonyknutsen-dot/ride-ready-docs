@@ -545,7 +545,6 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
           <Section icon={User} title="Performed by">
             <DetailRow label="Name" value={performedBy} />
             {entry.actor_email && <DetailRow label="Email" value={entry.actor_email} />}
-            <DetailRow label="User ID" value={entry.user_id?.slice(0, 12) + '…'} />
             <DetailRow label="Trigger type" value={triggerType} />
           </Section>
 
@@ -553,9 +552,6 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
           <Section icon={Clock} title="Event">
             <DetailRow label="Action" value={ACTION_VERBS[entry.action] || entry.action} />
             <DetailRow label="Family" value={family} />
-            <DetailRow label="Result" value={<Badge variant="outline" className={`text-[10px] ${rv.className}`}>{rv.label}</Badge>} />
-            <DetailRow label="Timestamp" value={format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")} />
-            {sourcePage && <DetailRow label="Source page" value={sourcePage} />}
           </Section>
 
           {/* ── Target ── */}
