@@ -136,6 +136,7 @@ const App = () => (
               <AuthenticatedAppShell />
               <LockScreenProvider>
               <LocationAwareOfflineSuspense>
+              <MaintenanceGuard>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
