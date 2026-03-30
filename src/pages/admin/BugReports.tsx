@@ -121,6 +121,7 @@ const getNextVersion = (currentVersion: string): string => {
 
 const BugReports = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [reports, setReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
@@ -131,8 +132,9 @@ const BugReports = () => {
   const [emailCache, setEmailCache] = useState<Record<string, string>>({});
   const [fetchingEmail, setFetchingEmail] = useState<string | null>(null);
   
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  // Filters — initialise from URL search params if present
+  const initialStatus = searchParams.get('status') || 'all';
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus.includes(',') ? initialStatus.split(',')[0] : initialStatus);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [versionFilter, setVersionFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
