@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
+import { openDocumentById } from '@/utils/documentOpen';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';

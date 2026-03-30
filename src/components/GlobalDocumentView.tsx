@@ -31,6 +31,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import { openDocumentById } from '@/utils/documentOpen';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;

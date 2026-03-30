@@ -38,6 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import { openDocumentById } from '@/utils/documentOpen';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
