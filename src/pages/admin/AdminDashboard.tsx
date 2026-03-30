@@ -153,8 +153,8 @@ export default function AdminDashboard() {
   // ─── TRIAGE ITEMS ───
   const triageItems = [
     { label: 'Unanswered Support Messages', count: stats.unansweredSupport, href: '/admin/support?status=pending', icon: MessageCircle, accent: 'destructive' as const, cta: 'Review & Respond' },
-    { label: 'Bug Reports Needing Triage', count: stats.bugReportsNeedingTriage, href: '/admin/bug-reports?status=new', icon: Bug, accent: 'warning' as const, cta: 'Triage Bugs' },
-    { label: 'Feature Requests Pending', count: stats.featureRequestsPending, href: '/admin/feature-requests?status=pending', icon: Lightbulb, accent: 'primary' as const, cta: 'Review Requests' },
+    { label: 'Bug Reports Needing Triage', count: stats.bugReportsNeedingTriage, href: '/admin/bug-reports?status=new,in_progress', icon: Bug, accent: 'warning' as const, cta: 'Triage Bugs' },
+    { label: 'Feature Requests Pending', count: stats.featureRequestsPending, href: '/admin/feature-requests?status=pending,in_review', icon: Lightbulb, accent: 'primary' as const, cta: 'Review Requests' },
   ];
 
   // ─── LIBRARY APPROVAL ITEMS ───
@@ -463,7 +463,7 @@ export default function AdminDashboard() {
             </section>
 
             {/* ─── 6. PLATFORM TOTALS ─── */}
-            <section className="opacity-75">
+            <section>
               <div className="flex items-center gap-2 mb-2">
                 <BarChart3 className="h-3.5 w-3.5 text-muted-foreground/50" />
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Platform Totals</h2>
@@ -473,6 +473,7 @@ export default function AdminDashboard() {
                   </Badge>
                 )}
               </div>
+              <p className="text-[11px] text-muted-foreground/50 mb-2">Read-only summary — these counts are not linked to filtered views.</p>
               <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
                 {[
                   { label: 'Equipment', value: displayedRides, testCount: stats.testRides, icon: FolderOpen },
@@ -480,11 +481,11 @@ export default function AdminDashboard() {
                   { label: 'Checks', value: displayedChecks, testCount: stats.testChecks, icon: CheckCircle },
                   { label: 'Maintenance', value: displayedMaintenance, testCount: stats.testMaintenanceRecords, icon: Wrench },
                 ].map(item => (
-                  <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg border border-border/30 bg-muted/10">
-                    <item.icon className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg border border-border/30 bg-muted/5">
+                    <item.icon className="h-4 w-4 text-muted-foreground/30 shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-lg font-semibold text-muted-foreground leading-none">{item.value}</p>
-                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                      <p className="text-lg font-semibold text-muted-foreground/70 leading-none">{item.value}</p>
+                      <p className="text-[10px] text-muted-foreground/40 mt-0.5">
                         {item.label}
                         {excludeTestData && item.testCount > 0 && ` · ${item.testCount} test excl.`}
                       </p>
