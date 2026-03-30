@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Activity, RefreshCw, Loader2, CheckCircle, AlertTriangle, XCircle,
@@ -29,7 +28,7 @@ interface FailureEntry {
 }
 
 interface CategoryCard {
-  key: string;
+  key: CategoryKey;
   label: string;
   icon: typeof Activity;
   count: number;
@@ -37,7 +36,7 @@ interface CategoryCard {
   evidence: string;
 }
 
-const CATEGORY_CONFIG: { key: string; label: string; icon: typeof Activity }[] = [
+const CATEGORY_CONFIG: { key: CategoryKey; label: string; icon: typeof Activity }[] = [
   { key: 'Webhooks', label: 'Webhooks', icon: Webhook },
   { key: 'PDF Generation', label: 'PDF Generation', icon: Wrench },
   { key: 'Storage / Uploads', label: 'Storage / Uploads', icon: Upload },
@@ -46,7 +45,7 @@ const CATEGORY_CONFIG: { key: string; label: string; icon: typeof Activity }[] =
   { key: 'Other', label: 'Other Failures', icon: AlertTriangle },
 ];
 
-function categorizeFailure(f: FailureEntry): string {
+function categorizeFailure(f: FailureEntry): CategoryKey {
   const action = f.action?.toLowerCase() || '';
   const resource = f.resource_type?.toLowerCase() || '';
   const hint = f.context_hint?.toLowerCase() || '';
@@ -113,14 +112,14 @@ export default function JobsQueues() {
     fetchData();
   };
 
-  // Build category counts
+  // Build category counts from failures
   const categoryCounts: Record<string, number> = {};
   failures.forEach(f => {
     const cat = categorizeFailure(f);
     categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
   });
 
-  // Build category cards
+  // Build exactly 6 category cards
   const categoryCards: CategoryCard[] = CATEGORY_CONFIG.map(cfg => {
     const count = categoryCounts[cfg.key] || 0;
     return {
@@ -165,12 +164,12 @@ export default function JobsQueues() {
           </div>
         ) : (
           <>
-            {/* Summary Cards */}
+            {/* Summary Cards — exactly 6 */}
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
               {categoryCards.map(card => (
                 <button
                   key={card.key}
-                  onClick={() => setCategoryFilter(categoryFilter === card.key ? 'all' : card.key as CategoryKey)}
+                  onClick={() => setCategoryFilter(categoryFilter === card.key ? 'all' : card.key)}
                   className={`text-left p-3 rounded-lg border transition-colors ${
                     categoryFilter === card.key
                       ? 'border-primary bg-primary/5'
@@ -189,9 +188,7 @@ export default function JobsQueues() {
                     )}
                     <span className="text-xs font-medium truncate">{card.label}</span>
                   </div>
-                  <p className="text-lg font-bold leading-none mb-1">
-                    {card.count}
-                  </p>
+                  <p className="text-lg font-bold leading-none mb-1">{card.count}</p>
                   <p className="text-[10px] text-muted-foreground/60 leading-tight">{card.evidence}</p>
                 </button>
               ))}
