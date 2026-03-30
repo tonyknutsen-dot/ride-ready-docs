@@ -18,6 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { UserCard } from '@/components/admin/UserCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,6 +93,7 @@ interface TesterAllTimeData {
 }
 
 export default function UserManagement() {
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -828,7 +831,7 @@ export default function UserManagement() {
           />
         </div>
 
-        {/* Users Table */}
+        {/* Users List */}
         <Card>
           <CardHeader>
             <CardTitle>All Users</CardTitle>
@@ -837,402 +840,347 @@ export default function UserManagement() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead className="hidden md:table-cell">Company</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden sm:table-cell">Plan</TableHead>
-                  <TableHead className="hidden lg:table-cell">Rides</TableHead>
-                  <TableHead className="hidden xl:table-cell">Stripe</TableHead>
-                  <TableHead className="hidden lg:table-cell">Country</TableHead>
-                  <TableHead className="hidden sm:table-cell">Joined</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            {/* Mobile: card layout */}
+            {isMobile ? (
+              <div className="space-y-2">
                 {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="min-w-0">
-                        <div className="font-medium truncate">
-                          {user.name || user.email?.split('@')[0] || 'Unknown'}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {user.email || 'No email'}
-                        </div>
-                        {/* Show company on mobile within this cell */}
-                        <div className="md:hidden flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                          <Building className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{user.profile?.company_name || 'No company'}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <span className="font-medium truncate">
-                          {user.profile?.company_name || 'No company'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(user.profile?.subscription_status, user.profile?.is_suspended ?? false)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <span className="capitalize">
-                        {user.profile?.subscription_plan || '-'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <span className="font-mono text-sm">{user.rideCount}</span>
-                    </TableCell>
-                    <TableCell className="hidden xl:table-cell">
-                      {user.profile?.stripe_customer_id ? (
-                        <div className="space-y-0.5">
-                          <div className="text-[10px] font-mono text-muted-foreground truncate max-w-[120px]" title={user.profile.stripe_customer_id}>
-                            {user.profile.stripe_customer_id}
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    updatingUserId={updatingUserId}
+                    updatingTesterUserId={updatingTesterUserId}
+                    suspendingUserId={suspendingUserId}
+                    onToggleAdmin={toggleAdminRole}
+                    onToggleSuspension={(uid, suspended, reason) => {
+                      if (reason) setSuspendReason(reason);
+                      toggleSuspension(uid, suspended);
+                    }}
+                    onToggleTester={toggleTesterRole}
+                    onExtendTester={extendTesterExpiry}
+                    onOffboardTester={offboardTester}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Desktop: table layout */
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Rides</TableHead>
+                    <TableHead>Country</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">
+                            {user.name || user.email?.split('@')[0] || 'Unknown'}
                           </div>
-                          {user.profile.stripe_subscription_id && (
-                            <div className="text-[10px] font-mono text-muted-foreground truncate max-w-[120px]" title={user.profile.stripe_subscription_id}>
-                              {user.profile.stripe_subscription_id}
+                          <div className="text-xs text-muted-foreground truncate">
+                            {user.email || 'No email'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="font-medium truncate">
+                            {user.profile?.company_name || 'No company'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(user.profile?.subscription_status, user.profile?.is_suspended ?? false)}
+                      </TableCell>
+                      <TableCell>
+                        <span className="capitalize">
+                          {user.profile?.subscription_plan || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">{user.rideCount}</span>
+                      </TableCell>
+                      <TableCell>
+                        {user.profile?.country || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(user.created_at), 'MMM d, yyyy')}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {user.isAdmin ? (
+                            <Badge className="bg-primary w-fit">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Admin
+                            </Badge>
+                          ) : user.isTester ? (
+                            <div className="space-y-1">
+                              <Badge className="bg-warning text-warning-foreground w-fit">
+                                <FlaskConical className="h-3 w-3 mr-1" />
+                                Tester
+                              </Badge>
+                              {user.testerExpiresAt && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {new Date(user.testerExpiresAt) < new Date() ? (
+                                    <span className="text-destructive">Expired</span>
+                                  ) : (
+                                    <span>Expires {format(new Date(user.testerExpiresAt), 'MMM d, yyyy')}</span>
+                                  )}
+                                </div>
+                              )}
                             </div>
+                          ) : (
+                            <Badge variant="outline" className="w-fit">User</Badge>
                           )}
                         </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {user.profile?.country || '-'}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(user.created_at), 'MMM d, yyyy')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        {user.isAdmin ? (
-                          <Badge className="bg-primary w-fit">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Admin
-                          </Badge>
-                        ) : user.isTester ? (
-                          <div className="space-y-1">
-                            <Badge className="bg-warning text-warning-foreground w-fit">
-                              <FlaskConical className="h-3 w-3 mr-1" />
-                              Tester
-                            </Badge>
-                            {user.testerExpiresAt && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {new Date(user.testerExpiresAt) < new Date() ? (
-                                  <span className="text-destructive">Expired</span>
-                                ) : (
-                                  <span>Expires {format(new Date(user.testerExpiresAt), 'MMM d, yyyy')}</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="w-fit">User</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Suspend/Reactivate Button */}
-                        <AlertDialog open={showSuspendDialog === user.id} onOpenChange={(open) => {
-                          if (!open) {
-                            setShowSuspendDialog(null);
-                            setSuspendReason('');
-                          }
-                        }}>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant={user.profile?.is_suspended ? 'default' : 'outline'}
-                              size="sm"
-                              disabled={suspendingUserId === user.id}
-                              onClick={() => setShowSuspendDialog(user.id)}
-                            >
-                              {suspendingUserId === user.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : user.profile?.is_suspended ? (
-                                <>
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Reactivate
-                                </>
-                              ) : (
-                                <>
-                                  <Ban className="h-4 w-4 mr-1" />
-                                  Suspend
-                                </>
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                {user.profile?.is_suspended ? 'Reactivate User Account?' : 'Suspend User Account?'}
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {user.profile?.is_suspended
-                                  ? 'This will restore the user\'s access to their account.'
-                                  : 'This will prevent the user from accessing their account.'}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            {!user.profile?.is_suspended && (
-                              <div className="space-y-2">
-                                <Label htmlFor="suspend-reason">Reason (optional)</Label>
-                                <Textarea
-                                  id="suspend-reason"
-                                  placeholder="Enter reason for suspension..."
-                                  value={suspendReason}
-                                  onChange={(e) => setSuspendReason(e.target.value)}
-                                />
-                              </div>
-                            )}
-                            {user.profile?.is_suspended && user.profile?.suspended_reason && (
-                              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                                <strong>Suspension reason:</strong> {user.profile.suspended_reason}
-                              </div>
-                            )}
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => toggleSuspension(user.id, user.profile?.is_suspended ?? false)}
-                              >
-                                {user.profile?.is_suspended ? 'Reactivate' : 'Suspend'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-
-                        {/* Admin Role Button */}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant={user.isAdmin ? 'outline' : 'secondary'}
-                              size="sm"
-                              disabled={updatingUserId === user.id}
-                            >
-                              {updatingUserId === user.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : user.isAdmin ? (
-                                <>
-                                  <ShieldOff className="h-4 w-4 mr-1" />
-                                  Remove Admin
-                                </>
-                              ) : (
-                                <>
-                                  <Shield className="h-4 w-4 mr-1" />
-                                  Make Admin
-                                </>
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                {user.isAdmin ? 'Remove Admin Access?' : 'Grant Admin Access?'}
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {user.isAdmin
-                                  ? 'This user will lose access to the admin dashboard and management features.'
-                                  : 'This user will gain full admin access including user management and system settings.'}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => toggleAdminRole(user.id, user.isAdmin)}
-                              >
-                                {user.isAdmin ? 'Remove Admin' : 'Grant Admin'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-
-                        {/* Tester Role Button - only show if not admin */}
-                        {!user.isAdmin && (
-                          <AlertDialog open={showTesterDialog === user.id} onOpenChange={(open) => {
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Suspend/Reactivate Button */}
+                          <AlertDialog open={showSuspendDialog === user.id} onOpenChange={(open) => {
                             if (!open) {
-                              setShowTesterDialog(null);
-                              setTesterExpiryDays('30');
+                              setShowSuspendDialog(null);
+                              setSuspendReason('');
                             }
                           }}>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant={user.isTester ? 'outline' : 'secondary'}
+                                variant={user.profile?.is_suspended ? 'default' : 'outline'}
                                 size="sm"
-                                disabled={updatingTesterUserId === user.id}
-                                className={user.isTester ? 'border-warning text-warning-foreground hover:bg-warning/10' : ''}
-                                onClick={() => setShowTesterDialog(user.id)}
+                                disabled={suspendingUserId === user.id}
+                                onClick={() => setShowSuspendDialog(user.id)}
                               >
-                                {updatingTesterUserId === user.id ? (
+                                {suspendingUserId === user.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : user.isTester ? (
+                                ) : user.profile?.is_suspended ? (
                                   <>
-                                    <FlaskConical className="h-4 w-4 mr-1" />
-                                    Manage Tester
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Reactivate
                                   </>
                                 ) : (
                                   <>
-                                    <FlaskConical className="h-4 w-4 mr-1" />
-                                    Make Tester
+                                    <Ban className="h-4 w-4 mr-1" />
+                                    Suspend
                                   </>
                                 )}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="flex items-center gap-2">
-                                  <FlaskConical className="h-5 w-5 text-warning" />
-                                  {user.isTester ? 'Manage Tester Role' : 'Grant Tester Role'}
+                                <AlertDialogTitle>
+                                  {user.profile?.is_suspended ? 'Reactivate User Account?' : 'Suspend User Account?'}
                                 </AlertDialogTitle>
-                                <AlertDialogDescription asChild>
-                                  <div className="space-y-4">
-                                    {user.isTester ? (
-                                      <>
-                                        <p>
-                                          This user currently has the tester role.
-                                          {user.testerExpiresAt && (
-                                            <span className="block mt-1 font-medium">
-                                              Expires: {format(new Date(user.testerExpiresAt), 'MMM d, yyyy h:mm a')}
-                                              {new Date(user.testerExpiresAt) < new Date() && (
-                                                <Badge variant="destructive" className="ml-2">Expired</Badge>
-                                              )}
-                                            </span>
-                                          )}
-                                        </p>
-                                        <div className="space-y-2">
-                                          <Label>Extend Access</Label>
-                                          <div className="flex gap-2">
-                                            <Button 
-                                              size="sm" 
-                                              variant="outline"
-                                              onClick={() => extendTesterExpiry(user.id, 7)}
-                                              disabled={updatingTesterUserId === user.id}
-                                            >
-                                              +7 days
-                                            </Button>
-                                            <Button 
-                                              size="sm" 
-                                              variant="outline"
-                                              onClick={() => extendTesterExpiry(user.id, 30)}
-                                              disabled={updatingTesterUserId === user.id}
-                                            >
-                                              +30 days
-                                            </Button>
-                                            <Button 
-                                              size="sm" 
-                                              variant="outline"
-                                              onClick={() => extendTesterExpiry(user.id, 90)}
-                                              disabled={updatingTesterUserId === user.id}
-                                            >
-                                              +90 days
-                                            </Button>
-                                          </div>
-                                        </div>
-                                        
-                                        <hr className="my-4 border-border" />
-                                        
-                                        <div className="space-y-3">
-                                          <Label className="text-destructive">Off-board Tester</Label>
-                                          <div className="space-y-2">
-                                            <Label htmlFor="offboard-reason" className="text-sm text-muted-foreground">Reason (optional)</Label>
-                                            <Input
-                                              id="offboard-reason"
-                                              placeholder="e.g., Testing period complete"
-                                              value={offboardReason}
-                                              onChange={(e) => setOffboardReason(e.target.value)}
-                                            />
-                                          </div>
-                                          <div className="flex gap-2">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => offboardTester(user.id, 'user', offboardReason)}
-                                              disabled={updatingTesterUserId === user.id}
-                                              className="flex-1"
-                                            >
-                                              <UserMinus className="h-4 w-4 mr-1" />
-                                              Convert to User
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="destructive"
-                                              onClick={() => offboardTester(user.id, 'disabled', offboardReason)}
-                                              disabled={updatingTesterUserId === user.id}
-                                              className="flex-1"
-                                            >
-                                              <UserX className="h-4 w-4 mr-1" />
-                                              Disable Account
-                                            </Button>
-                                          </div>
-                                          <p className="text-xs text-muted-foreground">
-                                            <strong>Convert to User:</strong> Removes tester access, keeps account active.<br/>
-                                            <strong>Disable Account:</strong> Removes tester access and suspends account.
-                                          </p>
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <p>
-                                          This user will see a "TEST MODE" banner and have access to all paid features without billing.
-                                        </p>
-                                        <div className="space-y-2">
-                                          <Label htmlFor="tester-expiry">Access Duration</Label>
-                                          <div className="flex gap-2">
-                                            <Input
-                                              id="tester-expiry"
-                                              type="number"
-                                              min="0"
-                                              value={testerExpiryDays}
-                                              onChange={(e) => setTesterExpiryDays(e.target.value)}
-                                              className="w-24"
-                                            />
-                                            <span className="self-center text-sm text-muted-foreground">days</span>
-                                          </div>
-                                          <p className="text-xs text-muted-foreground">
-                                            Set to 0 for no expiry (permanent tester).
-                                          </p>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
+                                <AlertDialogDescription>
+                                  {user.profile?.is_suspended
+                                    ? 'This will restore the user\'s access to their account.'
+                                    : 'This will prevent the user from accessing their account.'}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              {!user.profile?.is_suspended && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="suspend-reason">Reason (optional)</Label>
+                                  <Textarea
+                                    id="suspend-reason"
+                                    placeholder="Enter reason for suspension..."
+                                    value={suspendReason}
+                                    onChange={(e) => setSuspendReason(e.target.value)}
+                                  />
+                                </div>
+                              )}
+                              {user.profile?.is_suspended && user.profile?.suspended_reason && (
+                                <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                                  <strong>Suspension reason:</strong> {user.profile.suspended_reason}
+                                </div>
+                              )}
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => toggleSuspension(user.id, user.profile?.is_suspended ?? false)}
+                                >
+                                  {user.profile?.is_suspended ? 'Reactivate' : 'Suspend'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+
+                          {/* Admin Role Button */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant={user.isAdmin ? 'outline' : 'secondary'}
+                                size="sm"
+                                disabled={updatingUserId === user.id}
+                              >
+                                {updatingUserId === user.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : user.isAdmin ? (
+                                  <>
+                                    <ShieldOff className="h-4 w-4 mr-1" />
+                                    Remove Admin
+                                  </>
+                                ) : (
+                                  <>
+                                    <Shield className="h-4 w-4 mr-1" />
+                                    Make Admin
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {user.isAdmin ? 'Remove Admin Access?' : 'Grant Admin Access?'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {user.isAdmin
+                                    ? 'This user will lose access to the admin dashboard and management features.'
+                                    : 'This user will gain full admin access including user management and system settings.'}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                {user.isTester ? (
-                                  <AlertDialogAction
-                                    onClick={() => toggleTesterRole(user.id, true)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Remove Tester Role
-                                  </AlertDialogAction>
-                                ) : (
-                                  <AlertDialogAction
-                                    onClick={() => toggleTesterRole(user.id, false, parseInt(testerExpiryDays) || 0)}
-                                  >
-                                    Grant Tester Role
-                                  </AlertDialogAction>
-                                )}
+                                <AlertDialogAction
+                                  onClick={() => toggleAdminRole(user.id, user.isAdmin)}
+                                >
+                                  {user.isAdmin ? 'Remove Admin' : 'Grant Admin'}
+                                </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+
+                          {/* Tester Role Button */}
+                          {!user.isAdmin && (
+                            <AlertDialog open={showTesterDialog === user.id} onOpenChange={(open) => {
+                              if (!open) {
+                                setShowTesterDialog(null);
+                                setTesterExpiryDays('30');
+                              }
+                            }}>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant={user.isTester ? 'outline' : 'secondary'}
+                                  size="sm"
+                                  disabled={updatingTesterUserId === user.id}
+                                  className={user.isTester ? 'border-warning text-warning-foreground hover:bg-warning/10' : ''}
+                                  onClick={() => setShowTesterDialog(user.id)}
+                                >
+                                  {updatingTesterUserId === user.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : user.isTester ? (
+                                    <>
+                                      <FlaskConical className="h-4 w-4 mr-1" />
+                                      Manage Tester
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FlaskConical className="h-4 w-4 mr-1" />
+                                      Make Tester
+                                    </>
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="flex items-center gap-2">
+                                    <FlaskConical className="h-5 w-5 text-warning" />
+                                    {user.isTester ? 'Manage Tester Role' : 'Grant Tester Role'}
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription asChild>
+                                    <div className="space-y-4">
+                                      {user.isTester ? (
+                                        <>
+                                          <p>
+                                            This user currently has the tester role.
+                                            {user.testerExpiresAt && (
+                                              <span className="block mt-1 font-medium">
+                                                Expires: {format(new Date(user.testerExpiresAt), 'MMM d, yyyy h:mm a')}
+                                                {new Date(user.testerExpiresAt) < new Date() && (
+                                                  <Badge variant="destructive" className="ml-2">Expired</Badge>
+                                                )}
+                                              </span>
+                                            )}
+                                          </p>
+                                          <div className="space-y-2">
+                                            <Label>Extend Access</Label>
+                                            <div className="flex gap-2">
+                                              <Button size="sm" variant="outline" onClick={() => extendTesterExpiry(user.id, 7)} disabled={updatingTesterUserId === user.id}>+7 days</Button>
+                                              <Button size="sm" variant="outline" onClick={() => extendTesterExpiry(user.id, 30)} disabled={updatingTesterUserId === user.id}>+30 days</Button>
+                                              <Button size="sm" variant="outline" onClick={() => extendTesterExpiry(user.id, 90)} disabled={updatingTesterUserId === user.id}>+90 days</Button>
+                                            </div>
+                                          </div>
+                                          <hr className="my-4 border-border" />
+                                          <div className="space-y-3">
+                                            <Label className="text-destructive">Off-board Tester</Label>
+                                            <div className="space-y-2">
+                                              <Label htmlFor="offboard-reason" className="text-sm text-muted-foreground">Reason (optional)</Label>
+                                              <Input
+                                                id="offboard-reason"
+                                                placeholder="e.g., Testing period complete"
+                                                value={offboardReason}
+                                                onChange={(e) => setOffboardReason(e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button size="sm" variant="outline" onClick={() => offboardTester(user.id, 'user', offboardReason)} disabled={updatingTesterUserId === user.id} className="flex-1">
+                                                <UserMinus className="h-4 w-4 mr-1" />Convert to User
+                                              </Button>
+                                              <Button size="sm" variant="destructive" onClick={() => offboardTester(user.id, 'disabled', offboardReason)} disabled={updatingTesterUserId === user.id} className="flex-1">
+                                                <UserX className="h-4 w-4 mr-1" />Disable Account
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <p>This user will see a "TEST MODE" banner and have access to all paid features without billing.</p>
+                                          <div className="space-y-2">
+                                            <Label htmlFor="tester-expiry">Access Duration</Label>
+                                            <div className="flex gap-2">
+                                              <Input id="tester-expiry" type="number" min="0" value={testerExpiryDays} onChange={(e) => setTesterExpiryDays(e.target.value)} className="w-24" />
+                                              <span className="self-center text-sm text-muted-foreground">days</span>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">Set to 0 for no expiry (permanent tester).</p>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  {user.isTester ? (
+                                    <AlertDialogAction onClick={() => toggleTesterRole(user.id, true)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                      Remove Tester Role
+                                    </AlertDialogAction>
+                                  ) : (
+                                    <AlertDialogAction onClick={() => toggleTesterRole(user.id, false, parseInt(testerExpiryDays) || 0)}>
+                                      Grant Tester Role
+                                    </AlertDialogAction>
+                                  )}
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
 
             {filteredUsers.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
