@@ -49,6 +49,17 @@ const TOGGLE_ICONS: Record<string, React.ElementType> = {
 const ACCESS_KEYS = ['public_enquiries_enabled', 'early_access_enabled', 'marketing_tools_enabled', 'support_access_grants_enabled'];
 const FLAG_KEYS = ['admin_system_health_enabled', 'admin_email_log_enabled', 'admin_jobs_queues_enabled'];
 
+/** Precise UI descriptions — override DB descriptions where needed */
+const DESCRIPTION_OVERRIDES: Record<string, string> = {
+  public_enquiries_enabled: 'Controls the public enquiry form where available in the app.',
+  early_access_enabled: 'Controls the early access signup entry point where available.',
+  marketing_tools_enabled: 'Controls admin access to marketing campaign tools (admin-only).',
+  support_access_grants_enabled: 'Controls admin/support grant creation tooling (admin-only).',
+  admin_system_health_enabled: 'Controls visibility and access to the System Health admin page.',
+  admin_email_log_enabled: 'Controls visibility and access to the Email Log admin page.',
+  admin_jobs_queues_enabled: 'Controls visibility and access to the Jobs & Queues admin page.',
+};
+
 export default function PlatformSettings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<SettingsMap>({});
@@ -98,7 +109,21 @@ export default function PlatformSettings() {
       .eq('resource_type', 'platform_setting')
       .order('created_at', { ascending: false })
       .limit(10);
-    setRecentChanges(data || []);
+
+    const logs = data || [];
+    // Enrich with actor names from profiles
+    const userIds = [...new Set(logs.map(l => l.user_id).filter(Boolean))];
+    let actorMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, controller_name, company_name')
+        .in('user_id', userIds);
+      (profiles || []).forEach((p: any) => {
+        actorMap[p.user_id] = p.controller_name || p.company_name || '';
+      });
+    }
+    setRecentChanges(logs.map(l => ({ ...l, _actorName: actorMap[l.user_id] || '' })));
   }, []);
 
   useEffect(() => {
@@ -185,7 +210,7 @@ export default function PlatformSettings() {
           <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-medium">{s.label}</p>
-            <p className="text-xs text-muted-foreground truncate">{s.description}</p>
+            <p className="text-xs text-muted-foreground truncate">{DESCRIPTION_OVERRIDES[settingKey] || s.description}</p>
           </div>
         </div>
         <Switch
@@ -258,13 +283,13 @@ export default function PlatformSettings() {
               <Power className="h-4 w-4 text-destructive" />
               Maintenance Mode
             </CardTitle>
-            <CardDescription>Controls whether the platform shows a maintenance state to users.</CardDescription>
+            <CardDescription>Blocks access to non-admin app routes during maintenance. Admin routes remain accessible. Internal notes are never shown publicly.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Enable Maintenance Mode</p>
-                <p className="text-xs text-muted-foreground">Users will see a maintenance banner</p>
+                <p className="text-xs text-muted-foreground">Non-admin routes will be blocked and show the public message below</p>
               </div>
               <Switch
                 checked={isOn('maintenance_mode')}
@@ -320,7 +345,7 @@ export default function PlatformSettings() {
               <Globe className="h-4 w-4 text-primary" />
               Access &amp; Growth Toggles
             </CardTitle>
-            <CardDescription>Control public-facing and operational access features.</CardDescription>
+            <CardDescription>Control app entry points and admin tooling availability.</CardDescription>
           </CardHeader>
           <CardContent className="divide-y divide-border">
             {ACCESS_KEYS.map(k => <ToggleRow key={k} settingKey={k} />)}
@@ -334,7 +359,7 @@ export default function PlatformSettings() {
               <Layers className="h-4 w-4 text-primary" />
               Feature Flags
             </CardTitle>
-            <CardDescription>Toggle platform features. These flags actively control sidebar visibility, route access, and feature availability across the app.</CardDescription>
+            <CardDescription>These flags control visibility and access for the linked admin pages. Disabling a flag hides its sidebar link, dashboard card, and blocks direct route access.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="divide-y divide-border">
@@ -348,7 +373,7 @@ export default function PlatformSettings() {
                       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{s.label}</p>
-                        <p className="text-xs text-muted-foreground">{s.description}</p>
+                        <p className="text-xs text-muted-foreground">{DESCRIPTION_OVERRIDES[k] || s.description}</p>
                         <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">{s.key}</p>
                       </div>
                     </div>
@@ -460,7 +485,7 @@ export default function PlatformSettings() {
                             <span className="text-foreground">{String(details.new_value) || '(empty)'}</span>
                           </span>
                         )}
-                        <span className="text-[10px]">by {log.user_id?.slice(0, 8) ?? 'unknown'}…</span>
+                        <span className="text-[10px]">by {log._actorName || `User ${log.user_id?.slice(0, 8) ?? 'unknown'}…`}</span>
                       </div>
                     </div>
                   );
@@ -481,8 +506,8 @@ export default function PlatformSettings() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmToggle?.newValue === 'true'
-                ? 'This will show a maintenance banner to all users. Make sure the maintenance message is set.'
-                : 'This will remove the maintenance banner and restore normal access.'}
+                ? 'This will block access to all non-admin app routes and display the public maintenance message. Admin routes remain accessible.'
+                : 'This will restore normal access to all app routes.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
