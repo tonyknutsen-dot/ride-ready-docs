@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertTriangle, Download, Loader2, CheckSquare, Wrench, Calendar, ClipboardList, FileWarning, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 interface DataCounts {
   checks: number;
