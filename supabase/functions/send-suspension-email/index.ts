@@ -24,10 +24,14 @@ interface SuspensionEmailRequest {
   reason?: string;
 }
 
+const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightRequest(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const responseHeaders = getCorsHeaders(origin);
 
   try {
     const { email, companyName, isSuspended, reason }: SuspensionEmailRequest = await req.json();
