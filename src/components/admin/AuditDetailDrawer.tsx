@@ -341,21 +341,21 @@ function ChangesTable({ entry }: { entry: AuditEntry }) {
       </h4>
       <div className="rounded-lg border overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-[1fr_1fr_1fr] bg-muted/60 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-          <div className="px-2.5 py-1.5">Field</div>
-          <div className="px-2.5 py-1.5">Before</div>
-          <div className="px-2.5 py-1.5">After</div>
+        <div className="grid grid-cols-[28%_36%_36%] bg-muted/60 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+          <div className="px-2 py-1.5">Field</div>
+          <div className="px-2 py-1.5">Before</div>
+          <div className="px-2 py-1.5">After</div>
         </div>
         {/* Table rows */}
         {changedKeys.map((key, i) => (
-          <div key={key} className={`grid grid-cols-[1fr_1fr_1fr] text-xs ${i % 2 === 0 ? '' : 'bg-muted/20'} ${i < changedKeys.length - 1 ? 'border-b border-border/50' : ''}`}>
-            <div className="px-2.5 py-2 font-medium text-foreground/80 capitalize break-all">
+          <div key={key} className={`grid grid-cols-[28%_36%_36%] text-xs ${i % 2 === 0 ? '' : 'bg-muted/20'} ${i < changedKeys.length - 1 ? 'border-b border-border/50' : ''}`}>
+            <div className="px-2 py-2 font-medium text-foreground/80 capitalize break-words hyphens-auto">
               {key.replace(/_/g, ' ')}
             </div>
-            <div className="px-2.5 py-2 text-destructive/70 line-through break-all">
+            <div className="px-2 py-2 text-destructive/60 line-through break-words hyphens-auto leading-relaxed">
               {formatValue(before?.[key])}
             </div>
-            <div className="px-2.5 py-2 text-foreground font-medium break-all">
+            <div className="px-2 py-2 text-foreground font-medium break-words hyphens-auto leading-relaxed">
               {formatValue(after?.[key])}
             </div>
           </div>
