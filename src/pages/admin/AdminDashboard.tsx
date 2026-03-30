@@ -13,6 +13,7 @@ import {
   ChevronDown, ChevronUp, Shield, Info, Lightbulb, Library, Activity,
   History, Mail, Wrench,
 } from 'lucide-react';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 interface DashboardStats {
   unansweredSupport: number;
