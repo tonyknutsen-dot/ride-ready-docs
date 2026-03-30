@@ -22,6 +22,7 @@ interface PdfCanvasViewerProps {
 const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
+const MOBILE_MIN_FIT_SCALE = 0.85; // Never open smaller than this on mobile
 
 const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -89,27 +90,42 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
     if (!pdfDoc || fitWidthComputed.current) return;
 
     const computeFitWidth = async () => {
-      if (fitWidth && containerRef.current) {
-        try {
-          const page = await pdfDoc.getPage(1);
-          const viewport = page.getViewport({ scale: 1 });
-          const containerWidth = containerRef.current.clientWidth - 16; // subtract padding
-          const fitScale = containerWidth / viewport.width;
-          const clampedScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitScale));
-          fitWidthComputed.current = true;
-          setScale(clampedScale);
-        } catch {
-          fitWidthComputed.current = true;
-          setScale(1);
+      if (!fitWidth) {
+        fitWidthComputed.current = true;
+        setScale(1);
+        return;
+      }
+
+      try {
+        const page = await pdfDoc.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+
+        // Try multiple width sources — dialog may not have laid out containerRef yet
+        let availableWidth = 0;
+        if (containerRef.current && containerRef.current.clientWidth > 50) {
+          availableWidth = containerRef.current.clientWidth - 16;
+        } else {
+          // Fallback: use viewport width minus modal chrome (padding, borders)
+          availableWidth = window.innerWidth - 24;
         }
-      } else {
+
+        const fitScale = availableWidth / viewport.width;
+        // On mobile, never open unreadably small
+        const isMobile = window.innerWidth < 640;
+        const minScale = isMobile ? MOBILE_MIN_FIT_SCALE : MIN_ZOOM;
+        const clampedScale = Math.max(minScale, Math.min(MAX_ZOOM, fitScale));
+
+        fitWidthComputed.current = true;
+        setScale(clampedScale);
+      } catch {
         fitWidthComputed.current = true;
         setScale(1);
       }
     };
 
-    // Small delay to ensure container is measured
-    requestAnimationFrame(computeFitWidth);
+    // Wait for dialog layout to settle before measuring
+    const timer = setTimeout(computeFitWidth, 80);
+    return () => clearTimeout(timer);
   }, [pdfDoc, fitWidth]);
 
   // Render all pages when doc or scale changes
