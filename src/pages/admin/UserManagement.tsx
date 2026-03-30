@@ -775,10 +775,10 @@ export default function UserManagement() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
                 Total Users
               </CardTitle>
             </CardHeader>
@@ -800,7 +800,19 @@ export default function UserManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
+                Staff Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {users.filter(u => u.isStaffMember).length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
                 Testers
               </CardTitle>
             </CardHeader>
@@ -812,7 +824,7 @@ export default function UserManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
                 Admin Users
               </CardTitle>
             </CardHeader>
@@ -824,8 +836,8 @@ export default function UserManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Suspended Users
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
+                Suspended
               </CardTitle>
             </CardHeader>
             <CardContent>
