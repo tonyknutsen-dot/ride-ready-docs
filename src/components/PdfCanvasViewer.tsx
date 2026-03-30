@@ -204,7 +204,7 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
 
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'mx-auto bg-white rounded overflow-hidden shadow-sm mb-2 max-w-full';
+      wrapper.className = 'mx-auto bg-white sm:rounded overflow-hidden sm:shadow-sm mb-1 sm:mb-2 max-w-full';
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       canvas.style.display = 'block';
