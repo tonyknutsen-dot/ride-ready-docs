@@ -367,8 +367,8 @@ function ChangesTable({ entry }: { entry: AuditEntry }) {
 
 function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+    <div className="space-y-1.5">
+      <h4 className="text-[10px] font-bold text-foreground/50 uppercase tracking-[0.08em] flex items-center gap-1.5 border-b border-border/40 pb-1">
         <Icon className="h-3 w-3" /> {title}
       </h4>
       {children}
