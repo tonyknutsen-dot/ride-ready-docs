@@ -313,7 +313,7 @@ const AuditLogs = () => {
     if (!isHighlighted) return false;
 
     const hiddenByRoutineAuth = hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session';
-    const hiddenByOrphan = hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id));
+    const hiddenByOrphan = hideOrphanRows && (!log.actor_name || log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id));
 
     return hiddenByRoutineAuth || hiddenByOrphan;
   }).length, [baseFilteredLogs, hideRoutineAuth, familyFilter, hideOrphanRows]);
