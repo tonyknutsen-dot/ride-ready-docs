@@ -509,7 +509,7 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="pb-0">
-          <SheetTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Audit Event Detail</SheetTitle>
+          <SheetTitle className="text-sm font-semibold text-muted-foreground tracking-wide">Audit Event Detail</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4 pt-2">
