@@ -419,7 +419,7 @@ const AuditLogs = () => {
       doc.rect(margin, startY, contentW, 10, 'F');
       doc.setFontSize(8);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Events (24h): ${stats.events}     Active Users: ${stats.users}     Failed/Blocked: ${stats.failed}     High-Risk: ${stats.highRisk}`, margin + 4, startY + 6.5);
+      doc.text(`Visible events: ${visibleStats.events}     Active users: ${visibleStats.users}     Failed/Blocked: ${visibleStats.failed}     High-Risk: ${visibleStats.highRisk}`, margin + 4, startY + 6.5);
       startY += 18;
 
       // ── Event sections ──
