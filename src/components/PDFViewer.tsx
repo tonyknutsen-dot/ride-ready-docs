@@ -13,7 +13,6 @@ interface PDFViewerProps {
 }
 
 const PDFViewer = ({ isOpen, onClose, pdfUrl, pdfName, onDownload }: PDFViewerProps) => {
-  // Parse structured doc ID from name if present
   const docIdMatch = pdfName?.match(/^([A-Z0-9]+-[A-Z]{2,3}-\d{4}-\d{4})\s*[–—-]\s*/);
   const docId = docIdMatch ? docIdMatch[1] : null;
   const displayName = docId ? pdfName.slice(docIdMatch![0].length) : pdfName;
@@ -21,30 +20,30 @@ const PDFViewer = ({ isOpen, onClose, pdfUrl, pdfName, onDownload }: PDFViewerPr
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="max-w-[95vw] w-full sm:max-w-4xl max-h-[95vh] p-0 overflow-hidden rounded-xl border border-border shadow-xl"
+        className="max-w-[100vw] w-full h-[100dvh] sm:max-w-4xl sm:h-[95vh] sm:max-h-[95vh] p-0 overflow-hidden rounded-none sm:rounded-xl border-0 sm:border sm:border-border shadow-none sm:shadow-xl [&>button.absolute]:hidden"
         aria-describedby={undefined}
       >
         <VisuallyHidden>
           <DialogTitle>{pdfName}</DialogTitle>
         </VisuallyHidden>
 
-        <div className="flex flex-col h-[90vh] bg-background">
-          {/* ── Clean top bar ── */}
-          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm shrink-0">
+        <div className="flex flex-col h-full bg-background">
+          {/* Compact header */}
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/60 bg-card/90 backdrop-blur-sm shrink-0">
             <div className="min-w-0 flex-1">
               {docId ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-mono text-xs font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded shrink-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-mono text-[10px] font-semibold text-primary bg-primary/8 px-1.5 py-0.5 rounded shrink-0">
                     {docId}
                   </span>
-                  <span className="text-sm text-muted-foreground truncate">{displayName}</span>
+                  <span className="text-xs text-muted-foreground truncate">{displayName}</span>
                 </div>
               ) : (
-                <h3 className="text-sm font-medium text-foreground truncate">{displayName}</h3>
+                <h3 className="text-xs font-medium text-foreground truncate">{displayName}</h3>
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-0.5 shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
@@ -66,9 +65,9 @@ const PDFViewer = ({ isOpen, onClose, pdfUrl, pdfName, onDownload }: PDFViewerPr
             </div>
           </div>
 
-          {/* ── PDF content ── */}
+          {/* PDF content — fills remaining space */}
           <div className="flex-1 min-h-0">
-            <PdfCanvasViewer src={pdfUrl} onDownload={onDownload} />
+            <PdfCanvasViewer src={pdfUrl} onDownload={onDownload} fitWidth />
           </div>
         </div>
       </DialogContent>

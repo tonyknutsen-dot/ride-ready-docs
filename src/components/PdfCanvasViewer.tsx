@@ -8,32 +8,32 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure PDF.js worker from CDN (must match installed version)
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 interface PdfCanvasViewerProps {
-  /** URL or blob URL for the PDF */
   src: string | null;
-  /** Fallback download handler if rendering fails */
   onDownload?: () => void;
-  /** Additional class for the container */
   className?: string;
+  /** When true, auto-calculate scale to fit container width on first load */
+  fitWidth?: boolean;
 }
 
 const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 
-const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) => {
+const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pagesContainerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState<number | null>(null); // null = not yet computed
   const [pages, setPages] = useState<HTMLCanvasElement[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const renderTasksRef = useRef<Map<number, any>>(new Map());
+  const fitWidthComputed = useRef(false);
 
   // Load the PDF document
   useEffect(() => {
@@ -48,6 +48,8 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
     setError(null);
     setPdfDoc(null);
     setPages([]);
+    setScale(null);
+    fitWidthComputed.current = false;
 
     const loadPdf = async () => {
       try {
@@ -82,9 +84,37 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
     };
   }, [src]);
 
+  // Compute fit-width scale once doc loads
+  useEffect(() => {
+    if (!pdfDoc || fitWidthComputed.current) return;
+
+    const computeFitWidth = async () => {
+      if (fitWidth && containerRef.current) {
+        try {
+          const page = await pdfDoc.getPage(1);
+          const viewport = page.getViewport({ scale: 1 });
+          const containerWidth = containerRef.current.clientWidth - 16; // subtract padding
+          const fitScale = containerWidth / viewport.width;
+          const clampedScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitScale));
+          fitWidthComputed.current = true;
+          setScale(clampedScale);
+        } catch {
+          fitWidthComputed.current = true;
+          setScale(1);
+        }
+      } else {
+        fitWidthComputed.current = true;
+        setScale(1);
+      }
+    };
+
+    // Small delay to ensure container is measured
+    requestAnimationFrame(computeFitWidth);
+  }, [pdfDoc, fitWidth]);
+
   // Render all pages when doc or scale changes
   useEffect(() => {
-    if (!pdfDoc) return;
+    if (!pdfDoc || scale === null) return;
 
     let cancelled = false;
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -146,7 +176,6 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
   }, [pdfDoc, scale]);
 
   // Mount canvases into the DOM
-  const pagesContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const container = pagesContainerRef.current;
     if (!container) return;
@@ -157,15 +186,14 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
 
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'mx-auto bg-white rounded-lg overflow-hidden shadow-sm mb-3 max-w-full';
+      wrapper.className = 'mx-auto bg-white rounded overflow-hidden shadow-sm mb-2 max-w-full';
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       canvas.style.display = 'block';
       wrapper.appendChild(canvas);
 
-      // Page label
       const label = document.createElement('div');
-      label.className = 'text-center text-[10px] text-muted-foreground py-1.5 bg-white/80';
+      label.className = 'text-center text-[10px] text-muted-foreground py-1 bg-white/80';
       label.textContent = `${idx + 1} / ${totalPages}`;
       wrapper.appendChild(label);
 
@@ -174,26 +202,24 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
   }, [pages, totalPages]);
 
   const handleZoomIn = useCallback(() => {
-    setScale(s => Math.min(s + ZOOM_STEP, MAX_ZOOM));
+    setScale(s => Math.min((s ?? 1) + ZOOM_STEP, MAX_ZOOM));
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setScale(s => Math.max(s - ZOOM_STEP, MIN_ZOOM));
+    setScale(s => Math.max((s ?? 1) - ZOOM_STEP, MIN_ZOOM));
   }, []);
 
-  // ── Loading state ──
-  if (loading) {
+  if (loading || scale === null) {
     return (
-      <div className={cn('flex items-center justify-center h-full', className)}>
-        <div className="text-center space-y-3">
-          <Loader2 className="mx-auto h-7 w-7 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading document…</p>
+      <div ref={containerRef} className={cn('flex items-center justify-center h-full', className)}>
+        <div className="text-center space-y-2">
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">Loading document…</p>
         </div>
       </div>
     );
   }
 
-  // ── Error state ──
   if (error || !src) {
     return (
       <div className={cn('flex items-center justify-center h-full', className)}>
@@ -211,40 +237,26 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
     );
   }
 
-  // ── Rendered PDF ──
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Compact toolbar */}
-      <div className="flex items-center justify-center gap-1.5 py-2 px-3 border-b border-border/50 bg-muted/30 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          onClick={handleZoomOut}
-          disabled={scale <= MIN_ZOOM}
-        >
+      <div className="flex items-center justify-center gap-1 py-1.5 px-2 border-b border-border/40 bg-muted/20 shrink-0">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
           <ZoomOut className="h-3.5 w-3.5" />
         </Button>
-        <span className="text-[11px] font-medium text-muted-foreground min-w-[3rem] text-center tabular-nums">
+        <span className="text-[10px] font-medium text-muted-foreground min-w-[2.5rem] text-center tabular-nums">
           {Math.round(scale * 100)}%
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          onClick={handleZoomIn}
-          disabled={scale >= MAX_ZOOM}
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
           <ZoomIn className="h-3.5 w-3.5" />
         </Button>
-        <div className="w-px h-4 bg-border/60 mx-1" />
-        <span className="text-[11px] text-muted-foreground tabular-nums">
-          {totalPages} {totalPages === 1 ? 'page' : 'pages'}
+        <span className="text-[10px] text-muted-foreground tabular-nums ml-1">
+          {totalPages} pg{totalPages !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Scrollable pages */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/20 p-3 sm:p-4">
+      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-2">
         <div ref={pagesContainerRef} className="flex flex-col items-center" />
       </div>
     </div>
