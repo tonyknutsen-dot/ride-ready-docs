@@ -518,9 +518,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <SupportAccessAdmin />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="support_access_grants_enabled" disabledMessage="Support access grants are currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <SupportAccessAdmin />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 }
