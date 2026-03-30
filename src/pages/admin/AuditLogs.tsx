@@ -266,26 +266,6 @@ const AuditLogs = () => {
 
   const ROUTINE_AUTH_ACTIONS = new Set(['login', 'logout', 'lock', 'unlock']);
 
-  const filteredLogs = logs.filter(log => {
-    if (resultFilter !== 'all' && getEventResult(log) !== resultFilter) return false;
-    if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
-      return false;
-    }
-    if (hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id))) {
-      return false;
-    }
-    if (searchTerm) {
-      const s = searchTerm.toLowerCase();
-      const haystack = [
-          resolvePerformedBy(log), log.action, log.resource_type,
-        getTargetName(log), log.equipment_name, log.organisation_name,
-        log.context_hint, log.reason,
-        JSON.stringify(log.details),
-      ].filter(Boolean).join(' ').toLowerCase();
-      if (!haystack.includes(s)) return false;
-    }
-    return true;
-
   const baseFilteredLogs = useMemo(() => logs.filter(log => {
     if (resultFilter !== 'all' && getEventResult(log) !== resultFilter) return false;
     if (searchTerm) {
