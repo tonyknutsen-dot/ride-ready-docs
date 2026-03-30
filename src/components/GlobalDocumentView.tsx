@@ -30,8 +30,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
-import PDFViewer from '@/components/PDFViewer';
-import ImageViewer from '@/components/ImageViewer';
+import DocumentViewer, { detectFileType } from '@/components/DocumentViewer';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
