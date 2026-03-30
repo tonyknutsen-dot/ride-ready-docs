@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getCachedPdf, cachePdf, createCachedPdfUrl, fetchPdfBlob } from '@/lib/pdfCache';
+import { getCachedPdf, cachePdf, createCachedPdfUrl } from '@/lib/pdfCache';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,12 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
-import { revokeObjectUrl } from '@/utils/exportFileActions';
+import {
+  createPdfViewerUrlFromBlob,
+  getSignedStorageUrl,
+  getStorageFileBlob,
+  revokeObjectUrl,
+} from '@/utils/exportFileActions';
 import {
   fetchDocumentVersions, archiveRideDocument,
   restoreRideDocument, RideDocument, RIDE_DOC_TYPE_LABELS,
@@ -118,6 +123,12 @@ const DocumentViewerPage = () => {
     };
   }, [viewerState?.temporary, viewerState?.fileUrl]);
 
+  useEffect(() => {
+    return () => {
+      revokeObjectUrl(pdfUrl);
+    };
+  }, [pdfUrl]);
+
   // Check if this document is already cached locally
   useEffect(() => {
     if (!documentId) return;
@@ -130,11 +141,10 @@ const DocumentViewerPage = () => {
     if (!rideDoc || !navigator.onLine) return;
     setSavingOffline(true);
     try {
-      const signedUrl = await getSignedUrl(rideDoc.file_url);
-      if (!signedUrl) throw new Error('Failed to get URL');
-      const blob = await fetchPdfBlob(signedUrl);
-      if (!blob) throw new Error('Failed to download');
-      await cachePdf(rideDoc.document_id, rideDoc.version, rideDoc.file_url, blob, rideDoc.title);
+      const blob = await getStorageFileBlob(rideDoc.file_url);
+      const prepared = await createPdfViewerUrlFromBlob(blob);
+      if (!prepared.validPdf) throw new Error('Stored file is not a valid PDF');
+      await cachePdf(rideDoc.document_id, rideDoc.version, rideDoc.file_url, prepared.normalizedBlob, rideDoc.title);
       setIsCachedLocally(true);
       toast({ title: 'Saved for offline', description: 'This document is now available offline.' });
     } catch (err) {
@@ -147,6 +157,9 @@ const DocumentViewerPage = () => {
   const loadDocument = async (id: string) => {
     setLoading(true);
     setIsViewingOldVersion(false);
+    revokeObjectUrl(pdfUrl);
+    setPdfUrl(null);
+    setPdfSource(null);
     try {
       // Try ride_documents first
       const { data: rdDoc } = await supabase
@@ -220,8 +233,10 @@ const DocumentViewerPage = () => {
 
   const loadFromRideDocument = async (rd: RideDocument, isOld: boolean) => {
     setRideDoc(rd);
+    setFallbackDocId(null);
     setDocTitle(rd.title);
     setDocDisplayId(rd.document_id);
+    setFileType('pdf');
 
     // ── Cache-first PDF loading ──
     const cached = await getCachedPdf(rd.document_id);
@@ -232,20 +247,14 @@ const DocumentViewerPage = () => {
       setPdfUrl(createCachedPdfUrl(cached));
       setPdfSource('cache');
     } else if (isOnline) {
-      // Online: fetch fresh, cache it
-      const signedUrl = await getSignedUrl(rd.file_url);
-      if (signedUrl) {
-        // Fetch as blob so mobile browsers render PDF inline (not download prompt)
-        const fetchedBlob = await fetchPdfBlob(signedUrl);
-        if (fetchedBlob) {
-          const blobUrl = URL.createObjectURL(new Blob([fetchedBlob], { type: 'application/pdf' }));
-          setPdfUrl(blobUrl);
-          cachePdf(rd.document_id, rd.version, rd.file_url, fetchedBlob, rd.title);
-        } else {
-          setPdfUrl(signedUrl);
-        }
+      try {
+        const resolvedViewer = await resolveStoredViewerUrl(rd.file_url, 'pdf');
+        setPdfUrl(resolvedViewer.url);
         setPdfSource('network');
-      } else {
+        if (resolvedViewer.blob) {
+          cachePdf(rd.document_id, rd.version, rd.file_url, resolvedViewer.blob, rd.title);
+        }
+      } catch {
         // Signed URL failed but we may have a stale cache
         if (cached) {
           setPdfUrl(createCachedPdfUrl(cached));
@@ -316,10 +325,46 @@ const DocumentViewerPage = () => {
     return 'other';
   };
 
+  const resolveStoredViewerUrl = async (
+    filePath: string,
+    nextFileType: 'pdf' | 'image' | 'other',
+  ): Promise<{ url: string | null; source: 'network' | null; blob?: Blob }> => {
+    if (nextFileType === 'other') {
+      const signedUrl = await getSignedStorageUrl(filePath);
+      return { url: signedUrl, source: null };
+    }
+
+    const blob = await getStorageFileBlob(filePath);
+
+    if (nextFileType === 'pdf') {
+      const prepared = await createPdfViewerUrlFromBlob(blob);
+      if (!prepared.validPdf) {
+        throw new Error('Stored file is not a valid PDF');
+      }
+
+      return {
+        url: prepared.url,
+        source: 'network',
+        blob: prepared.normalizedBlob,
+      };
+    }
+
+    const normalizedBlob = blob.type
+      ? blob
+      : new Blob([blob], { type: 'application/octet-stream' });
+
+    return {
+      url: URL.createObjectURL(normalizedBlob),
+      source: 'network',
+      blob: normalizedBlob,
+    };
+  };
+
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
     setAllVersions([]);
     setLatestVersion(null);
+    setRideDoc(null);
     setDocTitle(doc.document_name);
 
     const ft = detectFileType(doc.file_path || '', doc.mime_type);
@@ -328,19 +373,9 @@ const DocumentViewerPage = () => {
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
     setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
 
-    const signedUrl = await getSignedUrl(doc.file_path);
-    if (signedUrl && ft === 'pdf') {
-      // Fetch as blob so mobile browsers render inline instead of showing download prompt
-      const blob = await fetchPdfBlob(signedUrl);
-      if (blob) {
-        const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-        setPdfUrl(blobUrl);
-      } else {
-        setPdfUrl(signedUrl);
-      }
-    } else {
-      setPdfUrl(signedUrl);
-    }
+    const resolvedViewer = await resolveStoredViewerUrl(doc.file_path, ft);
+    setPdfUrl(resolvedViewer.url);
+    setPdfSource(resolvedViewer.source);
 
     const rideName = doc.ride_id ? await getRideName(doc.ride_id) : 'Global';
 
@@ -391,11 +426,7 @@ const DocumentViewerPage = () => {
   };
 
   const getSignedUrl = async (filePath: string): Promise<string | null> => {
-    const { data, error } = await supabase.storage
-      .from('ride-documents')
-      .createSignedUrl(filePath, 3600);
-    if (error || !data?.signedUrl) return null;
-    return data.signedUrl;
+    return getSignedStorageUrl(filePath);
   };
 
   const getRideName = async (rideId: string): Promise<string> => {
@@ -430,30 +461,28 @@ const DocumentViewerPage = () => {
       toast({ title: 'Requires connection', description: 'Downloads are unavailable while offline.' });
       return;
     }
-    const filePath = rideDoc?.file_url;
-    if (!filePath && !fallbackDocId) return;
+    const currentFilePath = rideDoc?.file_url;
+    if (!currentFilePath && !fallbackDocId) return;
 
-    let url: string | null = null;
-    if (filePath) {
-      url = await getSignedUrl(filePath);
+    let resolvedFilePath: string | null = null;
+    if (currentFilePath) {
+      resolvedFilePath = currentFilePath;
     } else if (fallbackDocId) {
       const { data } = await supabase
         .from('documents')
         .select('file_path')
         .eq('id', fallbackDocId)
         .maybeSingle();
-      if (data) url = await getSignedUrl(data.file_path);
+      if (data) resolvedFilePath = data.file_path;
     }
 
-    if (!url) {
+    if (!resolvedFilePath) {
       toast({ title: 'Download failed', variant: 'destructive' });
       return;
     }
 
     try {
-      // Fetch as blob to avoid Chrome blocking cross-origin navigations
-      const response = await fetch(url);
-      const blob = await response.blob();
+      const blob = await getStorageFileBlob(resolvedFilePath);
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -713,6 +742,7 @@ const DocumentViewerPage = () => {
               <iframe
                 src={pdfUrl || undefined}
                 title={docTitle || 'Document viewer'}
+                allow="fullscreen"
                 className="h-full w-full border-0 bg-background"
               />
             </div>
