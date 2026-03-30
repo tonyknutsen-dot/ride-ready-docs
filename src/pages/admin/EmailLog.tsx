@@ -167,14 +167,17 @@ export default function EmailLog() {
         </div>
 
         {!tableAvailable ? (
-          <Card className="hover:shadow-none">
+          <Card className="hover:shadow-none border-dashed">
             <CardContent className="pt-6 pb-6">
               <div className="flex flex-col items-center gap-3 text-center">
-                <Mail className="h-10 w-10 text-muted-foreground/30" />
+                <Mail className="h-10 w-10 text-muted-foreground/20" />
                 <div>
-                  <p className="text-sm font-medium">Email logging not configured</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    The email_send_log table has not been set up yet. Email logging will become available once the email infrastructure is configured.
+                  <p className="text-sm font-semibold">Email logging not yet active</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                    The <code className="text-[11px] px-1 py-0.5 rounded bg-muted">email_send_log</code> table does not exist. Until email infrastructure logs to this table, no delivery data is available.
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/50 mt-2">
+                    This is not an error — it means email tracking has not been configured yet. Stats showing "0" on other pages reflect this absence, not confirmed zero activity.
                   </p>
                 </div>
               </div>
