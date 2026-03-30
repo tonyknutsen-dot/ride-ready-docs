@@ -220,7 +220,7 @@ export function UserCard({
         {/* Row 3: Badges */}
         <div className="flex flex-wrap items-center gap-1.5">
           {getStatusBadge()}
-          {getRoleBadge()}
+          {getRoleBadges()}
           {user.profile?.subscription_plan && (
             <Badge variant="outline" className="capitalize text-[10px]">
               {user.profile.subscription_plan}
