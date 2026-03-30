@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { AdminBreadcrumb } from './AdminBreadcrumb';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
