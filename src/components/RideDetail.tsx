@@ -36,7 +36,6 @@ import InspectionManager from './InspectionManager';
 import DefectReportDialog from './DefectReportDialog';
 import { FeatureGate } from './FeatureGate';
 import RideForm from './RideForm';
-import DocumentViewer from './DocumentViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
 import { lazy, Suspense } from 'react';
 import CriticalDefectBanner from './CriticalDefectBanner';
@@ -151,7 +150,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     loading: true,
   });
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [photoDocumentId, setPhotoDocumentId] = useState<string | null>(null);
 
   useEffect(() => {
     loadRideStats();
@@ -228,12 +227,13 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     if (!effectiveUserId) return;
     try {
       let photoQuery = supabase
-        .from('documents').select('file_path')
+        .from('documents').select('id, file_path')
         .eq('ride_id', ride.id).eq('document_type', 'photo')
         .eq('is_latest_version', true).order('uploaded_at', { ascending: false }).limit(1);
       if (!isStaff) photoQuery = photoQuery.eq('user_id', effectiveUserId);
       const { data: photoDoc } = await photoQuery.maybeSingle();
       if (photoDoc?.file_path) {
+        setPhotoDocumentId(photoDoc.id);
         const { data, error } = await supabase.storage.from('ride-documents').createSignedUrl(photoDoc.file_path, 3600);
         if (data?.signedUrl && !error) setPhotoUrl(data.signedUrl);
       }
@@ -336,12 +336,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
         </div>
       </div>
-
-      {/* Photo Viewer */}
-      {photoUrl && (
-        <DocumentViewer isOpen={photoViewerOpen} onClose={() => setPhotoViewerOpen(false)} fileUrl={photoUrl} fileName={ride.ride_name} fileType="image" onDownload={() => window.open(photoUrl, '_blank')} />
-      )}
-
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {(() => {
@@ -421,8 +415,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           {/* Ride Card — photo + details + operating status */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             {/* Photo */}
-            {photoUrl ? (
-              <div className="relative h-36 bg-muted cursor-pointer" onClick={() => setPhotoViewerOpen(true)}>
+              {photoUrl ? (
+                <div className="relative h-36 bg-muted cursor-pointer" onClick={() => photoDocumentId && navigate(`/documents/${photoDocumentId}`)}>
                 <img src={photoUrl} alt={ride.ride_name} className="w-full h-full object-cover" />
               </div>
             ) : (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,6 +33,7 @@ interface RideDocumentRegisterProps {
 const RideDocumentRegister = ({ rideId, rideName }: RideDocumentRegisterProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<RideDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -68,15 +70,8 @@ const RideDocumentRegister = ({ rideId, rideName }: RideDocumentRegisterProps) =
     setExpandedGroups(prev => ({ ...prev, [type]: !prev[type] }));
   };
 
-  const handleViewPdf = async (doc: RideDocument) => {
-    const { data, error } = await supabase.storage
-      .from('ride-documents')
-      .createSignedUrl(doc.file_url, 3600);
-    if (error || !data?.signedUrl) {
-      toast({ title: 'Could not open document', variant: 'destructive' });
-      return;
-    }
-    window.open(data.signedUrl, '_blank');
+  const handleViewPdf = (doc: RideDocument) => {
+    navigate(`/documents/${doc.id}`);
   };
 
   const handleShowVersions = async (doc: RideDocument) => {

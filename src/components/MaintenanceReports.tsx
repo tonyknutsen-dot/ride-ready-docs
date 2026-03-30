@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar, FileDown, FileText, Eye } from 'lucide-react';
@@ -63,6 +64,7 @@ const MAINTENANCE_TYPES = [
 const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
   const [reports, setReports] = useState<Tables<'documents'>[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
@@ -81,9 +83,8 @@ const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
     load();
   }, [rideId]);
 
-  const handleView = async (filePath: string) => {
-    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  const handleView = (reportId: string) => {
+    navigate(`/documents/${reportId}`);
   };
 
   if (loadingReports) return null;
@@ -107,7 +108,7 @@ const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => handleView(report.file_path)} className="shrink-0">
+            <Button variant="outline" size="sm" onClick={() => handleView(report.id)} className="shrink-0">
               <Eye className="h-3.5 w-3.5 mr-1" />
               View
             </Button>
