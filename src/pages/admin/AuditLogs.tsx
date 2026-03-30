@@ -732,6 +732,29 @@ const AuditLogs = () => {
             </Select>
           </div>
 
+          {!hasVisibleHighlightedRows && hiddenHighlightedCount > 0 && (
+            <Card className="border-dashed border-destructive/30 bg-destructive/[0.04] p-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">No highlighted rows are currently visible.</p>
+                <p className="text-xs text-muted-foreground">
+                  {hiddenHighlightedCount} high-risk or failed event{hiddenHighlightedCount !== 1 ? 's are' : ' is'} hidden by your current defaults.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {hideOrphanRows && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideOrphanRows(false)}>
+                      Show orphan/system rows
+                    </Button>
+                  )}
+                  {hideRoutineAuth && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideRoutineAuth(false)}>
+                      Show routine auth
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Collapsible filters + legend */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
             <div className="flex items-center gap-2">
