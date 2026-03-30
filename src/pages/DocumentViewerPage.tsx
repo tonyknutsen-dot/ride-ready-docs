@@ -77,6 +77,7 @@ const DocumentViewerPage = () => {
   const [docDisplayId, setDocDisplayId] = useState('');
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
   const [fileType, setFileType] = useState<'pdf' | 'image' | 'other'>('pdf');
+  const [viewerError, setViewerError] = useState<string | null>(null);
 
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
@@ -112,6 +113,12 @@ const DocumentViewerPage = () => {
       setDocDisplayId('');
       setIsCachedLocally(false);
       setFileType(detectFileType(viewerState.fileName || viewerState.fileUrl, viewerState.mimeType));
+      setViewerError(null);
+      debugViewer('temporary-viewer-mounted', {
+        documentId: documentId ?? null,
+        fileName: viewerState.fileName || 'Document',
+        fileType: detectFileType(viewerState.fileName || viewerState.fileUrl, viewerState.mimeType),
+      });
     }
   }, [documentId, user, viewerState?.fileUrl, viewerState?.fileName, viewerState?.mimeType]);
 
@@ -154,12 +161,52 @@ const DocumentViewerPage = () => {
     }
   }, [rideDoc, toast]);
 
+  const debugViewer = useCallback((event: string, payload?: Record<string, unknown>) => {
+    console.info('[DocumentViewer]', {
+      event,
+      ...payload,
+    });
+  }, []);
+
+  const formatViewerError = useCallback((error: unknown) => {
+    if (error instanceof Error && error.message) return error.message;
+    return 'The file could not be resolved for viewing.';
+  }, []);
+
+  const appendPdfViewerParams = useCallback((url: string) => {
+    const hash = 'view=FitH';
+    return url.includes('#') ? `${url}&${hash}` : `${url}#${hash}`;
+  }, []);
+
+  const primePdfCache = useCallback(async (filePath: string, cacheKey: string, version: number, title: string) => {
+    try {
+      const blob = await getStorageFileBlob(filePath);
+      const prepared = await createPdfViewerUrlFromBlob(blob);
+      if (!prepared.validPdf) {
+        debugViewer('cache-prime-invalid-pdf', { filePath, cacheKey, version });
+        return;
+      }
+
+      await cachePdf(cacheKey, version, filePath, prepared.normalizedBlob, title);
+      debugViewer('cache-prime-success', { filePath, cacheKey, version });
+    } catch (error) {
+      debugViewer('cache-prime-failed', {
+        filePath,
+        cacheKey,
+        version,
+        error: formatViewerError(error),
+      });
+    }
+  }, [debugViewer, formatViewerError]);
+
   const loadDocument = async (id: string) => {
     setLoading(true);
     setIsViewingOldVersion(false);
+    setViewerError(null);
     revokeObjectUrl(pdfUrl);
     setPdfUrl(null);
     setPdfSource(null);
+    debugViewer('load-start', { documentId: id });
     try {
       // Try ride_documents first
       const { data: rdDoc } = await supabase
@@ -170,6 +217,11 @@ const DocumentViewerPage = () => {
 
       if (rdDoc) {
         const rd = rdDoc as RideDocument;
+        debugViewer('document-found-ride-documents', {
+          documentId: id,
+          filePath: rd.file_url,
+          documentType: rd.document_type,
+        });
         // Fetch all versions for this document_id
         const versions = await fetchDocumentVersions(rd.document_id);
         setAllVersions(versions);
@@ -193,6 +245,12 @@ const DocumentViewerPage = () => {
         .maybeSingle();
 
       if (doc) {
+        debugViewer('document-found-documents-table', {
+          documentId: id,
+          filePath: doc.file_path,
+          mimeType: doc.mime_type,
+          documentType: doc.document_type,
+        });
         await loadFromDocumentsTable(doc);
         return;
       }
@@ -201,6 +259,11 @@ const DocumentViewerPage = () => {
       navigate(-1);
     } catch (err) {
       console.error('Error loading document:', err);
+      setViewerError(formatViewerError(err));
+      debugViewer('load-failed', {
+        documentId: id,
+        error: formatViewerError(err),
+      });
       toast({ title: 'Failed to load document', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -246,31 +309,65 @@ const DocumentViewerPage = () => {
       // Cache hit — version matches, serve locally
       setPdfUrl(createCachedPdfUrl(cached));
       setPdfSource('cache');
+      setViewerError(null);
+      debugViewer('viewer-source-ready', {
+        documentId: rd.id,
+        source: 'cache',
+        filePath: rd.file_url,
+      });
     } else if (isOnline) {
       try {
         const resolvedViewer = await resolveStoredViewerUrl(rd.file_url, 'pdf');
         setPdfUrl(resolvedViewer.url);
         setPdfSource('network');
-        if (resolvedViewer.blob) {
-          cachePdf(rd.document_id, rd.version, rd.file_url, resolvedViewer.blob, rd.title);
-        }
-      } catch {
+        setViewerError(null);
+        debugViewer('viewer-source-ready', {
+          documentId: rd.id,
+          source: 'network',
+          filePath: rd.file_url,
+          resolvedUrl: resolvedViewer.url,
+        });
+        void primePdfCache(rd.file_url, rd.document_id, rd.version, rd.title);
+      } catch (error) {
         // Signed URL failed but we may have a stale cache
         if (cached) {
           setPdfUrl(createCachedPdfUrl(cached));
           setPdfSource('cache');
+          setViewerError(null);
+          debugViewer('viewer-source-fallback-cache', {
+            documentId: rd.id,
+            filePath: rd.file_url,
+            error: formatViewerError(error),
+          });
         } else {
           setPdfUrl(null);
+          setViewerError(formatViewerError(error));
+          debugViewer('viewer-source-failed', {
+            documentId: rd.id,
+            filePath: rd.file_url,
+            error: formatViewerError(error),
+          });
         }
       }
     } else if (cached) {
       // Offline with stale cache — serve what we have
       setPdfUrl(createCachedPdfUrl(cached));
       setPdfSource('cache');
+      setViewerError(null);
+      debugViewer('viewer-source-ready', {
+        documentId: rd.id,
+        source: 'cache-offline',
+        filePath: rd.file_url,
+      });
     } else {
       // Offline, no cache
       setPdfUrl(null);
       setPdfSource(null);
+      setViewerError('This PDF is not cached yet. Open it once while online to view it here later.');
+      debugViewer('viewer-source-missing-offline', {
+        documentId: rd.id,
+        filePath: rd.file_url,
+      });
     }
 
     const rideName = await getRideName(rd.ride_id);
@@ -328,35 +425,35 @@ const DocumentViewerPage = () => {
   const resolveStoredViewerUrl = async (
     filePath: string,
     nextFileType: 'pdf' | 'image' | 'other',
-  ): Promise<{ url: string | null; source: 'network' | null; blob?: Blob }> => {
-    if (nextFileType === 'other') {
-      const signedUrl = await getSignedStorageUrl(filePath);
-      return { url: signedUrl, source: null };
+  ): Promise<{ url: string | null; source: 'network' | null }> => {
+    debugViewer('resolve-file-start', {
+      documentId: documentId ?? null,
+      filePath,
+      fileType: nextFileType,
+    });
+
+    const signedUrl = await getSignedStorageUrl(filePath);
+
+    debugViewer('resolve-file-url', {
+      documentId: documentId ?? null,
+      filePath,
+      signedUrl,
+    });
+
+    if (!signedUrl) {
+      throw new Error('Could not generate a secure file URL for this document.');
     }
 
-    const blob = await getStorageFileBlob(filePath);
-
     if (nextFileType === 'pdf') {
-      const prepared = await createPdfViewerUrlFromBlob(blob);
-      if (!prepared.validPdf) {
-        throw new Error('Stored file is not a valid PDF');
-      }
-
       return {
-        url: prepared.url,
+        url: appendPdfViewerParams(signedUrl),
         source: 'network',
-        blob: prepared.normalizedBlob,
       };
     }
 
-    const normalizedBlob = blob.type
-      ? blob
-      : new Blob([blob], { type: 'application/octet-stream' });
-
     return {
-      url: URL.createObjectURL(normalizedBlob),
-      source: 'network',
-      blob: normalizedBlob,
+      url: signedUrl,
+      source: nextFileType === 'image' ? 'network' : null,
     };
   };
 
@@ -369,13 +466,38 @@ const DocumentViewerPage = () => {
 
     const ft = detectFileType(doc.file_path || '', doc.mime_type);
     setFileType(ft);
+    debugViewer('documents-table-file-detected', {
+      documentId: doc.id,
+      filePath: doc.file_path,
+      fileType: ft,
+      mimeType: doc.mime_type,
+    });
 
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
     setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
 
-    const resolvedViewer = await resolveStoredViewerUrl(doc.file_path, ft);
-    setPdfUrl(resolvedViewer.url);
-    setPdfSource(resolvedViewer.source);
+    try {
+      const resolvedViewer = await resolveStoredViewerUrl(doc.file_path, ft);
+      setPdfUrl(resolvedViewer.url);
+      setPdfSource(resolvedViewer.source);
+      setViewerError(null);
+      debugViewer('viewer-source-ready', {
+        documentId: doc.id,
+        source: resolvedViewer.source,
+        filePath: doc.file_path,
+        resolvedUrl: resolvedViewer.url,
+      });
+    } catch (error) {
+      setPdfUrl(null);
+      setPdfSource(null);
+      setViewerError(formatViewerError(error));
+      debugViewer('viewer-source-failed', {
+        documentId: doc.id,
+        filePath: doc.file_path,
+        error: formatViewerError(error),
+      });
+      throw error;
+    }
 
     const rideName = doc.ride_id ? await getRideName(doc.ride_id) : 'Global';
 
@@ -423,10 +545,6 @@ const DocumentViewerPage = () => {
       isArchived: false,
       evidenceCount: eventMeta.evidenceCount || 0,
     });
-  };
-
-  const getSignedUrl = async (filePath: string): Promise<string | null> => {
-    return getSignedStorageUrl(filePath);
   };
 
   const getRideName = async (rideId: string): Promise<string> => {
@@ -579,7 +697,7 @@ const DocumentViewerPage = () => {
               <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="text-sm font-semibold text-foreground">Document unavailable</p>
               <p className="text-xs text-muted-foreground">
-                The PDF could not be loaded. It may have been removed or you may not have access.
+                {viewerError || 'The PDF could not be loaded. It may have been removed or you may not have access.'}
               </p>
             </>
           )}
@@ -740,10 +858,28 @@ const DocumentViewerPage = () => {
           {fileType === 'pdf' && (
             <div className="h-full w-full bg-background">
               <iframe
+                key={pdfUrl || 'pdf-viewer'}
                 src={pdfUrl || undefined}
                 title={docTitle || 'Document viewer'}
                 allow="fullscreen"
                 className="h-full w-full border-0 bg-background"
+                onLoad={() => {
+                  debugViewer('viewer-mount-success', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                  });
+                }}
+                onError={() => {
+                  const message = 'The PDF viewer could not load this file.';
+                  setViewerError(message);
+                  debugViewer('viewer-mount-failed', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                    error: message,
+                  });
+                }}
               />
             </div>
           )}
