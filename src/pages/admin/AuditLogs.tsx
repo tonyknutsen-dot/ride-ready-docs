@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -147,7 +147,7 @@ const AuditLogs = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [logs, setLogs] = useState<AuditEntry[]>([]);
-  const [stats, setStats] = useState({ events: 0, users: 0, failed: 0, highRisk: 0 });
+  
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
@@ -196,29 +196,6 @@ const AuditLogs = () => {
     return newMap;
   }, [profileMap]);
 
-  const fetchStats = async () => {
-    const yesterday = subDays(new Date(), 1).toISOString();
-
-    const [totalRes, uniqueRes, failedRes, highRiskRes] = await Promise.all([
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true }).gte('created_at', yesterday),
-      supabase.from('audit_logs').select('user_id').gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true })
-        .or('action.eq.failed_unlock,result.eq.failed,result.eq.blocked')
-        .gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true })
-        .in('action', HIGH_RISK_ACTION_LIST)
-        .gte('created_at', yesterday),
-    ]);
-
-    const uniqueUserIds = new Set(uniqueRes.data?.map(d => d.user_id) || []);
-
-    setStats({
-      events: totalRes.count || 0,
-      users: uniqueUserIds.size,
-      failed: failedRes.count || 0,
-      highRisk: highRiskRes.count || 0,
-    });
-  };
 
   const fetchLogs = async (reset = false) => {
     try {
@@ -278,30 +255,23 @@ const AuditLogs = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetchStats();
     fetchLogs(true);
   }, [actionFilter, familyFilter, dateFilter]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchLogs(true)]);
+    await fetchLogs(true);
     toast({ title: 'Refreshed', description: 'Audit logs updated' });
   };
 
   const ROUTINE_AUTH_ACTIONS = new Set(['login', 'logout', 'lock', 'unlock']);
 
-  const filteredLogs = logs.filter(log => {
+  const baseFilteredLogs = useMemo(() => logs.filter(log => {
     if (resultFilter !== 'all' && getEventResult(log) !== resultFilter) return false;
-    if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
-      return false;
-    }
-    if (hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id))) {
-      return false;
-    }
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
       const haystack = [
-          resolvePerformedBy(log), log.action, log.resource_type,
+        resolvePerformedBy(log), log.action, log.resource_type,
         getTargetName(log), log.equipment_name, log.organisation_name,
         log.context_hint, log.reason,
         JSON.stringify(log.details),
@@ -309,7 +279,47 @@ const AuditLogs = () => {
       if (!haystack.includes(s)) return false;
     }
     return true;
-  });
+  }), [logs, resultFilter, searchTerm]);
+
+  const filteredLogs = useMemo(() => baseFilteredLogs.filter(log => {
+    if (hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session') {
+      return false;
+    }
+    if (hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id))) {
+      return false;
+    }
+    return true;
+  }), [baseFilteredLogs, hideRoutineAuth, familyFilter, hideOrphanRows]);
+
+  const visibleStats = useMemo(() => {
+    const users = new Set(filteredLogs.map((log) => log.user_id).filter(Boolean));
+    const failed = filteredLogs.filter((log) => ['failed', 'blocked', 'denied'].includes(getEventResult(log))).length;
+    const highRisk = filteredLogs.filter((log) => {
+      const result = getEventResult(log);
+      return HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
+    }).length;
+
+    return {
+      events: filteredLogs.length,
+      users: users.size,
+      failed,
+      highRisk,
+    };
+  }, [filteredLogs]);
+
+  const hiddenHighlightedCount = useMemo(() => baseFilteredLogs.filter((log) => {
+    const result = getEventResult(log);
+    const isHighlighted = HIGH_PRIORITY_ACTIONS.has(log.action) || HIGH_PRIORITY_RESULTS.has(result);
+    if (!isHighlighted) return false;
+
+    const hiddenByRoutineAuth = hideRoutineAuth && familyFilter !== 'Authentication' && ROUTINE_AUTH_ACTIONS.has(log.action) && log.resource_type === 'session';
+    const hiddenByOrphan = hideOrphanRows && (log.actor_name === '__no_profile__' || (!log.actor_name && !log.user_id));
+
+    return hiddenByRoutineAuth || hiddenByOrphan;
+  }).length, [baseFilteredLogs, hideRoutineAuth, familyFilter, hideOrphanRows]);
+
+  const hasVisibleHighlightedRows = visibleStats.failed > 0 || visibleStats.highRisk > 0;
+
 
   // CSV Export
   const handleExportCSV = () => {
@@ -389,7 +399,7 @@ const AuditLogs = () => {
       doc.rect(margin, startY, contentW, 10, 'F');
       doc.setFontSize(8);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Events (24h): ${stats.events}     Active Users: ${stats.users}     Failed/Blocked: ${stats.failed}     High-Risk: ${stats.highRisk}`, margin + 4, startY + 6.5);
+      doc.text(`Visible events: ${visibleStats.events}     Active users: ${visibleStats.users}     Failed/Blocked: ${visibleStats.failed}     High-Risk: ${visibleStats.highRisk}`, margin + 4, startY + 6.5);
       startY += 18;
 
       // ── Event sections ──
@@ -581,7 +591,7 @@ const AuditLogs = () => {
       let kpiY = activeFilters.length > 0 ? 48 : 42;
       doc.setFontSize(9);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Events (24h): ${stats.events}  |  Users: ${stats.users}  |  Failed: ${stats.failed}  |  High-Risk: ${stats.highRisk}`, margin, kpiY);
+      doc.text(`Visible events: ${visibleStats.events}  |  Users: ${visibleStats.users}  |  Failed: ${visibleStats.failed}  |  High-Risk: ${visibleStats.highRisk}`, margin, kpiY);
 
       // Summary table — 5 columns, larger font
       const headers = ['Time', 'Performed by', 'Action & Target', 'Result', 'Trigger'];
@@ -693,11 +703,11 @@ const AuditLogs = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-          <KpiCard label="Events (24h)" value={stats.events} icon={History} />
-          <KpiCard label="Active Users" value={stats.users} icon={Users} />
-          <KpiCard label="Failed / Blocked" value={stats.failed} icon={AlertTriangle} accent />
-          <KpiCard label="High-Risk" value={stats.highRisk} icon={Shield} accent />
+          <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+            <KpiCard label="Visible events" value={visibleStats.events} icon={History} />
+            <KpiCard label="Active users" value={visibleStats.users} icon={Users} />
+            <KpiCard label="Failed / Blocked" value={visibleStats.failed} icon={AlertTriangle} accent />
+            <KpiCard label="High-risk" value={visibleStats.highRisk} icon={Shield} accent />
         </div>
 
         {/* Search + Date + Filters */}
@@ -721,6 +731,29 @@ const AuditLogs = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {!hasVisibleHighlightedRows && hiddenHighlightedCount > 0 && (
+            <Card className="border-dashed border-destructive/30 bg-destructive/[0.04] p-3">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">No highlighted rows are currently visible.</p>
+                <p className="text-xs text-muted-foreground">
+                  {hiddenHighlightedCount} high-risk or failed event{hiddenHighlightedCount !== 1 ? 's are' : ' is'} hidden by your current defaults.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {hideOrphanRows && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideOrphanRows(false)}>
+                      Show orphan/system rows
+                    </Button>
+                  )}
+                  {hideRoutineAuth && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideRoutineAuth(false)}>
+                      Show routine auth
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Collapsible filters + legend */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
