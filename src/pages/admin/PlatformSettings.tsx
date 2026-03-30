@@ -420,7 +420,7 @@ export default function PlatformSettings() {
               <Save className="h-3.5 w-3.5 mr-1" />
               Save Release Notes
             </Button>
-            {settings['release_note_title']?.updated_at && settings['release_note_title'].updated_at !== settings['release_note_title']?.value && (
+            {settings['release_note_title']?.updated_by && (
               <p className="text-xs text-muted-foreground">
                 Last updated: {new Date(settings['release_note_title'].updated_at).toLocaleString()}
               </p>
