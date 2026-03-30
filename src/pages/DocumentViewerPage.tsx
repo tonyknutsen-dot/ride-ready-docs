@@ -425,36 +425,38 @@ const DocumentViewerPage = () => {
   const resolveStoredViewerUrl = async (
     filePath: string,
     nextFileType: 'pdf' | 'image' | 'other',
-  ): Promise<{ url: string | null; source: 'network' | null }> => {
+  ): Promise<{ url: string; source: 'network' }> => {
     debugViewer('resolve-file-start', {
       documentId: documentId ?? null,
       filePath,
       fileType: nextFileType,
     });
 
-    const signedUrl = await getSignedStorageUrl(filePath);
+    // Download blob directly — more reliable than signed URLs on mobile
+    const blob = await getStorageFileBlob(filePath);
 
-    debugViewer('resolve-file-url', {
+    debugViewer('resolve-file-blob', {
       documentId: documentId ?? null,
       filePath,
-      signedUrl,
+      blobSize: blob.size,
+      blobType: blob.type,
     });
 
-    if (!signedUrl) {
-      throw new Error('Could not generate a secure file URL for this document.');
-    }
-
     if (nextFileType === 'pdf') {
-      return {
-        url: appendPdfViewerParams(signedUrl),
-        source: 'network',
-      };
+      const normalizedBlob = blob.type === 'application/pdf'
+        ? blob
+        : new Blob([blob], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(normalizedBlob);
+      return { url: blobUrl, source: 'network' };
     }
 
-    return {
-      url: signedUrl,
-      source: nextFileType === 'image' ? 'network' : null,
-    };
+    if (nextFileType === 'image') {
+      const blobUrl = URL.createObjectURL(blob);
+      return { url: blobUrl, source: 'network' };
+    }
+
+    const blobUrl = URL.createObjectURL(blob);
+    return { url: blobUrl, source: 'network' };
   };
 
   const loadFromDocumentsTable = async (doc: any) => {
