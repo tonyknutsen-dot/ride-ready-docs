@@ -703,11 +703,11 @@ const AuditLogs = () => {
         </div>
 
         {/* KPI Cards */}
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-            <KpiCard label="Visible events" value={visibleStats.events} icon={History} />
-            <KpiCard label="Active users" value={visibleStats.users} icon={Users} />
-            <KpiCard label="Failed / Blocked" value={visibleStats.failed} icon={AlertTriangle} accent />
-            <KpiCard label="High-risk" value={visibleStats.highRisk} icon={Shield} accent />
+        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+          <KpiCard label="Visible events" value={visibleStats.events} icon={History} />
+          <KpiCard label="Active users" value={visibleStats.users} icon={Users} />
+          <KpiCard label="Failed / Blocked" value={visibleStats.failed} icon={AlertTriangle} accent />
+          <KpiCard label={hiddenHighlightedCount > 0 && !hasVisibleHighlightedRows ? `High-risk (${hiddenHighlightedCount} hidden)` : 'High-risk'} value={visibleStats.highRisk} icon={Shield} accent />
         </div>
 
         {/* Search + Date + Filters */}
@@ -733,22 +733,27 @@ const AuditLogs = () => {
           </div>
 
           {!hasVisibleHighlightedRows && hiddenHighlightedCount > 0 && (
-            <Card className="border-dashed border-destructive/30 bg-destructive/[0.04] p-3">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">No highlighted rows are currently visible.</p>
+            <Card className="border-l-4 border-l-destructive/60 border-dashed bg-destructive/[0.04] p-3">
+              <div className="space-y-1.5">
+                <p className="text-sm font-bold text-foreground">Hidden highlighted events</p>
                 <p className="text-xs text-muted-foreground">
-                  {hiddenHighlightedCount} high-risk or failed event{hiddenHighlightedCount !== 1 ? 's are' : ' is'} hidden by your current defaults.
+                  {hiddenHighlightedCount} high-risk or failed event{hiddenHighlightedCount !== 1 ? 's are' : ' is'} hidden by your current filters.
                 </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {hideOrphanRows && (
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideOrphanRows(false)}>
-                      Show orphan/system rows
-                    </Button>
-                  )}
+                <div className="flex items-center gap-3 pt-1">
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => { setHideOrphanRows(false); setHideRoutineAuth(false); }}
+                  >
+                    Show hidden highlighted rows
+                  </Button>
                   {hideRoutineAuth && (
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideRoutineAuth(false)}>
+                    <button
+                      onClick={() => setHideRoutineAuth(false)}
+                      className="text-[11px] text-muted-foreground underline hover:text-foreground transition-colors"
+                    >
                       Show routine auth
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -757,7 +762,7 @@ const AuditLogs = () => {
 
           {/* Collapsible filters + legend */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 px-2">
                   <ChevronDown className={`h-3 w-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
@@ -777,7 +782,7 @@ const AuditLogs = () => {
                 onClick={() => setHideOrphanRows(h => !h)}
                 className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideOrphanRows ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
               >
-                {hideOrphanRows ? 'Orphan rows hidden' : 'Showing all rows'}
+                {hideOrphanRows ? 'Unnamed / system rows hidden' : 'Showing all rows'}
               </button>
               <div className="ml-auto">
                 <AuditLegend />
@@ -873,34 +878,33 @@ const AuditLogs = () => {
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-0.5">
                       {/* Line 1: Performer + action + record type */}
-                      <p className="text-sm leading-snug">
-                        <span className={isRealUser ? 'font-semibold' : 'text-muted-foreground italic font-medium'}>
+                      <p className="text-[13px] leading-snug">
+                        <span className={`font-bold ${isRealUser ? 'text-foreground' : 'text-muted-foreground italic'}`}>
                           {performer}
                         </span>
-                        <span className="text-muted-foreground">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
-                        <span className="text-foreground/70">{getResourceLabel(log.resource_type).toLowerCase()}</span>
+                        <span className="text-foreground/60 font-medium">{' '}{ACTION_VERBS[log.action] || log.action}{' '}</span>
+                        <span className="text-foreground/70 font-medium">{getResourceLabel(log.resource_type).toLowerCase()}</span>
                       </p>
                       {/* Line 2: Target name */}
                       {targetName !== '—' && (
-                        <p className="text-[13px] font-medium truncate text-foreground/90">{targetName}</p>
+                        <p className="text-[13px] font-semibold truncate text-foreground/85">{targetName}</p>
                       )}
                       {/* Line 3: Compact metadata */}
-                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
-                        <span className="text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                        <span className="text-[10px] text-muted-foreground/70">
                           {format(new Date(log.created_at), 'dd MMM HH:mm')}
                         </span>
-                        <span className="text-muted-foreground/30 text-[10px]">•</span>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">{family}</Badge>
+                        <Badge variant="secondary" className="text-[9px] px-1 py-0 h-[14px]">{family}</Badge>
                         <ResultBadge result={result} />
                         {hasChanges && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/20 text-primary">
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-[14px] border-primary/30 bg-primary/10 text-primary font-semibold">
                             {log.changed_fields?.length
                               ? `${log.changed_fields.length} field${log.changed_fields.length > 1 ? 's' : ''} changed`
                               : 'Changes recorded'}
                           </Badge>
                         )}
-                         {triggerType !== 'User action' && (
-                          <span className="text-[10px] text-muted-foreground/60 italic">{triggerType}</span>
+                        {triggerType !== 'User action' && (
+                          <span className="text-[9px] text-muted-foreground/50 italic">{triggerType}</span>
                         )}
                       </div>
                     </div>
