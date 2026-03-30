@@ -125,6 +125,7 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
 
     // Wait for dialog layout to settle before measuring
     const timer = setTimeout(computeFitWidth, 80);
+    return () => clearTimeout(timer);
   }, [pdfDoc, fitWidth]);
 
   // Render all pages when doc or scale changes
