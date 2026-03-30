@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -37,6 +38,7 @@ export const PublicContactDialog = ({
   triggerVariant = 'outline',
   triggerClassName = ''
 }: PublicContactDialogProps) => {
+  const { isOn } = usePlatformSettings();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -104,6 +106,20 @@ export const PublicContactDialog = ({
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-[500px]">
+        {!isOn('public_enquiries_enabled') ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Contact Unavailable</DialogTitle>
+              <DialogDescription>
+                Public enquiries are temporarily unavailable. Please check back later.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+            </div>
+          </>
+        ) : (
+        <>
         <DialogHeader>
           <DialogTitle>Get in Touch</DialogTitle>
           <DialogDescription>
@@ -197,6 +213,8 @@ export const PublicContactDialog = ({
             </Button>
           </div>
         </form>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

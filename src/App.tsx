@@ -21,6 +21,8 @@ import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { PWAUpdateModal } from "@/components/PWAUpdateModal";
 import { LockScreenProvider } from "@/components/LockScreenProvider";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
+import { MaintenanceGuard } from "@/components/MaintenanceGuard";
+import { FeatureFlagGate } from "@/components/FeatureFlagGate";
 import { useLocation } from "react-router-dom";
 
 /** Wrapper that passes current pathname to OfflineSuspense so it resets on navigation */
@@ -134,6 +136,7 @@ const App = () => (
               <AuthenticatedAppShell />
               <LockScreenProvider>
               <LocationAwareOfflineSuspense>
+              <MaintenanceGuard>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
@@ -316,12 +319,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <Marketing />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="marketing_tools_enabled" disabledMessage="Marketing campaign tools are currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <Marketing />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
-                } 
+                }
               />
               <Route 
                 path="/wind-log"
@@ -513,9 +518,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <SupportAccessAdmin />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="support_access_grants_enabled" disabledMessage="Support access grants are currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <SupportAccessAdmin />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 }
@@ -645,9 +652,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <SystemHealth />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="admin_system_health_enabled" disabledMessage="System Health page is currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <SystemHealth />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -657,9 +666,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <JobsQueues />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="admin_jobs_queues_enabled" disabledMessage="Jobs &amp; Queues page is currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <JobsQueues />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -669,9 +680,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <EmailLogPage />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="admin_email_log_enabled" disabledMessage="Email Log page is currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <EmailLogPage />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -787,6 +800,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
+              </MaintenanceGuard>
               </LocationAwareOfflineSuspense>
               </LockScreenProvider>
               {/* Cookie consent shown globally (lightweight) */}

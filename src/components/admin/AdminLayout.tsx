@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { AdminBreadcrumb } from './AdminBreadcrumb';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ interface PendingCounts {
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isOn } = usePlatformSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCounts, setPendingCounts] = useState<PendingCounts>({
     rideRequests: 0,
@@ -96,7 +98,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'Admin Access',
       items: [
         { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
-        { name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 },
+        ...(isOn('support_access_grants_enabled') ? [{ name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 }] : []),
       ],
     },
     {
@@ -110,15 +112,15 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'System',
       items: [
         { name: 'Platform Settings', href: '/admin/platform-settings', icon: Settings2, count: 0 },
-        { name: 'System Health', href: '/admin/system-health', icon: Wrench, count: 0 },
-        { name: 'Jobs & Queues', href: '/admin/jobs-queues', icon: Activity, count: 0 },
-        { name: 'Email Log', href: '/admin/email-log', icon: Mail, count: 0 },
+        ...(isOn('admin_system_health_enabled') ? [{ name: 'System Health', href: '/admin/system-health', icon: Wrench, count: 0 }] : []),
+        ...(isOn('admin_jobs_queues_enabled') ? [{ name: 'Jobs & Queues', href: '/admin/jobs-queues', icon: Activity, count: 0 }] : []),
+        ...(isOn('admin_email_log_enabled') ? [{ name: 'Email Log', href: '/admin/email-log', icon: Mail, count: 0 }] : []),
       ],
     },
     {
       label: 'Growth',
       items: [
-        { name: 'Marketing Campaigns', href: '/marketing', icon: Mail, count: 0 },
+        ...(isOn('marketing_tools_enabled') ? [{ name: 'Marketing Campaigns', href: '/marketing', icon: Mail, count: 0 }] : []),
         { name: 'Early Access Signups', href: '/admin/early-access', icon: Sparkles, count: 0 },
       ],
     },

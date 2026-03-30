@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ const isStandaloneMode = () =>
 
 const ComingSoon = () => {
   const navigate = useNavigate();
+  const { isOn: isPlatformOn } = usePlatformSettings();
 
   // When opened as installed PWA, skip the landing page
   useEffect(() => {
@@ -189,6 +191,7 @@ const ComingSoon = () => {
           </div>
 
           {/* Early Access Signup */}
+          {isPlatformOn('early_access_enabled') ? (
           <Card className="border-primary/30 bg-card shadow-lg">
             <CardContent className="p-6">
               {isSuccess ? (
@@ -289,6 +292,13 @@ const ComingSoon = () => {
               )}
             </CardContent>
           </Card>
+          ) : (
+          <Card className="border-border bg-card">
+            <CardContent className="p-6 text-center">
+              <p className="text-muted-foreground text-sm">Early access signups are currently closed.</p>
+            </CardContent>
+          </Card>
+          )}
 
           {/* CTA */}
           <div className="space-y-3">
