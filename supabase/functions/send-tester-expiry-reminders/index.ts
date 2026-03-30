@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 import { generateEmailWrapper, emailStyles, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -137,9 +138,11 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         console.log(`Email sent to ${userEmail}:`, emailResponse);
+        await logEmailSend({ template_name: 'tester-expiry-reminder', recipient_email: userEmail, subject: 'Your Tester Access Expires in 3 Days - Ride Ready Docs', status: 'sent', user_id: role.user_id });
         emailsSent.push(userEmail);
       } catch (emailError: any) {
         console.error(`Error sending email for user ${role.user_id}:`, emailError);
+        await logEmailSend({ template_name: 'tester-expiry-reminder', recipient_email: userEmail || 'unknown', status: 'failed', error_message: emailError.message, user_id: role.user_id });
         errors.push(`User ${role.user_id}: ${emailError.message}`);
       }
     }

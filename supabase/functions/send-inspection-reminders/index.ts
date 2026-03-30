@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -159,6 +160,8 @@ const handler = async (req: Request): Promise<Response> => {
           });
 
           console.log("Email sent successfully:", emailResponse);
+          const reminderSubject = `🔔 Inspection Reminder: ${schedule.inspection_name} - ${rideName}`;
+          await logEmailSend({ template_name: 'inspection-reminder', recipient_email: user.email, subject: reminderSubject, status: 'sent', user_id: schedule.user_id, metadata: { schedule_id: schedule.id, days_until_due: daysUntilDue } });
 
           await supabase
             .from("inspection_schedules")

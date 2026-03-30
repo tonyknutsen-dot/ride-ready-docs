@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -151,8 +152,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Admin notification sent successfully:", emailResponse);
+    await logEmailSend({ template_name: 'ride-type-request-admin', recipient_email: 'info@ridereadydocs.com', subject: `🎡 New ${typeLabel} Request: ${safeName}`, status: 'sent', metadata: { request_name: requestData.name, request_type: requestData.type } });
 
-    // User confirmation email
     const userHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -163,20 +164,15 @@ const handler = async (req: Request): Promise<Response> => {
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-    <!-- Header -->
     <div style="background: linear-gradient(135deg, ${success} 0%, #15803d 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
       <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
         <span style="font-size: 24px;">✓</span>
       </div>
       <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Request Submitted!</h1>
     </div>
-    
-    <!-- Content -->
     <div style="background: white; padding: 40px; border: 1px solid #e5e7eb; border-top: none;">
       <p style="margin-top: 0; font-size: 16px;">Hi ${safeUserName},</p>
-      
       <p style="font-size: 15px;">Thank you for submitting a request to add <strong>"${safeName}"</strong> as a new ${typeLabel.toLowerCase()} type.</p>
-      
       <div style="background: #eff6ff; border-left: 4px solid ${primary}; padding: 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
         <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: ${primary};">What happens next?</p>
         <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
@@ -185,13 +181,9 @@ const handler = async (req: Request): Promise<Response> => {
           <li style="margin-bottom: 0;">You'll receive an email when the decision is made</li>
         </ul>
       </div>
-      
       <p style="font-size: 15px;">We appreciate your contribution to making Ride Ready Docs more comprehensive!</p>
-      
       <p style="margin-top: 24px; margin-bottom: 0;">Best regards,<br><strong>The Ride Ready Docs Team</strong></p>
     </div>
-    
-    <!-- Footer -->
     <div style="background: #f9fafb; padding: 30px 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
       <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.8;">
         © ${currentYear} Ride Ready Docs. All rights reserved.<br>
@@ -203,14 +195,16 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
+    const userSubject = `✓ Request Confirmed: ${safeName}`;
     const userEmailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [requestData.userEmail],
-      subject: `✓ Request Confirmed: ${safeName}`,
+      subject: userSubject,
       html: userHtml,
     });
 
     console.log("User confirmation sent successfully:", userEmailResponse);
+    await logEmailSend({ template_name: 'ride-type-request-confirm', recipient_email: requestData.userEmail, subject: userSubject, status: 'sent', metadata: { request_name: requestData.name } });
 
     return new Response(
       JSON.stringify({ 

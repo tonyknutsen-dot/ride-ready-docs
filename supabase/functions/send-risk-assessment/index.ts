@@ -4,6 +4,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { brandColors, emailStyles, logoSvg, generateEmailWrapper, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 interface SendRiskAssessmentRequest {
   assessmentId: string;
@@ -177,6 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Email sent successfully:", emailResponse);
+    await logEmailSend({ template_name: 'risk-assessment', recipient_email: recipientEmail, subject: `Risk Assessment: ${rideName}`, status: 'sent', user_id: user.id, metadata: { assessment_id: assessmentId, ride_id: rideId } });
 
     // Log the email send for audit trail
     await supabase

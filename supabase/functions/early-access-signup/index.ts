@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 import { 
   checkRateLimit, 
   getClientIdentifier, 
@@ -192,9 +193,10 @@ serve(async (req) => {
         html: userEmailHtml,
       });
       console.log(`Confirmation email sent to ${trimmedEmail}`);
+      await logEmailSend({ template_name: 'early-access-signup', recipient_email: trimmedEmail, subject: "You're on the Ride Ready Docs Early Access List!", status: 'sent' });
     } catch (emailError) {
       console.error("Failed to send user confirmation email:", emailError);
-      // Don't fail the request - signup is still recorded
+      await logEmailSend({ template_name: 'early-access-signup', recipient_email: trimmedEmail, status: 'failed', error_message: (emailError as any)?.message });
     }
 
     // Send notification email to admin

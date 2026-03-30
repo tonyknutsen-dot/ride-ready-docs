@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@4.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { generateEmailWrapper, emailStyles, brandColors } from "../_shared/email-template.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -131,16 +132,19 @@ serve(async (req) => {
       );
 
       try {
+        const trialSubject = "Good news — we've extended your free trial! 🎡";
         await resend.emails.send({
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [userEmail],
-          subject: "Good news — we've extended your free trial! 🎡",
+          subject: trialSubject,
           html,
         });
         emailsSent++;
         console.log(`[TRIAL-EXTENSION] Extension email sent to ${userEmail}`);
+        await logEmailSend({ template_name: 'trial-extension', recipient_email: userEmail, subject: trialSubject, status: 'sent', user_id: profile.user_id });
       } catch (emailError) {
         console.error(`[TRIAL-EXTENSION] Failed to send email to ${userEmail}:`, emailError);
+        await logEmailSend({ template_name: 'trial-extension', recipient_email: userEmail, status: 'failed', error_message: (emailError as any)?.message, user_id: profile.user_id });
       }
     }
 

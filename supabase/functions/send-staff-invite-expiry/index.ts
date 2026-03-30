@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -136,9 +137,12 @@ const handler = async (req: Request): Promise<Response> => {
 
         if ((emailResponse as any)?.error) {
           console.error(`[STAFF-INVITE-EXPIRY] Failed to send to ${invite.email}:`, (emailResponse as any).error);
+          await logEmailSend({ template_name: 'staff-invite-expiry', recipient_email: invite.email, subject: `⏰ Your staff invite expires soon - ${companyName}`, status: 'failed', error_message: (emailResponse as any).error.message });
           errors.push(`${invite.email}: ${(emailResponse as any).error.message}`);
           continue;
         }
+
+        await logEmailSend({ template_name: 'staff-invite-expiry', recipient_email: invite.email, subject: `⏰ Your staff invite expires soon - ${companyName}`, status: 'sent' });
 
         // Mark as reminded
         await supabase

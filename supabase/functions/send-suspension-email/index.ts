@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -23,10 +24,14 @@ interface SuspensionEmailRequest {
   reason?: string;
 }
 
+const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightRequest(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const responseHeaders = getCorsHeaders(origin);
 
   try {
     const { email, companyName, isSuspended, reason }: SuspensionEmailRequest = await req.json();
@@ -151,16 +156,17 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Suspension email sent successfully:", emailResponse);
+    await logEmailSend({ template_name: isSuspended ? 'account-suspended' : 'account-reactivated', recipient_email: email, subject, status: 'sent', metadata: { is_suspended: isSuspended } });
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      headers: { "Content-Type": "application/json", ...responseHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-suspension-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 500, headers: { "Content-Type": "application/json", ...responseHeaders } }
     );
   }
 };

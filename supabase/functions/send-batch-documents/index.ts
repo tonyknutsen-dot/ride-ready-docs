@@ -5,6 +5,7 @@ import JSZip from "https://esm.sh/jszip@3.10.1";
 import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 interface SendBatchDocumentsRequest {
   recipientEmail: string;
@@ -332,6 +333,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Email sent via ${sendMethod}:`, emailResponse);
+    await logEmailSend({ template_name: 'batch-documents', recipient_email: recipientEmail, subject: `Equipment Documentation Package`, status: 'sent', user_id: user.id, metadata: { send_method: sendMethod, doc_count: attachments.length } });
 
     // Audit notification
     const notificationMessage = sendMethod === 'share-link'

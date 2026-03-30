@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -307,7 +308,9 @@ serve(async (req: Request) => {
 
     if (emailError) {
       console.error("[MONITOR] Failed to send alert email:", emailError);
+      await logEmailSend({ template_name: 'rate-limit-alert', recipient_email: 'info@ridereadydocs.com', status: 'failed', error_message: emailError.message });
     } else {
+      await logEmailSend({ template_name: 'rate-limit-alert', recipient_email: 'info@ridereadydocs.com', subject: `Rate Limit Abuse Detected`, status: 'sent', metadata: { patterns_count: patterns.length, blocked_count: blockedIpsWithTokens.length } });
       console.log("[MONITOR] Alert email sent successfully");
     }
 
