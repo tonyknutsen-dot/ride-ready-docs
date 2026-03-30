@@ -395,10 +395,10 @@ export default function UserManagement() {
       // Fetch user emails and names from edge function
       const { data: authData, error: authError } = await supabase.functions.invoke('get-users-admin');
       
-      const userEmailMap = new Map<string, { email: string; name: string | null }>();
+      const userEmailMap = new Map<string, { email: string; name: string | null; created_at?: string }>();
       if (!authError && authData?.users) {
         for (const u of authData.users) {
-          userEmailMap.set(u.id, { email: u.email, name: u.name });
+          userEmailMap.set(u.id, { email: u.email, name: u.name, created_at: u.created_at });
         }
       }
 
