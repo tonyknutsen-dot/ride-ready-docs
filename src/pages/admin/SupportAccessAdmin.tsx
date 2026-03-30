@@ -222,7 +222,7 @@ export default function SupportAccessAdmin() {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('user_id, full_name, company_name, controller_name')
+        .select('user_id, company_name, controller_name')
         .order('company_name', { ascending: true })
         .limit(500);
       setUserProfiles((data || []) as ProfileOption[]);
