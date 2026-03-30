@@ -41,9 +41,9 @@ export const REGISTER_MAX_WIDTH = 'max-w-4xl';
 export const EXPORT_ORDER = ['csv', 'pdf'] as const;
 
 /* ─── Viewer launch behaviour ─── */
-// PDF → in-app PdfCanvasViewer
-// Image → in-app ImageViewer/lightbox
-// Other → window.open fallback
+// PDF → routed full-page document viewer
+// Image → routed full-page document viewer
+// Other → routed fallback/download view
 export type ViewerType = 'pdf' | 'image' | 'fallback';
 
 export const getViewerType = (filePath: string): ViewerType => {

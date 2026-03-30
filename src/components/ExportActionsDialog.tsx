@@ -63,13 +63,16 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   };
 
   const handleView = async () => {
-    const docId = await ensureSaved();
-    if (docId) {
-      onOpenChange(false);
-      navigate(`/documents/${docId}`);
-    } else {
-      toast({ title: 'Cannot view', description: 'Save the document first to view it', variant: 'destructive' });
-    }
+    onOpenChange(false);
+    const fileUrl = URL.createObjectURL(result.blob);
+    navigate('/viewer', {
+      state: {
+        fileUrl,
+        fileName: result.fileName,
+        mimeType: result.blob.type || null,
+        temporary: true,
+      },
+    });
   };
 
   const handleDownload = () => {
