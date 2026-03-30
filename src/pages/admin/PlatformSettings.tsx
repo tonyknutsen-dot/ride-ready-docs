@@ -373,7 +373,7 @@ export default function PlatformSettings() {
                       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{s.label}</p>
-                        <p className="text-xs text-muted-foreground">{s.description}</p>
+                        <p className="text-xs text-muted-foreground">{DESCRIPTION_OVERRIDES[k] || s.description}</p>
                         <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">{s.key}</p>
                       </div>
                     </div>
