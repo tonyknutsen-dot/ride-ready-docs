@@ -474,7 +474,7 @@ export default function PlatformSettings() {
                             <span className="text-foreground">{String(details.new_value) || '(empty)'}</span>
                           </span>
                         )}
-                        <span className="text-[10px]">by {log.user_id?.slice(0, 8) ?? 'unknown'}…</span>
+                        <span className="text-[10px]">by {log._actorName || `User ${log.user_id?.slice(0, 8) ?? 'unknown'}…`}</span>
                       </div>
                     </div>
                   );
