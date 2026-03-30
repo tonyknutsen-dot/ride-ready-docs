@@ -341,21 +341,21 @@ function ChangesTable({ entry }: { entry: AuditEntry }) {
       </h4>
       <div className="rounded-lg border overflow-hidden">
         {/* Table header */}
-        <div className="grid grid-cols-[1fr_1fr_1fr] bg-muted/60 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-          <div className="px-2.5 py-1.5">Field</div>
-          <div className="px-2.5 py-1.5">Before</div>
-          <div className="px-2.5 py-1.5">After</div>
+        <div className="grid grid-cols-[28%_36%_36%] bg-muted/60 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+          <div className="px-2 py-1.5">Field</div>
+          <div className="px-2 py-1.5">Before</div>
+          <div className="px-2 py-1.5">After</div>
         </div>
         {/* Table rows */}
         {changedKeys.map((key, i) => (
-          <div key={key} className={`grid grid-cols-[1fr_1fr_1fr] text-xs ${i % 2 === 0 ? '' : 'bg-muted/20'} ${i < changedKeys.length - 1 ? 'border-b border-border/50' : ''}`}>
-            <div className="px-2.5 py-2 font-medium text-foreground/80 capitalize break-all">
+          <div key={key} className={`grid grid-cols-[28%_36%_36%] text-xs ${i % 2 === 0 ? '' : 'bg-muted/20'} ${i < changedKeys.length - 1 ? 'border-b border-border/50' : ''}`}>
+            <div className="px-2 py-2 font-medium text-foreground/80 capitalize break-words hyphens-auto">
               {key.replace(/_/g, ' ')}
             </div>
-            <div className="px-2.5 py-2 text-destructive/70 line-through break-all">
+            <div className="px-2 py-2 text-destructive/60 line-through break-words hyphens-auto leading-relaxed">
               {formatValue(before?.[key])}
             </div>
-            <div className="px-2.5 py-2 text-foreground font-medium break-all">
+            <div className="px-2 py-2 text-foreground font-medium break-words hyphens-auto leading-relaxed">
               {formatValue(after?.[key])}
             </div>
           </div>
@@ -405,10 +405,10 @@ function AuditLegend() {
           <div>
             <p className="font-semibold text-foreground mb-1">Results</p>
             <div className="space-y-0.5 text-muted-foreground">
-              <p><span className="text-emerald-600 font-medium">Success</span> — Action completed normally</p>
-              <p><span className="text-red-600 font-medium">Failed</span> — Action attempted but did not succeed</p>
-              <p><span className="text-red-600 font-medium">Blocked</span> — Action was prevented by a security rule</p>
-              <p><span className="text-amber-600 font-medium">Denied</span> — Action was rejected due to permissions</p>
+              <p><span className="text-primary font-medium">Success</span> — Action completed normally</p>
+              <p><span className="text-destructive font-medium">Failed</span> — Action attempted but did not succeed</p>
+              <p><span className="text-destructive font-medium">Blocked</span> — Action was prevented by a security rule</p>
+              <p><span className="text-destructive/80 font-medium">Denied</span> — Action was rejected due to permissions</p>
             </div>
           </div>
           <div>
@@ -509,22 +509,22 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="pb-0">
-          <SheetTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Audit Event Detail</SheetTitle>
+          <SheetTitle className="text-sm font-semibold text-muted-foreground tracking-wide">Audit Event Detail</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4 pt-2">
           {/* ── Summary Card ── */}
-          <div className={`rounded-xl border-2 p-4 space-y-2.5 ${
+          <div className={`rounded-xl border p-4 space-y-2.5 ${
             result === 'failed' || result === 'blocked' || result === 'denied'
-              ? 'border-destructive/40 bg-destructive/[0.06]'
+              ? 'border-destructive/30 bg-destructive/[0.04]'
               : isHighPriority
-                ? 'border-destructive/25 bg-destructive/[0.04]'
+                ? 'border-destructive/20 bg-destructive/[0.02]'
                 : 'border-border bg-muted/30'
           }`}>
             {isHighPriority && (
               <div className="flex items-center gap-1.5 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                <span className="text-[10px] font-bold text-destructive uppercase tracking-widest">High-risk event</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-destructive/80" />
+                <span className="text-[10px] font-semibold text-destructive/80 uppercase tracking-wider">High-risk event</span>
               </div>
             )}
             <p className="text-base font-bold leading-snug tracking-tight">
