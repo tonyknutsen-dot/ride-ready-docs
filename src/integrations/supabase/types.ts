@@ -2134,6 +2134,39 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          category: string
+          description: string | null
+          id: string
+          key: string
+          label: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          category?: string
+          description?: string | null
+          id?: string
+          key: string
+          label: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       pressure_reader_profiles: {
         Row: {
           created_at: string
