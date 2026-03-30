@@ -22,7 +22,8 @@ interface PdfCanvasViewerProps {
 const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
-const MOBILE_MIN_FIT_SCALE = 1.0; // Never open smaller than this on mobile
+const MOBILE_VIEWPORT_GUTTER = 4;
+const FIT_WIDTH_SETTLE_MS = 140;
 
 const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,13 +31,13 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scale, setScale] = useState<number | null>(null); // null = not yet computed
+  const [scale, setScale] = useState<number | null>(null);
   const [pages, setPages] = useState<HTMLCanvasElement[]>([]);
   const [totalPages, setTotalPages] = useState(0);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const renderTasksRef = useRef<Map<number, any>>(new Map());
   const fitWidthComputed = useRef(false);
 
-  // Load the PDF document
   useEffect(() => {
     if (!src) {
       setLoading(false);
@@ -50,6 +51,7 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
     setPdfDoc(null);
     setPages([]);
     setScale(null);
+    setContainerWidth(null);
     fitWidthComputed.current = false;
 
     const loadPdf = async () => {
@@ -79,43 +81,69 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
     return () => {
       cancelled = true;
       renderTasksRef.current.forEach(task => {
-        try { task.cancel(); } catch {}
+        try {
+          task.cancel();
+        } catch {}
       });
       renderTasksRef.current.clear();
     };
   }, [src]);
 
-  // Compute fit-width scale once doc loads
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const measure = () => {
+      const nextWidth = element.getBoundingClientRect().width;
+      if (nextWidth > 0) {
+        setContainerWidth(nextWidth);
+      }
+    };
+
+    measure();
+
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => measure())
+      : null;
+
+    observer?.observe(element);
+    window.addEventListener('resize', measure);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [loading, scale, src]);
+
   useEffect(() => {
     if (!pdfDoc || fitWidthComputed.current) return;
+    if (fitWidth && (!containerWidth || containerWidth < 180)) return;
 
-    const computeFitWidth = async () => {
-      if (!fitWidth) {
-        fitWidthComputed.current = true;
-        setScale(1);
-        return;
-      }
+    let cancelled = false;
+
+    const timer = window.setTimeout(async () => {
+      if (cancelled) return;
 
       try {
-        const page = await pdfDoc.getPage(1);
-        const viewport = page.getViewport({ scale: 1 });
-
-        const isMobile = window.innerWidth < 640;
-
-        // On mobile, use nearly the full screen width minus minimal padding (4px each side)
-        // On desktop, measure the container or fall back to a reasonable width
-        let availableWidth: number;
-        if (isMobile) {
-          availableWidth = window.innerWidth - 8;
-        } else if (containerRef.current && containerRef.current.clientWidth > 50) {
-          availableWidth = containerRef.current.clientWidth - 16;
-        } else {
-          availableWidth = window.innerWidth - 48;
+        if (!fitWidth) {
+          fitWidthComputed.current = true;
+          setScale(1);
+          return;
         }
 
-        const fitScale = availableWidth / viewport.width;
-        const minScale = isMobile ? MOBILE_MIN_FIT_SCALE : MIN_ZOOM;
-        const clampedScale = Math.max(minScale, Math.min(MAX_ZOOM, fitScale));
+        const page = await pdfDoc.getPage(1);
+        if (cancelled) return;
+
+        const viewport = page.getViewport({ scale: 1 });
+        const isMobile = window.innerWidth < 640;
+        const measuredWidth = containerWidth && containerWidth > 50 ? containerWidth : window.innerWidth;
+        const mobileFallbackWidth = window.innerWidth - MOBILE_VIEWPORT_GUTTER;
+        const usableWidth = isMobile
+          ? Math.max(measuredWidth - MOBILE_VIEWPORT_GUTTER, mobileFallbackWidth)
+          : Math.max(measuredWidth - 16, 0);
+
+        const fitScale = usableWidth / viewport.width;
+        const clampedScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitScale));
 
         fitWidthComputed.current = true;
         setScale(clampedScale);
@@ -123,14 +151,14 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
         fitWidthComputed.current = true;
         setScale(1);
       }
+    }, FIT_WIDTH_SETTLE_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
     };
+  }, [pdfDoc, fitWidth, containerWidth]);
 
-    // Wait for dialog layout to settle before measuring
-    const timer = setTimeout(computeFitWidth, 120);
-    return () => clearTimeout(timer);
-  }, [pdfDoc, fitWidth]);
-
-  // Render all pages when doc or scale changes
   useEffect(() => {
     if (!pdfDoc || scale === null) return;
 
@@ -159,7 +187,9 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
 
           const prevTask = renderTasksRef.current.get(i);
           if (prevTask) {
-            try { prevTask.cancel(); } catch {}
+            try {
+              prevTask.cancel();
+            } catch {}
           }
 
           const renderTask = page.render({
@@ -193,7 +223,6 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
     };
   }, [pdfDoc, scale]);
 
-  // Mount canvases into the DOM
   useEffect(() => {
     const container = pagesContainerRef.current;
     if (!container) return;
@@ -204,14 +233,14 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
 
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'mx-auto bg-white sm:rounded overflow-hidden sm:shadow-sm mb-1 sm:mb-2 max-w-full';
+      wrapper.className = 'mx-auto bg-white overflow-hidden sm:rounded sm:shadow-sm mb-0.5 sm:mb-2 max-w-full';
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       canvas.style.display = 'block';
       wrapper.appendChild(canvas);
 
       const label = document.createElement('div');
-      label.className = 'text-center text-[10px] text-muted-foreground py-1 bg-white/80';
+      label.className = 'hidden sm:block text-center text-[10px] text-muted-foreground py-1 bg-white/80';
       label.textContent = `${idx + 1} / ${totalPages}`;
       wrapper.appendChild(label);
 
@@ -257,15 +286,14 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
-      {/* Compact toolbar */}
-      <div className="flex items-center justify-center gap-1 py-1 px-2 border-b border-border/40 bg-muted/20 shrink-0">
-        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
+      <div className="flex items-center justify-center gap-1 py-0.5 px-1.5 sm:py-1 sm:px-2 border-b border-border/40 bg-muted/20 shrink-0">
+        <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-7 sm:w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
           <ZoomOut className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
         </Button>
         <span className="text-[10px] font-medium text-muted-foreground min-w-[2.5rem] text-center tabular-nums">
           {Math.round(scale * 100)}%
         </span>
-        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
+        <Button variant="ghost" size="icon" className="h-5 w-5 sm:h-7 sm:w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
           <ZoomIn className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
         </Button>
         <span className="text-[10px] text-muted-foreground tabular-nums ml-1">
@@ -273,9 +301,8 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
         </span>
       </div>
 
-      {/* Scrollable pages — minimal padding on mobile */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-1 sm:p-2">
-        <div ref={pagesContainerRef} className="flex flex-col items-center" />
+      <div ref={containerRef} className="flex-1 overflow-auto bg-background sm:bg-muted/10 p-0 sm:p-2">
+        <div ref={pagesContainerRef} className="flex flex-col items-center w-full" />
       </div>
     </div>
   );
