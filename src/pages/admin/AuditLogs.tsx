@@ -196,29 +196,6 @@ const AuditLogs = () => {
     return newMap;
   }, [profileMap]);
 
-  const fetchStats = async () => {
-    const yesterday = subDays(new Date(), 1).toISOString();
-
-    const [totalRes, uniqueRes, failedRes, highRiskRes] = await Promise.all([
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true }).gte('created_at', yesterday),
-      supabase.from('audit_logs').select('user_id').gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true })
-        .or('action.eq.failed_unlock,result.eq.failed,result.eq.blocked')
-        .gte('created_at', yesterday),
-      supabase.from('audit_logs').select('id', { count: 'exact', head: true })
-        .in('action', HIGH_RISK_ACTION_LIST)
-        .gte('created_at', yesterday),
-    ]);
-
-    const uniqueUserIds = new Set(uniqueRes.data?.map(d => d.user_id) || []);
-
-    setStats({
-      events: totalRes.count || 0,
-      users: uniqueUserIds.size,
-      failed: failedRes.count || 0,
-      highRisk: highRiskRes.count || 0,
-    });
-  };
 
   const fetchLogs = async (reset = false) => {
     try {
