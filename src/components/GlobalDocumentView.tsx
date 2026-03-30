@@ -355,12 +355,11 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   const SubSection = ({ label, docs }: { label: string; docs: Document[] }) => {
     if (docs.length === 0) return null;
     return (
-      <div className="space-y-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
-          {label}
-          <span className="ml-1.5 text-[10px] font-normal">({docs.length})</span>
+      <div className="space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
+          {label} <span className="font-normal">({docs.length})</span>
         </p>
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {docs.map(doc => (
             <DocCard key={doc.id} doc={doc} />
           ))}
