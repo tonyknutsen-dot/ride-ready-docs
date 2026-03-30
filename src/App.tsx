@@ -664,9 +664,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <JobsQueues />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="admin_jobs_queues_enabled" disabledMessage="Jobs &amp; Queues page is currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <JobsQueues />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
