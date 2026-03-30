@@ -249,6 +249,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log(`Email sent successfully:`, emailResponse);
+    await logEmailSend({ template_name: 'document-share', recipient_email: recipientEmail, subject: `Equipment Documentation Package - ${senderName}`, status: 'sent', user_id: user.id, metadata: { doc_count: documents.length } });
 
     // Log notification
     await supabase
