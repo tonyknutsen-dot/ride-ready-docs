@@ -437,6 +437,7 @@ export default function AdminDashboard() {
             <section>
               <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">System Health</h2>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                {isPlatformOn('admin_jobs_queues_enabled') && (
                 <Link to="/admin/jobs-queues" className="group">
                   <div className="flex items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
                     <div className="flex items-center gap-3">
@@ -449,6 +450,8 @@ export default function AdminDashboard() {
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                 </Link>
+                )}
+                {isPlatformOn('admin_email_log_enabled') && (
                 <Link to="/admin/email-log" className="group">
                   <div className="flex items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
                     <div className="flex items-center gap-3">
@@ -461,6 +464,7 @@ export default function AdminDashboard() {
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                 </Link>
+                )}
               </div>
             </section>
 
