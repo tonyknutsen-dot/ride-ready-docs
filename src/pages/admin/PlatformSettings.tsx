@@ -49,6 +49,17 @@ const TOGGLE_ICONS: Record<string, React.ElementType> = {
 const ACCESS_KEYS = ['public_enquiries_enabled', 'early_access_enabled', 'marketing_tools_enabled', 'support_access_grants_enabled'];
 const FLAG_KEYS = ['admin_system_health_enabled', 'admin_email_log_enabled', 'admin_jobs_queues_enabled'];
 
+/** Precise UI descriptions — override DB descriptions where needed */
+const DESCRIPTION_OVERRIDES: Record<string, string> = {
+  public_enquiries_enabled: 'Controls the public enquiry form where available in the app.',
+  early_access_enabled: 'Controls the early access signup entry point where available.',
+  marketing_tools_enabled: 'Controls admin access to marketing campaign tools (admin-only).',
+  support_access_grants_enabled: 'Controls admin/support grant creation tooling (admin-only).',
+  admin_system_health_enabled: 'Controls visibility and access to the System Health admin page.',
+  admin_email_log_enabled: 'Controls visibility and access to the Email Log admin page.',
+  admin_jobs_queues_enabled: 'Controls visibility and access to the Jobs & Queues admin page.',
+};
+
 export default function PlatformSettings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<SettingsMap>({});
