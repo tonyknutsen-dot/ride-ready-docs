@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedPdf, cachePdf, createCachedPdfUrl, fetchPdfBlob } from '@/lib/pdfCache';
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
+import { revokeObjectUrl } from '@/utils/exportFileActions';
 import {
   fetchDocumentVersions, archiveRideDocument,
   restoreRideDocument, RideDocument, RIDE_DOC_TYPE_LABELS,
@@ -46,12 +47,21 @@ interface DocumentMeta {
   evidenceCount: number;
 }
 
+interface TemporaryViewerState {
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string | null;
+  temporary?: boolean;
+}
+
 const DocumentViewerPage = () => {
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const viewerState = (location.state ?? null) as TemporaryViewerState | null;
 
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -78,9 +88,35 @@ const DocumentViewerPage = () => {
   const [archiveReason, setArchiveReason] = useState('');
 
   useEffect(() => {
-    if (!documentId || !user) return;
-    loadDocument(documentId);
-  }, [documentId, user]);
+    if (documentId && user) {
+      loadDocument(documentId);
+      return;
+    }
+
+    if (viewerState?.fileUrl) {
+      setLoading(false);
+      setRideDoc(null);
+      setFallbackDocId(null);
+      setAllVersions([]);
+      setLatestVersion(null);
+      setIsViewingOldVersion(false);
+      setMeta(null);
+      setPdfUrl(viewerState.fileUrl);
+      setPdfSource(null);
+      setDocTitle(viewerState.fileName || 'Document');
+      setDocDisplayId('');
+      setIsCachedLocally(false);
+      setFileType(detectFileType(viewerState.fileName || viewerState.fileUrl, viewerState.mimeType));
+    }
+  }, [documentId, user, viewerState?.fileUrl, viewerState?.fileName, viewerState?.mimeType]);
+
+  useEffect(() => {
+    return () => {
+      if (viewerState?.temporary && viewerState.fileUrl) {
+        revokeObjectUrl(viewerState.fileUrl);
+      }
+    };
+  }, [viewerState?.temporary, viewerState?.fileUrl]);
 
   // Check if this document is already cached locally
   useEffect(() => {
@@ -266,7 +302,10 @@ const DocumentViewerPage = () => {
     });
   };
 
-  const detectFileType = (filePath: string): 'pdf' | 'image' | 'other' => {
+  const detectFileType = (filePath: string, mimeType?: string | null): 'pdf' | 'image' | 'other' => {
+    const mt = mimeType?.toLowerCase() || '';
+    if (mt === 'application/pdf') return 'pdf';
+    if (mt.startsWith('image/')) return 'image';
     const fp = filePath.toLowerCase();
     if (/\.pdf$/i.test(fp)) return 'pdf';
     if (/\.(jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(fp)) return 'image';
@@ -279,7 +318,7 @@ const DocumentViewerPage = () => {
     setLatestVersion(null);
     setDocTitle(doc.document_name);
 
-    const ft = detectFileType(doc.file_path || '');
+    const ft = detectFileType(doc.file_path || '', doc.mime_type);
     setFileType(ft);
 
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
@@ -354,6 +393,24 @@ const DocumentViewerPage = () => {
   };
 
   const handleDownload = async () => {
+    if (viewerState?.temporary && viewerState.fileUrl) {
+      try {
+        const response = await fetch(viewerState.fileUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = viewerState.fileName || docTitle || 'document';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        toast({ title: 'Download failed', variant: 'destructive' });
+      }
+      return;
+    }
+
     if (!navigator.onLine) {
       toast({ title: 'Requires connection', description: 'Downloads are unavailable while offline.' });
       return;
@@ -634,20 +691,23 @@ const DocumentViewerPage = () => {
 
       {/* ── Content: Document + Sidebar ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Document Viewer — file-type aware */}
+        {/* Document Viewer — routed, full-page, native-first */}
         <div className="flex-1">
           {fileType === 'pdf' && (
-            <PdfCanvasViewer
-              src={pdfUrl}
-              onDownload={handleDownload}
-            />
+            <div className="h-full w-full bg-background">
+              <iframe
+                src={pdfUrl || undefined}
+                title={docTitle || 'Document viewer'}
+                className="h-full w-full border-0 bg-background"
+              />
+            </div>
           )}
           {fileType === 'image' && pdfUrl && (
-            <div className="w-full h-full overflow-auto flex items-center justify-center bg-muted/30 p-4">
+            <div className="w-full h-full overflow-auto bg-background">
               <img
                 src={pdfUrl}
                 alt={docTitle}
-                className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                className="block mx-auto max-w-full min-h-full object-contain"
               />
             </div>
           )}
