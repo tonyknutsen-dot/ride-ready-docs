@@ -652,6 +652,18 @@ const App = () => (
                 } 
               />
               <Route 
+                path="/admin/jobs-queues" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <JobsQueues />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/admin/email-log" 
                 element={
                   <ProtectedRoute>
