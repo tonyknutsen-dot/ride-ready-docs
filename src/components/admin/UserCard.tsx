@@ -113,24 +113,36 @@ export function UserCard({
     }
   };
 
-  const getRoleBadge = () => {
+  const getRoleBadges = () => {
+    const badges = [];
     if (user.isAdmin) {
-      return (
-        <Badge className="bg-primary">
+      badges.push(
+        <Badge key="admin" className="bg-primary">
           <Shield className="h-3 w-3 mr-1" />
           Admin
         </Badge>
       );
     }
+    if (user.isStaffMember) {
+      badges.push(
+        <Badge key="staff" variant="outline" className="border-primary/40 text-primary">
+          <Users className="h-3 w-3 mr-1" />
+          Staff
+        </Badge>
+      );
+    }
     if (user.isTester) {
-      return (
-        <Badge className="bg-warning text-warning-foreground">
+      badges.push(
+        <Badge key="tester" className="bg-warning text-warning-foreground">
           <FlaskConical className="h-3 w-3 mr-1" />
           Tester
         </Badge>
       );
     }
-    return <Badge variant="outline">User</Badge>;
+    if (badges.length === 0) {
+      badges.push(<Badge key="user" variant="outline">User</Badge>);
+    }
+    return badges;
   };
 
   return (
