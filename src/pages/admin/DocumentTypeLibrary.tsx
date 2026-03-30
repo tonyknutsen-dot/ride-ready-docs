@@ -315,7 +315,16 @@ export default function DocumentTypeLibrary() {
         .eq('id', deleteTarget.id);
       if (error) throw error;
       setTypes(prev => prev.filter(t => t.id !== deleteTarget.id));
-      logEvent('delete', 'document_type', deleteTarget.id, { name: deleteTarget.name });
+      logEvent('delete', 'document_type', deleteTarget.id, { name: deleteTarget.name }, {
+        before: {
+          name: deleteTarget.name,
+          type_key: deleteTarget.type_key,
+          category: deleteTarget.category,
+          source: deleteTarget.source,
+          description: deleteTarget.description,
+        },
+        contextHint: 'admin permanent deletion',
+      });
       toast({ title: 'Deleted', description: `"${deleteTarget.name}" removed from library.` });
       setDeleteTarget(null);
     } catch (err: any) {

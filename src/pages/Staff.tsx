@@ -14,6 +14,7 @@ import { StaffInviteModal } from '@/components/staff/StaffInviteModal';
 import { StaffDetailsDrawer } from '@/components/staff/StaffDetailsDrawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Database } from '@/integrations/supabase/types';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type StaffRole = Database['public']['Enums']['staff_role'];
 type FilterRole = 'all' | 'staff' | 'pending';
@@ -22,6 +23,7 @@ const Staff = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const appRole = useAppRole();
   const isOnline = useOnlineStatus();
   const canManage = can_manage_staff(appRole);
@@ -144,6 +146,24 @@ const Staff = () => {
       if (deleteTarget.user_id) {
         await supabase.from('profiles').delete().eq('user_id', deleteTarget.user_id);
       }
+
+      logEvent('delete', 'staff', deleteTarget.id, {
+        name: deleteTarget.display_name || deleteTarget.email || 'Unknown',
+        email: deleteTarget.email,
+        role: deleteTarget.permission_level,
+      }, {
+        before: {
+          display_name: deleteTarget.display_name,
+          email: deleteTarget.email,
+          permission_level: deleteTarget.permission_level,
+          equipment_access_mode: deleteTarget.equipment_access_mode,
+          is_active: true,
+        },
+        after: { is_active: false },
+        changedFields: ['is_active'],
+        contextHint: 'staff member removed and profile deleted',
+      });
+
       toast({ title: 'Staff member removed' });
       if (organisationId) fetchStaff(organisationId);
     } catch (e: any) {

@@ -30,6 +30,7 @@ import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 import RelatedDefectsSection from '@/components/RelatedDefectsSection';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 // Types
 type Ride = Tables<'rides'> & {
@@ -105,6 +106,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
   const [previousReports, setPreviousReports] = useState<Document[]>([]);
 
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const ALLOWED_TYPES = [
     'image/jpeg','image/png','image/gif','image/webp','image/heic',
@@ -231,18 +233,46 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
   // ── CRUD operations ──
   const handleDelete = async (recordId: string) => {
     try {
-      const { data: record, error: fetchError } = await supabase
-        .from('maintenance_records').select('document_ids').eq('id', recordId).single();
+      // Fetch full record for audit before snapshot
+      const { data: fullRecord, error: fetchError } = await supabase
+        .from('maintenance_records')
+        .select('*')
+        .eq('id', recordId)
+        .single();
       if (fetchError) throw fetchError;
-      if (record?.document_ids && record.document_ids.length > 0) {
-        const { data: docs } = await supabase.from('documents').select('file_path').in('id', record.document_ids);
+
+      // Clean up attached documents
+      if (fullRecord?.document_ids && fullRecord.document_ids.length > 0) {
+        const { data: docs } = await supabase.from('documents').select('file_path').in('id', fullRecord.document_ids);
         if (docs && docs.length > 0) {
           await supabase.storage.from('ride-documents').remove(docs.map(d => d.file_path));
         }
-        await supabase.from('documents').delete().in('id', record.document_ids);
+        await supabase.from('documents').delete().in('id', fullRecord.document_ids);
       }
       const { error } = await supabase.from('maintenance_records').delete().eq('id', recordId);
       if (error) throw error;
+
+      const typeLabel = MAINTENANCE_TYPES.find(t => t.value === fullRecord.maintenance_type)?.label || fullRecord.maintenance_type;
+      logEvent('delete', 'maintenance', recordId, {
+        name: `${typeLabel} – ${fullRecord.description?.substring(0, 80)}`,
+        ride: ride.ride_name,
+        maintenance_date: fullRecord.maintenance_date,
+        attachments_deleted: fullRecord.document_ids?.length || 0,
+      }, {
+        before: {
+          description: fullRecord.description,
+          maintenance_type: typeLabel,
+          maintenance_date: fullRecord.maintenance_date,
+          performed_by: fullRecord.performed_by,
+          parts_replaced: fullRecord.parts_replaced,
+          cost: fullRecord.cost,
+          notes: fullRecord.notes,
+        },
+        equipmentName: ride.ride_name,
+        equipmentId: ride.id,
+        contextHint: 'permanent deletion with attachments',
+      });
+
       toast({ title: 'Success', description: 'Maintenance record deleted' });
       loadMaintenanceRecords();
     } catch (error) {
