@@ -25,6 +25,7 @@ interface EmailLogEntry {
   message_id: string;
   template_name: string | null;
   recipient_email: string | null;
+  subject: string | null;
   status: string;
   error_message: string | null;
   created_at: string;
