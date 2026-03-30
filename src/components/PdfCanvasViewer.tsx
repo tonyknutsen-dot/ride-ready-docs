@@ -22,6 +22,7 @@ interface PdfCanvasViewerProps {
 const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
+const MOBILE_MIN_FIT_SCALE = 0.85; // Never open smaller than this on mobile
 
 const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
