@@ -292,6 +292,13 @@ const ComingSoon = () => {
               )}
             </CardContent>
           </Card>
+          ) : (
+          <Card className="border-border bg-card">
+            <CardContent className="p-6 text-center">
+              <p className="text-muted-foreground text-sm">Early access signups are currently closed.</p>
+            </CardContent>
+          </Card>
+          )}
 
           {/* CTA */}
           <div className="space-y-3">
