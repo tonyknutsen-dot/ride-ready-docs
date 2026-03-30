@@ -38,6 +38,9 @@ const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 4;
 const MOBILE_BP = 640;
+const FIT_WIDTH_SETTLE_MS = 180;
+const MOBILE_PAGE_GUTTER = 2;
+const DESKTOP_PAGE_GUTTER = 24;
 
 /* ─── Component ─── */
 const DocumentViewer = ({ isOpen, onClose, fileUrl, fileName, fileType, onDownload }: DocumentViewerProps) => {
@@ -109,6 +112,7 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
   const [scale, setScale] = useState<number | null>(null);
   const [pages, setPages] = useState<HTMLCanvasElement[]>([]);
   const [totalPages, setTotalPages] = useState(0);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const renderTasksRef = useRef<Map<number, any>>(new Map());
   const scaleComputedRef = useRef(false);
 
@@ -138,12 +142,49 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
     return () => { cancelled = true; renderTasksRef.current.forEach(t => { try { t.cancel(); } catch {} }); renderTasksRef.current.clear(); };
   }, [src]);
 
+  // Track the real visible viewport width of the PDF area.
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    let raf1 = 0;
+    let raf2 = 0;
+
+    const measure = () => {
+      const nextWidth = element.getBoundingClientRect().width;
+      if (nextWidth > 0) {
+        setContainerWidth(nextWidth);
+      }
+    };
+
+    measure();
+    raf1 = window.requestAnimationFrame(() => {
+      measure();
+      raf2 = window.requestAnimationFrame(measure);
+    });
+
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => measure())
+      : null;
+
+    observer?.observe(element);
+    window.addEventListener('resize', measure);
+    window.visualViewport?.addEventListener('resize', measure);
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+      window.visualViewport?.removeEventListener('resize', measure);
+    };
+  }, []);
+
   // Compute fit-to-width scale once PDF + container are ready
   useEffect(() => {
-    if (!pdfDoc || scaleComputedRef.current) return;
+    if (!pdfDoc || scaleComputedRef.current || !containerWidth || containerWidth < 120) return;
     let cancelled = false;
 
-    // Wait for layout to settle — critical for mobile dialogs
     const timer = window.setTimeout(async () => {
       if (cancelled) return;
       try {
@@ -152,30 +193,30 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
         const viewport = page.getViewport({ scale: 1 });
         const isMobile = window.innerWidth < MOBILE_BP;
 
-        // Use window width as the source of truth on mobile — container may not have settled
-        const containerW = containerRef.current?.clientWidth;
-        const usableWidth = isMobile
-          ? window.innerWidth - 4
-          : Math.max((containerW && containerW > 50 ? containerW : window.innerWidth) - 24, 200);
+        const usableWidth = Math.max(
+          containerWidth - (isMobile ? MOBILE_PAGE_GUTTER : DESKTOP_PAGE_GUTTER),
+          120,
+        );
 
         const fitScale = usableWidth / viewport.width;
-        const minScale = isMobile ? 1.0 : MIN_ZOOM;
         scaleComputedRef.current = true;
-        setScale(Math.max(minScale, Math.min(MAX_ZOOM, fitScale)));
+        setScale(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitScale)));
       } catch {
         scaleComputedRef.current = true;
         setScale(1);
       }
-    }, 150);
+    }, FIT_WIDTH_SETTLE_MS);
 
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [pdfDoc]);
+  }, [pdfDoc, containerWidth]);
 
   // Render all pages when scale changes
   useEffect(() => {
     if (!pdfDoc || scale === null) return;
     let cancelled = false;
     const dpr = window.devicePixelRatio || 1;
+
+    setPages([]);
 
     (async () => {
       const canvases: HTMLCanvasElement[] = [];
@@ -188,6 +229,8 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
           const canvas = document.createElement('canvas');
           canvas.width = vp.width; canvas.height = vp.height;
           canvas.style.width = `${dvp.width}px`; canvas.style.height = `${dvp.height}px`;
+          canvas.dataset.pageWidth = `${dvp.width}`;
+          canvas.dataset.pageHeight = `${dvp.height}`;
           const ctx = canvas.getContext('2d');
           if (!ctx) continue;
           const prev = renderTasksRef.current.get(i);
@@ -214,14 +257,15 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
     while (el.firstChild) el.removeChild(el.firstChild);
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'mx-auto bg-white overflow-hidden sm:rounded sm:shadow-sm mb-0.5 sm:mb-2 max-w-full';
-      canvas.style.maxWidth = '100%';
-      canvas.style.height = 'auto';
+      wrapper.className = 'mx-auto overflow-hidden mb-px sm:mb-2 sm:rounded sm:shadow-sm bg-background';
+      if (canvas.dataset.pageWidth) {
+        wrapper.style.width = `${canvas.dataset.pageWidth}px`;
+      }
       canvas.style.display = 'block';
       wrapper.appendChild(canvas);
       if (totalPages > 1) {
         const label = document.createElement('div');
-        label.className = 'hidden sm:block text-center text-[10px] text-muted-foreground py-0.5 bg-white/80';
+        label.className = 'hidden sm:block text-center text-[10px] text-muted-foreground py-0.5 bg-background/80';
         label.textContent = `${idx + 1} / ${totalPages}`;
         wrapper.appendChild(label);
       }
@@ -262,7 +306,7 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
   return (
     <div className="flex flex-col h-full">
       {/* Zoom toolbar */}
-      <div className="flex items-center justify-center gap-1 py-0.5 px-1 border-b border-border/40 bg-muted/20 shrink-0">
+      <div className="flex items-center justify-center gap-1 px-1 py-0.5 border-b border-border/40 bg-muted/20 shrink-0">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
           <ZoomOut className="h-3 w-3" />
         </Button>
@@ -278,8 +322,12 @@ function PdfContent({ src, onDownload }: { src: string; onDownload?: () => void 
       </div>
 
       {/* Scrollable pages */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-background sm:bg-muted/10 p-0 sm:p-2 touch-manipulation">
-        <div ref={pagesRef} className="flex flex-col items-center w-full" />
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto overscroll-contain bg-background p-0 sm:bg-muted/10 sm:p-2"
+        style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
+      >
+        <div ref={pagesRef} className="flex w-max min-w-full flex-col items-center" />
       </div>
     </div>
   );
