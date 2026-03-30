@@ -250,6 +250,7 @@ export function getSourcePage(entry: AuditEntry): string | null {
     'CampaignBuilder': 'Marketing campaigns',
     'DocumentUpload': 'Document upload',
     'MaintenanceLogger': 'Maintenance log',
+    'DowngradeConfirmationDialog': 'Billing / Downgrade',
     'CheckItemSubmissions': 'Admin / Check intake',
     'RiskItemSubmissions': 'Admin / Risk intake',
     'RideTypeRequests': 'Admin / Equipment type requests',
