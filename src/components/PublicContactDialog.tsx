@@ -38,6 +38,7 @@ export const PublicContactDialog = ({
   triggerVariant = 'outline',
   triggerClassName = ''
 }: PublicContactDialogProps) => {
+  const { isOn } = usePlatformSettings();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
