@@ -6,6 +6,7 @@ import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Link2, Send } from 'l
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { downloadBlob } from '@/utils/exportFileActions';
+import { openDocumentById } from '@/utils/documentOpen';
 import QuickSendDialog from '@/components/QuickSendDialog';
 
 export interface ExportResult {

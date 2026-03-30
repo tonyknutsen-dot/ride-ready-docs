@@ -37,6 +37,7 @@ import {
   fetchRideDocuments, fetchDocumentVersions, archiveRideDocument,
   restoreRideDocument, RideDocument,
 } from '@/utils/rideDocumentService';
+import { openDocumentById } from '@/utils/documentOpen';
 import CompletedEventEditSheet from '@/components/CompletedEventEditSheet';
 import { getAllOfflineComplianceCompletions, offlineDb, type OfflineComplianceCompletion } from '@/lib/offlineDb';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
