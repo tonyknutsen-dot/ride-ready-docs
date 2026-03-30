@@ -21,6 +21,8 @@ const routeLabels: Record<string, string> = {
   '/admin/security': 'Security Dashboard',
   '/admin/payments': 'Payments & Billing',
   '/admin/feature-requests': 'Feature Requests',
+  '/admin/system-health': 'System Health',
+  '/admin/email-log': 'Email Log',
 };
 
 export function AdminBreadcrumb() {
