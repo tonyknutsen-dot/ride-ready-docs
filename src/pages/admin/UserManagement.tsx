@@ -18,6 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { UserCard } from '@/components/admin/UserCard';
 import {
   AlertDialog,
   AlertDialogAction,
