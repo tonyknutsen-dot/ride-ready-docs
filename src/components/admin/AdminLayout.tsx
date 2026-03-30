@@ -109,6 +109,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     {
       label: 'System',
       items: [
+        { name: 'Platform Settings', href: '/admin/platform-settings', icon: Settings2, count: 0 },
         { name: 'System Health', href: '/admin/system-health', icon: Wrench, count: 0 },
         { name: 'Jobs & Queues', href: '/admin/jobs-queues', icon: Activity, count: 0 },
         { name: 'Email Log', href: '/admin/email-log', icon: Mail, count: 0 },

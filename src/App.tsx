@@ -676,6 +676,18 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/admin/platform-settings" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <PlatformSettings />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
               {/* Public shared documents download page - no auth required */}
               <Route path="/shared/:token" element={<SharedDocuments />} />
               <Route 
