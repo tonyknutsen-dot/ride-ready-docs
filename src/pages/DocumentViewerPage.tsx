@@ -240,17 +240,11 @@ const DocumentViewerPage = () => {
         if (fetchedBlob) {
           const blobUrl = URL.createObjectURL(new Blob([fetchedBlob], { type: 'application/pdf' }));
           setPdfUrl(blobUrl);
+          cachePdf(rd.document_id, rd.version, rd.file_url, fetchedBlob, rd.title);
         } else {
           setPdfUrl(signedUrl);
         }
         setPdfSource('network');
-        // Cache in background (re-use fetched blob if available)
-        if (fetchedBlob) {
-          cachePdf(rd.document_id, rd.version, rd.file_url, fetchedBlob, rd.title);
-        } else {
-          fetchPdfBlob(signedUrl).then(blob => {
-          if (blob) cachePdf(rd.document_id, rd.version, rd.file_url, blob, rd.title);
-        });
       } else {
         // Signed URL failed but we may have a stale cache
         if (cached) {
