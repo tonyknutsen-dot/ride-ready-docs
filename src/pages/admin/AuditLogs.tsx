@@ -723,11 +723,11 @@ const AuditLogs = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-          <KpiCard label="Events (24h)" value={stats.events} icon={History} />
-          <KpiCard label="Active Users" value={stats.users} icon={Users} />
-          <KpiCard label="Failed / Blocked" value={stats.failed} icon={AlertTriangle} accent />
-          <KpiCard label="High-Risk" value={stats.highRisk} icon={Shield} accent />
+          <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+            <KpiCard label="Visible events" value={visibleStats.events} icon={History} />
+            <KpiCard label="Active users" value={visibleStats.users} icon={Users} />
+            <KpiCard label="Failed / Blocked" value={visibleStats.failed} icon={AlertTriangle} accent />
+            <KpiCard label="High-risk" value={visibleStats.highRisk} icon={Shield} accent />
         </div>
 
         {/* Search + Date + Filters */}
