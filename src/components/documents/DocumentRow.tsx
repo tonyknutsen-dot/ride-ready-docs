@@ -1,9 +1,17 @@
 /**
  * Single document row used in DocumentList.
- * Extracted for maintainability — no UI change.
+ * Mobile-first layout: filename readable, actions compact.
  */
-import { FileText } from 'lucide-react';
-import DocumentRowActions from '@/components/documents/DocumentRowActions';
+import { FileText, Eye, Download, MoreVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Link2, RefreshCw, Archive, Globe, MapPin } from 'lucide-react';
 import { isDocExpired, isDocExpiringSoon, formatFileSize } from '@/utils/documentHelpers';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -46,35 +54,47 @@ const DocumentRow = ({
   const uploadedStr = new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   const sizeStr = doc.file_size ? formatFileSize(doc.file_size) : null;
 
+  const hasOverflow = !!(onCopyLink || onDelete || (!isOlderVersion && !isStaff && onToggleGlobal));
+
   return (
-    <div className={`flex items-center gap-3 px-3 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors min-w-0 ${isOlderVersion ? 'opacity-70' : ''}`}>
+    <div
+      className={`flex items-start gap-3 px-3 py-3 border-b border-border/50 last:border-b-0 hover:bg-muted/40 transition-colors min-w-0 ${isOlderVersion ? 'opacity-70' : ''}`}
+      onClick={() => onView(doc)}
+      role="button"
+      tabIndex={0}
+    >
       {/* File icon / thumbnail */}
-      <div className="shrink-0">
+      <div className="shrink-0 mt-0.5">
         {thumbUrl ? (
           <img
             src={thumbUrl}
             alt={displayName}
-            className="w-10 h-10 object-cover rounded-lg border border-slate-200"
+            className="w-10 h-10 object-cover rounded-lg border border-border"
           />
         ) : (
-          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-            <FileText className="w-5 h-5 text-slate-600" />
+          <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center border border-border">
+            <FileText className="w-5 h-5 text-muted-foreground" />
           </div>
         )}
       </div>
 
-      {/* File info */}
+      {/* File info — full width, wrapping allowed */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate" title={displayName}>
+        {/* Title — 2-line clamp, semibold, readable */}
+        <div className="flex items-start gap-1.5">
+          <p
+            className="text-sm font-semibold text-foreground leading-snug line-clamp-2"
+            title={displayName}
+          >
             {isOlderVersion
               ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
               : displayName}
           </p>
           {hasMultipleVersions && !isOlderVersion && (
-            <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">Latest</span>
+            <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary mt-0.5">Latest</span>
           )}
         </div>
+
         {/* Compliance subtitle */}
         {!isOlderVersion && (() => {
           const docIdMatch = doc.document_name?.match(/^([A-Z0-9]+-CR-\d{4}-\d{4})/);
@@ -97,7 +117,9 @@ const DocumentRow = ({
             </p>
           );
         })()}
-        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+
+        {/* Metadata row — compact, secondary */}
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           {!isOlderVersion && doc.is_global && (
             <span className="text-[10px] text-muted-foreground font-medium">Shared insurance</span>
           )}
@@ -105,30 +127,76 @@ const DocumentRow = ({
             <span className="text-[10px] text-muted-foreground font-medium">This equipment only</span>
           )}
           {!isOlderVersion && (
-            <span className="text-xs text-muted-foreground">{uploadedStr}</span>
+            <span className="text-[11px] text-foreground/60 font-medium">{uploadedStr}</span>
           )}
-          {sizeStr && <span className="text-xs text-muted-foreground">• {sizeStr}</span>}
+          {sizeStr && <span className="text-[11px] text-foreground/60">• {sizeStr}</span>}
           {doc.expires_at && !isOlderVersion && (
             expired ? (
-              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">Expired</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">Expired</span>
             ) : expiringSoon ? (
-              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">Expires soon</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">Expires soon</span>
             ) : (
-              <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-green-100 text-green-800 border border-green-200">Valid</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-green-100 text-green-800 border border-green-200">Valid</span>
             )
           )}
         </div>
       </div>
 
-      {/* Actions — canonical pattern */}
-      <DocumentRowActions
-        onView={() => onView(doc)}
-        onDownload={() => onDownload(doc)}
-        onCopyLink={() => onCopyLink(doc)}
-        onDelete={!isOlderVersion && onDelete ? () => onDelete(doc) : undefined}
-        isGlobal={doc.is_global ?? false}
-        onToggleGlobal={!isOlderVersion && !isStaff && onToggleGlobal ? () => onToggleGlobal(doc) : undefined}
-      />
+      {/* Actions — minimal footprint: overflow menu only on mobile */}
+      <div className="flex items-center gap-0.5 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
+        {/* Download — single visible icon */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={(e) => { e.stopPropagation(); onDownload(doc); }}
+          title="Save to device"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+
+        {/* Overflow menu — all other actions */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView(doc); }}>
+              <Eye className="h-4 w-4 mr-2" /> View
+            </DropdownMenuItem>
+            {!isOlderVersion && !isStaff && onToggleGlobal && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleGlobal(doc); }}>
+                  {doc.is_global ? (
+                    <><MapPin className="h-4 w-4 mr-2" /> Make equipment-only</>
+                  ) : (
+                    <><Globe className="h-4 w-4 mr-2" /> Share across all equipment</>
+                  )}
+                </DropdownMenuItem>
+              </>
+            )}
+            {onCopyLink && (
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopyLink(doc); }}>
+                <Link2 className="h-4 w-4 mr-2" /> Copy Link
+              </DropdownMenuItem>
+            )}
+            {!isOlderVersion && onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={(e) => { e.stopPropagation(); onDelete(doc); }}
+                >
+                  <Archive className="h-4 w-4 mr-2" /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };
