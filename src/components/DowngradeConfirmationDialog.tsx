@@ -34,6 +34,7 @@ export function DowngradeConfirmationDialog({
 }: DowngradeConfirmationDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
