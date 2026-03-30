@@ -732,7 +732,7 @@ const AuditLogs = () => {
           <div className="min-w-0">
             <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
               <History className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
-              <span className="truncate">Audit Trail</span>
+              <span className="truncate">Audit Logs</span>
             </h1>
             <p className="text-sm text-muted-foreground hidden sm:block">
               Platform-wide activity and compliance audit log
