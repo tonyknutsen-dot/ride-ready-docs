@@ -23,6 +23,7 @@ const Staff = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
   const appRole = useAppRole();
   const isOnline = useOnlineStatus();
   const canManage = can_manage_staff(appRole);
