@@ -467,22 +467,13 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Viewers */}
-      {viewerDoc?.type === 'pdf' && (
-        <PDFViewer
+      {viewerDoc && (
+        <DocumentViewer
           isOpen
           onClose={() => setViewerDoc(null)}
-          pdfUrl={viewerDoc.url}
-          pdfName={viewerDoc.name}
-          onDownload={handleViewerDownload}
-        />
-      )}
-      {viewerDoc?.type === 'image' && (
-        <ImageViewer
-          isOpen
-          onClose={() => setViewerDoc(null)}
-          imageUrl={viewerDoc.url}
-          imageName={viewerDoc.name}
+          fileUrl={viewerDoc.url}
+          fileName={viewerDoc.name}
+          fileType={viewerDoc.type}
           onDownload={handleViewerDownload}
         />
       )}

@@ -339,7 +339,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Photo Viewer */}
       {photoUrl && (
-        <ImageViewer isOpen={photoViewerOpen} onClose={() => setPhotoViewerOpen(false)} imageUrl={photoUrl} imageName={ride.ride_name} onDownload={() => window.open(photoUrl, '_blank')} />
+        <DocumentViewer isOpen={photoViewerOpen} onClose={() => setPhotoViewerOpen(false)} fileUrl={photoUrl} fileName={ride.ride_name} fileType="image" onDownload={() => window.open(photoUrl, '_blank')} />
       )}
 
       {/* Tab Navigation */}

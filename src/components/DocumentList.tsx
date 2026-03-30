@@ -799,22 +799,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       </Card>
       </div>
 
-      {/* In-app viewers */}
-      {viewerDoc?.type === 'pdf' && (
-        <PDFViewer
-          isOpen={true}
+      {viewerDoc && (
+        <DocumentViewer
+          isOpen
           onClose={() => setViewerDoc(null)}
-          pdfUrl={viewerDoc.url}
-          pdfName={viewerDoc.name}
-          onDownload={handleViewerDownload}
-        />
-      )}
-      {viewerDoc?.type === 'image' && (
-        <ImageViewer
-          isOpen={true}
-          onClose={() => setViewerDoc(null)}
-          imageUrl={viewerDoc.url}
-          imageName={viewerDoc.name}
+          fileUrl={viewerDoc.url}
+          fileName={viewerDoc.name}
+          fileType={viewerDoc.type}
           onDownload={handleViewerDownload}
         />
       )}
