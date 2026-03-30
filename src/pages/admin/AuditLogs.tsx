@@ -703,11 +703,11 @@ const AuditLogs = () => {
         </div>
 
         {/* KPI Cards */}
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-            <KpiCard label="Visible events" value={visibleStats.events} icon={History} />
-            <KpiCard label="Active users" value={visibleStats.users} icon={Users} />
-            <KpiCard label="Failed / Blocked" value={visibleStats.failed} icon={AlertTriangle} accent />
-            <KpiCard label="High-risk" value={visibleStats.highRisk} icon={Shield} accent />
+        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+          <KpiCard label="Visible events" value={visibleStats.events} icon={History} />
+          <KpiCard label="Active users" value={visibleStats.users} icon={Users} />
+          <KpiCard label="Failed / Blocked" value={visibleStats.failed} icon={AlertTriangle} accent />
+          <KpiCard label={hiddenHighlightedCount > 0 && !hasVisibleHighlightedRows ? `High-risk (${hiddenHighlightedCount} hidden)` : 'High-risk'} value={visibleStats.highRisk} icon={Shield} accent />
         </div>
 
         {/* Search + Date + Filters */}
@@ -733,22 +733,27 @@ const AuditLogs = () => {
           </div>
 
           {!hasVisibleHighlightedRows && hiddenHighlightedCount > 0 && (
-            <Card className="border-dashed border-destructive/30 bg-destructive/[0.04] p-3">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-foreground">No highlighted rows are currently visible.</p>
+            <Card className="border-l-4 border-l-destructive/60 border-dashed bg-destructive/[0.04] p-3">
+              <div className="space-y-1.5">
+                <p className="text-sm font-bold text-foreground">Hidden highlighted events</p>
                 <p className="text-xs text-muted-foreground">
-                  {hiddenHighlightedCount} high-risk or failed event{hiddenHighlightedCount !== 1 ? 's are' : ' is'} hidden by your current defaults.
+                  {hiddenHighlightedCount} high-risk or failed event{hiddenHighlightedCount !== 1 ? 's are' : ' is'} hidden by your current filters.
                 </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {hideOrphanRows && (
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideOrphanRows(false)}>
-                      Show orphan/system rows
-                    </Button>
-                  )}
+                <div className="flex items-center gap-3 pt-1">
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => { setHideOrphanRows(false); setHideRoutineAuth(false); }}
+                  >
+                    Show hidden highlighted rows
+                  </Button>
                   {hideRoutineAuth && (
-                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHideRoutineAuth(false)}>
+                    <button
+                      onClick={() => setHideRoutineAuth(false)}
+                      className="text-[11px] text-muted-foreground underline hover:text-foreground transition-colors"
+                    >
                       Show routine auth
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -757,7 +762,7 @@ const AuditLogs = () => {
 
           {/* Collapsible filters + legend */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 px-2">
                   <ChevronDown className={`h-3 w-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
@@ -777,7 +782,7 @@ const AuditLogs = () => {
                 onClick={() => setHideOrphanRows(h => !h)}
                 className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${hideOrphanRows ? 'bg-primary/10 border-primary/30 text-primary' : 'border-border text-muted-foreground'}`}
               >
-                {hideOrphanRows ? 'Orphan rows hidden' : 'Showing all rows'}
+                {hideOrphanRows ? 'Unnamed / system rows hidden' : 'Showing all rows'}
               </button>
               <div className="ml-auto">
                 <AuditLegend />
