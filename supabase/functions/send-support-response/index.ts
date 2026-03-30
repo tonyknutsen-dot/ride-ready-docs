@@ -113,12 +113,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Support response email sent successfully:", emailResponse);
 
+    await logEmailSend({
+      template_name: 'support-response',
+      recipient_email: userEmail,
+      subject: `Re: ${subject}`,
+      status: 'sent',
+      message_id: emailResponse?.data?.id || undefined,
+    });
+
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error sending support response email:", error);
+
+    await logEmailSend({
+      template_name: 'support-response',
+      recipient_email: userEmail || 'unknown',
+      status: 'failed',
+      error_message: error.message,
+    }).catch(() => {});
+
     return new Response(
       JSON.stringify({ error: "Failed to send email. Please try again later." }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
