@@ -947,13 +947,20 @@ export default function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {user.isAdmin ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.isAdmin && (
                             <Badge className="bg-primary w-fit">
                               <Shield className="h-3 w-3 mr-1" />
                               Admin
                             </Badge>
-                          ) : user.isTester ? (
+                          )}
+                          {user.isStaffMember && (
+                            <Badge variant="outline" className="border-primary/40 text-primary w-fit">
+                              <Users className="h-3 w-3 mr-1" />
+                              Staff
+                            </Badge>
+                          )}
+                          {user.isTester && (
                             <div className="space-y-1">
                               <Badge className="bg-warning text-warning-foreground w-fit">
                                 <FlaskConical className="h-3 w-3 mr-1" />
@@ -970,7 +977,8 @@ export default function UserManagement() {
                                 </div>
                               )}
                             </div>
-                          ) : (
+                          )}
+                          {!user.isAdmin && !user.isTester && !user.isStaffMember && (
                             <Badge variant="outline" className="w-fit">User</Badge>
                           )}
                         </div>
