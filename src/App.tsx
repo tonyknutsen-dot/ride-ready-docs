@@ -21,6 +21,8 @@ import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { PWAUpdateModal } from "@/components/PWAUpdateModal";
 import { LockScreenProvider } from "@/components/LockScreenProvider";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
+import { MaintenanceGuard } from "@/components/MaintenanceGuard";
+import { FeatureFlagGate } from "@/components/FeatureFlagGate";
 import { useLocation } from "react-router-dom";
 
 /** Wrapper that passes current pathname to OfflineSuspense so it resets on navigation */
