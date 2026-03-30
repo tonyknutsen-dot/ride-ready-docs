@@ -129,6 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Request status email sent successfully:", emailResponse);
+    await logEmailSend({ template_name: 'request-status-update', recipient_email: userEmail, subject: `${isApproved ? '✓' : '✗'} Your ${typeLabel} Request has been ${statusLabel}`, status: 'sent', metadata: { request_type: requestType, request_name: requestName, decision: status } });
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,

@@ -156,16 +156,17 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Suspension email sent successfully:", emailResponse);
+    await logEmailSend({ template_name: isSuspended ? 'account-suspended' : 'account-reactivated', recipient_email: email, subject, status: 'sent', metadata: { is_suspended: isSuspended } });
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      headers: { "Content-Type": "application/json", ...responseHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-suspension-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 500, headers: { "Content-Type": "application/json", ...responseHeaders } }
     );
   }
 };

@@ -131,6 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Document type request email sent successfully:", emailResponse);
+    await logEmailSend({ template_name: 'document-type-request', recipient_email: 'info@ridereadydocs.com', subject: `📋 New Document Type Request: ${safeDocumentTypeName}`, status: 'sent', metadata: { document_type_name: documentTypeName } });
 
     return new Response(JSON.stringify({ success: true, messageId: emailResponse.data?.id }), {
       status: 200,
