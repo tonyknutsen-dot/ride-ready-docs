@@ -22,7 +22,7 @@ interface PdfCanvasViewerProps {
 const ZOOM_STEP = 0.25;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
-const MOBILE_MIN_FIT_SCALE = 0.85; // Never open smaller than this on mobile
+const MOBILE_MIN_FIT_SCALE = 1.0; // Never open smaller than this on mobile
 
 const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasViewerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,18 +100,20 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
         const page = await pdfDoc.getPage(1);
         const viewport = page.getViewport({ scale: 1 });
 
-        // Try multiple width sources — dialog may not have laid out containerRef yet
-        let availableWidth = 0;
-        if (containerRef.current && containerRef.current.clientWidth > 50) {
+        const isMobile = window.innerWidth < 640;
+
+        // On mobile, use nearly the full screen width minus minimal padding (4px each side)
+        // On desktop, measure the container or fall back to a reasonable width
+        let availableWidth: number;
+        if (isMobile) {
+          availableWidth = window.innerWidth - 8;
+        } else if (containerRef.current && containerRef.current.clientWidth > 50) {
           availableWidth = containerRef.current.clientWidth - 16;
         } else {
-          // Fallback: use viewport width minus modal chrome (padding, borders)
-          availableWidth = window.innerWidth - 24;
+          availableWidth = window.innerWidth - 48;
         }
 
         const fitScale = availableWidth / viewport.width;
-        // On mobile, never open unreadably small
-        const isMobile = window.innerWidth < 640;
         const minScale = isMobile ? MOBILE_MIN_FIT_SCALE : MIN_ZOOM;
         const clampedScale = Math.max(minScale, Math.min(MAX_ZOOM, fitScale));
 
@@ -124,7 +126,7 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
     };
 
     // Wait for dialog layout to settle before measuring
-    const timer = setTimeout(computeFitWidth, 80);
+    const timer = setTimeout(computeFitWidth, 120);
     return () => clearTimeout(timer);
   }, [pdfDoc, fitWidth]);
 
@@ -202,7 +204,7 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
 
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'mx-auto bg-white rounded overflow-hidden shadow-sm mb-2 max-w-full';
+      wrapper.className = 'mx-auto bg-white sm:rounded overflow-hidden sm:shadow-sm mb-1 sm:mb-2 max-w-full';
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
       canvas.style.display = 'block';
@@ -256,23 +258,23 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Compact toolbar */}
-      <div className="flex items-center justify-center gap-1 py-1.5 px-2 border-b border-border/40 bg-muted/20 shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
-          <ZoomOut className="h-3.5 w-3.5" />
+      <div className="flex items-center justify-center gap-1 py-1 px-2 border-b border-border/40 bg-muted/20 shrink-0">
+        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
+          <ZoomOut className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
         </Button>
         <span className="text-[10px] font-medium text-muted-foreground min-w-[2.5rem] text-center tabular-nums">
           {Math.round(scale * 100)}%
         </span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
-          <ZoomIn className="h-3.5 w-3.5" />
+        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
+          <ZoomIn className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
         </Button>
         <span className="text-[10px] text-muted-foreground tabular-nums ml-1">
           {totalPages} pg{totalPages !== 1 ? 's' : ''}
         </span>
       </div>
 
-      {/* Scrollable pages */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-2">
+      {/* Scrollable pages — minimal padding on mobile */}
+      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-1 sm:p-2">
         <div ref={pagesContainerRef} className="flex flex-col items-center" />
       </div>
     </div>
