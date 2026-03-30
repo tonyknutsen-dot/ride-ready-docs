@@ -678,9 +678,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <EmailLogPage />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="admin_email_log_enabled" disabledMessage="Email Log page is currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <EmailLogPage />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
