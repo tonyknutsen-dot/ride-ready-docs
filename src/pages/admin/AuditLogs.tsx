@@ -189,7 +189,7 @@ const AuditLogs = () => {
       // Keep the sentinel internal only; UI must never render it directly.
     missing.forEach(id => {
       if (!newMap.has(id)) {
-        newMap.set(id, { name: '__no_profile__', email: '' });
+        newMap.set(id, { name: '', email: '' });
       }
     });
     setProfileMap(newMap);
