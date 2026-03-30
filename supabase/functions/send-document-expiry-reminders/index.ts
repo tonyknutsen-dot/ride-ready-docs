@@ -216,6 +216,7 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         console.log(`Email sent to ${user.email}:`, emailResponse);
+        await logEmailSend({ template_name: 'document-expiry-reminder', recipient_email: user.email, subject: `📄 Document Expiry Reminder - ${thirtyDayDocs.length + sevenDayDocs.length} Document(s) Expiring Soon`, status: 'sent', user_id: userId, metadata: { doc_count: userDocs.length } });
         emailsSent++;
 
       } catch (error) {

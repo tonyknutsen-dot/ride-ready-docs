@@ -333,6 +333,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Email sent via ${sendMethod}:`, emailResponse);
+    await logEmailSend({ template_name: 'batch-documents', recipient_email: recipientEmail, subject: `Equipment Documentation Package`, status: 'sent', user_id: user.id, metadata: { send_method: sendMethod, doc_count: attachments.length } });
 
     // Audit notification
     const notificationMessage = sendMethod === 'share-link'

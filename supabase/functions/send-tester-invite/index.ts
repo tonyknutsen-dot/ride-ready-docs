@@ -2,13 +2,14 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 interface TesterInviteRequest {
   email: string;
   inviterName?: string;
-  expiryDays?: number; // Days until tester role expires (0 = no expiry)
+  expiryDays?: number;
 }
 
 const msPerDay = 24 * 60 * 60 * 1000;
@@ -24,7 +25,6 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the authorization header to identify the admin user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -33,7 +33,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify the user is an admin
     const token = authHeader.replace("Bearer ", "").trim();
     if (!token) {
       return new Response(
@@ -53,7 +52,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user is admin
     const { data: adminRole } = await supabase
       .from("user_roles")
       .select("role")
@@ -79,14 +77,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     const normalizedEmail = email.toLowerCase();
 
-    // Determine expiry
     const effectiveExpiryDays = typeof expiryDays === "number" ? expiryDays : 7;
     const computedExpiresAt =
       effectiveExpiryDays === 0
         ? null
         : new Date(Date.now() + effectiveExpiryDays * msPerDay).toISOString();
 
-    // Check for existing pending invite
     const { data: existingInvite } = await supabase
       .from("tester_invites")
       .select("id, status, invite_token, expires_at")
@@ -94,7 +90,6 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("status", "pending")
       .maybeSingle();
 
-    // If a pending invite exists but is expired, mark it expired so we can create a new one.
     if (existingInvite?.expires_at && new Date(existingInvite.expires_at) < new Date()) {
       await supabase
         .from("tester_invites")
@@ -102,7 +97,6 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", existingInvite.id);
     }
 
-    // Check if user already has tester role
     const { data: existingUser } = await supabase.auth.admin.listUsers();
     const targetUser = existingUser?.users?.find(
       (u) => u.email?.toLowerCase() === normalizedEmail
@@ -124,13 +118,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Create invite record
     let inviteIdForCleanup: string | null = null;
-
-    // Reuse existing pending invite if still valid; otherwise create a new one.
-    let invite:
-      | { id: string; invite_token: string; expires_at: string | null }
-      | null = null;
+    let invite: { id: string; invite_token: string; expires_at: string | null } | null = null;
 
     if (existingInvite && (!existingInvite.expires_at || new Date(existingInvite.expires_at) >= new Date())) {
       invite = {
@@ -161,15 +150,14 @@ const handler = async (req: Request): Promise<Response> => {
       invite = createdInvite;
     }
 
-    // Build invite URL using published URL
     const baseUrl = "https://ridereadydocs.com";
     const inviteUrl = `${baseUrl}/tester-invite/${invite.invite_token}`;
+    const subject = "You're invited to be a Tester! 🧪";
 
-    // Send email
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
-      subject: "You're invited to be a Tester! 🧪",
+      subject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -216,26 +204,22 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    // Resend returns { data, error }
     if ((emailResponse as any)?.error) {
       console.error("Tester invite email send error:", (emailResponse as any).error);
+      await logEmailSend({ template_name: 'tester-invite', recipient_email: email, subject, status: 'failed', error_message: (emailResponse as any).error?.message, user_id: user.id });
 
-      // If we created a new invite and the email failed, clean it up so it doesn't block retries.
       if (inviteIdForCleanup) {
         await supabase.from("tester_invites").delete().eq("id", inviteIdForCleanup);
       }
 
       return new Response(
-        JSON.stringify({
-          error:
-            (emailResponse as any).error?.message ||
-            "Failed to send invite email",
-        }),
+        JSON.stringify({ error: (emailResponse as any).error?.message || "Failed to send invite email" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     console.log("Tester invite email sent:", emailResponse);
+    await logEmailSend({ template_name: 'tester-invite', recipient_email: email, subject, status: 'sent', user_id: user.id });
 
     return new Response(
       JSON.stringify({ 

@@ -11,6 +11,7 @@ import {
   getClientIp
 } from "../_shared/rate-limit.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -39,14 +40,12 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
 
   try {
-    // Check IP blocking first
     const clientIp = getClientIp(req);
     const ipBlockResult = await checkIpBlocked(clientIp);
     if (ipBlockResult.isBlocked) {
       return createBlockedIpResponse(ipBlockResult, corsHeaders);
     }
 
-    // Rate limiting for email endpoint (critical - fail closed)
     const rateLimitKey = getClientIdentifier(req, "send-staff-invite");
     const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     
@@ -58,7 +57,6 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the authorization header to identify the owner
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -78,7 +76,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if user owns an organisation
     const { data: organisation, error: orgError } = await supabase
       .from("organisations")
       .select("id, name")
@@ -111,7 +108,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     const normalizedEmail = email.toLowerCase();
 
-    // Check for existing pending invite
     const { data: existingInvite } = await supabase
       .from("staff_invites")
       .select("id, status, invite_token, expires_at")
@@ -120,7 +116,6 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("status", "pending")
       .maybeSingle();
 
-    // If a pending invite exists but is expired, mark it expired
     if (existingInvite?.expires_at && new Date(existingInvite.expires_at) < new Date()) {
       await supabase
         .from("staff_invites")
@@ -128,7 +123,6 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", existingInvite.id);
     }
 
-    // Check if user is already a member of this organisation
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     const targetUser = existingUsers?.users?.find(
       (u) => u.email?.toLowerCase() === normalizedEmail
@@ -151,7 +145,6 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Default feature permissions based on permission level if not provided
     const defaultPermissions: FeaturePermissions = {
       calendar: true,
       checks: true,
@@ -163,12 +156,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     const permissions = featurePermissions || defaultPermissions;
 
-    // Create or reuse invite
     let invite: { id: string; invite_token: string; expires_at: string } | null = null;
     let inviteIdForCleanup: string | null = null;
 
     if (existingInvite && (!existingInvite.expires_at || new Date(existingInvite.expires_at) >= new Date())) {
-      // Reuse existing valid invite, but update permission level and feature permissions
       await supabase
         .from("staff_invites")
         .update({ 
@@ -220,7 +211,6 @@ const handler = async (req: Request): Promise<Response> => {
       invite = createdInvite;
     }
 
-    // Get owner's profile for personalisation
     const { data: profile } = await supabase
       .from("profiles")
       .select("controller_name, company_name")
@@ -230,11 +220,9 @@ const handler = async (req: Request): Promise<Response> => {
     const inviterName = profile?.controller_name || profile?.company_name || "Your employer";
     const companyName = profile?.company_name || organisation.name;
 
-    // Build invite URL
     const baseUrl = "https://ridereadydocs.com";
     const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
 
-    // Build feature list for email
     const featureList: string[] = [];
     if (permissions.checks) featureList.push("Safety checks");
     if (permissions.calendar) featureList.push("Calendar & schedules");
@@ -243,11 +231,12 @@ const handler = async (req: Request): Promise<Response> => {
     if (permissions.risk_assessments) featureList.push("Risk assessments");
     if (permissions.send_documents) featureList.push("Send documents externally");
 
-    // Send email
+    const subject = `You're invited to join ${companyName} on Ride Ready Docs`;
+
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
-      subject: `You're invited to join ${companyName} on Ride Ready Docs`,
+      subject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -302,20 +291,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     if ((emailResponse as any)?.error) {
       console.error("Staff invite email send error:", (emailResponse as any).error);
+      await logEmailSend({ template_name: 'staff-invite', recipient_email: email, subject, status: 'failed', error_message: (emailResponse as any).error?.message, user_id: user.id });
 
       if (inviteIdForCleanup) {
         await supabase.from("staff_invites").delete().eq("id", inviteIdForCleanup);
       }
 
       return new Response(
-        JSON.stringify({
-          error: (emailResponse as any).error?.message || "Failed to send invite email",
-        }),
+        JSON.stringify({ error: (emailResponse as any).error?.message || "Failed to send invite email" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     console.log("Staff invite email sent:", emailResponse);
+    await logEmailSend({ template_name: 'staff-invite', recipient_email: email, subject, status: 'sent', user_id: user.id, metadata: { organisation_id: organisation.id, permission_level: permissionLevel } });
 
     return new Response(
       JSON.stringify({ 
