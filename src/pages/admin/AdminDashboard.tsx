@@ -153,8 +153,8 @@ export default function AdminDashboard() {
   // ─── TRIAGE ITEMS ───
   const triageItems = [
     { label: 'Unanswered Support Messages', count: stats.unansweredSupport, href: '/admin/support?status=pending', icon: MessageCircle, accent: 'destructive' as const, cta: 'Review & Respond' },
-    { label: 'Bug Reports Needing Triage', count: stats.bugReportsNeedingTriage, href: '/admin/bug-reports?status=new', icon: Bug, accent: 'warning' as const, cta: 'Triage Bugs' },
-    { label: 'Feature Requests Pending', count: stats.featureRequestsPending, href: '/admin/feature-requests?status=pending', icon: Lightbulb, accent: 'primary' as const, cta: 'Review Requests' },
+    { label: 'Bug Reports Needing Triage', count: stats.bugReportsNeedingTriage, href: '/admin/bug-reports?status=new,in_progress', icon: Bug, accent: 'warning' as const, cta: 'Triage Bugs' },
+    { label: 'Feature Requests Pending', count: stats.featureRequestsPending, href: '/admin/feature-requests?status=pending,in_review', icon: Lightbulb, accent: 'primary' as const, cta: 'Review Requests' },
   ];
 
   // ─── LIBRARY APPROVAL ITEMS ───
