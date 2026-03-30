@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -176,6 +177,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", emailResponse);
 
+    await logEmailSend({
+      template_name: 'public-enquiry-notification',
+      recipient_email: 'info@ridereadydocs.com',
+      subject: `[${typeLabel}] New enquiry from ${name}`,
+      status: 'sent',
+      message_id: emailResponse?.data?.id || undefined,
+    });
+
     // Send confirmation email to the enquirer
     const confirmationHtml = `
       <!DOCTYPE html>
@@ -222,6 +231,13 @@ const handler = async (req: Request): Promise<Response> => {
       to: [email],
       subject: "Thank you for contacting Ride Ready",
       html: confirmationHtml,
+    });
+
+    await logEmailSend({
+      template_name: 'public-enquiry-confirmation',
+      recipient_email: email,
+      subject: "Thank you for contacting Ride Ready",
+      status: 'sent',
     });
 
     console.log("Confirmation email sent to:", email);

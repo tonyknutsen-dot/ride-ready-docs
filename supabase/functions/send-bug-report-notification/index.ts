@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -84,12 +85,29 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Bug report notification sent:", emailResponse);
 
+    const emailSubject = `${severityEmoji} Bug Report ${referenceId}: ${title}`;
+    await logEmailSend({
+      template_name: 'bug-report-notification',
+      recipient_email: 'info@knutssoftware.co.uk',
+      subject: emailSubject,
+      status: 'sent',
+      message_id: emailResponse?.data?.id || undefined,
+    });
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error sending bug report notification:", error);
+
+    await logEmailSend({
+      template_name: 'bug-report-notification',
+      recipient_email: 'info@knutssoftware.co.uk',
+      status: 'failed',
+      error_message: error.message,
+    }).catch(() => {});
+
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }

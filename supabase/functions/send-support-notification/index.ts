@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 // Brand colors
 const primary = '#1e4a8f';
@@ -155,6 +156,15 @@ const handler = async (req: Request): Promise<Response> => {
     const emailData = await emailResponse.json();
     console.log('Email sent successfully:', emailData);
 
+    await logEmailSend({
+      template_name: 'support-notification',
+      recipient_email: 'info@ridereadydocs.com',
+      subject: `New Support Message: ${message.subject}`,
+      status: 'sent',
+      message_id: emailData?.id || undefined,
+      user_id: message.user_id || undefined,
+    });
+
     return new Response(
       JSON.stringify({ success: true, emailId: emailData.id }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -162,6 +172,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error: any) {
     console.error('Error in send-support-notification:', error);
+
+    await logEmailSend({
+      template_name: 'support-notification',
+      recipient_email: 'info@ridereadydocs.com',
+      status: 'failed',
+      error_message: error.message,
+    }).catch(() => {});
+
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

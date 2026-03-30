@@ -25,6 +25,7 @@ interface EmailLogEntry {
   message_id: string;
   template_name: string | null;
   recipient_email: string | null;
+  subject: string | null;
   status: string;
   error_message: string | null;
   created_at: string;
@@ -57,7 +58,7 @@ export default function EmailLog() {
 
       let query = (supabase as any)
         .from('email_send_log')
-        .select('id, message_id, template_name, recipient_email, status, error_message, created_at')
+        .select('id, message_id, template_name, recipient_email, subject, status, error_message, created_at')
         .gte('created_at', startDate)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -290,13 +291,14 @@ export default function EmailLog() {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">Template</TableHead>
-                          <TableHead className="text-xs hidden sm:table-cell">Recipient</TableHead>
-                          <TableHead className="text-xs">Status</TableHead>
-                          <TableHead className="text-xs">Time</TableHead>
-                          <TableHead className="text-xs hidden md:table-cell">Error</TableHead>
-                        </TableRow>
+                         <TableRow>
+                           <TableHead className="text-xs">Template</TableHead>
+                           <TableHead className="text-xs hidden sm:table-cell">Recipient</TableHead>
+                           <TableHead className="text-xs hidden md:table-cell">Subject</TableHead>
+                           <TableHead className="text-xs">Status</TableHead>
+                           <TableHead className="text-xs">Time</TableHead>
+                           <TableHead className="text-xs hidden lg:table-cell">Error</TableHead>
+                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {entries.map(entry => (
@@ -307,16 +309,19 @@ export default function EmailLog() {
                                 {entry.recipient_email || '—'}
                               </span>
                             </TableCell>
-                            <TableCell className="text-xs text-muted-foreground hidden sm:table-cell py-2.5 max-w-[200px] truncate">
-                              {entry.recipient_email || '—'}
-                            </TableCell>
-                            <TableCell className="py-2.5">{statusBadge(entry.status)}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground py-2.5 whitespace-nowrap">
-                              {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
-                            </TableCell>
-                            <TableCell className="text-xs text-destructive/80 hidden md:table-cell py-2.5 max-w-[200px] truncate">
-                              {entry.error_message || ''}
-                            </TableCell>
+                             <TableCell className="text-xs text-muted-foreground hidden sm:table-cell py-2.5 max-w-[200px] truncate">
+                               {entry.recipient_email || '—'}
+                             </TableCell>
+                             <TableCell className="text-xs text-muted-foreground hidden md:table-cell py-2.5 max-w-[200px] truncate">
+                               {entry.subject || '—'}
+                             </TableCell>
+                             <TableCell className="py-2.5">{statusBadge(entry.status)}</TableCell>
+                             <TableCell className="text-xs text-muted-foreground py-2.5 whitespace-nowrap">
+                               {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                             </TableCell>
+                             <TableCell className="text-xs text-destructive/80 hidden lg:table-cell py-2.5 max-w-[200px] truncate">
+                               {entry.error_message || ''}
+                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

@@ -4,6 +4,7 @@ import { Resend } from "npm:resend@2.0.0";
 import { brandColors, emailStyles, buildMarketingEmail, buildCtaButton, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
+import { logEmailSend } from "../_shared/email-logger.ts";
 
 // Convert plain text to HTML with proper line breaks
 function textToHtml(text: string): string {
@@ -149,6 +150,14 @@ serve(async (req: Request) => {
           to: [contact.email],
           subject: personalizedSubject,
           html: htmlContent,
+        });
+
+        await logEmailSend({
+          template_name: 'marketing-campaign',
+          recipient_email: contact.email,
+          subject: personalizedSubject,
+          status: 'sent',
+          metadata: { campaign_id: campaignId },
         });
 
         await supabase
