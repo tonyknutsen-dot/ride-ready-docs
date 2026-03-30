@@ -111,6 +111,8 @@ serve(async (req: Request) => {
       html: htmlContent,
     });
 
+    await logEmailSend({ template_name: 'test-marketing-email', recipient_email: testEmail, subject: personalizedSubject, status: 'sent', user_id: user.id });
+
     return new Response(
       JSON.stringify({
         success: true,

@@ -178,6 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Email sent successfully:", emailResponse);
+    await logEmailSend({ template_name: 'risk-assessment', recipient_email: recipientEmail, subject: `Risk Assessment: ${rideName}`, status: 'sent', user_id: user.id, metadata: { assessment_id: assessmentId, ride_id: rideId } });
 
     // Log the email send for audit trail
     await supabase

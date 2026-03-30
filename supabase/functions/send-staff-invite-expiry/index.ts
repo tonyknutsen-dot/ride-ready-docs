@@ -137,9 +137,12 @@ const handler = async (req: Request): Promise<Response> => {
 
         if ((emailResponse as any)?.error) {
           console.error(`[STAFF-INVITE-EXPIRY] Failed to send to ${invite.email}:`, (emailResponse as any).error);
+          await logEmailSend({ template_name: 'staff-invite-expiry', recipient_email: invite.email, subject: `⏰ Your staff invite expires soon - ${companyName}`, status: 'failed', error_message: (emailResponse as any).error.message });
           errors.push(`${invite.email}: ${(emailResponse as any).error.message}`);
           continue;
         }
+
+        await logEmailSend({ template_name: 'staff-invite-expiry', recipient_email: invite.email, subject: `⏰ Your staff invite expires soon - ${companyName}`, status: 'sent' });
 
         // Mark as reminded
         await supabase

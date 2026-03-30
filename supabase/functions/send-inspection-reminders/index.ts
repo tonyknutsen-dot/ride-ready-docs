@@ -160,6 +160,8 @@ const handler = async (req: Request): Promise<Response> => {
           });
 
           console.log("Email sent successfully:", emailResponse);
+          const reminderSubject = `🔔 Inspection Reminder: ${schedule.inspection_name} - ${rideName}`;
+          await logEmailSend({ template_name: 'inspection-reminder', recipient_email: user.email, subject: reminderSubject, status: 'sent', user_id: schedule.user_id, metadata: { schedule_id: schedule.id, days_until_due: daysUntilDue } });
 
           await supabase
             .from("inspection_schedules")

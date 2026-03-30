@@ -132,16 +132,19 @@ serve(async (req) => {
       );
 
       try {
+        const trialSubject = "Good news — we've extended your free trial! 🎡";
         await resend.emails.send({
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [userEmail],
-          subject: "Good news — we've extended your free trial! 🎡",
+          subject: trialSubject,
           html,
         });
         emailsSent++;
         console.log(`[TRIAL-EXTENSION] Extension email sent to ${userEmail}`);
+        await logEmailSend({ template_name: 'trial-extension', recipient_email: userEmail, subject: trialSubject, status: 'sent', user_id: profile.user_id });
       } catch (emailError) {
         console.error(`[TRIAL-EXTENSION] Failed to send email to ${userEmail}:`, emailError);
+        await logEmailSend({ template_name: 'trial-extension', recipient_email: userEmail, status: 'failed', error_message: (emailError as any)?.message, user_id: profile.user_id });
       }
     }
 
