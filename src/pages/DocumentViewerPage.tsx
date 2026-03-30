@@ -324,8 +324,19 @@ const DocumentViewerPage = () => {
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
     setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
 
-    const url = await getSignedUrl(doc.file_path);
-    setPdfUrl(url);
+    const signedUrl = await getSignedUrl(doc.file_path);
+    if (signedUrl && ft === 'pdf') {
+      // Fetch as blob so mobile browsers render inline instead of showing download prompt
+      const blob = await fetchPdfBlob(signedUrl);
+      if (blob) {
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        setPdfUrl(blobUrl);
+      } else {
+        setPdfUrl(signedUrl);
+      }
+    } else {
+      setPdfUrl(signedUrl);
+    }
 
     const rideName = doc.ride_id ? await getRideName(doc.ride_id) : 'Global';
 
