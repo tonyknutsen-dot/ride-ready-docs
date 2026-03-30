@@ -37,6 +37,7 @@ import {
   fetchRideDocuments, fetchDocumentVersions, archiveRideDocument,
   restoreRideDocument, RideDocument,
 } from '@/utils/rideDocumentService';
+import { openDocumentById } from '@/utils/documentOpen';
 import CompletedEventEditSheet from '@/components/CompletedEventEditSheet';
 import { getAllOfflineComplianceCompletions, offlineDb, type OfflineComplianceCompletion } from '@/lib/offlineDb';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -404,8 +405,12 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   };
 
   const handleViewPdf = (doc: RideDocument) => {
-    // Navigate to the full document viewer page
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'CompletedComplianceTab',
+      toast,
+    });
   };
 
   const handleDownload = async (doc: RideDocument) => {

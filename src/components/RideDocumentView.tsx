@@ -38,6 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import { openDocumentById } from '@/utils/documentOpen';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
@@ -147,7 +148,12 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   /* ─── Actions ─── */
 
   const handleView = (doc: Document) => {
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'RideDocumentView',
+      toast,
+    });
   };
 
   const handleDownload = async (doc: Document) => {

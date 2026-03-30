@@ -19,6 +19,7 @@ import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { openDocumentById } from '@/utils/documentOpen';
 import {
   fetchRideDocuments, fetchDocumentVersions, archiveRideDocument,
   restoreRideDocument, RideDocument, RideDocType,
@@ -71,7 +72,12 @@ const RideDocumentRegister = ({ rideId, rideName }: RideDocumentRegisterProps) =
   };
 
   const handleViewPdf = (doc: RideDocument) => {
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'RideDocumentRegister',
+      toast,
+    });
   };
 
   const handleShowVersions = async (doc: RideDocument) => {

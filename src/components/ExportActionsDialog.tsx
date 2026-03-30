@@ -6,6 +6,7 @@ import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Link2, Send } from 'l
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { downloadBlob } from '@/utils/exportFileActions';
+import { openDocumentById } from '@/utils/documentOpen';
 import QuickSendDialog from '@/components/QuickSendDialog';
 
 export interface ExportResult {
@@ -110,7 +111,12 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const handleViewSavedDocument = () => {
     if (!savedDocId) return;
     onOpenChange(false);
-    navigate(`/documents/${savedDocId}`);
+    void openDocumentById({
+      documentId: savedDocId,
+      navigate,
+      sourceComponent: 'ExportActionsDialog',
+      toast,
+    });
   };
 
   const handleCopyLink = async () => {

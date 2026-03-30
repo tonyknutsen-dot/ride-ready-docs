@@ -32,6 +32,7 @@ import {
   checkOverflow,
 } from '@/utils/pdfTemplate';
 import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
+import { openDocumentById } from '@/utils/documentOpen';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -65,6 +66,7 @@ const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
   const [reports, setReports] = useState<Tables<'documents'>[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const load = async () => {
@@ -84,7 +86,12 @@ const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
   }, [rideId]);
 
   const handleView = (reportId: string) => {
-    navigate(`/documents/${reportId}`);
+    void openDocumentById({
+      documentId: reportId,
+      navigate,
+      sourceComponent: 'MaintenanceReports.GeneratedReportsList',
+      toast,
+    });
   };
 
   if (loadingReports) return null;
