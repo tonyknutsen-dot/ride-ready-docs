@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +31,6 @@ import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
-import DocumentViewer, { detectFileType } from '@/components/DocumentViewer';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
@@ -94,14 +94,12 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const { logEvent } = useAuditLog();
+  const navigate = useNavigate();
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
-
-  // Viewer state
-  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' | 'unsupported' } | null>(null);
 
   /* ─── Fetch ─── */
   useEffect(() => {
@@ -177,35 +175,8 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
 
   /* ─── Actions ─── */
 
-  const handleView = async (doc: Document) => {
-    try {
-      const signedUrl = await getSignedStorageUrl(doc.file_path);
-      if (!signedUrl) throw new Error('Could not get file URL');
-      const ft = detectFileType(doc.file_path || doc.document_name || '');
-      if (ft === 'unsupported') {
-        window.open(signedUrl, '_blank');
-      } else {
-        setViewerDoc({ url: signedUrl, name: doc.document_name, type: ft });
-      }
-    } catch (err: any) {
-      toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
-    }
-  };
-
-  const handleViewerDownload = async () => {
-    if (!viewerDoc) return;
-    try {
-      const response = await fetch(viewerDoc.url);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = viewerDoc.name;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast({ title: 'Download failed', variant: 'destructive' });
-    }
+  const handleView = (doc: Document) => {
+    navigate(`/documents/${doc.id}`);
   };
 
   const handleCopyLink = async (doc: Document) => {
@@ -444,17 +415,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
           <SubSection label="Uploaded" docs={uploaded} />
           <SubSection label="Generated" docs={generated} />
         </div>
-      )}
-
-      {viewerDoc && (
-        <DocumentViewer
-          isOpen
-          onClose={() => setViewerDoc(null)}
-          fileUrl={viewerDoc.url}
-          fileName={viewerDoc.name}
-          fileType={viewerDoc.type}
-          onDownload={handleViewerDownload}
-        />
       )}
     </div>
   );

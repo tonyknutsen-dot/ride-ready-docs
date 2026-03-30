@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,6 @@ import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
-import DocumentViewer, { detectFileType } from '@/components/DocumentViewer';
 import {
   isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
   getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile,
@@ -51,6 +51,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { labelMap, categoryMap } = useDocumentTypes();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,38 +70,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const [checkRecordDisplayLimit, setCheckRecordDisplayLimit] = useState(20);
   const CHECK_RECORD_PAGE_SIZE = 20;
 
-  // Viewer state for in-app document viewing
-  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' | 'unsupported' } | null>(null);
-
-  const handleViewDoc = async (doc: Document) => {
-    try {
-      const signedUrl = await getSignedStorageUrl(doc.file_path);
-      if (!signedUrl) throw new Error('Could not get file URL');
-      const ft = detectFileType(doc.file_path || doc.document_name || '');
-      if (ft === 'unsupported') {
-        window.open(signedUrl, '_blank');
-      } else {
-        setViewerDoc({ url: signedUrl, name: getDocumentDisplayName(doc), type: ft });
-      }
-    } catch (err: any) {
-      toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
-    }
-  };
-
-  const handleViewerDownload = async () => {
-    if (!viewerDoc) return;
-    try {
-      const response = await fetch(viewerDoc.url);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = viewerDoc.name;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast({ title: 'Download failed', variant: 'destructive' });
-    }
+  const handleViewDoc = (doc: Document) => {
+    navigate(`/documents/${doc.id}`);
   };
 
   // Use shared file-type detection from documentHelpers.ts
@@ -679,16 +650,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         })}
         </div>
 
-        {viewerDoc && (
-          <DocumentViewer
-            isOpen
-            onClose={() => setViewerDoc(null)}
-            fileUrl={viewerDoc.url}
-            fileName={viewerDoc.name}
-            fileType={viewerDoc.type}
-            onDownload={handleViewerDownload}
-          />
-        )}
     </>
   );
   }
@@ -798,17 +759,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         </CardContent>
       </Card>
       </div>
-
-      {viewerDoc && (
-        <DocumentViewer
-          isOpen
-          onClose={() => setViewerDoc(null)}
-          fileUrl={viewerDoc.url}
-          fileName={viewerDoc.name}
-          fileType={viewerDoc.type}
-          onDownload={handleViewerDownload}
-        />
-      )}
     </>
   );
 };
