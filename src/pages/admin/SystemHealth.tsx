@@ -164,7 +164,7 @@ export default function SystemHealth() {
           lastChecked: now,
           icon: Activity,
           drillDownHref: '/admin/audit-logs',
-          drillDownLabel: 'View Audit Trail',
+          drillDownLabel: 'View Audit Logs',
         },
         {
           name: 'Stripe Webhooks',

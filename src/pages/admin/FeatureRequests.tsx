@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -84,10 +85,20 @@ function getPriorityBadge(priority: string) {
 }
 
 export default function FeatureRequests() {
+  const [searchParams] = useSearchParams();
   const [requests, setRequests] = useState<FeatureRequest[]>([]);
   const [senders, setSenders] = useState<Record<string, SenderProfile>>({});
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('open');
+
+  // Initialise filter from URL: ?status=pending,in_review maps to 'open'
+  const urlStatus = searchParams.get('status') || '';
+  const urlStatuses = urlStatus.split(',').filter(Boolean).sort();
+  const openStatuses = [...OPEN_STATUSES].sort();
+  const initialFilter = urlStatuses.length > 0
+    ? (JSON.stringify(urlStatuses) === JSON.stringify(openStatuses) ? 'open' : urlStatuses[0])
+    : 'open';
+
+  const [filterStatus, setFilterStatus] = useState(initialFilter);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState('');

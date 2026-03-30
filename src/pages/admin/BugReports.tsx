@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -120,6 +121,7 @@ const getNextVersion = (currentVersion: string): string => {
 
 const BugReports = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [reports, setReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
@@ -130,8 +132,9 @@ const BugReports = () => {
   const [emailCache, setEmailCache] = useState<Record<string, string>>({});
   const [fetchingEmail, setFetchingEmail] = useState<string | null>(null);
   
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  // Filters — initialise from URL search params if present
+  const initialStatus = searchParams.get('status') || 'all';
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus.includes(',') ? initialStatus.split(',')[0] : initialStatus);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [versionFilter, setVersionFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -192,12 +195,17 @@ const BugReports = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
+      // Support comma-separated statuses from URL params
+      const urlStatuses = searchParams.get('status')?.split(',').filter(Boolean);
       let query = (supabase as any)
         .from('bug_reports')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (statusFilter !== 'all') {
+      if (urlStatuses && urlStatuses.length > 1 && statusFilter === urlStatuses[0]) {
+        // Multi-status from dashboard deep-link
+        query = query.in('status', urlStatuses);
+      } else if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
       if (severityFilter !== 'all') {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,12 +14,18 @@ const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, normal: 2, 
 const OPEN_STATUSES = ['pending', 'in_progress', 'waiting_on_user'];
 
 export default function SupportMessages() {
+  const [searchParams] = useSearchParams();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [replies, setReplies] = useState<Record<string, SupportReply[]>>({});
   const [replyCounts, setReplyCounts] = useState<Record<string, number>>({});
   const [senders, setSenders] = useState<Record<string, SenderProfile>>({});
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('open');
+
+  // Initialise filter from URL param: ?status=pending
+  const urlStatus = searchParams.get('status') || '';
+  const initialFilter = urlStatus && ['pending', 'in_progress', 'waiting_on_user', 'resolved', 'archived', 'open', 'all'].includes(urlStatus) ? urlStatus : 'open';
+
+  const [filterStatus, setFilterStatus] = useState(initialFilter);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
