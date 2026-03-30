@@ -58,7 +58,7 @@ export default function EmailLog() {
 
       let query = (supabase as any)
         .from('email_send_log')
-        .select('id, message_id, template_name, recipient_email, status, error_message, created_at')
+        .select('id, message_id, template_name, recipient_email, subject, status, error_message, created_at')
         .gte('created_at', startDate)
         .order('created_at', { ascending: false })
         .limit(100);
