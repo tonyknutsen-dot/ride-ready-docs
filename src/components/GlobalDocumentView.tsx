@@ -177,7 +177,12 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   /* ─── Actions ─── */
 
   const handleView = (doc: Document) => {
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'GlobalDocumentView',
+      toast,
+    });
   };
 
   const handleCopyLink = async (doc: Document) => {

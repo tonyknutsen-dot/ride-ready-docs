@@ -72,7 +72,12 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const CHECK_RECORD_PAGE_SIZE = 20;
 
   const handleViewDoc = (doc: Document) => {
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'DocumentList',
+      toast,
+    });
   };
 
   // Use shared file-type detection from documentHelpers.ts

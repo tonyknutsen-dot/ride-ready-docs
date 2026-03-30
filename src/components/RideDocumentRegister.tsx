@@ -72,7 +72,12 @@ const RideDocumentRegister = ({ rideId, rideName }: RideDocumentRegisterProps) =
   };
 
   const handleViewPdf = (doc: RideDocument) => {
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'RideDocumentRegister',
+      toast,
+    });
   };
 
   const handleShowVersions = async (doc: RideDocument) => {

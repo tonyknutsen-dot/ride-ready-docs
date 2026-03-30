@@ -148,7 +148,12 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   /* ─── Actions ─── */
 
   const handleView = (doc: Document) => {
-    navigate(`/documents/${doc.id}`);
+    void openDocumentById({
+      documentId: doc.id,
+      navigate,
+      sourceComponent: 'RideDocumentView',
+      toast,
+    });
   };
 
   const handleDownload = async (doc: Document) => {
