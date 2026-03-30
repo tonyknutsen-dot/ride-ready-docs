@@ -98,7 +98,21 @@ export default function PlatformSettings() {
       .eq('resource_type', 'platform_setting')
       .order('created_at', { ascending: false })
       .limit(10);
-    setRecentChanges(data || []);
+
+    const logs = data || [];
+    // Enrich with actor names from profiles
+    const userIds = [...new Set(logs.map(l => l.user_id).filter(Boolean))];
+    let actorMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, controller_name, company_name')
+        .in('user_id', userIds);
+      (profiles || []).forEach((p: any) => {
+        actorMap[p.user_id] = p.controller_name || p.company_name || '';
+      });
+    }
+    setRecentChanges(logs.map(l => ({ ...l, _actorName: actorMap[l.user_id] || '' })));
   }, []);
 
   useEffect(() => {
