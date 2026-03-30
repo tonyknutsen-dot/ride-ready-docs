@@ -213,6 +213,8 @@ export const PublicContactDialog = ({
             </Button>
           </div>
         </form>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
