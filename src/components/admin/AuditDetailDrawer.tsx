@@ -336,8 +336,8 @@ function ChangesTable({ entry }: { entry: AuditEntry }) {
 
   return (
     <div className="space-y-2">
-      <h4 className="text-[11px] font-bold text-foreground uppercase tracking-wider">
-        What changed ({changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''})
+      <h4 className="text-[11px] font-bold text-foreground uppercase tracking-[0.08em] border-b-2 border-primary/20 pb-1 inline-block">
+        What changed · {changedKeys.length} field{changedKeys.length !== 1 ? 's' : ''}
       </h4>
       <div className="rounded-lg border overflow-hidden">
         {/* Table header */}
