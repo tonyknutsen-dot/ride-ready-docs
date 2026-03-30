@@ -30,6 +30,7 @@ import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 import RelatedDefectsSection from '@/components/RelatedDefectsSection';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 // Types
 type Ride = Tables<'rides'> & {
