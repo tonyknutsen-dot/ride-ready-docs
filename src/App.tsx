@@ -319,12 +319,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <Marketing />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="marketing_tools_enabled" disabledMessage="Marketing campaign tools are currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <Marketing />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
-                } 
+                }
               />
               <Route 
                 path="/wind-log"
