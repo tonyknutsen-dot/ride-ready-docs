@@ -444,6 +444,8 @@ export default function UserManagement() {
           },
           isAdmin: adminUserIds.has(profile.user_id),
           isTester: testerRoles.has(profile.user_id) && !isTesterExpired,
+          isStaffMember: staffMap.has(profile.user_id),
+          staffOrgName: staffMap.get(profile.user_id) || null,
           testerExpiresAt: testerExpiresAt,
           rideCount: rideCountMap.get(profile.user_id) || 0,
         };
