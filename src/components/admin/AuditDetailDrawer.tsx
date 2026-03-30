@@ -514,17 +514,17 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
 
         <div className="space-y-4 pt-2">
           {/* ── Summary Card ── */}
-          <div className={`rounded-xl border-2 p-4 space-y-2.5 ${
+          <div className={`rounded-xl border p-4 space-y-2.5 ${
             result === 'failed' || result === 'blocked' || result === 'denied'
-              ? 'border-destructive/40 bg-destructive/[0.06]'
+              ? 'border-destructive/30 bg-destructive/[0.04]'
               : isHighPriority
-                ? 'border-destructive/25 bg-destructive/[0.04]'
+                ? 'border-destructive/20 bg-destructive/[0.02]'
                 : 'border-border bg-muted/30'
           }`}>
             {isHighPriority && (
               <div className="flex items-center gap-1.5 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                <span className="text-[10px] font-bold text-destructive uppercase tracking-widest">High-risk event</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-destructive/80" />
+                <span className="text-[10px] font-semibold text-destructive/80 uppercase tracking-wider">High-risk event</span>
               </div>
             )}
             <p className="text-base font-bold leading-snug tracking-tight">
