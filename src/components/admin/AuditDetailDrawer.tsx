@@ -160,6 +160,7 @@ const TRIGGER_TYPE_MAP: Record<string, string> = {
   'CampaignBuilder': 'User action',
   'DocumentUpload': 'User action',
   'MaintenanceLogger': 'User action',
+  'DowngradeConfirmationDialog': 'User action',
   // Admin actions
   'CheckItemSubmissions': 'Admin action',
   'RiskItemSubmissions': 'Admin action',
