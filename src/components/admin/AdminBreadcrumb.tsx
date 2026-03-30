@@ -24,6 +24,7 @@ const routeLabels: Record<string, string> = {
   '/admin/system-health': 'System Health',
   '/admin/jobs-queues': 'Jobs & Queues',
   '/admin/email-log': 'Email Log',
+  '/admin/platform-settings': 'Platform Settings',
 };
 
 export function AdminBreadcrumb() {
