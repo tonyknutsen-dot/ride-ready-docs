@@ -624,7 +624,7 @@ const AuditLogs = () => {
 
       doc.setFontSize(18);
       doc.setTextColor(...navy);
-      doc.text('Audit Trail Summary', margin, 22);
+      doc.text('Audit Logs Summary', margin, 22);
 
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
