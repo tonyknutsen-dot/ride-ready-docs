@@ -172,10 +172,7 @@ const DocumentViewerPage = () => {
     return 'The file could not be resolved for viewing.';
   }, []);
 
-  const appendPdfViewerParams = useCallback((url: string) => {
-    const hash = 'view=FitH';
-    return url.includes('#') ? `${url}&${hash}` : `${url}#${hash}`;
-  }, []);
+  // removed: appendPdfViewerParams — no longer needed with blob URLs
 
   const primePdfCache = useCallback(async (filePath: string, cacheKey: string, version: number, title: string) => {
     try {
