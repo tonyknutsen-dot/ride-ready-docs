@@ -56,6 +56,7 @@ export default function AdminDashboard() {
   const [paymentLoading, setPaymentLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [excludeTestData, setExcludeTestData] = useState(true);
+  const { isOn: isPlatformOn } = usePlatformSettings();
   const [showTestData, setShowTestData] = useState(false);
 
   useEffect(() => {
