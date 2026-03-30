@@ -70,19 +70,17 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const CHECK_RECORD_PAGE_SIZE = 20;
 
   // Viewer state for in-app document viewing
-  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' | 'unsupported' } | null>(null);
 
   const handleViewDoc = async (doc: Document) => {
     try {
       const signedUrl = await getSignedStorageUrl(doc.file_path);
       if (!signedUrl) throw new Error('Could not get file URL');
-      const fp = (doc.file_path || '').toLowerCase();
-      if (fp.endsWith('.pdf')) {
-        setViewerDoc({ url: signedUrl, name: getDocumentDisplayName(doc), type: 'pdf' });
-      } else if (/\.(jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(fp)) {
-        setViewerDoc({ url: signedUrl, name: getDocumentDisplayName(doc), type: 'image' });
-      } else {
+      const ft = detectFileType(doc.file_path || doc.document_name || '');
+      if (ft === 'unsupported') {
         window.open(signedUrl, '_blank');
+      } else {
+        setViewerDoc({ url: signedUrl, name: getDocumentDisplayName(doc), type: ft });
       }
     } catch (err: any) {
       toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
