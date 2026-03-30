@@ -495,33 +495,40 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="pb-1">
-          <SheetTitle className="text-sm font-semibold text-muted-foreground">Audit Record</SheetTitle>
+        <SheetHeader className="pb-0">
+          <SheetTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Audit Record</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-3 pt-1">
+        <div className="space-y-4 pt-2">
           {/* ── Summary Card ── */}
-          <div className={`rounded-lg border p-3.5 space-y-2 ${isHighPriority ? 'border-destructive/30 bg-destructive/5' : 'bg-muted/20'}`}>
+          <div className={`rounded-xl border-2 p-4 space-y-2.5 ${
+            result === 'failed' || result === 'blocked' || result === 'denied'
+              ? 'border-destructive/40 bg-destructive/[0.06]'
+              : isHighPriority
+                ? 'border-destructive/25 bg-destructive/[0.04]'
+                : 'border-border bg-muted/30'
+          }`}>
             {isHighPriority && (
-              <div className="border-l-[3px] border-l-destructive pl-2 -ml-1 mb-1">
-                <span className="text-[10px] font-bold text-destructive uppercase tracking-wider">High-risk event</span>
+              <div className="flex items-center gap-1.5 mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+                <span className="text-[10px] font-bold text-destructive uppercase tracking-widest">High-risk event</span>
               </div>
             )}
-            <p className="text-[15px] font-semibold leading-snug">
-              <span className={isRealUser ? '' : 'text-muted-foreground italic'}>{performedBy}</span>{' '}
-              <span className="text-muted-foreground font-normal">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
-              <span className="text-foreground">{getResourceLabel(entry.resource_type).toLowerCase()}</span>
+            <p className="text-base font-bold leading-snug tracking-tight">
+              <span className={isRealUser ? 'text-foreground' : 'text-muted-foreground italic'}>{performedBy}</span>{' '}
+              <span className="text-foreground/60 font-medium">{ACTION_VERBS[entry.action] || entry.action}</span>{' '}
+              <span className="text-foreground/80">{getResourceLabel(entry.resource_type).toLowerCase()}</span>
             </p>
             {targetName !== '—' && (
-              <p className="text-sm font-medium text-foreground/80">"{targetName}"</p>
+              <p className="text-sm font-semibold text-foreground/85">"{targetName}"</p>
             )}
             {sourcePage && (
               <p className="text-xs text-muted-foreground">
-                via <span className="font-medium text-foreground/70">{sourcePage}</span>
+                via <span className="font-semibold text-foreground/70">{sourcePage}</span>
               </p>
             )}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <Badge variant="outline" className={rv.className}>{rv.label}</Badge>
+            <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+              <Badge variant="outline" className={`${rv.className} text-[10px]`}>{rv.label}</Badge>
               <Badge variant="secondary" className="text-[10px]">{family}</Badge>
               {changedKeys.length > 0 && (
                 <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
@@ -529,6 +536,9 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
                 </Badge>
               )}
             </div>
+            <p className="text-[11px] text-muted-foreground pt-0.5">
+              {format(new Date(entry.created_at), "dd MMM yyyy 'at' HH:mm:ss")}
+            </p>
           </div>
 
           {/* ── Performed by ── */}
