@@ -91,12 +91,13 @@ function formatSnapshot(snapshot?: Record<string, any> | null, keys?: string[] |
  */
 function resolvePerformedBy(log: AuditEntry): string {
   const name = log.actor_name;
+  const SENTINELS = ['__no_profile__', ''];
 
-  if (name && name !== '__no_profile__') return name;
+  if (name && !SENTINELS.includes(name)) return name;
 
   const trigger = getTriggerType(log);
   if (trigger === 'Automation' || trigger === 'Seeded proof' || trigger === 'Workflow') {
-    return 'System';
+    return 'System (automated)';
   }
 
   return 'Unknown user';
