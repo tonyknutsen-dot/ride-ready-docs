@@ -417,7 +417,6 @@ export default function UserManagement() {
       // Build from every relevant source so staff/tester users without profile rows still appear
       const userIds = Array.from(new Set([
         ...(profiles || []).map(p => p.user_id),
-        ...authUsers.map((u: { id: string }) => u.id),
         ...(userRoles || []).map(r => r.user_id),
         ...(orgMembers || []).map(m => m.user_id),
       ]));
