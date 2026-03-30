@@ -300,46 +300,54 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
 
     return (
       <div
-        className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+        className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-border/50 bg-card cursor-pointer hover:bg-accent/40 transition-colors"
         onClick={() => handleView(doc)}
       >
-        {/* File type icon */}
-        <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-md bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
           <FileIcon doc={doc} />
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 space-y-0.5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold truncate">{doc.document_name || typeLabel}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">
+            {doc.document_name || typeLabel}
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+            <span className="text-[10px] text-foreground/50 font-medium">{gen ? 'Generated' : 'Uploaded'}</span>
+            <span className="text-[10px] text-foreground/50">•</span>
+            <span className="text-[10px] text-foreground/50 font-medium">{ext}</span>
+            <span className="text-[10px] text-foreground/50">•</span>
+            <span className="text-[10px] text-foreground/50">{formatDateUK(new Date(doc.uploaded_at))}</span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
-              {gen ? 'Generated' : 'Uploaded'}
-            </Badge>
-            <span className="text-[10px] text-muted-foreground font-medium">{ext}</span>
-            {doc.version_number && (
-              <span className="text-[10px] text-muted-foreground">v{doc.version_number}</span>
-            )}
-            <span className="text-[10px] text-muted-foreground">
-              {formatDateUK(new Date(doc.uploaded_at))}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 mt-0.5">
-            {doc.expires_at && <ExpiryPill date={doc.expires_at} />}
-            <span className="text-[10px] text-muted-foreground italic">Applies to all rides</span>
-          </div>
+          {doc.expires_at && (
+            <div className="mt-0.5">
+              <ExpiryPill date={doc.expires_at} />
+            </div>
+          )}
         </div>
 
-        {/* Canonical actions */}
-        <DocumentRowActions
-          onView={() => handleView(doc)}
-          onDownload={() => handleDownload(doc)}
-          onCopyLink={() => handleCopyLink(doc)}
-          onDelete={() => handleDelete(doc)}
-        />
+        <div className="flex items-center gap-0.5 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(doc)} title="Download">
+            <Download className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleView(doc)}>
+                <Eye className="h-4 w-4 mr-2" /> View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleCopyLink(doc)}>
+                <Link2 className="h-4 w-4 mr-2" /> Copy Link
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(doc)}>
+                <Archive className="h-4 w-4 mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     );
   };
