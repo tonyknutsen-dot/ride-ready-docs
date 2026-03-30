@@ -32,6 +32,7 @@ import {
   checkOverflow,
 } from '@/utils/pdfTemplate';
 import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
+import { openDocumentById } from '@/utils/documentOpen';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
