@@ -191,6 +191,7 @@ const ComingSoon = () => {
           </div>
 
           {/* Early Access Signup */}
+          {isPlatformOn('early_access_enabled') ? (
           <Card className="border-primary/30 bg-card shadow-lg">
             <CardContent className="p-6">
               {isSuccess ? (
