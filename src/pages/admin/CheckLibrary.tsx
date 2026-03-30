@@ -410,7 +410,17 @@ export default function CheckLibrary() {
     if (error) {
       toast({ title: 'Error', description: 'Failed to delete item', variant: 'destructive' });
     } else {
-      logEvent('delete', 'check', deleteTarget.id, { label: deleteTarget.label });
+      logEvent('delete', 'check_library_item', deleteTarget.id, { label: deleteTarget.label }, {
+        before: {
+          label: deleteTarget.label,
+          frequency: deleteTarget.frequency,
+          equipment_group: deleteTarget.equipment_group,
+          category: deleteTarget.category,
+          risk_level: deleteTarget.risk_level,
+          hint: deleteTarget.hint,
+        },
+        contextHint: 'admin permanent deletion',
+      });
       toast({ title: 'Deleted', description: 'Library item permanently removed' });
       setItems(prev => prev.filter(i => i.id !== deleteTarget.id));
     }

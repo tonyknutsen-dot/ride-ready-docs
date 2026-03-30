@@ -365,7 +365,16 @@ export default function RiskLibrary() {
     if (error) {
       toast({ title: 'Error', description: 'Failed to delete item', variant: 'destructive' });
     } else {
-      logEvent('delete', 'risk_library', deleteTarget.id, { label: deleteTarget.label });
+      logEvent('delete', 'risk_library', deleteTarget.id, { label: deleteTarget.label }, {
+        before: {
+          label: deleteTarget.label,
+          item_type: deleteTarget.item_type,
+          equipment_group: deleteTarget.equipment_group,
+          category: deleteTarget.category,
+          hint: deleteTarget.hint,
+        },
+        contextHint: 'admin permanent deletion',
+      });
       toast({ title: 'Deleted', description: 'Risk library item permanently removed' });
       setItems(prev => prev.filter(i => i.id !== deleteTarget.id));
     }

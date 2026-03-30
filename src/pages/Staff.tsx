@@ -145,6 +145,24 @@ const Staff = () => {
       if (deleteTarget.user_id) {
         await supabase.from('profiles').delete().eq('user_id', deleteTarget.user_id);
       }
+
+      logEvent('delete', 'staff', deleteTarget.id, {
+        name: deleteTarget.full_name || deleteTarget.email || 'Unknown',
+        email: deleteTarget.email,
+        role: deleteTarget.permission_level,
+      }, {
+        before: {
+          full_name: deleteTarget.full_name,
+          email: deleteTarget.email,
+          permission_level: deleteTarget.permission_level,
+          equipment_access_mode: deleteTarget.equipment_access_mode,
+          is_active: true,
+        },
+        after: { is_active: false },
+        changedFields: ['is_active'],
+        contextHint: 'staff member removed and profile deleted',
+      });
+
       toast({ title: 'Staff member removed' });
       if (organisationId) fetchStaff(organisationId);
     } catch (e: any) {
