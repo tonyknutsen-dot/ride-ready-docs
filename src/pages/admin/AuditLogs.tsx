@@ -484,8 +484,59 @@ const AuditLogs = () => {
           startY += reasonLines.length * 4;
         }
 
-        // ── Changes table ──
-        if (hasChangedFields || hasBeforeAfter) {
+        // ── Bulk Wipe Summary (special rendering) ──
+        const isBulkWipe = log.details && (log.details as any).bulk_action === 'downgrade_data_wipe';
+        if (isBulkWipe) {
+          const d = log.details as Record<string, any>;
+          const counts = d.counts || log.before_data || {};
+          const totalDeleted = d.total_records_deleted ?? 0;
+          const exported = d.data_exported_before_wipe;
+
+          startY += 3;
+          doc.setFontSize(9);
+          doc.setTextColor(200, 50, 50);
+          doc.text(`Total records deleted: ${totalDeleted}`, gridLeft, startY);
+          startY += 5;
+          doc.setFontSize(7.5);
+          doc.setTextColor(80, 80, 80);
+          doc.text(`Data exported before wipe: ${exported ? 'Yes' : 'No'}`, gridLeft, startY);
+          startY += 6;
+
+          const moduleLabels: Record<string, string> = {
+            checks: 'Checks', check_templates: 'Check templates',
+            maintenance_records: 'Maintenance records', defects: 'Defects',
+            documents: 'Documents', risk_assessments: 'Risk assessments',
+            compliance_events: 'Compliance events',
+          };
+          const moduleRows = Object.entries(counts)
+            .filter(([, v]) => typeof v === 'number' && (v as number) > 0)
+            .map(([k, v]) => [moduleLabels[k] || k, String(v), '0']);
+
+          if (moduleRows.length > 0) {
+            doc.setFontSize(8);
+            doc.setTextColor(...navy);
+            doc.text('Affected records by module', gridLeft, startY);
+            startY += 2;
+
+            autoTable(doc, {
+              startY,
+              head: [['Module', 'Before', 'After']],
+              body: moduleRows,
+              theme: 'grid',
+              styles: { fontSize: 7.5, cellPadding: 2, lineColor: [210, 215, 220], lineWidth: 0.2 },
+              headStyles: { fillColor: [255, 240, 240], textColor: [200, 50, 50], fontStyle: 'bold', lineWidth: 0.2 },
+              columnStyles: {
+                0: { cellWidth: 60, fontStyle: 'bold' },
+                1: { cellWidth: 30, halign: 'right' },
+                2: { cellWidth: 30, halign: 'right' },
+              },
+              margin: { left: margin, right: margin },
+            });
+            startY = ((doc as any).lastAutoTable?.finalY || startY) + 4;
+          }
+        }
+        // ── Changes table (non-bulk-wipe) ──
+        else if (hasChangedFields || hasBeforeAfter) {
           startY += 3;
           doc.setFontSize(8);
           doc.setTextColor(...navy);

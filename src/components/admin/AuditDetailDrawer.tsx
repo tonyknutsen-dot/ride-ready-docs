@@ -160,6 +160,7 @@ const TRIGGER_TYPE_MAP: Record<string, string> = {
   'CampaignBuilder': 'User action',
   'DocumentUpload': 'User action',
   'MaintenanceLogger': 'User action',
+  'DowngradeConfirmationDialog': 'User action',
   // Admin actions
   'CheckItemSubmissions': 'Admin action',
   'RiskItemSubmissions': 'Admin action',
@@ -217,7 +218,11 @@ export function getTriggerType(entry: AuditEntry): string {
   if (source && TRIGGER_TYPE_MAP[source]) return TRIGGER_TYPE_MAP[source];
   // Infer from action/resource
   if (['login', 'logout', 'lock', 'unlock', 'failed_unlock'].includes(entry.action)) return 'Automation';
-  if (entry.resource_type === 'subscription') return 'Automation';
+  // User-initiated subscription actions (downgrade wipe) vs webhook-triggered
+  if (entry.resource_type === 'subscription') {
+    if (entry.details?.bulk_action === 'downgrade_data_wipe') return 'User action';
+    return 'Automation';
+  }
   return 'User action';
 }
 
@@ -245,6 +250,7 @@ export function getSourcePage(entry: AuditEntry): string | null {
     'CampaignBuilder': 'Marketing campaigns',
     'DocumentUpload': 'Document upload',
     'MaintenanceLogger': 'Maintenance log',
+    'DowngradeConfirmationDialog': 'Billing / Downgrade',
     'CheckItemSubmissions': 'Admin / Check intake',
     'RiskItemSubmissions': 'Admin / Risk intake',
     'RideTypeRequests': 'Admin / Equipment type requests',
@@ -445,6 +451,73 @@ function AuditLegend() {
 
 export { AuditLegend };
 
+// ── Bulk Wipe Summary ──
+
+function BulkWipeSummary({ details, before, after }: { details: Record<string, any>; before?: Record<string, any> | null; after?: Record<string, any> | null }) {
+  const counts = details.counts || before || {};
+  const afterCounts = after || {};
+  const total = details.total_records_deleted ?? 0;
+  const exported = details.data_exported_before_wipe;
+
+  const MODULE_LABELS: Record<string, string> = {
+    checks: 'Checks',
+    check_templates: 'Check templates',
+    maintenance_records: 'Maintenance records',
+    defects: 'Defects',
+    documents: 'Documents',
+    risk_assessments: 'Risk assessments',
+    compliance_events: 'Compliance events',
+    wind_logs: 'Wind log entries',
+    pressure_readings: 'Pressure readings',
+    marketing_contacts: 'Marketing contacts',
+  };
+
+  const moduleRows = Object.entries(counts)
+    .filter(([, v]) => typeof v === 'number' && v > 0)
+    .sort(([, a], [, b]) => (b as number) - (a as number));
+
+  return (
+    <div className="space-y-3">
+      {/* Total banner */}
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-center">
+        <p className="text-2xl font-bold text-destructive">{total}</p>
+        <p className="text-xs text-destructive/80 font-medium">Total records deleted</p>
+      </div>
+
+      {/* Export status */}
+      <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-xs">
+        <span className="text-muted-foreground">Data exported before wipe:</span>
+        <Badge variant={exported ? 'default' : 'destructive'} className="text-[10px]">
+          {exported ? 'Yes' : 'No'}
+        </Badge>
+      </div>
+
+      {/* Module breakdown */}
+      {moduleRows.length > 0 && (
+        <div className="space-y-1.5">
+          <h4 className="text-[11px] font-bold text-foreground uppercase tracking-[0.08em] border-b-2 border-destructive/20 pb-1 inline-block">
+            Affected records by module
+          </h4>
+          <div className="rounded-lg border overflow-hidden">
+            <div className="grid grid-cols-[1fr_60px_60px] bg-muted/60 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <div className="px-2 py-1.5">Module</div>
+              <div className="px-2 py-1.5 text-right">Before</div>
+              <div className="px-2 py-1.5 text-right">After</div>
+            </div>
+            {moduleRows.map(([key, value], i) => (
+              <div key={key} className={`grid grid-cols-[1fr_60px_60px] text-xs ${i % 2 === 0 ? '' : 'bg-muted/20'} ${i < moduleRows.length - 1 ? 'border-b border-border/50' : ''}`}>
+                <div className="px-2 py-2 font-medium">{MODULE_LABELS[key] || key.replace(/_/g, ' ')}</div>
+                <div className="px-2 py-2 text-right text-destructive/70 line-through">{String(value)}</div>
+                <div className="px-2 py-2 text-right font-medium">{String(afterCounts[key] ?? 0)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Drawer ──
 
 interface Props {
@@ -489,9 +562,11 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
     'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
     'label', 'type', 'check_item_text', 'source', 'result', 'blocked',
     'before', 'after', 'skipped', 'imported', 'site_name', 'site', 'location', 'site_id',
-    'module', 'seeded',
+    'module', 'seeded', 'bulk_action', 'total_records_deleted', 'counts',
+    'data_exported_before_wipe', 'downgrade_reason',
   ]);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
+  const isBulkWipe = details.bulk_action === 'downgrade_data_wipe';
 
   const referenceEntries = [
     ['Record ID', entry.resource_id],
@@ -581,8 +656,16 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             </Section>
           )}
 
+          {/* ── Bulk Wipe Summary (for downgrade data wipe events) ── */}
+          {isBulkWipe && (
+            <>
+              <Separator className="my-1" />
+              <BulkWipeSummary details={details} before={before} after={after} />
+            </>
+          )}
+
           {/* ── What changed (most prominent) ── */}
-          {hasChanges && (
+          {hasChanges && !isBulkWipe && (
             <>
               <Separator className="my-1" />
               <ChangesTable entry={entry} />
