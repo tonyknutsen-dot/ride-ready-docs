@@ -210,10 +210,10 @@ export function UserCard({
         </div>
 
         {/* Row 2: Company */}
-        {user.profile?.company_name && (
+        {(user.profile?.company_name || user.staffOrgName) && (
           <div className="flex items-center gap-1.5 text-xs text-foreground/60">
             <Building className="h-3 w-3 shrink-0" />
-            <span className="truncate">{user.profile.company_name}</span>
+            <span className="truncate">{user.profile?.company_name || user.staffOrgName}</span>
           </div>
         )}
 

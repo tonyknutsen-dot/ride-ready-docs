@@ -364,7 +364,7 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      // Fetch profiles (which contain user_id)
+      // Fetch profiles (some staff/tester users may not have one yet)
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -395,15 +395,33 @@ export default function UserManagement() {
       // Fetch user emails and names from edge function
       const { data: authData, error: authError } = await supabase.functions.invoke('get-users-admin');
       
-      const userEmailMap = new Map<string, { email: string; name: string | null }>();
+      const userEmailMap = new Map<string, { email: string; name: string | null; created_at?: string }>();
       if (!authError && authData?.users) {
         for (const u of authData.users) {
-          userEmailMap.set(u.id, { email: u.email, name: u.name });
+          userEmailMap.set(u.id, { email: u.email, name: u.name, created_at: u.created_at });
         }
       }
 
+      const profileMap = new Map((profiles || []).map(profile => [profile.user_id, profile]));
+
+      const authUsers = authData?.users || [];
+      const authUserMap = new Map<string, { email: string; name: string | null; created_at: string }>();
+      for (const user of authUsers) {
+        authUserMap.set(user.id, {
+          email: user.email || '',
+          name: user.name || null,
+          created_at: user.created_at,
+        });
+      }
+
+      // Build from every relevant source so staff/tester users without profile rows still appear
+      const userIds = Array.from(new Set([
+        ...(profiles || []).map(p => p.user_id),
+        ...(userRoles || []).map(r => r.user_id),
+        ...(orgMembers || []).map(m => m.user_id),
+      ]));
+
       // Fetch ride counts per user
-      const userIds = (profiles || []).map(p => p.user_id);
       const { data: rideCounts } = await supabase
         .from('rides')
         .select('user_id')
@@ -419,18 +437,19 @@ export default function UserManagement() {
         userRoles?.filter(r => r.role === 'tester').map(r => [r.user_id, r.expires_at]) || []
       );
 
-      // Map profiles to user format
-      const usersData: UserWithProfile[] = (profiles || []).map(profile => {
-        const testerExpiresAt = testerRoles.get(profile.user_id) || null;
+      const usersData: UserWithProfile[] = userIds.map((userId) => {
+        const profile = profileMap.get(userId);
+        const testerExpiresAt = testerRoles.get(userId) || null;
         const isTesterExpired = testerExpiresAt ? new Date(testerExpiresAt) < new Date() : false;
-        const authInfo = userEmailMap.get(profile.user_id);
+        const authInfo = authUserMap.get(userId) || userEmailMap.get(userId);
+        const createdAt = authInfo?.created_at || profile?.created_at || new Date().toISOString();
         
         return {
-          id: profile.user_id,
+          id: userId,
           email: authInfo?.email || '',
           name: authInfo?.name || null,
-          created_at: profile.created_at,
-          profile: {
+          created_at: createdAt,
+          profile: profile ? {
             company_name: profile.company_name,
             subscription_status: profile.subscription_status,
             subscription_plan: profile.subscription_plan,
@@ -441,15 +460,17 @@ export default function UserManagement() {
             suspended_reason: profile.suspended_reason,
             stripe_customer_id: profile.stripe_customer_id || null,
             stripe_subscription_id: profile.stripe_subscription_id || null,
-          },
-          isAdmin: adminUserIds.has(profile.user_id),
-          isTester: testerRoles.has(profile.user_id) && !isTesterExpired,
-          isStaffMember: staffMap.has(profile.user_id),
-          staffOrgName: staffMap.get(profile.user_id) || null,
+          } : null,
+          isAdmin: adminUserIds.has(userId),
+          isTester: testerRoles.has(userId) && !isTesterExpired,
+          isStaffMember: staffMap.has(userId),
+          staffOrgName: staffMap.get(userId) || null,
           testerExpiresAt: testerExpiresAt,
-          rideCount: rideCountMap.get(profile.user_id) || 0,
+          rideCount: rideCountMap.get(userId) || 0,
         };
       });
+
+      usersData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setUsers(usersData);
     } catch (error: any) {
@@ -740,6 +761,7 @@ export default function UserManagement() {
       user.id.toLowerCase().includes(searchLower) ||
       user.email.toLowerCase().includes(searchLower) ||
       user.name?.toLowerCase().includes(searchLower) ||
+        user.staffOrgName?.toLowerCase().includes(searchLower) ||
       user.profile?.company_name?.toLowerCase().includes(searchLower) ||
       user.profile?.country?.toLowerCase().includes(searchLower)
     );
@@ -922,7 +944,7 @@ export default function UserManagement() {
                         <div className="flex items-center gap-2">
                           <Building className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="font-medium truncate">
-                            {user.profile?.company_name || 'No company'}
+                             {user.profile?.company_name || user.staffOrgName || 'No company'}
                           </span>
                         </div>
                       </TableCell>
