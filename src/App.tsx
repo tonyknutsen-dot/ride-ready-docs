@@ -686,6 +686,16 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/viewer"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <DocumentViewerPage />
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
               {/* Inspection Record - full page view */}
               <Route 
                 path="/inspection-record/:recordId"
