@@ -235,10 +235,20 @@ const DocumentViewerPage = () => {
       // Online: fetch fresh, cache it
       const signedUrl = await getSignedUrl(rd.file_url);
       if (signedUrl) {
-        setPdfUrl(signedUrl);
+        // Fetch as blob so mobile browsers render PDF inline (not download prompt)
+        const fetchedBlob = await fetchPdfBlob(signedUrl);
+        if (fetchedBlob) {
+          const blobUrl = URL.createObjectURL(new Blob([fetchedBlob], { type: 'application/pdf' }));
+          setPdfUrl(blobUrl);
+        } else {
+          setPdfUrl(signedUrl);
+        }
         setPdfSource('network');
-        // Cache in background
-        fetchPdfBlob(signedUrl).then(blob => {
+        // Cache in background (re-use fetched blob if available)
+        if (fetchedBlob) {
+          cachePdf(rd.document_id, rd.version, rd.file_url, fetchedBlob, rd.title);
+        } else {
+          fetchPdfBlob(signedUrl).then(blob => {
           if (blob) cachePdf(rd.document_id, rd.version, rd.file_url, blob, rd.title);
         });
       } else {
