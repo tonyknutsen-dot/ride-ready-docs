@@ -225,7 +225,7 @@ export default function SupportAccessAdmin() {
         .select('user_id, company_name, controller_name')
         .order('company_name', { ascending: true })
         .limit(500);
-      setUserProfiles((data || []) as ProfileOption[]);
+      setUserProfiles((data || []).map((p: any) => ({ ...p, full_name: p.controller_name })) as ProfileOption[]);
     } catch { /* non-critical */ }
   };
 
