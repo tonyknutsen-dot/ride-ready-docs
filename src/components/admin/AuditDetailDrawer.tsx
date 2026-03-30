@@ -495,9 +495,11 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
     'name', 'document_name', 'email', 'ride_name', 'ride', 'title',
     'label', 'type', 'check_item_text', 'source', 'result', 'blocked',
     'before', 'after', 'skipped', 'imported', 'site_name', 'site', 'location', 'site_id',
-    'module', 'seeded',
+    'module', 'seeded', 'bulk_action', 'total_records_deleted', 'counts',
+    'data_exported_before_wipe', 'downgrade_reason',
   ]);
   const extraDetails = Object.entries(details).filter(([k]) => !knownKeys.has(k));
+  const isBulkWipe = details.bulk_action === 'downgrade_data_wipe';
 
   const referenceEntries = [
     ['Record ID', entry.resource_id],
