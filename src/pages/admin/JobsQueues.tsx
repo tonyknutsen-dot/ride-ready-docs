@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,8 @@ import {
 import { formatDistanceToNow, subDays, subHours, format } from 'date-fns';
 
 type TimeRange = '24h' | '7d' | '30d';
-type CategoryKey = 'all' | 'Webhooks' | 'PDF Generation' | 'Storage / Uploads' | 'Email' | 'Authentication' | 'Other';
+type FailureCategory = 'Webhooks' | 'PDF Generation' | 'Storage / Uploads' | 'Email' | 'Authentication' | 'Other';
+type CategoryKey = 'all' | FailureCategory;
 
 interface FailureEntry {
   id: string;
@@ -28,7 +29,7 @@ interface FailureEntry {
 }
 
 interface CategoryCard {
-  key: CategoryKey;
+  key: FailureCategory;
   label: string;
   icon: typeof Activity;
   count: number;
@@ -36,16 +37,19 @@ interface CategoryCard {
   evidence: string;
 }
 
-const CATEGORY_CONFIG: { key: CategoryKey; label: string; icon: typeof Activity }[] = [
-  { key: 'Webhooks', label: 'Webhooks', icon: Webhook },
-  { key: 'PDF Generation', label: 'PDF Generation', icon: Wrench },
-  { key: 'Storage / Uploads', label: 'Storage / Uploads', icon: Upload },
-  { key: 'Email', label: 'Email Jobs', icon: Mail },
-  { key: 'Authentication', label: 'Authentication', icon: Shield },
-  { key: 'Other', label: 'Other Failures', icon: AlertTriangle },
+const CATEGORY_CONFIG: CategoryCard[] = [
+  { key: 'Webhooks', label: 'Webhooks', icon: Webhook, count: 0, status: 'unknown', evidence: '' },
+  { key: 'PDF Generation', label: 'PDF Generation', icon: Wrench, count: 0, status: 'unknown', evidence: '' },
+  { key: 'Storage / Uploads', label: 'Storage / Uploads', icon: Upload, count: 0, status: 'unknown', evidence: '' },
+  { key: 'Email', label: 'Email Jobs', icon: Mail, count: 0, status: 'unknown', evidence: '' },
+  { key: 'Authentication', label: 'Authentication', icon: Shield, count: 0, status: 'unknown', evidence: '' },
+  { key: 'Other', label: 'Other Failures', icon: AlertTriangle, count: 0, status: 'unknown', evidence: '' },
 ];
 
-function categorizeFailure(f: FailureEntry): CategoryKey {
+const uniqueByKey = <T extends { key: string }>(items: T[]): T[] =>
+  Array.from(new Map(items.map((item) => [item.key, item])).values());
+
+function categorizeFailure(f: FailureEntry): FailureCategory {
   const action = f.action?.toLowerCase() || '';
   const resource = f.resource_type?.toLowerCase() || '';
   const hint = f.context_hint?.toLowerCase() || '';
@@ -65,6 +69,8 @@ export default function JobsQueues() {
   const [refreshing, setRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [categoryFilter, setCategoryFilter] = useState<CategoryKey>('all');
+
+  const uniqueCategoryConfig = useMemo(() => uniqueByKey(CATEGORY_CONFIG), []);
 
   const getStartDate = (range: TimeRange) => {
     switch (range) {
@@ -112,31 +118,35 @@ export default function JobsQueues() {
     fetchData();
   };
 
-  // Build category counts from failures
-  const categoryCounts: Record<string, number> = {};
-  failures.forEach(f => {
-    const cat = categorizeFailure(f);
-    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-  });
+  const categoryCounts = useMemo(() => {
+    const counts: Partial<Record<FailureCategory, number>> = {};
+    failures.forEach((failure) => {
+      const category = categorizeFailure(failure);
+      counts[category] = (counts[category] || 0) + 1;
+    });
+    return counts;
+  }, [failures]);
 
-  // Build exactly 6 category cards
-  const categoryCards: CategoryCard[] = CATEGORY_CONFIG.map(cfg => {
-    const count = categoryCounts[cfg.key] || 0;
-    return {
-      ...cfg,
-      count,
-      status: totalActions === 0 ? 'unknown' : count > 0 ? 'failures' : 'no_failures',
-      evidence: totalActions === 0
-        ? 'No audit log entries in selected period'
-        : count > 0
-          ? `${count} failure${count !== 1 ? 's' : ''} from audit_logs`
-          : `No failures in ${totalActions} logged actions`,
-    };
-  });
+  const categoryCards = useMemo(
+    () => uniqueByKey(uniqueCategoryConfig.map((cfg) => {
+      const count = categoryCounts[cfg.key] || 0;
+      return {
+        ...cfg,
+        count,
+        status: totalActions === 0 ? 'unknown' : count > 0 ? 'failures' : 'no_failures',
+        evidence: totalActions === 0
+          ? 'No audit log entries in selected period'
+          : count > 0
+            ? `${count} failure${count !== 1 ? 's' : ''} from audit_logs`
+            : `No failures in ${totalActions} logged actions`,
+      };
+    })),
+    [categoryCounts, totalActions, uniqueCategoryConfig],
+  );
 
   const filteredFailures = categoryFilter === 'all'
     ? failures
-    : failures.filter(f => categorizeFailure(f) === categoryFilter);
+    : failures.filter((failure) => categorizeFailure(failure) === categoryFilter);
 
   const rangeLabel = timeRange === '24h' ? '24 hours' : timeRange === '7d' ? '7 days' : '30 days';
 
@@ -166,7 +176,7 @@ export default function JobsQueues() {
           <>
             {/* Summary Cards — exactly 6 */}
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-              {categoryCards.map(card => (
+              {categoryCards.map((card) => (
                 <button
                   key={card.key}
                   onClick={() => setCategoryFilter(categoryFilter === card.key ? 'all' : card.key)}
@@ -197,7 +207,7 @@ export default function JobsQueues() {
             {/* Filters */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex gap-1">
-                {(['24h', '7d', '30d'] as TimeRange[]).map(range => (
+                {(['24h', '7d', '30d'] as TimeRange[]).map((range) => (
                   <Button
                     key={range}
                     variant={timeRange === range ? 'default' : 'outline'}
@@ -209,15 +219,15 @@ export default function JobsQueues() {
                   </Button>
                 ))}
               </div>
-              <Select value={categoryFilter} onValueChange={v => setCategoryFilter(v as CategoryKey)}>
+              <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as CategoryKey)}>
                 <SelectTrigger className="w-[160px] h-7 text-xs">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {CATEGORY_CONFIG.map(c => (
-                    <SelectItem key={c.key} value={c.key}>
-                      {c.label} {categoryCounts[c.key] ? `(${categoryCounts[c.key]})` : ''}
+                  {uniqueCategoryConfig.map((category) => (
+                    <SelectItem key={category.key} value={category.key}>
+                      {category.label} {categoryCounts[category.key] ? `(${categoryCounts[category.key]})` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
