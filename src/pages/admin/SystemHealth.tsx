@@ -188,7 +188,7 @@ export default function SystemHealth() {
             <Activity className="h-5 md:h-6 w-5 md:w-6 text-primary" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold">System Health</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Operational health from audit logs, webhooks, email delivery, and access grants</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Operational signals from audit logs, webhooks, email delivery, and access grants (last 24 hours)</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>

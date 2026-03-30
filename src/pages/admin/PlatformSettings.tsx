@@ -495,8 +495,8 @@ export default function PlatformSettings() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmToggle?.newValue === 'true'
-                ? 'This will show a maintenance banner to all users. Make sure the maintenance message is set.'
-                : 'This will remove the maintenance banner and restore normal access.'}
+                ? 'This will block access to all non-admin app routes and display the public maintenance message. Admin routes remain accessible.'
+                : 'This will restore normal access to all app routes.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
