@@ -152,14 +152,11 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     try {
       const signedUrl = await getSignedStorageUrl(doc.file_path);
       if (!signedUrl) throw new Error('Could not get file URL');
-      const fp = doc.file_path || '';
-      if (isPDFFile(fp)) {
-        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'pdf' });
-      } else if (isImageFile(fp)) {
-        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'image' });
-      } else {
-        // Unsupported type — download directly
+      const ft = detectFileType(doc.file_path || doc.document_name || '');
+      if (ft === 'unsupported') {
         window.open(signedUrl, '_blank');
+      } else {
+        setViewerDoc({ url: signedUrl, name: doc.document_name, type: ft });
       }
     } catch (err: any) {
       toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
