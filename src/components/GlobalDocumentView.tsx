@@ -21,7 +21,7 @@ import {
   Link2,
   Eye,
 } from 'lucide-react';
-import DocumentRowActions from '@/components/documents/DocumentRowActions';
+
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
