@@ -650,9 +650,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AppLayout>
-                        <SystemHealth />
-                      </AppLayout>
+                      <FeatureFlagGate flagKey="admin_system_health_enabled" disabledMessage="System Health page is currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <SystemHealth />
+                        </AppLayout>
+                      </FeatureFlagGate>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
