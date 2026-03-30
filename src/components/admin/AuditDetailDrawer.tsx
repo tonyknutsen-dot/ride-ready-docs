@@ -656,8 +656,16 @@ export function AuditDetailDrawer({ entry, open, onOpenChange }: Props) {
             </Section>
           )}
 
+          {/* ── Bulk Wipe Summary (for downgrade data wipe events) ── */}
+          {isBulkWipe && (
+            <>
+              <Separator className="my-1" />
+              <BulkWipeSummary details={details} before={before} after={after} />
+            </>
+          )}
+
           {/* ── What changed (most prominent) ── */}
-          {hasChanges && (
+          {hasChanges && !isBulkWipe && (
             <>
               <Separator className="my-1" />
               <ChangesTable entry={entry} />
