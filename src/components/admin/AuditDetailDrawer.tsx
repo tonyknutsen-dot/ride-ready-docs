@@ -194,6 +194,7 @@ export function getEventResult(entry: AuditEntry): string {
 
 export function getTargetName(entry: AuditEntry): string {
   const d = entry.details || {};
+  if (d.bulk_action) return d.bulk_action === 'downgrade_data_wipe' ? 'Subscription data wipe' : String(d.bulk_action);
   return d.document_name || d.name || d.email || d.ride_name || d.ride || d.title || d.label || d.type || d.check_item_text || entry.resource_id?.slice(0, 8) || '—';
 }
 
