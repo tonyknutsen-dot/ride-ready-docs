@@ -235,12 +235,16 @@ const DocumentViewerPage = () => {
       // Online: fetch fresh, cache it
       const signedUrl = await getSignedUrl(rd.file_url);
       if (signedUrl) {
-        setPdfUrl(signedUrl);
+        // Fetch as blob so mobile browsers render PDF inline (not download prompt)
+        const fetchedBlob = await fetchPdfBlob(signedUrl);
+        if (fetchedBlob) {
+          const blobUrl = URL.createObjectURL(new Blob([fetchedBlob], { type: 'application/pdf' }));
+          setPdfUrl(blobUrl);
+          cachePdf(rd.document_id, rd.version, rd.file_url, fetchedBlob, rd.title);
+        } else {
+          setPdfUrl(signedUrl);
+        }
         setPdfSource('network');
-        // Cache in background
-        fetchPdfBlob(signedUrl).then(blob => {
-          if (blob) cachePdf(rd.document_id, rd.version, rd.file_url, blob, rd.title);
-        });
       } else {
         // Signed URL failed but we may have a stale cache
         if (cached) {
@@ -324,8 +328,19 @@ const DocumentViewerPage = () => {
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
     setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
 
-    const url = await getSignedUrl(doc.file_path);
-    setPdfUrl(url);
+    const signedUrl = await getSignedUrl(doc.file_path);
+    if (signedUrl && ft === 'pdf') {
+      // Fetch as blob so mobile browsers render inline instead of showing download prompt
+      const blob = await fetchPdfBlob(signedUrl);
+      if (blob) {
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        setPdfUrl(blobUrl);
+      } else {
+        setPdfUrl(signedUrl);
+      }
+    } else {
+      setPdfUrl(signedUrl);
+    }
 
     const rideName = doc.ride_id ? await getRideName(doc.ride_id) : 'Global';
 
