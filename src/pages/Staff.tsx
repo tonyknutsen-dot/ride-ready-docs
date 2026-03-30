@@ -148,12 +148,12 @@ const Staff = () => {
       }
 
       logEvent('delete', 'staff', deleteTarget.id, {
-        name: deleteTarget.full_name || deleteTarget.email || 'Unknown',
+        name: deleteTarget.display_name || deleteTarget.email || 'Unknown',
         email: deleteTarget.email,
         role: deleteTarget.permission_level,
       }, {
         before: {
-          full_name: deleteTarget.full_name,
+          display_name: deleteTarget.display_name,
           email: deleteTarget.email,
           permission_level: deleteTarget.permission_level,
           equipment_access_mode: deleteTarget.equipment_access_mode,

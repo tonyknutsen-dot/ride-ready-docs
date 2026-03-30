@@ -106,6 +106,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
   const [previousReports, setPreviousReports] = useState<Document[]>([]);
 
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const ALLOWED_TYPES = [
     'image/jpeg','image/png','image/gif','image/webp','image/heic',
