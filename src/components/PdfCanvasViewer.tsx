@@ -258,23 +258,23 @@ const PdfCanvasViewer = ({ src, onDownload, className, fitWidth }: PdfCanvasView
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Compact toolbar */}
-      <div className="flex items-center justify-center gap-1 py-1.5 px-2 border-b border-border/40 bg-muted/20 shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
-          <ZoomOut className="h-3.5 w-3.5" />
+      <div className="flex items-center justify-center gap-1 py-1 px-2 border-b border-border/40 bg-muted/20 shrink-0">
+        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
+          <ZoomOut className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
         </Button>
         <span className="text-[10px] font-medium text-muted-foreground min-w-[2.5rem] text-center tabular-nums">
           {Math.round(scale * 100)}%
         </span>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
-          <ZoomIn className="h-3.5 w-3.5" />
+        <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
+          <ZoomIn className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
         </Button>
         <span className="text-[10px] text-muted-foreground tabular-nums ml-1">
           {totalPages} pg{totalPages !== 1 ? 's' : ''}
         </span>
       </div>
 
-      {/* Scrollable pages */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-2">
+      {/* Scrollable pages — minimal padding on mobile */}
+      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/10 p-1 sm:p-2">
         <div ref={pagesContainerRef} className="flex flex-col items-center" />
       </div>
     </div>
