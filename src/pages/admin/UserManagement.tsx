@@ -380,6 +380,18 @@ export default function UserManagement() {
 
       if (rolesError) throw rolesError;
 
+      // Fetch staff (organisation members)
+      const { data: orgMembers } = await supabase
+        .from('organisation_members')
+        .select('user_id, is_active, organisations(name)')
+        .eq('is_active', true);
+
+      const staffMap = new Map<string, string | null>();
+      for (const m of orgMembers || []) {
+        const org = m.organisations as { name: string } | null;
+        staffMap.set(m.user_id, org?.name || null);
+      }
+
       // Fetch user emails and names from edge function
       const { data: authData, error: authError } = await supabase.functions.invoke('get-users-admin');
       
