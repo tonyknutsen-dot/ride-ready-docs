@@ -272,7 +272,7 @@ export default function PlatformSettings() {
               <Power className="h-4 w-4 text-destructive" />
               Maintenance Mode
             </CardTitle>
-            <CardDescription>Controls whether the platform shows a maintenance state to users.</CardDescription>
+            <CardDescription>Blocks access to non-admin app routes during maintenance. Admin routes remain accessible. Internal notes are never shown publicly.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
