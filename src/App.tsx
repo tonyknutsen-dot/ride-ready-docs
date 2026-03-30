@@ -638,6 +638,30 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/admin/system-health" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <SystemHealth />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/email-log" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <EmailLogPage />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
               {/* Public shared documents download page - no auth required */}
               <Route path="/shared/:token" element={<SharedDocuments />} />
               <Route 
