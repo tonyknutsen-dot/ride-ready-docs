@@ -14,12 +14,11 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader,
   DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
-import PdfCanvasViewer from '@/components/PdfCanvasViewer';
 import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
   MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
-  File,
+  Image as ImageIcon, File,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -852,33 +851,35 @@ const DocumentViewerPage = () => {
 
       {/* ── Content: Document + Sidebar ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Document Viewer — routed, full-page, in-app pdf.js */}
-        <div className="flex-1 min-h-0 bg-background">
-          {fileType === 'pdf' && pdfUrl && (
-            <PdfCanvasViewer
-              className="h-full"
-              fileName={docTitle || 'Document'}
-              fileUrl={pdfUrl}
-              onLoadSuccess={({ pageCount }) => {
-                debugViewer('viewer-mount-success', {
-                  documentId: documentId ?? fallbackDocId ?? null,
-                  fileType,
-                  pageCount,
-                  resolvedUrl: pdfUrl,
-                  viewerComponent: 'PdfCanvasViewer',
-                });
-              }}
-              onLoadError={(message) => {
-                setViewerError(message);
-                debugViewer('viewer-mount-failed', {
-                  documentId: documentId ?? fallbackDocId ?? null,
-                  fileType,
-                  resolvedUrl: pdfUrl,
-                  error: message,
-                  viewerComponent: 'PdfCanvasViewer',
-                });
-              }}
-            />
+        {/* Document Viewer — routed, full-page, native-first */}
+        <div className="flex-1">
+          {fileType === 'pdf' && (
+            <div className="h-full w-full bg-background">
+              <iframe
+                key={pdfUrl || 'pdf-viewer'}
+                src={pdfUrl || undefined}
+                title={docTitle || 'Document viewer'}
+                allow="fullscreen"
+                className="h-full w-full border-0 bg-background"
+                onLoad={() => {
+                  debugViewer('viewer-mount-success', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                  });
+                }}
+                onError={() => {
+                  const message = 'The PDF viewer could not load this file.';
+                  setViewerError(message);
+                  debugViewer('viewer-mount-failed', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                    error: message,
+                  });
+                }}
+              />
+            </div>
           )}
           {fileType === 'image' && pdfUrl && (
             <div className="w-full h-full overflow-auto bg-background">
