@@ -446,7 +446,6 @@ export default function AdminDashboard() {
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
-                  </div>
                 </Link>
                 <Link to="/admin/email-log" className="group">
                   <div className="flex items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
