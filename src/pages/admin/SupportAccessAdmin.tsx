@@ -98,11 +98,11 @@ export default function SupportAccessAdmin() {
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id, controller_name, company_name, full_name')
+          .select('user_id, controller_name, company_name')
           .in('user_id', userIds);
         (profiles || []).forEach((p: any) => {
           profileMap.set(p.user_id, {
-            name: p.controller_name || p.full_name || '',
+            name: p.controller_name || '',
             company: p.company_name || '',
           });
         });
