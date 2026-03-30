@@ -309,16 +309,19 @@ export default function EmailLog() {
                                 {entry.recipient_email || '—'}
                               </span>
                             </TableCell>
-                            <TableCell className="text-xs text-muted-foreground hidden sm:table-cell py-2.5 max-w-[200px] truncate">
-                              {entry.recipient_email || '—'}
-                            </TableCell>
-                            <TableCell className="py-2.5">{statusBadge(entry.status)}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground py-2.5 whitespace-nowrap">
-                              {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
-                            </TableCell>
-                            <TableCell className="text-xs text-destructive/80 hidden md:table-cell py-2.5 max-w-[200px] truncate">
-                              {entry.error_message || ''}
-                            </TableCell>
+                             <TableCell className="text-xs text-muted-foreground hidden sm:table-cell py-2.5 max-w-[200px] truncate">
+                               {entry.recipient_email || '—'}
+                             </TableCell>
+                             <TableCell className="text-xs text-muted-foreground hidden md:table-cell py-2.5 max-w-[200px] truncate">
+                               {entry.subject || '—'}
+                             </TableCell>
+                             <TableCell className="py-2.5">{statusBadge(entry.status)}</TableCell>
+                             <TableCell className="text-xs text-muted-foreground py-2.5 whitespace-nowrap">
+                               {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                             </TableCell>
+                             <TableCell className="text-xs text-destructive/80 hidden lg:table-cell py-2.5 max-w-[200px] truncate">
+                               {entry.error_message || ''}
+                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
