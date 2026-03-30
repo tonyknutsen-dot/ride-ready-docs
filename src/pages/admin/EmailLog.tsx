@@ -291,13 +291,14 @@ export default function EmailLog() {
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">Template</TableHead>
-                          <TableHead className="text-xs hidden sm:table-cell">Recipient</TableHead>
-                          <TableHead className="text-xs">Status</TableHead>
-                          <TableHead className="text-xs">Time</TableHead>
-                          <TableHead className="text-xs hidden md:table-cell">Error</TableHead>
-                        </TableRow>
+                         <TableRow>
+                           <TableHead className="text-xs">Template</TableHead>
+                           <TableHead className="text-xs hidden sm:table-cell">Recipient</TableHead>
+                           <TableHead className="text-xs hidden md:table-cell">Subject</TableHead>
+                           <TableHead className="text-xs">Status</TableHead>
+                           <TableHead className="text-xs">Time</TableHead>
+                           <TableHead className="text-xs hidden lg:table-cell">Error</TableHead>
+                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {entries.map(entry => (
