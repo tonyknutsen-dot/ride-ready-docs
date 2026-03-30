@@ -152,8 +152,17 @@ export function DowngradeConfirmationDialog({
     if (!acknowledged) return;
     setDowngrading(true);
 
+    // Capture counts BEFORE deletion for the audit trail
+    const deletionManifest = dataCounts ? { ...dataCounts } : null;
+
     try {
       if (user) {
+        // Also count templates for the audit record
+        const { count: templateCount } = await supabase
+          .from("daily_check_templates")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id);
+
         await Promise.all([
           supabase.from("check_results").delete().in(
             "check_id",
@@ -175,6 +184,56 @@ export function DowngradeConfirmationDialog({
           ),
           supabase.from("daily_check_templates").delete().eq("user_id", user.id),
         ]);
+
+        // ── Audit: bulk deletion event ──
+        logEvent('delete', 'subscription', undefined, {
+          bulk_action: 'downgrade_data_wipe',
+          total_records_deleted: totalRecords + (templateCount || 0),
+          data_exported_before_wipe: hasExported,
+          modules_affected: [
+            deletionManifest?.checks ? 'checks' : null,
+            deletionManifest?.riskAssessments ? 'risk_assessments' : null,
+            deletionManifest?.maintenanceRecords ? 'maintenance' : null,
+            deletionManifest?.ndtReports ? 'ndt_reports' : null,
+            deletionManifest?.annualInspections ? 'annual_inspections' : null,
+            deletionManifest?.inspectionSchedules ? 'inspection_schedules' : null,
+            templateCount ? 'check_templates' : null,
+          ].filter(Boolean),
+          counts: {
+            checks: deletionManifest?.checks || 0,
+            risk_assessments: deletionManifest?.riskAssessments || 0,
+            maintenance_records: deletionManifest?.maintenanceRecords || 0,
+            ndt_reports: deletionManifest?.ndtReports || 0,
+            annual_inspections: deletionManifest?.annualInspections || 0,
+            inspection_schedules: deletionManifest?.inspectionSchedules || 0,
+            check_templates: templateCount || 0,
+          },
+        }, {
+          reason: 'User-initiated subscription cancellation with data wipe',
+          contextHint: 'bulk deletion – subscription downgrade',
+          before: {
+            checks: deletionManifest?.checks || 0,
+            risk_assessments: deletionManifest?.riskAssessments || 0,
+            maintenance_records: deletionManifest?.maintenanceRecords || 0,
+            ndt_reports: deletionManifest?.ndtReports || 0,
+            annual_inspections: deletionManifest?.annualInspections || 0,
+            inspection_schedules: deletionManifest?.inspectionSchedules || 0,
+            check_templates: templateCount || 0,
+          },
+          after: {
+            checks: 0,
+            risk_assessments: 0,
+            maintenance_records: 0,
+            ndt_reports: 0,
+            annual_inspections: 0,
+            inspection_schedules: 0,
+            check_templates: 0,
+          },
+          changedFields: [
+            'checks', 'risk_assessments', 'maintenance_records',
+            'ndt_reports', 'annual_inspections', 'inspection_schedules', 'check_templates',
+          ],
+        });
       }
 
       await onConfirmDowngrade();
