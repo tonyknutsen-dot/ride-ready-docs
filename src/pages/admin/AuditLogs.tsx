@@ -690,7 +690,7 @@ const AuditLogs = () => {
         doc.setPage(i);
         doc.setFontSize(7);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Ride Ready Docs — Audit Trail Summary — Page ${i} of ${pageCount}`, margin, pageH - 8);
+        doc.text(`Ride Ready Docs — Audit Logs Summary — Page ${i} of ${pageCount}`, margin, pageH - 8);
       }
 
       doc.save(`audit-trail-summary-${format(now, 'yyyy-MM-dd')}.pdf`);
