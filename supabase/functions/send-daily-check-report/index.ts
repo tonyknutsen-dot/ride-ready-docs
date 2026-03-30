@@ -97,12 +97,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Report email sent successfully:", emailResponse);
 
+    await logEmailSend({
+      template_name: 'daily-check-report',
+      recipient_email: recipientEmail,
+      subject,
+      status: 'sent',
+      message_id: emailResponse?.data?.id || undefined,
+    });
+
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-daily-check-report function:", error);
+
+    await logEmailSend({
+      template_name: 'daily-check-report',
+      recipient_email: 'unknown',
+      status: 'failed',
+      error_message: error.message,
+    }).catch(() => {});
+
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }

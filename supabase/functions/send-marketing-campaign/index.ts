@@ -152,6 +152,14 @@ serve(async (req: Request) => {
           html: htmlContent,
         });
 
+        await logEmailSend({
+          template_name: 'marketing-campaign',
+          recipient_email: contact.email,
+          subject: personalizedSubject,
+          status: 'sent',
+          metadata: { campaign_id: campaignId },
+        });
+
         await supabase
           .from("campaign_recipients")
           .update({ status: "sent", sent_at: new Date().toISOString() })
