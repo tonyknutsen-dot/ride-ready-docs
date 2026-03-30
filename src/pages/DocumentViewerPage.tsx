@@ -24,7 +24,6 @@ import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
 import {
   createPdfViewerUrlFromBlob,
-  getSignedStorageUrl,
   getStorageFileBlob,
   revokeObjectUrl,
 } from '@/utils/exportFileActions';
