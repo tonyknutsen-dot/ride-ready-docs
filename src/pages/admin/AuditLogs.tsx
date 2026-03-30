@@ -260,7 +260,7 @@ const AuditLogs = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchLogs(true)]);
+    await fetchLogs(true);
     toast({ title: 'Refreshed', description: 'Audit logs updated' });
   };
 
