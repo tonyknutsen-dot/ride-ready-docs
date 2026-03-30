@@ -112,15 +112,15 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'System',
       items: [
         { name: 'Platform Settings', href: '/admin/platform-settings', icon: Settings2, count: 0 },
-        { name: 'System Health', href: '/admin/system-health', icon: Wrench, count: 0 },
-        { name: 'Jobs & Queues', href: '/admin/jobs-queues', icon: Activity, count: 0 },
-        { name: 'Email Log', href: '/admin/email-log', icon: Mail, count: 0 },
+        ...(isOn('admin_system_health_enabled') ? [{ name: 'System Health', href: '/admin/system-health', icon: Wrench, count: 0 }] : []),
+        ...(isOn('admin_jobs_queues_enabled') ? [{ name: 'Jobs & Queues', href: '/admin/jobs-queues', icon: Activity, count: 0 }] : []),
+        ...(isOn('admin_email_log_enabled') ? [{ name: 'Email Log', href: '/admin/email-log', icon: Mail, count: 0 }] : []),
       ],
     },
     {
       label: 'Growth',
       items: [
-        { name: 'Marketing Campaigns', href: '/marketing', icon: Mail, count: 0 },
+        ...(isOn('marketing_tools_enabled') ? [{ name: 'Marketing Campaigns', href: '/marketing', icon: Mail, count: 0 }] : []),
         { name: 'Early Access Signups', href: '/admin/early-access', icon: Sparkles, count: 0 },
       ],
     },
