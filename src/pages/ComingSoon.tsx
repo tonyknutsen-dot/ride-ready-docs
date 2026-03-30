@@ -18,6 +18,7 @@ const isStandaloneMode = () =>
 
 const ComingSoon = () => {
   const navigate = useNavigate();
+  const { isOn: isPlatformOn } = usePlatformSettings();
 
   // When opened as installed PWA, skip the landing page
   useEffect(() => {
