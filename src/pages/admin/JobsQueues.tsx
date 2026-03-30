@@ -144,6 +144,15 @@ export default function JobsQueues() {
     [categoryCounts, totalActions, uniqueCategoryConfig],
   );
 
+  useEffect(() => {
+    console.info('[JobsQueues] final categoryCards', categoryCards.map((card) => ({
+      key: card.key,
+      label: card.label,
+      count: card.count,
+      status: card.status,
+    })));
+  }, [categoryCards]);
+
   const filteredFailures = categoryFilter === 'all'
     ? failures
     : failures.filter((failure) => categorizeFailure(failure) === categoryFilter);
