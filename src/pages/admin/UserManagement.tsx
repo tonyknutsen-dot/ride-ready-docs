@@ -52,6 +52,8 @@ interface UserWithProfile {
   } | null;
   isAdmin: boolean;
   isTester: boolean;
+  isStaffMember: boolean;
+  staffOrgName: string | null;
   testerExpiresAt: string | null;
   rideCount: number;
 }
@@ -378,6 +380,18 @@ export default function UserManagement() {
 
       if (rolesError) throw rolesError;
 
+      // Fetch staff (organisation members)
+      const { data: orgMembers } = await supabase
+        .from('organisation_members')
+        .select('user_id, is_active, organisations(name)')
+        .eq('is_active', true);
+
+      const staffMap = new Map<string, string | null>();
+      for (const m of orgMembers || []) {
+        const org = m.organisations as { name: string } | null;
+        staffMap.set(m.user_id, org?.name || null);
+      }
+
       // Fetch user emails and names from edge function
       const { data: authData, error: authError } = await supabase.functions.invoke('get-users-admin');
       
@@ -430,6 +444,8 @@ export default function UserManagement() {
           },
           isAdmin: adminUserIds.has(profile.user_id),
           isTester: testerRoles.has(profile.user_id) && !isTesterExpired,
+          isStaffMember: staffMap.has(profile.user_id),
+          staffOrgName: staffMap.get(profile.user_id) || null,
           testerExpiresAt: testerExpiresAt,
           rideCount: rideCountMap.get(profile.user_id) || 0,
         };
@@ -759,10 +775,10 @@ export default function UserManagement() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
                 Total Users
               </CardTitle>
             </CardHeader>
@@ -784,7 +800,19 @@ export default function UserManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
+                Staff Members
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {users.filter(u => u.isStaffMember).length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
                 Testers
               </CardTitle>
             </CardHeader>
@@ -796,7 +824,7 @@ export default function UserManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
                 Admin Users
               </CardTitle>
             </CardHeader>
@@ -808,8 +836,8 @@ export default function UserManagement() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Suspended Users
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
+                Suspended
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -919,13 +947,20 @@ export default function UserManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {user.isAdmin ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.isAdmin && (
                             <Badge className="bg-primary w-fit">
                               <Shield className="h-3 w-3 mr-1" />
                               Admin
                             </Badge>
-                          ) : user.isTester ? (
+                          )}
+                          {user.isStaffMember && (
+                            <Badge variant="outline" className="border-primary/40 text-primary w-fit">
+                              <Users className="h-3 w-3 mr-1" />
+                              Staff
+                            </Badge>
+                          )}
+                          {user.isTester && (
                             <div className="space-y-1">
                               <Badge className="bg-warning text-warning-foreground w-fit">
                                 <FlaskConical className="h-3 w-3 mr-1" />
@@ -942,7 +977,8 @@ export default function UserManagement() {
                                 </div>
                               )}
                             </div>
-                          ) : (
+                          )}
+                          {!user.isAdmin && !user.isTester && !user.isStaffMember && (
                             <Badge variant="outline" className="w-fit">User</Badge>
                           )}
                         </div>

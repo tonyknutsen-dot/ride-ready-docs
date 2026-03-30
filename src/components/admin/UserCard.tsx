@@ -34,6 +34,7 @@ import {
   UserMinus,
   UserX,
   Calendar,
+  Users,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -58,6 +59,8 @@ export interface UserCardData {
   profile: UserProfile | null;
   isAdmin: boolean;
   isTester: boolean;
+  isStaffMember: boolean;
+  staffOrgName: string | null;
   testerExpiresAt: string | null;
   rideCount: number;
 }
@@ -111,24 +114,36 @@ export function UserCard({
     }
   };
 
-  const getRoleBadge = () => {
+  const getRoleBadges = () => {
+    const badges = [];
     if (user.isAdmin) {
-      return (
-        <Badge className="bg-primary">
+      badges.push(
+        <Badge key="admin" className="bg-primary">
           <Shield className="h-3 w-3 mr-1" />
           Admin
         </Badge>
       );
     }
+    if (user.isStaffMember) {
+      badges.push(
+        <Badge key="staff" variant="outline" className="border-primary/40 text-primary">
+          <Users className="h-3 w-3 mr-1" />
+          Staff
+        </Badge>
+      );
+    }
     if (user.isTester) {
-      return (
-        <Badge className="bg-warning text-warning-foreground">
+      badges.push(
+        <Badge key="tester" className="bg-warning text-warning-foreground">
           <FlaskConical className="h-3 w-3 mr-1" />
           Tester
         </Badge>
       );
     }
-    return <Badge variant="outline">User</Badge>;
+    if (badges.length === 0) {
+      badges.push(<Badge key="user" variant="outline">User</Badge>);
+    }
+    return badges;
   };
 
   return (
@@ -205,7 +220,7 @@ export function UserCard({
         {/* Row 3: Badges */}
         <div className="flex flex-wrap items-center gap-1.5">
           {getStatusBadge()}
-          {getRoleBadge()}
+          {getRoleBadges()}
           {user.profile?.subscription_plan && (
             <Badge variant="outline" className="capitalize text-[10px]">
               {user.profile.subscription_plan}
