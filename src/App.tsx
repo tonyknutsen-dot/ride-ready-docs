@@ -75,6 +75,7 @@ const PaymentsDashboard = lazy(() => import("./pages/admin/PaymentsDashboard"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 const EmailLogPage = lazy(() => import("./pages/admin/EmailLog"));
 const JobsQueues = lazy(() => import("./pages/admin/JobsQueuesPage"));
+const PlatformSettings = lazy(() => import("./pages/admin/PlatformSettings"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const Documents = lazy(() => import("./pages/Documents"));
