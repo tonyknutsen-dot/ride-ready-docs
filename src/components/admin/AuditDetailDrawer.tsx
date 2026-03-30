@@ -217,7 +217,11 @@ export function getTriggerType(entry: AuditEntry): string {
   if (source && TRIGGER_TYPE_MAP[source]) return TRIGGER_TYPE_MAP[source];
   // Infer from action/resource
   if (['login', 'logout', 'lock', 'unlock', 'failed_unlock'].includes(entry.action)) return 'Automation';
-  if (entry.resource_type === 'subscription') return 'Automation';
+  // User-initiated subscription actions (downgrade wipe) vs webhook-triggered
+  if (entry.resource_type === 'subscription') {
+    if (entry.details?.bulk_action === 'downgrade_data_wipe') return 'User action';
+    return 'Automation';
+  }
   return 'User action';
 }
 
