@@ -14,6 +14,7 @@ import { StaffInviteModal } from '@/components/staff/StaffInviteModal';
 import { StaffDetailsDrawer } from '@/components/staff/StaffDetailsDrawer';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Database } from '@/integrations/supabase/types';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 type StaffRole = Database['public']['Enums']['staff_role'];
 type FilterRole = 'all' | 'staff' | 'pending';
