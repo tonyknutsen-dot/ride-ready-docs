@@ -277,7 +277,14 @@ export default function EmailLog() {
                 {entries.length === 0 ? (
                   <div className="flex items-center gap-3 p-6">
                     <Mail className="h-5 w-5 text-muted-foreground/40 shrink-0" />
-                    <p className="text-sm text-muted-foreground">No emails found for this time range and filter.</p>
+                    <div>
+                      <p className="text-sm text-muted-foreground">No emails match the current filters.</p>
+                      <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+                        {statusFilter !== 'all' || templateFilter !== 'all'
+                          ? 'Try adjusting the status or template filter, or expanding the time range.'
+                          : `No records found in the last ${timeRange === '24h' ? '24 hours' : timeRange === '7d' ? '7 days' : '30 days'}. This may mean no emails were sent in this period.`}
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">

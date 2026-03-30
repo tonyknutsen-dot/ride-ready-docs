@@ -197,8 +197,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
             <h1 className="text-lg md:text-xl font-semibold">Admin Panel</h1>
           </div>
           <div className="flex items-center space-x-2">
-            <Link to="/overview" className="hidden sm:block">
-              <Button variant="outline" size="sm">Back to App</Button>
+            <Link to="/overview">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <span className="sm:hidden">← App</span>
+                <span className="hidden sm:inline">Back to App</span>
+              </Button>
             </Link>
             <Button variant="ghost" size="sm" onClick={signOut} className="hidden sm:flex">
               <LogOut className="h-4 w-4 mr-2" />
