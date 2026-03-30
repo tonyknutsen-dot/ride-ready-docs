@@ -174,8 +174,8 @@ export default function SystemHealth() {
           detail: sysTotal === 0 ? 'No activity in last 24h' : `${sysFailures} failure${sysFailures !== 1 ? 's' : ''} / ${sysTotal} actions`,
           evidence: sysEvidence,
           icon: Activity,
-          drillDownHref: '/admin/audit-logs',
-          drillDownLabel: 'View Audit Logs',
+          drillDownHref: '/admin/jobs-queues',
+          drillDownLabel: 'View Jobs & Queues',
         },
         {
           name: 'Stripe Webhooks',

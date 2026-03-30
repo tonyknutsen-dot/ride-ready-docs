@@ -74,6 +74,7 @@ const EarlyAccessSignups = lazy(() => import("./pages/admin/EarlyAccessSignups")
 const PaymentsDashboard = lazy(() => import("./pages/admin/PaymentsDashboard"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 const EmailLogPage = lazy(() => import("./pages/admin/EmailLog"));
+const JobsQueues = lazy(() => import("./pages/admin/JobsQueues"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const Documents = lazy(() => import("./pages/Documents"));
@@ -645,6 +646,18 @@ const App = () => (
                     <AdminRoute>
                       <AppLayout>
                         <SystemHealth />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/jobs-queues" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <JobsQueues />
                       </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>

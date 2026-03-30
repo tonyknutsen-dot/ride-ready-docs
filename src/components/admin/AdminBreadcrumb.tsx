@@ -22,6 +22,7 @@ const routeLabels: Record<string, string> = {
   '/admin/payments': 'Payments & Billing',
   '/admin/feature-requests': 'Feature Requests',
   '/admin/system-health': 'System Health',
+  '/admin/jobs-queues': 'Jobs & Queues',
   '/admin/email-log': 'Email Log',
 };
 
