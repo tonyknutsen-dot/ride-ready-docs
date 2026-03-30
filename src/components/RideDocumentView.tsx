@@ -37,8 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
-import PDFViewer from '@/components/PDFViewer';
-import ImageViewer from '@/components/ImageViewer';
+import DocumentViewer, { detectFileType } from '@/components/DocumentViewer';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
 type Document = Tables<'documents'>;
@@ -78,7 +77,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const [globalOpen, setGlobalOpen] = useState(true);
 
   // Viewer state
-  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' | 'unsupported' } | null>(null);
 
   /* ─── Fetch ─── */
   useEffect(() => {
@@ -153,14 +152,11 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     try {
       const signedUrl = await getSignedStorageUrl(doc.file_path);
       if (!signedUrl) throw new Error('Could not get file URL');
-      const fp = doc.file_path || '';
-      if (isPDFFile(fp)) {
-        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'pdf' });
-      } else if (isImageFile(fp)) {
-        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'image' });
-      } else {
-        // Unsupported type — download directly
+      const ft = detectFileType(doc.file_path || doc.document_name || '');
+      if (ft === 'unsupported') {
         window.open(signedUrl, '_blank');
+      } else {
+        setViewerDoc({ url: signedUrl, name: doc.document_name, type: ft });
       }
     } catch (err: any) {
       toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
@@ -468,22 +464,13 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Viewers */}
-      {viewerDoc?.type === 'pdf' && (
-        <PDFViewer
+      {viewerDoc && (
+        <DocumentViewer
           isOpen
           onClose={() => setViewerDoc(null)}
-          pdfUrl={viewerDoc.url}
-          pdfName={viewerDoc.name}
-          onDownload={handleViewerDownload}
-        />
-      )}
-      {viewerDoc?.type === 'image' && (
-        <ImageViewer
-          isOpen
-          onClose={() => setViewerDoc(null)}
-          imageUrl={viewerDoc.url}
-          imageName={viewerDoc.name}
+          fileUrl={viewerDoc.url}
+          fileName={viewerDoc.name}
+          fileType={viewerDoc.type}
           onDownload={handleViewerDownload}
         />
       )}
