@@ -233,8 +233,10 @@ const DocumentViewerPage = () => {
 
   const loadFromRideDocument = async (rd: RideDocument, isOld: boolean) => {
     setRideDoc(rd);
+    setFallbackDocId(null);
     setDocTitle(rd.title);
     setDocDisplayId(rd.document_id);
+    setFileType('pdf');
 
     // ── Cache-first PDF loading ──
     const cached = await getCachedPdf(rd.document_id);
@@ -245,20 +247,14 @@ const DocumentViewerPage = () => {
       setPdfUrl(createCachedPdfUrl(cached));
       setPdfSource('cache');
     } else if (isOnline) {
-      // Online: fetch fresh, cache it
-      const signedUrl = await getSignedUrl(rd.file_url);
-      if (signedUrl) {
-        // Fetch as blob so mobile browsers render PDF inline (not download prompt)
-        const fetchedBlob = await fetchPdfBlob(signedUrl);
-        if (fetchedBlob) {
-          const blobUrl = URL.createObjectURL(new Blob([fetchedBlob], { type: 'application/pdf' }));
-          setPdfUrl(blobUrl);
-          cachePdf(rd.document_id, rd.version, rd.file_url, fetchedBlob, rd.title);
-        } else {
-          setPdfUrl(signedUrl);
-        }
+      try {
+        const resolvedViewer = await resolveStoredViewerUrl(rd.file_url, 'pdf');
+        setPdfUrl(resolvedViewer.url);
         setPdfSource('network');
-      } else {
+        if (resolvedViewer.blob) {
+          cachePdf(rd.document_id, rd.version, rd.file_url, resolvedViewer.blob, rd.title);
+        }
+      } catch {
         // Signed URL failed but we may have a stale cache
         if (cached) {
           setPdfUrl(createCachedPdfUrl(cached));
@@ -465,28 +461,28 @@ const DocumentViewerPage = () => {
       toast({ title: 'Requires connection', description: 'Downloads are unavailable while offline.' });
       return;
     }
-    const filePath = rideDoc?.file_url;
-    if (!filePath && !fallbackDocId) return;
+    const currentFilePath = rideDoc?.file_url;
+    if (!currentFilePath && !fallbackDocId) return;
 
-    let filePath: string | null = null;
-    if (filePath) {
-      filePath = rideDoc.file_url;
+    let resolvedFilePath: string | null = null;
+    if (currentFilePath) {
+      resolvedFilePath = currentFilePath;
     } else if (fallbackDocId) {
       const { data } = await supabase
         .from('documents')
         .select('file_path')
         .eq('id', fallbackDocId)
         .maybeSingle();
-      if (data) filePath = data.file_path;
+      if (data) resolvedFilePath = data.file_path;
     }
 
-    if (!filePath) {
+    if (!resolvedFilePath) {
       toast({ title: 'Download failed', variant: 'destructive' });
       return;
     }
 
     try {
-      const blob = await getStorageFileBlob(filePath);
+      const blob = await getStorageFileBlob(resolvedFilePath);
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = blobUrl;
