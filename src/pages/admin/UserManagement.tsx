@@ -93,6 +93,7 @@ interface TesterAllTimeData {
 }
 
 export default function UserManagement() {
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
