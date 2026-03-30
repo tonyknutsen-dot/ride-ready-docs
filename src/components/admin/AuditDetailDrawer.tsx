@@ -379,7 +379,7 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '—' || value === '') return null;
   return (
-    <div className="flex justify-between gap-3 py-1.5 text-sm">
+    <div className="flex justify-between gap-3 py-1 text-sm">
       <span className="text-muted-foreground text-xs flex-shrink-0">{label}</span>
       <span className="text-right font-medium text-xs break-all">{value}</span>
     </div>
