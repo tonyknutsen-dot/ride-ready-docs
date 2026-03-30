@@ -278,7 +278,7 @@ export default function PlatformSettings() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Enable Maintenance Mode</p>
-                <p className="text-xs text-muted-foreground">Users will see a maintenance banner</p>
+                <p className="text-xs text-muted-foreground">Non-admin routes will be blocked and show the public message below</p>
               </div>
               <Switch
                 checked={isOn('maintenance_mode')}
