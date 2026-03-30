@@ -944,7 +944,7 @@ export default function UserManagement() {
                         <div className="flex items-center gap-2">
                           <Building className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="font-medium truncate">
-                            {user.profile?.company_name || 'No company'}
+                             {user.profile?.company_name || user.staffOrgName || 'No company'}
                           </span>
                         </div>
                       </TableCell>
