@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library, Layers, Package, AlertTriangle, Wrench, Settings2 } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library, Layers, Package, AlertTriangle, Wrench, Settings2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,7 +98,10 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'Admin Access',
       items: [
         { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
-        ...(isOn('support_access_grants_enabled') ? [{ name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 }] : []),
+        ...(isOn('support_access_grants_enabled') ? [
+          { name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 },
+          { name: 'Support View', href: '/admin/support-view', icon: Eye, count: 0 },
+        ] : []),
       ],
     },
     {

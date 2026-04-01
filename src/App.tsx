@@ -64,6 +64,7 @@ const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const SupportAccessAdmin = lazy(() => import("./pages/admin/SupportAccessAdmin"));
+const SupportView = lazy(() => import("./pages/admin/SupportView"));
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const FeatureRequests = lazy(() => import("./pages/admin/FeatureRequests"));
 const CheckItemSubmissions = lazy(() => import("./pages/admin/CheckItemSubmissions"));
@@ -521,6 +522,20 @@ const App = () => (
                       <FeatureFlagGate flagKey="support_access_grants_enabled" disabledMessage="Support access grants are currently disabled in Platform Settings.">
                         <AppLayout>
                           <SupportAccessAdmin />
+                        </AppLayout>
+                      </FeatureFlagGate>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route 
+                path="/admin/support-view" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <FeatureFlagGate flagKey="support_access_grants_enabled" disabledMessage="Support access grants are currently disabled in Platform Settings.">
+                        <AppLayout>
+                          <SupportView />
                         </AppLayout>
                       </FeatureFlagGate>
                     </AdminRoute>
