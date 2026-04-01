@@ -105,7 +105,7 @@ export default function SupportViewPage() {
         supabase.from('compliance_events').select('id', { count: 'exact', head: true }).eq('user_id', targetUserId),
       ]);
 
-      setRides(ridesRes.data || []);
+      setRides((ridesRes.data || []).map((r: any) => ({ ...r, status: 'active' })));
       setDocuments(docsRes.data || []);
       setDefects(defectsRes.data || []);
 
