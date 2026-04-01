@@ -100,17 +100,26 @@ export function UserCard({
       return <Badge variant="destructive"><Ban className="h-3 w-3 mr-1" />Suspended</Badge>;
     }
     const status = user.profile?.subscription_status;
+    if (!status) {
+      // Staff/tester/admin-only accounts without a subscription — show role context instead
+      if (user.isStaffMember) return <Badge variant="outline">Staff Account</Badge>;
+      if (user.isTester) return <Badge variant="outline">Tester Account</Badge>;
+      if (user.isAdmin) return <Badge variant="outline">Admin Account</Badge>;
+      return <Badge variant="outline">No Subscription</Badge>;
+    }
     switch (status) {
       case 'active':
         return <Badge className="bg-green-500">Active</Badge>;
       case 'trial':
         return <Badge className="bg-blue-500">Trial</Badge>;
+      case 'past_due':
+        return <Badge className="bg-yellow-500 text-black">Past Due</Badge>;
       case 'expired':
         return <Badge variant="destructive">Expired</Badge>;
       case 'cancelled':
         return <Badge variant="outline">Cancelled</Badge>;
       default:
-        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+        return <Badge variant="outline" className="capitalize">{status}</Badge>;
     }
   };
 
