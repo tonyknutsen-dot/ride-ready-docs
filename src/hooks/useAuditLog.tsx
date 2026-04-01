@@ -9,7 +9,8 @@ type AuditAction =
   | 'send' | 'import' | 'upload' | 'replace'
   | 'complete' | 'close' | 'reopen'
   | 'grant' | 'revoke' | 'request' | 'reset_password'
-  | 'subscribe' | 'unsubscribe' | 'block' | 'unblock';
+  | 'subscribe' | 'unsubscribe' | 'block' | 'unblock'
+  | 'support_view';
 
 type ResourceType = 
   | 'document' | 'ride' | 'check' | 'check_template'
