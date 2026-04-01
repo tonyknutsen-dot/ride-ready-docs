@@ -98,7 +98,10 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'Admin Access',
       items: [
         { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
-        ...(isOn('support_access_grants_enabled') ? [{ name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 }] : []),
+        ...(isOn('support_access_grants_enabled') ? [
+          { name: 'Support Access Grants', href: '/admin/support-access', icon: Key, count: 0 },
+          { name: 'Support View', href: '/admin/support-view', icon: Eye, count: 0 },
+        ] : []),
       ],
     },
     {
