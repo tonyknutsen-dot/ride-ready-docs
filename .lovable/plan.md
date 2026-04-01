@@ -59,3 +59,20 @@
 | Defects show status in subtitle | Defect Register | Open defect count is operationally critical — shown in PageHeader subtitle |
 
 All other visual differences across pages within the same family are considered bugs.
+
+---
+
+## Admin Technical Debt / Follow-up
+
+### Support Access Grants — signed off PASS with minor issues
+
+Status: **Complete for current scope. Not blocked. Safe to move on.**
+
+Non-blocking follow-up items:
+
+1. **Pagination**: Add pagination or load-more once grant count exceeds 200 (current `.limit(200)` query has no UI warning if truncated)
+2. **Expiry audit logging**: Add individual `audit_logs` entries when the `expire_support_grants()` cron job flips grants to expired — currently silent
+3. **SupportView rides status**: Remove hardcoded `status: 'active'` in `/admin/support-view` rides tab — the `rides` table has no `status` column; display honest data only
+4. **Storage access documentation**: Maintain clear distinction between:
+   - **Metadata visibility**: Document names, types, dates are visible under an active grant via RLS-gated tables
+   - **File download access**: Private storage buckets (`ride-documents`, `defect-photos`) remain scoped to file owner's `auth.uid()` — admins with grants cannot download actual files without separate storage policy work
