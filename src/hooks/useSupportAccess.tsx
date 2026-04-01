@@ -175,10 +175,11 @@ export function useSupportAccess(): SupportAccessState {
   const logAccess = useCallback(async (resource: string, resourceId?: string) => {
     if (!activeTargetUserId) return;
     const grant = resolveGrantForUser(activeTargetUserId);
-    await logEvent('support_view', resource, resourceId as any, {
+    await logEvent('support_view', 'support_access', resourceId as any, {
       target_user_id: activeTargetUserId,
       grant_id: grant?.id,
       access_scope: grant?.access_scope,
+      viewed_resource: resource,
     }, { contextHint: `Support viewed ${resource}` });
   }, [activeTargetUserId, resolveGrantForUser, logEvent]);
 
