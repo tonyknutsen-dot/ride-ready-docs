@@ -440,6 +440,18 @@ export default function SupportAccessAdmin() {
                         {isActive && (
                           <Button
                             size="sm"
+                            variant="outline"
+                            asChild
+                          >
+                            <Link to="/admin/support-view">
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              <span className="hidden sm:inline">View Data</span>
+                            </Link>
+                          </Button>
+                        )}
+                        {isActive && (
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => setRevokeTarget(grant)}
                           >
