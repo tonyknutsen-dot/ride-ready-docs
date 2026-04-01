@@ -16,6 +16,7 @@ const routeLabels: Record<string, string> = {
   '/admin/document-type-library': 'Document Type Library',
   '/admin/support': 'Support Messages',
   '/admin/support-access': 'Support Access Grants',
+  '/admin/support-view': 'Support View',
   '/admin/users': 'User Management',
   '/admin/audit-logs': 'Audit Logs',
   '/admin/security': 'Security Dashboard',
