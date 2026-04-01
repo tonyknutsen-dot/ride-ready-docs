@@ -64,6 +64,7 @@ const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const SupportAccessAdmin = lazy(() => import("./pages/admin/SupportAccessAdmin"));
+const SupportView = lazy(() => import("./pages/admin/SupportView"));
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const FeatureRequests = lazy(() => import("./pages/admin/FeatureRequests"));
 const CheckItemSubmissions = lazy(() => import("./pages/admin/CheckItemSubmissions"));
