@@ -97,7 +97,7 @@ export default function SupportViewPage() {
     try {
       // These queries will only return data if admin_has_support_access RLS passes
       const [ridesRes, docsRes, checksRes, defectsRes, inspRes, compRes] = await Promise.all([
-        supabase.from('rides').select('id, ride_name, status, created_at').eq('user_id', targetUserId),
+        supabase.from('rides').select('id, ride_name, created_at').eq('user_id', targetUserId),
         supabase.from('documents').select('id, document_name, document_type, uploaded_at, expires_at').eq('user_id', targetUserId),
         supabase.from('checks').select('id', { count: 'exact', head: true }).eq('user_id', targetUserId),
         supabase.from('defects').select('id, description, severity, status, reported_at').eq('user_id', targetUserId),
