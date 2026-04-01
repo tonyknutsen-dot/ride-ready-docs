@@ -184,10 +184,11 @@ export function useSupportAccess(): SupportAccessState {
   }, [activeTargetUserId, resolveGrantForUser, logEvent]);
 
   const logBlocked = useCallback(async (resource: string, targetUserId: string, reason: string) => {
-    await logEvent('support_view', resource, undefined, {
+    await logEvent('support_view', 'support_access', undefined, {
       target_user_id: targetUserId,
       result: 'blocked',
       reason,
+      attempted_resource: resource,
     }, {
       contextHint: `Blocked: ${reason}`,
     });
