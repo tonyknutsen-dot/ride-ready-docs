@@ -306,71 +306,79 @@ export default function SupportAccessAdmin() {
 
   return (
     <AdminLayout>
-      <div className="space-y-5">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
-              <Key className="h-5 w-5 text-primary" />
-              Support Access Grants
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Manage user-granted temporary support access
-            </p>
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <Key className="h-5 md:h-6 w-5 md:w-6 text-primary" />
+                Support Access Grants
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage user-granted temporary support access
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-              <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+
+          {/* Action row — separated from title */}
+          <div className="flex items-center gap-2 mt-4">
+            <Button variant="outline" size="sm" className="h-8" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline ml-1.5">Refresh</span>
             </Button>
-            <Button size="sm" onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Create Grant</span>
-              <span className="sm:hidden">New</span>
+            <Button size="sm" className="h-8" onClick={openCreateDialog}>
+              <Plus className="h-3.5 w-3.5" />
+              <span className="ml-1.5 hidden sm:inline">Create Grant</span>
+              <span className="ml-1.5 sm:hidden">New</span>
             </Button>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex gap-1 overflow-x-auto">
+        {/* Tab row */}
+        <div className="overflow-x-auto -mx-1 px-1 scrollbar-none">
+          <div className="flex gap-1.5 min-w-max">
             {FILTER_TABS.map(tab => (
               <Button
                 key={tab.value}
-                variant={statusFilter === tab.value ? 'default' : 'outline'}
+                variant={statusFilter === tab.value ? 'default' : 'ghost'}
                 size="sm"
-                className="text-xs whitespace-nowrap"
+                className={`h-8 text-xs rounded-full px-3 whitespace-nowrap ${
+                  statusFilter !== tab.value ? 'bg-secondary/60 hover:bg-secondary' : ''
+                }`}
                 onClick={() => setStatusFilter(tab.value)}
               >
                 {tab.label}
               </Button>
             ))}
           </div>
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search user, company, reason…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9 h-9 text-sm"
-            />
-          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search user, company, reason…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
         </div>
 
         {/* List */}
         <div className="space-y-2">
           {filtered.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Key className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                <p className="text-muted-foreground text-sm">
-                  {statusFilter === 'active' ? 'No active support access grants' :
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <Key className="h-8 w-8 text-muted-foreground/25 mb-3" />
+                <p className="text-muted-foreground text-sm font-medium">
+                  {statusFilter === 'active' ? 'No active grants' :
                    statusFilter === 'expired' ? 'No expired grants' :
                    statusFilter === 'revoked' ? 'No revoked grants' :
-                   'No support access grants found'}
+                   'No grants found'}
                 </p>
                 {statusFilter === 'active' && (
-                  <p className="text-xs text-muted-foreground/60 mt-1">
+                  <p className="text-xs text-muted-foreground/60 mt-1 text-center max-w-[260px]">
                     Users must explicitly grant access, or an admin can create one.
                   </p>
                 )}
