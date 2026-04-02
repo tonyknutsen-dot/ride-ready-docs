@@ -352,7 +352,7 @@ export default function PaymentsDashboard() {
     flagsByUser[flag.user_id].push(flag);
   }
 
-  const displayedUsers = useMemo(() => {
+  const displayedUsers = (() => {
     let users = showAllUsers
       ? userHealth
       : userHealth.filter(u => u.problem_type !== null);
@@ -373,7 +373,7 @@ export default function PaymentsDashboard() {
       });
     }
     return users;
-  }, [showAllUsers, userHealth, accountSearch, flagsByUser]);
+  })();
 
   const activeFlagsForUser = (userId: string) =>
     (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
