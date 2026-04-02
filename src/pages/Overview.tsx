@@ -3,7 +3,7 @@ import { TrialStatus } from "@/components/TrialStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
-  Settings, Bell, AlertTriangle, ChevronRight, Clock, ShieldCheck
+  Settings, Bell, AlertTriangle, ChevronRight, ShieldCheck
 } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
@@ -35,9 +35,7 @@ const Overview = () => {
     canAccessChecks,
     canAccessRiskAssessments,
     canAccessCalendar,
-    canAccessBilling,
     canAccessSettings,
-    canManageStaff,
   } = useStaff();
 
   const handleRefresh = useCallback(async () => {
@@ -67,7 +65,6 @@ const Overview = () => {
   }
 
   const hasActionNeeded = actionNeededCount > 0;
-  const hasBadge = actionNeededCount > 0;
 
   // ── Build permission-filtered quick actions ──
   const quickActions = [
@@ -199,7 +196,7 @@ const Overview = () => {
               }`}
             >
               <Bell className={`h-5 w-5 ${hasActionNeeded ? 'text-destructive' : 'text-muted-foreground'}`} strokeWidth={2} />
-              {hasBadge && (
+              {hasActionNeeded && (
                 <span className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1 ${
                   hasActionNeeded
                     ? 'bg-destructive text-destructive-foreground'
