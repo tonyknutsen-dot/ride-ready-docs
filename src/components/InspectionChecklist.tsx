@@ -122,13 +122,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
 
-  // Prefill inspector name from profile
+  // Prefill inspector name from the actual user's profile (not org owner for staff)
   useEffect(() => {
-    if (user && effectiveUserId && !inspectorName) {
+    if (user && !inspectorName) {
+      // For staff: use *their own* profile name, not the org owner's
+      const profileUserId = isStaff ? user.id : effectiveUserId;
+      if (!profileUserId) return;
       supabase
         .from('profiles')
         .select('controller_name')
-        .eq('user_id', effectiveUserId)
+        .eq('user_id', profileUserId)
         .single()
         .then(({ data }) => {
           if (data?.controller_name && !inspectorName) {
@@ -136,7 +139,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           }
         });
     }
-  }, [user, effectiveUserId]);
+  }, [user, effectiveUserId, isStaff]);
 
   useEffect(() => {
     if (user) {
