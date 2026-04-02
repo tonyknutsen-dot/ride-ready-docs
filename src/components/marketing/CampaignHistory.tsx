@@ -235,7 +235,7 @@ export const CampaignHistory = () => {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">
-                              {recipient.contact?.name || recipient.contact?.email}
+                              {recipient.contact?.name || recipient.contact?.email || "Deleted contact"}
                             </p>
                             {recipient.contact?.name && (
                               <p className="text-xs text-muted-foreground truncate">

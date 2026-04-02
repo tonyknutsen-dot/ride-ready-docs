@@ -132,6 +132,7 @@ export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
         .select("id, email, name, company_name, tags, is_subscribed")
         .eq("user_id", user.id)
         .eq("is_subscribed", true)
+        .is("deleted_at", null)
         .order("name");
       if (error) throw error;
       setContacts(data || []);
