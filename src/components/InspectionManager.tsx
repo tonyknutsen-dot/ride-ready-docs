@@ -250,29 +250,34 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </button>
               );
             })}
-            {/* Separator before admin tabs */}
-            <div className="w-px bg-border self-stretch mx-1" />
-            {[
-              { value: 'annual',  label: 'Annual',   Icon: Building },
-              { value: 'ndt',     label: 'NDT',      Icon: TestTube },
-              { value: 'reports', label: 'Reports',  Icon: FileText },
-            ].map(({ value, label, Icon }) => {
-              const isActive = activeTab === value;
-              return (
-                <button
-                  key={value}
-                  onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all min-w-[64px] font-medium text-xs ${
-                    isActive
-                      ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                      : 'bg-card/60 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.8} />
-                  <span>{label}</span>
-                </button>
-              );
-            })}
+            {/* Admin/owner-only tabs — hidden from staff */}
+            {!isStaff && (
+              <>
+                {/* Separator before admin tabs */}
+                <div className="w-px bg-border self-stretch mx-1" />
+                {[
+                  { value: 'annual',  label: 'Annual',   Icon: Building },
+                  { value: 'ndt',     label: 'NDT',      Icon: TestTube },
+                  { value: 'reports', label: 'Reports',  Icon: FileText },
+                ].map(({ value, label, Icon }) => {
+                  const isActive = activeTab === value;
+                  return (
+                    <button
+                      key={value}
+                      onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
+                      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all min-w-[64px] font-medium text-xs ${
+                        isActive
+                          ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+                          : 'bg-card/60 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.8} />
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
+              </>
+            )}
           </div>
         </div>
 
