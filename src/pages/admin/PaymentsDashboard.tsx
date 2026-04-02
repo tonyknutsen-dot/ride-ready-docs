@@ -345,9 +345,28 @@ export default function PaymentsDashboard() {
 
   const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, accountFlags, problemUserCount } = data;
 
-  const displayedUsers = showAllUsers
-    ? userHealth
-    : userHealth.filter(u => u.problem_type !== null);
+  const displayedUsers = useMemo(() => {
+    let users = showAllUsers
+      ? userHealth
+      : userHealth.filter(u => u.problem_type !== null);
+
+    if (accountSearch.trim()) {
+      const q = accountSearch.toLowerCase().trim();
+      users = users.filter(u => {
+        const userFlags = (flagsByUser[u.user_id] || []);
+        return (
+          (u.company_name && u.company_name.toLowerCase().includes(q)) ||
+          (u.controller_name && u.controller_name.toLowerCase().includes(q)) ||
+          (u.app_status && u.app_status.toLowerCase().includes(q)) ||
+          (u.stripe_status && u.stripe_status.toLowerCase().includes(q)) ||
+          (u.app_plan && u.app_plan.toLowerCase().includes(q)) ||
+          (u.problem_type && u.problem_type.replace(/_/g, ' ').toLowerCase().includes(q)) ||
+          userFlags.some(f => f.flag_reason.replace(/_/g, ' ').toLowerCase().includes(q))
+        );
+      });
+    }
+    return users;
+  }, [showAllUsers, userHealth, accountSearch, flagsByUser]);
 
   // Build flag lookup by user_id
   const flagsByUser: Record<string, AccountFlag[]> = {};
