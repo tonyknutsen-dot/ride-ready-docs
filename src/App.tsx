@@ -432,15 +432,17 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* All Documents page */}
+              {/* All Documents page — owner only */}
               <Route 
                 path="/documents"
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <Documents />
-                      </AppLayout>
+                      <StaffRoute ownerOnly>
+                        <AppLayout>
+                          <Documents />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
