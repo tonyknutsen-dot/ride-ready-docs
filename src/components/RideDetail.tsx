@@ -257,7 +257,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const needsAttention: Array<{ key: string; icon: React.ElementType; label: string; detail: string; color: string; action?: () => void }> = [];
   
   if (!rideStats.loading) {
-    if (rideStats.hasExpiredDocs) {
+    if (rideStats.hasExpiredDocs && canAccessDocuments) {
       needsAttention.push({
         key: 'expired-docs',
         icon: Clock,
@@ -267,7 +267,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         action: () => setActiveTab('documents'),
       });
     }
-    if (rideStats.hasExpiringSoonDocs) {
+    if (rideStats.hasExpiringSoonDocs && canAccessDocuments) {
       needsAttention.push({
         key: 'expiring-docs',
         icon: Clock,
