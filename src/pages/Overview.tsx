@@ -196,7 +196,7 @@ const Overview = () => {
               }`}
             >
               <Bell className={`h-5 w-5 ${hasActionNeeded ? 'text-destructive' : 'text-muted-foreground'}`} strokeWidth={2} />
-              {hasBadge && (
+              {hasActionNeeded && (
                 <span className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1 ${
                   hasActionNeeded
                     ? 'bg-destructive text-destructive-foreground'
