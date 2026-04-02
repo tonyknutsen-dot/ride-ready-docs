@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import {
   DollarSign,
   TrendingUp,
@@ -243,8 +245,10 @@ export default function PaymentsDashboard() {
   const [activeTab, setActiveTab] = useState('failed');
   const [updatingFlag, setUpdatingFlag] = useState<string | null>(null);
   const [showTechnicalEvents, setShowTechnicalEvents] = useState(false);
+  const [accountSearch, setAccountSearch] = useState('');
   const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const fetchData = async () => {
     setLoading(true);
@@ -276,6 +280,12 @@ export default function PaymentsDashboard() {
           ? `Status updated to ${response.newStatus}, plan: ${response.newPlan || '—'}`
           : 'Profile is in sync with Stripe.',
       });
+      logEvent('update', 'subscription', userId, {
+        action: 'manual_resync',
+        mismatch_found: response.mismatch,
+        new_status: response.newStatus,
+        new_plan: response.newPlan,
+      }, { contextHint: 'Billing re-sync' });
       await fetchData();
     } catch (err: any) {
       toast({ title: 'Re-sync failed', description: err.message, variant: 'destructive' });
@@ -293,6 +303,10 @@ export default function PaymentsDashboard() {
       if (fnError) throw fnError;
       if (response.error) throw new Error(response.error);
       toast({ title: 'Flag updated' });
+      logEvent('update', 'subscription', flagId, {
+        action: 'flag_status_change',
+        ...updates,
+      }, { contextHint: updates.review_status ? `Flag → ${updates.review_status}` : 'Flag note added' });
       await fetchData();
     } catch (err: any) {
       toast({ title: 'Failed to update flag', description: err.message, variant: 'destructive' });
@@ -331,16 +345,35 @@ export default function PaymentsDashboard() {
 
   const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, accountFlags, problemUserCount } = data;
 
-  const displayedUsers = showAllUsers
-    ? userHealth
-    : userHealth.filter(u => u.problem_type !== null);
-
   // Build flag lookup by user_id
   const flagsByUser: Record<string, AccountFlag[]> = {};
   for (const flag of (accountFlags || [])) {
     if (!flagsByUser[flag.user_id]) flagsByUser[flag.user_id] = [];
     flagsByUser[flag.user_id].push(flag);
   }
+
+  const displayedUsers = (() => {
+    let users = showAllUsers
+      ? userHealth
+      : userHealth.filter(u => u.problem_type !== null);
+
+    if (accountSearch.trim()) {
+      const q = accountSearch.toLowerCase().trim();
+      users = users.filter(u => {
+        const userFlags = (flagsByUser[u.user_id] || []);
+        return (
+          (u.company_name && u.company_name.toLowerCase().includes(q)) ||
+          (u.controller_name && u.controller_name.toLowerCase().includes(q)) ||
+          (u.app_status && u.app_status.toLowerCase().includes(q)) ||
+          (u.stripe_status && u.stripe_status.toLowerCase().includes(q)) ||
+          (u.app_plan && u.app_plan.toLowerCase().includes(q)) ||
+          (u.problem_type && u.problem_type.replace(/_/g, ' ').toLowerCase().includes(q)) ||
+          userFlags.some(f => f.flag_reason.replace(/_/g, ' ').toLowerCase().includes(q))
+        );
+      });
+    }
+    return users;
+  })();
 
   const activeFlagsForUser = (userId: string) =>
     (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
@@ -480,7 +513,13 @@ export default function PaymentsDashboard() {
           </div>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 space-y-3">
+            <Input
+              placeholder="Search by name, company, status, plan, or flag reason…"
+              value={accountSearch}
+              onChange={(e) => setAccountSearch(e.target.value)}
+              className="h-9 text-sm"
+            />
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {problemUserCount > 0 ? (
                 <Badge variant="destructive" className="text-xs px-2.5 py-1 font-semibold">

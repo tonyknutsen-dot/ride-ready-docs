@@ -161,6 +161,25 @@ serve(async (req) => {
         details: { resynced_by: userData.user.id },
       });
 
+      // Forensic audit log
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: userData.user.id,
+        action: 'update',
+        resource_type: 'subscription',
+        resource_id: targetUserId,
+        details: {
+          action: 'manual_resync',
+          mismatch_found: mismatch,
+          stripe_status: stripeStatus,
+          stripe_plan: stripePlan,
+        },
+        before_data: { status: profile.subscription_status, plan: profile.subscription_plan },
+        after_data: { status: newStatus, plan: newPlan },
+        changed_fields: mismatch ? ['subscription_status', 'subscription_plan'] : null,
+        result: 'success',
+        context_hint: 'Billing re-sync',
+      });
+
       return new Response(JSON.stringify({ success: true, mismatch, newStatus, newPlan }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
@@ -192,6 +211,21 @@ serve(async (req) => {
 
       if (updateErr) throw new Error(`Failed to update flag: ${updateErr.message}`);
 
+      // Forensic audit log for flag change
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: userData.user.id,
+        action: 'update',
+        resource_type: 'subscription',
+        resource_id: flagId,
+        details: {
+          action: 'flag_status_change',
+          new_review_status: body.review_status || null,
+          admin_note: body.admin_note || null,
+        },
+        result: 'success',
+        context_hint: body.review_status ? `Flag → ${body.review_status}` : 'Flag note added',
+      });
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
@@ -211,6 +245,21 @@ serve(async (req) => {
         }, { onConflict: 'user_id,flag_reason' });
 
       if (insertErr) throw new Error(`Failed to create flag: ${insertErr.message}`);
+
+      // Forensic audit log for manual flag creation
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: userData.user.id,
+        action: 'create',
+        resource_type: 'subscription',
+        resource_id: body.user_id as string,
+        details: {
+          action: 'manual_flag_created',
+          flag_reason: body.flag_reason || 'manual_review',
+          severity: body.severity || 'warning',
+        },
+        result: 'success',
+        context_hint: 'Manual billing flag',
+      });
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
