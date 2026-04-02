@@ -70,7 +70,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
       return;
     }
     try {
-      let query = supabase.from('defects').select('*').eq('ride_id', rideId).eq('user_id', user?.id).order('reported_at', { ascending: false });
+      let query = supabase.from('defects').select('*').eq('ride_id', rideId).eq('user_id', effectiveUserId).order('reported_at', { ascending: false });
       if (!showResolved) query = query.neq('status', 'resolved');
       const { data, error } = await query;
       if (error) throw error;

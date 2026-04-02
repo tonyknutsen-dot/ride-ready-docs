@@ -109,6 +109,17 @@ const DefectReportForm = ({
       return;
     }
 
+    // Duplicate prevention: block same ride + same description within 60 seconds
+    const now = Date.now();
+    const trimmedDesc = description.trim();
+    if (lastSubmitRef.current
+      && lastSubmitRef.current.rideId === rideId
+      && lastSubmitRef.current.description === trimmedDesc
+      && now - lastSubmitRef.current.time < 60_000) {
+      toast({ title: "Possible duplicate", description: "This defect was just reported. Please wait before submitting again.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const photoPaths = await uploadPhotos();
@@ -116,13 +127,16 @@ const DefectReportForm = ({
         ride_id: rideId,
         check_id: checkId || null,
         user_id: effectiveUserId,
-        description: description.trim(),
+        reported_by_user_id: user.id,
+        description: trimmedDesc,
         severity,
         location_on_ride: locationOnRide.trim() || null,
         photo_paths: photoPaths,
         status: 'open'
-      });
+      } as any);
       if (error) throw error;
+
+      lastSubmitRef.current = { rideId, description: trimmedDesc, time: Date.now() };
 
       if (isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
         const severityLabel = severity === 'stop_operation' ? '🛑 STOP USE' : severity === 'urgent' ? '⚠️ Important' : 'Low';
