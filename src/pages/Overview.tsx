@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { TrialStatus } from "@/components/TrialStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
@@ -20,12 +19,26 @@ import DefectReportDialog from "@/components/DefectReportDialog";
 import { Badge } from "@/components/ui/badge";
 import appLogo from "@/assets/app-logo.jpg";
 import { useActionNeededCount } from "@/hooks/useActionNeededCount";
+import { useStaff } from "@/contexts/StaffContext";
 
 const Overview = () => {
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useOverviewData();
   const actionNeededCount = useActionNeededCount();
   const { subscription } = useSubscription();
+  const {
+    isStaff,
+    isOwner,
+    staffMembership,
+    canAccessDocuments,
+    canAccessMaintenance,
+    canAccessChecks,
+    canAccessRiskAssessments,
+    canAccessCalendar,
+    canAccessBilling,
+    canAccessSettings,
+    canManageStaff,
+  } = useStaff();
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -56,6 +69,85 @@ const Overview = () => {
   const hasActionNeeded = actionNeededCount > 0;
   const hasBadge = actionNeededCount > 0;
 
+  // ── Build permission-filtered quick actions ──
+  const quickActions = [
+    canAccessChecks && {
+      key: 'checks',
+      icon: CheckSquare,
+      label: 'Start Check',
+      sublabel: 'Daily / pre-use check',
+      onClick: () => navigate('/checks'),
+    },
+    {
+      key: 'defect',
+      icon: AlertTriangle,
+      label: 'Report Defect',
+      sublabel: 'Log an issue',
+      isDefectDialog: true,
+    },
+    canAccessDocuments && {
+      key: 'documents',
+      icon: FileText,
+      label: 'Upload Document',
+      sublabel: 'Add a certificate',
+      onClick: () => navigate('/documents'),
+    },
+    canAccessMaintenance && {
+      key: 'maintenance',
+      icon: Wrench,
+      label: 'Log Maintenance',
+      sublabel: 'Record a repair',
+      onClick: () => navigate('/maintenance'),
+    },
+  ].filter(Boolean) as Array<{
+    key: string;
+    icon: typeof CheckSquare;
+    label: string;
+    sublabel: string;
+    onClick?: () => void;
+    isDefectDialog?: boolean;
+  }>;
+
+  // ── Build permission-filtered modules ──
+  const modules = [
+    { icon: Cog, label: "Equipment", path: "/rides", visible: true },
+    { icon: CheckSquare, label: "Checks", path: "/checks", visible: canAccessChecks },
+    { icon: FileText, label: "Documents", path: "/documents", visible: canAccessDocuments },
+    { icon: Wrench, label: "Maintenance", path: "/maintenance", visible: canAccessMaintenance },
+    { icon: ShieldCheck, label: "Assessments", path: "/risk-assessments", visible: canAccessRiskAssessments },
+    { icon: Calendar, label: "Calendar", path: "/calendar", visible: canAccessCalendar },
+    { icon: Bell, label: "Notifications", path: "/notifications", visible: !isStaff },
+    { icon: Settings, label: "Settings", path: "/settings", visible: canAccessSettings },
+  ].filter(m => m.visible);
+
+  // ── Build permission-filtered stat cards ──
+  const statCards = [
+    {
+      label: 'Equipment',
+      value: stats.activeRides,
+      icon: Cog,
+      path: '/rides',
+      visible: true,
+    },
+    {
+      label: 'Open Defects',
+      value: data?.openDefectsCount ?? 0,
+      icon: AlertTriangle,
+      path: '/defects',
+      search: '?status=open',
+      accent: (data?.openDefectsCount ?? 0) > 0,
+      visible: true,
+    },
+    {
+      label: 'Docs Expiring',
+      value: (data?.expiredDocsCount ?? 0) + ((data?.complianceAlerts ?? []).find(a => a.type === 'due_soon')?.count ?? 0),
+      icon: FileText,
+      path: '/documents',
+      accent: (data?.expiredDocsCount ?? 0) > 0,
+      visible: canAccessDocuments,
+    },
+  ].filter(s => s.visible);
+
   return (
     <>
       <WelcomeModal />
@@ -71,23 +163,32 @@ const Overview = () => {
                 className="h-11 w-11 rounded-2xl object-cover shadow-card shrink-0 border border-border/30"
               />
               <div className="min-w-0">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard</h1>
-                <Badge
-                  variant={userPlan === 'trial' ? 'secondary' : 'default'}
-                  className={`text-[10px] mt-0.5 ${
-                    subscription?.subscriptionStatus === 'past_due'
-                      ? 'bg-destructive/10 text-destructive border-destructive/30'
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
+                  {isStaff ? 'My Shift' : 'Dashboard'}
+                </h1>
+                {/* Staff: show org name. Owner: show plan badge */}
+                {isStaff ? (
+                  <span className="text-xs text-muted-foreground">
+                    {staffMembership?.organisationName}
+                  </span>
+                ) : (
+                  <Badge
+                    variant={userPlan === 'trial' ? 'secondary' : 'default'}
+                    className={`text-[10px] mt-0.5 ${
+                      subscription?.subscriptionStatus === 'past_due'
+                        ? 'bg-destructive/10 text-destructive border-destructive/30'
+                        : subscription?.cancelAtPeriodEnd
+                        ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]'
+                        : userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''
+                    }`}
+                  >
+                    {subscription?.subscriptionStatus === 'past_due'
+                      ? 'Payment Failed'
                       : subscription?.cancelAtPeriodEnd
-                      ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]'
-                      : userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''
-                  }`}
-                >
-                  {subscription?.subscriptionStatus === 'past_due'
-                    ? 'Payment Failed'
-                    : subscription?.cancelAtPeriodEnd
-                    ? 'Cancelling'
-                    : formatPlanWithDescription(userPlan)}
-                </Badge>
+                      ? 'Cancelling'
+                      : formatPlanWithDescription(userPlan)}
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -123,34 +224,13 @@ const Overview = () => {
             </button>
           )}
 
-          <TrialStatus onUpgrade={() => navigate('/billing')} />
-          <ItemLimitWarning />
+          {/* Owner-only: trial/billing warnings */}
+          {!isStaff && <TrialStatus onUpgrade={() => navigate('/billing')} />}
+          {!isStaff && <ItemLimitWarning />}
 
-          {/* ── STATS — 3 simple cards ──────────────── */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              {
-                label: 'Equipment',
-                value: stats.activeRides,
-                icon: Cog,
-                path: '/rides',
-              },
-              {
-                label: 'Open Defects',
-                value: data?.openDefectsCount ?? 0,
-                icon: AlertTriangle,
-                path: '/defects',
-                search: '?status=open',
-                accent: (data?.openDefectsCount ?? 0) > 0,
-              },
-              {
-                label: 'Docs Expiring',
-                value: (data?.expiredDocsCount ?? 0) + ((data?.complianceAlerts ?? []).find(a => a.type === 'due_soon')?.count ?? 0),
-                icon: FileText,
-                path: '/documents',
-                accent: (data?.expiredDocsCount ?? 0) > 0,
-              },
-            ].map(({ label, value, icon: Icon, path, accent, search: searchStr }) => (
+          {/* ── STATS — permission-filtered ─────────── */}
+          <div className={`grid gap-3 ${statCards.length >= 3 ? 'grid-cols-3' : statCards.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {statCards.map(({ label, value, icon: Icon, path, accent, search: searchStr }) => (
               <button
                 key={label}
                 onClick={() => navigate({ pathname: path, search: searchStr })}
@@ -168,92 +248,75 @@ const Overview = () => {
           <NeedsAttentionPanel />
 
           {/* ── QUICK ACTIONS ──────────────────────── */}
-          <div>
-            <h2 className="text-[13px] font-bold text-foreground mb-2 tracking-[1px] uppercase">Quick Actions</h2>
-            <div className="h-px bg-border mb-4" />
+          {quickActions.length > 0 && (
+            <div>
+              <h2 className="text-[13px] font-bold text-foreground mb-2 tracking-[1px] uppercase">Quick Actions</h2>
+              <div className="h-px bg-border mb-4" />
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => navigate('/checks')}
-                className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
-                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-              >
-                <CheckSquare className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
-                <div>
-                  <span className="text-sm font-medium text-foreground">Start Check</span>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">Daily / pre-use check</span>
-                </div>
-              </button>
+              <div className={`grid gap-3 ${quickActions.length >= 4 ? 'grid-cols-2' : quickActions.length === 3 ? 'grid-cols-2' : quickActions.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {quickActions.map((action) => {
+                  const ActionIcon = action.icon;
 
-              <DefectReportDialog
-                trigger={
+                  if (action.isDefectDialog) {
+                    return (
+                      <DefectReportDialog
+                        key={action.key}
+                        trigger={
+                          <button
+                            className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                            style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+                          >
+                            <ActionIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
+                            <div>
+                              <span className="text-sm font-medium text-foreground">{action.label}</span>
+                              <span className="text-[11px] text-muted-foreground block mt-0.5">{action.sublabel}</span>
+                            </div>
+                          </button>
+                        }
+                      />
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={action.key}
+                      onClick={action.onClick}
+                      className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                      style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+                    >
+                      <ActionIcon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
+                      <div>
+                        <span className="text-sm font-medium text-foreground">{action.label}</span>
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">{action.sublabel}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── NAVIGATE MODULES — permission-filtered ── */}
+          {modules.length > 0 && (
+            <div>
+              <h2 className="text-[13px] font-bold text-foreground mb-2 tracking-[1px] uppercase">Modules</h2>
+              <div className="h-px bg-border mb-4" />
+
+              <div className="grid grid-cols-4 gap-3">
+                {modules.map(item => (
                   <button
-                    className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                    key={item.label}
+                    onClick={() => navigate(item.path)}
+                    className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all hover:border-primary/50 hover:bg-secondary group"
                     style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
                   >
-                    <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
-                    <div>
-                      <span className="text-sm font-medium text-foreground">Report Defect</span>
-                      <span className="text-[11px] text-muted-foreground block mt-0.5">Log an issue</span>
-                    </div>
+                    <item.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
+                    <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center leading-tight transition-colors">{item.label}</span>
                   </button>
-                }
-              />
-
-              <button
-                onClick={() => navigate('/documents')}
-                className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
-                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-              >
-                <FileText className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
-                <div>
-                  <span className="text-sm font-medium text-foreground">Upload Document</span>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">Add a certificate</span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => navigate('/maintenance')}
-                className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
-                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-              >
-                <Wrench className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
-                <div>
-                  <span className="text-sm font-medium text-foreground">Log Maintenance</span>
-                  <span className="text-[11px] text-muted-foreground block mt-0.5">Record a repair</span>
-                </div>
-              </button>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* ── NAVIGATE MODULES ───────────────────── */}
-          <div>
-            <h2 className="text-[13px] font-bold text-foreground mb-2 tracking-[1px] uppercase">Modules</h2>
-            <div className="h-px bg-border mb-4" />
-
-            <div className="grid grid-cols-4 gap-3">
-              {[
-                { icon: Cog,         label: "Equipment",     path: "/rides" },
-                { icon: CheckSquare, label: "Checks",        path: "/checks" },
-                { icon: FileText,    label: "Documents",     path: "/documents" },
-                { icon: Wrench,      label: "Maintenance",   path: "/maintenance" },
-                { icon: ShieldCheck, label: "Assessments",   path: "/risk-assessments" },
-                { icon: Calendar,    label: "Calendar",      path: "/calendar" },
-                { icon: Bell,        label: "Notifications", path: "/notifications" },
-                { icon: Settings,    label: "Settings",      path: "/settings" },
-              ].map(item => (
-                <button
-                  key={item.label}
-                  onClick={() => navigate(item.path)}
-                  className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all hover:border-primary/50 hover:bg-secondary group"
-                  style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-                >
-                  <item.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground text-center leading-tight transition-colors">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
         </div>
       </PullToRefresh>
