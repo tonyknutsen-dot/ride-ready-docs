@@ -246,6 +246,21 @@ serve(async (req) => {
 
       if (insertErr) throw new Error(`Failed to create flag: ${insertErr.message}`);
 
+      // Forensic audit log for manual flag creation
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: userData.user.id,
+        action: 'create',
+        resource_type: 'subscription',
+        resource_id: body.user_id as string,
+        details: {
+          action: 'manual_flag_created',
+          flag_reason: body.flag_reason || 'manual_review',
+          severity: body.severity || 'warning',
+        },
+        result: 'success',
+        context_hint: 'Manual billing flag',
+      });
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
