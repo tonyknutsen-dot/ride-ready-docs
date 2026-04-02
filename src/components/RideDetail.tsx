@@ -355,7 +355,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           const activeMoreLabel = moreTabs.find(t => t.value === activeTab)?.label;
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-              <TabsList className="w-full h-auto p-0.5 bg-transparent rounded-none grid grid-cols-4">
+              <TabsList className={`w-full h-auto p-0.5 bg-transparent rounded-none grid grid-cols-${primaryTabs.length + 1}`}>
                 {primaryTabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
