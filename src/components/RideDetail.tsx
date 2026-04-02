@@ -581,10 +581,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
         </TabsContent>
 
-        {/* ─── DOCS TAB ─── */}
-        <TabsContent value="documents" className="animate-fade-in">
-          <RideDocuments ride={ride} />
-        </TabsContent>
+        {/* ─── DOCS TAB — owner only ─── */}
+        {canAccessDocuments && (
+          <TabsContent value="documents" className="animate-fade-in">
+            <RideDocuments ride={ride} />
+          </TabsContent>
+        )}
 
         {/* ─── CHECKS TAB ─── */}
         <TabsContent value="checks" className="animate-fade-in">
