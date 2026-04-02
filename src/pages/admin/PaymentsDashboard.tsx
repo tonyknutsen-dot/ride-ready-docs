@@ -513,7 +513,13 @@ export default function PaymentsDashboard() {
           </div>
 
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-3 space-y-3">
+            <Input
+              placeholder="Search by name, company, status, plan, or flag reason…"
+              value={accountSearch}
+              onChange={(e) => setAccountSearch(e.target.value)}
+              className="h-9 text-sm"
+            />
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {problemUserCount > 0 ? (
                 <Badge variant="destructive" className="text-xs px-2.5 py-1 font-semibold">
