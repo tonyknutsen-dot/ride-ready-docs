@@ -366,15 +366,17 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* Checks route */}
+              {/* Checks routes — gated by staff permission */}
               <Route 
                 path="/checks" 
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <Checks />
-                      </AppLayout>
+                      <StaffRoute requiredPermission="staff">
+                        <AppLayout>
+                          <Checks />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -385,9 +387,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <ChecksRegister />
-                      </AppLayout>
+                      <StaffRoute requiredPermission="staff">
+                        <AppLayout>
+                          <ChecksRegister />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -398,7 +402,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <ChecklistExecutionPage />
+                      <StaffRoute requiredPermission="staff">
+                        <ChecklistExecutionPage />
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
