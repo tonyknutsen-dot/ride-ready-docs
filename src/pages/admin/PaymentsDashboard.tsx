@@ -345,6 +345,13 @@ export default function PaymentsDashboard() {
 
   const { summary, failedPayments, recentPayments, subscriptionBreakdown, userHealth, billingEventLog, accountFlags, problemUserCount } = data;
 
+  // Build flag lookup by user_id
+  const flagsByUser: Record<string, AccountFlag[]> = {};
+  for (const flag of (accountFlags || [])) {
+    if (!flagsByUser[flag.user_id]) flagsByUser[flag.user_id] = [];
+    flagsByUser[flag.user_id].push(flag);
+  }
+
   const displayedUsers = useMemo(() => {
     let users = showAllUsers
       ? userHealth
@@ -367,13 +374,6 @@ export default function PaymentsDashboard() {
     }
     return users;
   }, [showAllUsers, userHealth, accountSearch, flagsByUser]);
-
-  // Build flag lookup by user_id
-  const flagsByUser: Record<string, AccountFlag[]> = {};
-  for (const flag of (accountFlags || [])) {
-    if (!flagsByUser[flag.user_id]) flagsByUser[flag.user_id] = [];
-    flagsByUser[flag.user_id].push(flag);
-  }
 
   const activeFlagsForUser = (userId: string) =>
     (flagsByUser[userId] || []).filter(f => !['resolved', 'ignored'].includes(f.review_status));
