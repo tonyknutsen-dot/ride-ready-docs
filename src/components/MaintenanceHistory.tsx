@@ -850,6 +850,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
                         {format(parseISO(record.maintenance_date), 'd MMM yyyy')}
                       </span>
                     </div>
+                    {(canEditRecord(record) || canDeleteRecord(record)) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground"
@@ -858,13 +859,20 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteRecordId(record.id); }}>
-                          <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                        </DropdownMenuItem>
+                        {canEditRecord(record) && (
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
+                        )}
+                        {canDeleteRecord(record) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteRecordId(record.id); }}>
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </div>
 
                   <div className="space-y-2">
