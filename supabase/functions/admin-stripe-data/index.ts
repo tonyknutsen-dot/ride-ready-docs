@@ -211,6 +211,21 @@ serve(async (req) => {
 
       if (updateErr) throw new Error(`Failed to update flag: ${updateErr.message}`);
 
+      // Forensic audit log for flag change
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: userData.user.id,
+        action: 'update',
+        resource_type: 'subscription',
+        resource_id: flagId,
+        details: {
+          action: 'flag_status_change',
+          new_review_status: body.review_status || null,
+          admin_note: body.admin_note || null,
+        },
+        result: 'success',
+        context_hint: body.review_status ? `Flag → ${body.review_status}` : 'Flag note added',
+      });
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
