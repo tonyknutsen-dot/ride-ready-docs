@@ -35,9 +35,7 @@ const Overview = () => {
     canAccessChecks,
     canAccessRiskAssessments,
     canAccessCalendar,
-    canAccessBilling,
     canAccessSettings,
-    canManageStaff,
   } = useStaff();
 
   const handleRefresh = useCallback(async () => {
