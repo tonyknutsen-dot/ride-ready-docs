@@ -245,8 +245,10 @@ export default function PaymentsDashboard() {
   const [activeTab, setActiveTab] = useState('failed');
   const [updatingFlag, setUpdatingFlag] = useState<string | null>(null);
   const [showTechnicalEvents, setShowTechnicalEvents] = useState(false);
+  const [accountSearch, setAccountSearch] = useState('');
   const tabsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { logEvent } = useAuditLog();
 
   const fetchData = async () => {
     setLoading(true);
