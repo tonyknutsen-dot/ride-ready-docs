@@ -3,7 +3,7 @@ import { TrialStatus } from "@/components/TrialStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
-  Settings, Bell, AlertTriangle, ChevronRight, Clock, ShieldCheck
+  Settings, Bell, AlertTriangle, ChevronRight, ShieldCheck
 } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
