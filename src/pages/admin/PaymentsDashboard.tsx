@@ -303,6 +303,10 @@ export default function PaymentsDashboard() {
       if (fnError) throw fnError;
       if (response.error) throw new Error(response.error);
       toast({ title: 'Flag updated' });
+      logEvent('update', 'subscription', flagId, {
+        action: 'flag_status_change',
+        ...updates,
+      }, { contextHint: updates.review_status ? `Flag → ${updates.review_status}` : 'Flag note added' });
       await fetchData();
     } catch (err: any) {
       toast({ title: 'Failed to update flag', description: err.message, variant: 'destructive' });
