@@ -161,6 +161,25 @@ serve(async (req) => {
         details: { resynced_by: userData.user.id },
       });
 
+      // Forensic audit log
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: userData.user.id,
+        action: 'update',
+        resource_type: 'subscription',
+        resource_id: targetUserId,
+        details: {
+          action: 'manual_resync',
+          mismatch_found: mismatch,
+          stripe_status: stripeStatus,
+          stripe_plan: stripePlan,
+        },
+        before_data: { status: profile.subscription_status, plan: profile.subscription_plan },
+        after_data: { status: newStatus, plan: newPlan },
+        changed_fields: mismatch ? ['subscription_status', 'subscription_plan'] : null,
+        result: 'success',
+        context_hint: 'Billing re-sync',
+      });
+
       return new Response(JSON.stringify({ success: true, mismatch, newStatus, newPlan }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
