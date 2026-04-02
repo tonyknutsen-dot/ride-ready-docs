@@ -1006,6 +1006,7 @@ export type Database = {
           location_on_ride: string | null
           photo_paths: string[] | null
           reported_at: string
+          reported_by_user_id: string | null
           resolution_notes: string | null
           resolved_at: string | null
           resolved_by: string | null
@@ -1024,6 +1025,7 @@ export type Database = {
           location_on_ride?: string | null
           photo_paths?: string[] | null
           reported_at?: string
+          reported_by_user_id?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -1042,6 +1044,7 @@ export type Database = {
           location_on_ride?: string | null
           photo_paths?: string[] | null
           reported_at?: string
+          reported_by_user_id?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
