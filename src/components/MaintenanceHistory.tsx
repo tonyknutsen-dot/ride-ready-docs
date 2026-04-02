@@ -31,6 +31,9 @@ import ExportActionsDialog, { type ExportResult } from '@/components/ExportActio
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 import RelatedDefectsSection from '@/components/RelatedDefectsSection';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
 // Types
 type Ride = Tables<'rides'> & {
