@@ -8,6 +8,7 @@ import { AlertOctagon, Clock, Wrench, Check, WifiOff, ChevronRight, Camera, MapP
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { formatDistanceToNow } from 'date-fns';
 import { setCache, getCache } from '@/lib/offlineCache';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
@@ -52,6 +53,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   const [photoUrls, setPhotoUrls] = useState<{ [defectId: string]: string[] }>({});
   const { toast } = useToast();
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const navigate = useNavigate();
 
   const cacheKey = `defects:${rideId}:${showResolved ? 'all' : 'open'}`;
@@ -68,7 +70,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
       return;
     }
     try {
-      let query = supabase.from('defects').select('*').eq('ride_id', rideId).eq('user_id', user?.id).order('reported_at', { ascending: false });
+      let query = supabase.from('defects').select('*').eq('ride_id', rideId).eq('user_id', effectiveUserId).order('reported_at', { ascending: false });
       if (!showResolved) query = query.neq('status', 'resolved');
       const { data, error } = await query;
       if (error) throw error;

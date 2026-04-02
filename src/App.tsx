@@ -346,9 +346,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <DefectRegister />
-                      </AppLayout>
+                      <StaffRoute requiredPermission="staff">
+                        <AppLayout>
+                          <DefectRegister />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -359,9 +361,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <DefectReport />
-                      </AppLayout>
+                      <StaffRoute requiredPermission="staff">
+                        <AppLayout>
+                          <DefectReport />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
