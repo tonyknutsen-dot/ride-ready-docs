@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Upload, Search, Trash2, Edit, Mail, MailX, Users } from "lucide-react";
+import { Plus, Upload, Search, Trash2, Edit, Mail, MailX, Users, Loader2 } from "lucide-react";
 import { CSVImportDialog } from "./CSVImportDialog";
 import { useAuditLog } from "@/hooks/useAuditLog";
 
@@ -26,11 +26,15 @@ interface MarketingContact {
   unsubscribed_at: string | null;
 }
 
+const PAGE_SIZE = 50;
+
 export const ContactManager = () => {
   const { user } = useAuth();
   const { logEvent } = useAuditLog();
   const [contacts, setContacts] = useState<MarketingContact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -43,29 +47,95 @@ export const ContactManager = () => {
     tags: "",
   });
 
-  const fetchContacts = useCallback(async () => {
+  // Counts — fetched separately for accuracy
+  const [totalCount, setTotalCount] = useState(0);
+  const [subscribedCount, setSubscribedCount] = useState(0);
+  const [unsubscribedCount, setUnsubscribedCount] = useState(0);
+
+  const fetchCounts = useCallback(async () => {
+    if (!user) return;
+    const { count: total } = await supabase
+      .from("marketing_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("deleted_at", null);
+
+    const { count: subscribed } = await supabase
+      .from("marketing_contacts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_subscribed", true)
+      .is("deleted_at", null);
+
+    setTotalCount(total || 0);
+    setSubscribedCount(subscribed || 0);
+    setUnsubscribedCount((total || 0) - (subscribed || 0));
+  }, [user]);
+
+  const fetchContacts = useCallback(async (append = false) => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const from = append ? contacts.length : 0;
+      let query = supabase
         .from("marketing_contacts")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
 
+      if (searchQuery.trim()) {
+        const q = `%${searchQuery.trim()}%`;
+        query = query.or(`email.ilike.${q},name.ilike.${q},company_name.ilike.${q}`);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      setContacts(data || []);
+
+      const fetched = data || [];
+      if (append) {
+        setContacts(prev => [...prev, ...fetched]);
+      } else {
+        setContacts(fetched);
+      }
+      setHasMore(fetched.length === PAGE_SIZE);
     } catch (error: any) {
       console.error("Error fetching contacts:", error);
       toast.error("Failed to load contacts");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [user]);
+  }, [user, searchQuery]);
 
   useEffect(() => {
-    fetchContacts();
-  }, [fetchContacts]);
+    setLoading(true);
+    fetchContacts(false);
+    fetchCounts();
+  }, [fetchContacts, fetchCounts]);
+
+  // Debounce search
+  const [searchTimer, setSearchTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (searchTimer) clearTimeout(searchTimer);
+    setSearchTimer(setTimeout(() => {
+      setLoading(true);
+      fetchContacts(false);
+    }, 300));
+  };
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    fetchContacts(true);
+  };
+
+  const refreshAll = () => {
+    setLoading(true);
+    fetchContacts(false);
+    fetchCounts();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +192,7 @@ export const ContactManager = () => {
       setFormData({ email: "", name: "", company_name: "", notes: "", tags: "" });
       setEditingContact(null);
       setShowAddDialog(false);
-      fetchContacts();
+      refreshAll();
     } catch (error: any) {
       console.error("Error saving contact:", error);
       toast.error("Failed to save contact");
@@ -144,18 +214,20 @@ export const ContactManager = () => {
   const handleDelete = async (contactId: string) => {
     try {
       const contact = contacts.find(c => c.id === contactId);
+
+      // Soft-delete: set deleted_at timestamp
       const { error } = await supabase
         .from("marketing_contacts")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq("id", contactId);
 
       if (error) throw error;
       logEvent('delete', 'marketing_contact', contactId, { email: contact?.email }, {
         before: { email: contact?.email, name: contact?.name, is_subscribed: contact?.is_subscribed },
-        contextHint: 'manual deletion',
+        contextHint: 'soft delete',
       });
-      toast.success("Contact deleted");
-      fetchContacts();
+      toast.success("Contact removed");
+      refreshAll();
     } catch (error: any) {
       console.error("Error deleting contact:", error);
       toast.error("Failed to delete contact");
@@ -178,31 +250,19 @@ export const ContactManager = () => {
         contextHint: 'manual resubscribe',
       });
       toast.success("Contact resubscribed");
-      fetchContacts();
+      refreshAll();
     } catch (error: any) {
       console.error("Error resubscribing:", error);
       toast.error("Failed to resubscribe contact");
     }
   };
 
-  const filteredContacts = contacts.filter((contact) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      contact.email.toLowerCase().includes(query) ||
-      contact.name?.toLowerCase().includes(query) ||
-      contact.company_name?.toLowerCase().includes(query) ||
-      contact.tags?.some((tag) => tag.toLowerCase().includes(query))
-    );
-  });
-
-  const subscribedCount = contacts.filter((c) => c.is_subscribed).length;
-  const unsubscribedCount = contacts.filter((c) => !c.is_subscribed).length;
-
-  if (loading) {
+  if (loading && contacts.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">Loading contacts...</p>
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Loading contacts...</p>
         </CardContent>
       </Card>
     );
@@ -215,7 +275,7 @@ export const ContactManager = () => {
         <Card>
           <CardContent className="py-4 text-center">
             <Users className="h-6 w-6 mx-auto text-primary mb-1" />
-            <p className="text-2xl font-bold">{contacts.length}</p>
+            <p className="text-2xl font-bold">{totalCount}</p>
             <p className="text-xs text-muted-foreground">Total Contacts</p>
           </CardContent>
         </Card>
@@ -242,7 +302,7 @@ export const ContactManager = () => {
           <Input
             placeholder="Search contacts..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -334,21 +394,21 @@ export const ContactManager = () => {
       {/* Contact List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Contacts ({filteredContacts.length})</CardTitle>
+          <CardTitle className="text-lg">Contacts ({contacts.length}{hasMore ? "+" : ""})</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredContacts.length === 0 ? (
+          {contacts.length === 0 ? (
             <div className="text-center py-8">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">
-                {contacts.length === 0 
-                  ? "No contacts yet. Add your first contact or import from CSV."
-                  : "No contacts match your search."}
+                {searchQuery
+                  ? "No contacts match your search."
+                  : "No contacts yet. Add your first contact or import from CSV."}
               </p>
             </div>
           ) : (
             <div className="divide-y">
-              {filteredContacts.map((contact) => (
+              {contacts.map((contact) => (
                 <div
                   key={contact.id}
                   className={`py-3 flex flex-col sm:flex-row sm:items-center gap-2 ${
@@ -405,15 +465,15 @@ export const ContactManager = () => {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Contact</AlertDialogTitle>
+                          <AlertDialogTitle>Remove Contact</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete this contact? This action cannot be undone.
+                            This contact will be removed from your list. Campaign history for this contact will be preserved.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction onClick={() => handleDelete(contact.id)}>
-                            Delete
+                            Remove
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -423,13 +483,29 @@ export const ContactManager = () => {
               ))}
             </div>
           )}
+
+          {/* Load More */}
+          {hasMore && (
+            <div className="pt-4 text-center">
+              <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <CSVImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
-        onImportComplete={fetchContacts}
+        onImportComplete={refreshAll}
       />
     </div>
   );
