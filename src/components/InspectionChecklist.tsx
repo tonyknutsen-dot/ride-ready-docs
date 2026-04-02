@@ -1081,23 +1081,26 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               </h2>
               <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Checklist
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={generatePDF}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Overflow menu — hide admin actions from staff */}
+            {!isStaff && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Edit Checklist
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={generatePDF}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           <button
