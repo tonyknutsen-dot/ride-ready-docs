@@ -179,11 +179,10 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
   };
 
   const loadPreviousReports = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!effectiveUserId) return;
     const { data } = await supabase
       .from('documents').select('*')
-      .eq('ride_id', ride.id).eq('user_id', user.id)
+      .eq('ride_id', ride.id).eq('user_id', effectiveUserId)
       .eq('document_type', 'maintenance_report')
       .order('uploaded_at', { ascending: false });
     setPreviousReports(data || []);
