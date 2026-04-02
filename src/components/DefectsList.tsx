@@ -8,6 +8,7 @@ import { AlertOctagon, Clock, Wrench, Check, WifiOff, ChevronRight, Camera, MapP
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { formatDistanceToNow } from 'date-fns';
 import { setCache, getCache } from '@/lib/offlineCache';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
