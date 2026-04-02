@@ -65,7 +65,6 @@ const Overview = () => {
   }
 
   const hasActionNeeded = actionNeededCount > 0;
-  const hasBadge = actionNeededCount > 0;
 
   // ── Build permission-filtered quick actions ──
   const quickActions = [
