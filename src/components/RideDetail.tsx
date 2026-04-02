@@ -529,17 +529,19 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
 
           {/* Summary Stats — compact row */}
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className={`grid ${canAccessDocuments ? 'grid-cols-3' : 'grid-cols-2'} gap-2.5`}>
             <button onClick={() => setActiveTab('checks')} className="bg-card rounded-xl border border-border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all">
               <p className="text-lg font-bold text-foreground">{rideStats.loading ? '—' : rideStats.todayChecks}</p>
               <p className="text-[11px] text-muted-foreground leading-tight">Checks today</p>
             </button>
-            <button onClick={() => setActiveTab('documents')} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.hasExpiredDocs ? 'border-destructive/30' : rideStats.hasExpiringSoonDocs ? 'border-orange-300 dark:border-orange-800/40' : 'border-border'}`}>
-              <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : rideStats.hasExpiringSoonDocs ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
-                {rideStats.loading ? '—' : rideStats.hasExpiredDocs ? rideStats.expiredDocCount : rideStats.hasExpiringSoonDocs ? rideStats.expiringSoonDocCount : '✓'}
-              </p>
-              <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs expired' : rideStats.hasExpiringSoonDocs ? 'Docs expiring' : 'Docs current'}</p>
-            </button>
+            {canAccessDocuments && (
+              <button onClick={() => setActiveTab('documents')} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.hasExpiredDocs ? 'border-destructive/30' : rideStats.hasExpiringSoonDocs ? 'border-orange-300 dark:border-orange-800/40' : 'border-border'}`}>
+                <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : rideStats.hasExpiringSoonDocs ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                  {rideStats.loading ? '—' : rideStats.hasExpiredDocs ? rideStats.expiredDocCount : rideStats.hasExpiringSoonDocs ? rideStats.expiringSoonDocCount : '✓'}
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs expired' : rideStats.hasExpiringSoonDocs ? 'Docs expiring' : 'Docs current'}</p>
+              </button>
+            )}
             <button onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.openDefects > 0 ? 'border-destructive/30' : 'border-border'}`}>
               <p className={`text-lg font-bold ${rideStats.openDefects > 0 ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.openDefects}</p>
               <p className="text-[11px] text-muted-foreground leading-tight">Open defects</p>
