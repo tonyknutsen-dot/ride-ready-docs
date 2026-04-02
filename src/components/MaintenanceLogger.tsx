@@ -330,9 +330,20 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       return;
     }
 
+    // Duplicate prevention: block same equipment + similar description within 60 seconds
+    const now = Date.now();
+    const trimmedDesc = formData.description.trim();
+    if (lastSubmitRef.current
+      && lastSubmitRef.current.rideId === ride.id
+      && lastSubmitRef.current.description === trimmedDesc
+      && now - lastSubmitRef.current.time < 60_000) {
+      toast({ title: "Possible duplicate", description: "This maintenance record was just logged. Please wait before submitting again.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!effectiveUserId) {
+      if (!effectiveUserId || !user) {
         toast({ title: "Error", description: "You must be logged in.", variant: "destructive" });
         return;
       }
@@ -361,18 +372,21 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
       const { error } = await supabase.from('maintenance_records').insert([{
         user_id: effectiveUserId,
+        logged_by_user_id: user.id,
         ride_id: ride.id,
         maintenance_date: formData.maintenance_date.toISOString().split('T')[0],
         maintenance_type: formData.maintenance_type,
-        description: formData.description,
+        description: trimmedDesc,
         performed_by: formData.performed_by,
         parts_replaced: formData.parts_replaced || null,
         cost: formData.cost ? parseFloat(formData.cost) : null,
         notes: noteParts.length > 0 ? noteParts.join(' | ') : null,
         document_ids: documentIds.length > 0 ? documentIds : null,
-      }]);
+      } as any]);
 
       if (error) throw error;
+
+      lastSubmitRef.current = { rideId: ride.id, description: trimmedDesc, time: Date.now() };
 
       if (formData.linked_defect_id) {
         await supabase.from('defects').update({ status: 'in_progress' }).eq('id', formData.linked_defect_id);
