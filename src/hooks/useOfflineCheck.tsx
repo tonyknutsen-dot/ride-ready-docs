@@ -69,6 +69,8 @@ export function useOfflineCheck() {
           compliance_officer: check.complianceOfficer,
           environment_notes: check.environmentNotes,
           user_id: effectiveUserId,
+          // Forensic attribution: always record the actual logged-in user
+          performed_by_user_id: user.id,
         };
 
         // Add start notice acknowledgement fields if present

@@ -317,33 +317,37 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
 
   return (
     <div className="space-y-6">
-      <Alert>
-        <AlertDescription>
-          Create and manage daily inspection templates. Set one as active to use it for daily checks. You can edit, duplicate, or delete templates as needed.
-        </AlertDescription>
-      </Alert>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="space-y-2 min-w-0 flex-1">
-          <h3 className="text-xl font-semibold">Daily Check Templates</h3>
-          <p className="text-muted-foreground">
-            Manage custom daily check templates for {ride.ride_name}
-          </p>
+      {!isStaff && (
+        <Alert>
+          <AlertDescription>
+            Create and manage daily inspection templates. Set one as active to use it for daily checks. You can edit, duplicate, or delete templates as needed.
+          </AlertDescription>
+        </Alert>
+      )}
+      {!isStaff && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="space-y-2 min-w-0 flex-1">
+            <h3 className="text-xl font-semibold">Daily Check Templates</h3>
+            <p className="text-muted-foreground">
+              Manage custom daily check templates for {ride.ride_name}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={showArchived ? "secondary" : "outline"} 
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArchived ? "Hide Archived" : "Show Archived"}
+            </Button>
+            <Button onClick={() => setShowBuilder(true)} className="flex items-center space-x-2 shrink-0">
+              <Plus className="h-4 w-4" />
+              <span>Create Template</span>
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant={showArchived ? "secondary" : "outline"} 
-            size="sm"
-            onClick={() => setShowArchived(!showArchived)}
-          >
-            <Archive className="h-4 w-4 mr-2" />
-            {showArchived ? "Hide Archived" : "Show Archived"}
-          </Button>
-          <Button onClick={() => setShowBuilder(true)} className="flex items-center space-x-2 shrink-0">
-            <Plus className="h-4 w-4" />
-            <span>Create Template</span>
-          </Button>
-        </div>
-      </div>
+      )}
 
       {templates.length === 0 ? (
         <Card>
@@ -381,7 +385,8 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {!(template as any).is_archived && (
+                    {/* Hide all template management actions from staff */}
+                    {!isStaff && !(template as any).is_archived && (
                       <>
                         <TooltipProvider>
                           <Tooltip>
@@ -430,7 +435,11 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                         )}
                       </>
                     )}
-                    {(template as any).is_archived ? (
+                    {!isStaff && !(template as any).is_archived ? null : null}
+                    {template.is_active && isStaff && (
+                      <Badge variant="secondary">In Use</Badge>
+                    )}
+                    {!isStaff && (template as any).is_archived ? (
                       <Button
                         size="sm"
                         variant="outline"
@@ -440,105 +449,107 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                         Restore
                       </Button>
                     ) : null}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {!(template as any).is_archived && (
+                    {!isStaff && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {!(template as any).is_archived && (
+                            <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Archive className="h-4 w-4 mr-2" />
+                                  Archive
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Archive Template</AlertDialogTitle>
+                                  <AlertDialogDescription asChild>
+                                    <div>
+                                      <span>Archive "{template.template_name}"? It will be hidden from active use but preserved for historical records.</span>
+                                      {checkingLinked === template.id ? (
+                                        <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                                      ) : linkedChecksInfo[template.id]?.count > 0 ? (
+                                        <div className="mt-3 p-3 bg-muted border rounded-md">
+                                          <span className="block font-medium">This template has linked check records:</span>
+                                          <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                                            <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
+                                            <li>• Date range: <strong className="text-foreground">
+                                              {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString('en-GB')}
+                                            </strong></li>
+                                          </ul>
+                                          <span className="block mt-2 text-xs text-muted-foreground">
+                                            Archiving preserves all historical data.
+                                          </span>
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleArchiveTemplate(template.id)}>
+                                    Archive
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          {!(template as any).is_archived && <DropdownMenuSeparator />}
                           <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
                             <AlertDialogTrigger asChild>
-                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Archive className="h-4 w-4 mr-2" />
-                                Archive
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Permanently
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Archive Template</AlertDialogTitle>
+                                <AlertDialogTitle>Delete Template</AlertDialogTitle>
                                 <AlertDialogDescription asChild>
                                   <div>
-                                    <span>Archive "{template.template_name}"? It will be hidden from active use but preserved for historical records.</span>
+                                    <span>Are you sure you want to permanently delete "{template.template_name}"?</span>
                                     {checkingLinked === template.id ? (
                                       <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
                                     ) : linkedChecksInfo[template.id]?.count > 0 ? (
-                                      <div className="mt-3 p-3 bg-muted border rounded-md">
-                                        <span className="block font-medium">This template has linked check records:</span>
+                                      <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                                        <span className="block text-destructive font-medium">
+                                          ⚠️ Warning: This template has linked check records
+                                        </span>
                                         <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
                                           <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
                                           <li>• Date range: <strong className="text-foreground">
                                             {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString('en-GB')}
                                           </strong></li>
                                         </ul>
-                                        <span className="block mt-2 text-xs text-muted-foreground">
-                                          Archiving preserves all historical data.
+                                        <span className="block mt-2 text-xs text-destructive">
+                                          Consider archiving instead to preserve historical data.
                                         </span>
                                       </div>
-                                    ) : null}
+                                    ) : (
+                                      <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
+                                    )}
                                   </div>
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleArchiveTemplate(template.id)}>
-                                  Archive
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteTemplate(template.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete Permanently
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        )}
-                        {!(template as any).is_archived && <DropdownMenuSeparator />}
-                        <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Permanently
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                              <AlertDialogDescription asChild>
-                                <div>
-                                  <span>Are you sure you want to permanently delete "{template.template_name}"?</span>
-                                  {checkingLinked === template.id ? (
-                                    <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                                  ) : linkedChecksInfo[template.id]?.count > 0 ? (
-                                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                                      <span className="block text-destructive font-medium">
-                                        ⚠️ Warning: This template has linked check records
-                                      </span>
-                                      <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
-                                        <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
-                                        <li>• Date range: <strong className="text-foreground">
-                                          {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString('en-GB')}
-                                        </strong></li>
-                                      </ul>
-                                      <span className="block mt-2 text-xs text-destructive">
-                                        Consider archiving instead to preserve historical data.
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
-                                  )}
-                                </div>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteTemplate(template.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete Permanently
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
                 <CardDescription>

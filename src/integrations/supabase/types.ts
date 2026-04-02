@@ -647,6 +647,7 @@ export type Database = {
           is_test_data: boolean
           location: string | null
           notes: string | null
+          performed_by_user_id: string | null
           ride_id: string
           signature_data: string | null
           start_notice_acknowledged: boolean
@@ -669,6 +670,7 @@ export type Database = {
           is_test_data?: boolean
           location?: string | null
           notes?: string | null
+          performed_by_user_id?: string | null
           ride_id: string
           signature_data?: string | null
           start_notice_acknowledged?: boolean
@@ -691,6 +693,7 @@ export type Database = {
           is_test_data?: boolean
           location?: string | null
           notes?: string | null
+          performed_by_user_id?: string | null
           ride_id?: string
           signature_data?: string | null
           start_notice_acknowledged?: boolean
