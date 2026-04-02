@@ -1041,6 +1041,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   }
 
   if (!activeTemplate) {
+    // Staff cannot create templates — show a different message
+    if (isStaff) {
+      return (
+        <EmptyState
+          icon={FileText}
+          title="No Checklist Available"
+          description={`No ${frequency === 'preopening' ? 'pre-opening' : frequency} checklist has been set up for this equipment yet. Please contact your controller.`}
+        />
+      );
+    }
     return (
       <EmptyState
         icon={FileText}
