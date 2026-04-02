@@ -343,10 +343,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
     const documentIds: string[] = [];
     for (let i = 0; i < filePaths.length; i++) {
       const originalFile = newFiles[i];
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!effectiveUserId) throw new Error('User not authenticated');
       const { data, error } = await supabase.from('documents').insert([{
-        user_id: user.id, ride_id: ride.id, document_name: originalFile.name,
+        user_id: effectiveUserId, ride_id: ride.id, document_name: originalFile.name,
         document_type: 'maintenance', file_path: filePaths[i],
         mime_type: originalFile.type, file_size: originalFile.size,
         notes: `Maintenance record: ${recordDescription}`,
