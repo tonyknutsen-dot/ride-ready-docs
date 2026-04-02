@@ -657,8 +657,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
       }
 
       // Defect history
+      const defectUserId = effectiveUserId || user.id;
       const { data: defectsData } = await supabase.from('defects').select('*')
-        .eq('ride_id', ride.id).eq('user_id', user.id).order('reported_at', { ascending: false });
+        .eq('ride_id', ride.id).eq('user_id', defectUserId).order('reported_at', { ascending: false });
       const allDefects = defectsData || [];
       if (allDefects.length > 0) {
         doc.addPage(); yPos = 20;
