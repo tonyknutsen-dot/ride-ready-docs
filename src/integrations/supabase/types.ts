@@ -1773,6 +1773,7 @@ export type Database = {
           document_ids: string[] | null
           id: string
           is_test_data: boolean
+          logged_by_user_id: string | null
           maintenance_date: string
           maintenance_type: string
           next_maintenance_due: string | null
@@ -1790,6 +1791,7 @@ export type Database = {
           document_ids?: string[] | null
           id?: string
           is_test_data?: boolean
+          logged_by_user_id?: string | null
           maintenance_date: string
           maintenance_type: string
           next_maintenance_due?: string | null
@@ -1807,6 +1809,7 @@ export type Database = {
           document_ids?: string[] | null
           id?: string
           is_test_data?: boolean
+          logged_by_user_id?: string | null
           maintenance_date?: string
           maintenance_type?: string
           next_maintenance_due?: string | null
