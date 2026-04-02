@@ -509,13 +509,15 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   </button>
                 }
               />
-              <button
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
-                onClick={() => setActiveTab('documents')}
-              >
-                <FileText className="h-4 w-4 shrink-0" />
-                Upload Document
-              </button>
+              {canAccessDocuments && (
+                <button
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
+                  onClick={() => setActiveTab('documents')}
+                >
+                  <FileText className="h-4 w-4 shrink-0" />
+                  Upload Document
+                </button>
+              )}
               <button
                 className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform col-span-2"
                 onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
