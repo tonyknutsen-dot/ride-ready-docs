@@ -111,7 +111,7 @@ interface RideDetailProps {
 
 const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDetailProps) => {
   const { user } = useAuth();
-  const { isStaff } = useStaff();
+  const { isStaff, canAccessDocuments } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -257,7 +257,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const needsAttention: Array<{ key: string; icon: React.ElementType; label: string; detail: string; color: string; action?: () => void }> = [];
   
   if (!rideStats.loading) {
-    if (rideStats.hasExpiredDocs) {
+    if (rideStats.hasExpiredDocs && canAccessDocuments) {
       needsAttention.push({
         key: 'expired-docs',
         icon: Clock,
@@ -267,7 +267,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         action: () => setActiveTab('documents'),
       });
     }
-    if (rideStats.hasExpiringSoonDocs) {
+    if (rideStats.hasExpiringSoonDocs && canAccessDocuments) {
       needsAttention.push({
         key: 'expiring-docs',
         icon: Clock,
@@ -344,7 +344,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           const primaryTabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
-            { value: 'documents', label: 'Docs', Icon: FileText },
+            ...(canAccessDocuments ? [{ value: 'documents', label: 'Docs', Icon: FileText }] : []),
           ];
           const moreTabs = [
             { value: 'activity', label: 'Activity', Icon: History },
@@ -355,7 +355,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           const activeMoreLabel = moreTabs.find(t => t.value === activeTab)?.label;
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-              <TabsList className="w-full h-auto p-0.5 bg-transparent rounded-none grid grid-cols-4">
+              <TabsList className={`w-full h-auto p-0.5 bg-transparent rounded-none grid ${primaryTabs.length + 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 {primaryTabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
@@ -509,13 +509,15 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   </button>
                 }
               />
-              <button
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
-                onClick={() => setActiveTab('documents')}
-              >
-                <FileText className="h-4 w-4 shrink-0" />
-                Upload Document
-              </button>
+              {canAccessDocuments && (
+                <button
+                  className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
+                  onClick={() => setActiveTab('documents')}
+                >
+                  <FileText className="h-4 w-4 shrink-0" />
+                  Upload Document
+                </button>
+              )}
               <button
                 className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform col-span-2"
                 onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
@@ -527,17 +529,19 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
 
           {/* Summary Stats — compact row */}
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className={`grid ${canAccessDocuments ? 'grid-cols-3' : 'grid-cols-2'} gap-2.5`}>
             <button onClick={() => setActiveTab('checks')} className="bg-card rounded-xl border border-border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all">
               <p className="text-lg font-bold text-foreground">{rideStats.loading ? '—' : rideStats.todayChecks}</p>
               <p className="text-[11px] text-muted-foreground leading-tight">Checks today</p>
             </button>
-            <button onClick={() => setActiveTab('documents')} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.hasExpiredDocs ? 'border-destructive/30' : rideStats.hasExpiringSoonDocs ? 'border-orange-300 dark:border-orange-800/40' : 'border-border'}`}>
-              <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : rideStats.hasExpiringSoonDocs ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
-                {rideStats.loading ? '—' : rideStats.hasExpiredDocs ? rideStats.expiredDocCount : rideStats.hasExpiringSoonDocs ? rideStats.expiringSoonDocCount : '✓'}
-              </p>
-              <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs expired' : rideStats.hasExpiringSoonDocs ? 'Docs expiring' : 'Docs current'}</p>
-            </button>
+            {canAccessDocuments && (
+              <button onClick={() => setActiveTab('documents')} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.hasExpiredDocs ? 'border-destructive/30' : rideStats.hasExpiringSoonDocs ? 'border-orange-300 dark:border-orange-800/40' : 'border-border'}`}>
+                <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : rideStats.hasExpiringSoonDocs ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                  {rideStats.loading ? '—' : rideStats.hasExpiredDocs ? rideStats.expiredDocCount : rideStats.hasExpiringSoonDocs ? rideStats.expiringSoonDocCount : '✓'}
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs expired' : rideStats.hasExpiringSoonDocs ? 'Docs expiring' : 'Docs current'}</p>
+              </button>
+            )}
             <button onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.openDefects > 0 ? 'border-destructive/30' : 'border-border'}`}>
               <p className={`text-lg font-bold ${rideStats.openDefects > 0 ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.openDefects}</p>
               <p className="text-[11px] text-muted-foreground leading-tight">Open defects</p>
@@ -577,10 +581,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
         </TabsContent>
 
-        {/* ─── DOCS TAB ─── */}
-        <TabsContent value="documents" className="animate-fade-in">
-          <RideDocuments ride={ride} />
-        </TabsContent>
+        {/* ─── DOCS TAB — owner only ─── */}
+        {canAccessDocuments && (
+          <TabsContent value="documents" className="animate-fade-in">
+            <RideDocuments ride={ride} />
+          </TabsContent>
+        )}
 
         {/* ─── CHECKS TAB ─── */}
         <TabsContent value="checks" className="animate-fade-in">
