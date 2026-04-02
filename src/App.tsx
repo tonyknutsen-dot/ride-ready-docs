@@ -773,13 +773,15 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* Document Viewer - full page, no sidebar layout */}
+              {/* Document Viewer - full page, no sidebar layout — owner only */}
               <Route 
                 path="/documents/:documentId"
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <DocumentViewerPage />
+                      <StaffRoute ownerOnly>
+                        <DocumentViewerPage />
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -789,7 +791,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <DocumentViewerPage />
+                      <StaffRoute ownerOnly>
+                        <DocumentViewerPage />
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
