@@ -48,6 +48,7 @@ const DefectReportForm = ({
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const lastSubmitRef = useRef<{ rideId: string; description: string; time: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
