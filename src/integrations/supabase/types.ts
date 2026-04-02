@@ -468,7 +468,7 @@ export type Database = {
       campaign_recipients: {
         Row: {
           campaign_id: string
-          contact_id: string
+          contact_id: string | null
           created_at: string
           error_message: string | null
           id: string
@@ -477,7 +477,7 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
-          contact_id: string
+          contact_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -486,7 +486,7 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
-          contact_id?: string
+          contact_id?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
@@ -1817,6 +1817,7 @@ export type Database = {
         Row: {
           company_name: string | null
           created_at: string
+          deleted_at: string | null
           email: string
           id: string
           is_subscribed: boolean
@@ -1831,6 +1832,7 @@ export type Database = {
         Insert: {
           company_name?: string | null
           created_at?: string
+          deleted_at?: string | null
           email: string
           id?: string
           is_subscribed?: boolean
@@ -1845,6 +1847,7 @@ export type Database = {
         Update: {
           company_name?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string
           id?: string
           is_subscribed?: boolean
