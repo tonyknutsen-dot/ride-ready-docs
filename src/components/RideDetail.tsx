@@ -344,7 +344,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           const primaryTabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
-            { value: 'documents', label: 'Docs', Icon: FileText },
+            ...(canAccessDocuments ? [{ value: 'documents', label: 'Docs', Icon: FileText }] : []),
           ];
           const moreTabs = [
             { value: 'activity', label: 'Activity', Icon: History },
