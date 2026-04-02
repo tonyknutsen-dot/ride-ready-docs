@@ -176,6 +176,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   const [openDefects, setOpenDefects] = useState<Defect[]>([]);
   const [someoneElse, setSomeoneElse] = useState(false);
   const [loggedInUserName, setLoggedInUserName] = useState('');
+  const lastSubmitRef = useRef<{ rideId: string; description: string; time: number } | null>(null);
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
