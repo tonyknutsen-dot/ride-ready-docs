@@ -509,7 +509,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
         return;
       }
 
-      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+      const profileUserId = effectiveUserId || user.id;
+      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', profileUserId).single();
 
       let logoDataUrl: string | null = null;
       if (profile?.company_logo_path) {
