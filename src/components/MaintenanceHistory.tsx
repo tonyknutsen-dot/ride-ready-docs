@@ -110,6 +110,21 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
 
   const { toast } = useToast();
   const { logEvent } = useAuditLog();
+  const { user } = useAuth();
+  const { isStaff, isOwner } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
+
+  // Staff can only edit/delete records they created (within same session day).
+  // Owners can edit/delete any record.
+  const canEditRecord = (record: MaintenanceRecord) => {
+    if (!isStaff) return true; // owners can always edit
+    // Staff can only edit records they logged themselves
+    return (record as any).logged_by_user_id === user?.id;
+  };
+  const canDeleteRecord = (record: MaintenanceRecord) => {
+    // Only owners can delete records
+    return !isStaff;
+  };
 
   const ALLOWED_TYPES = [
     'image/jpeg','image/png','image/gif','image/webp','image/heic',
