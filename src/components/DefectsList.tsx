@@ -53,6 +53,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   const [photoUrls, setPhotoUrls] = useState<{ [defectId: string]: string[] }>({});
   const { toast } = useToast();
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const navigate = useNavigate();
 
   const cacheKey = `defects:${rideId}:${showResolved ? 'all' : 'open'}`;
