@@ -111,7 +111,7 @@ interface RideDetailProps {
 
 const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDetailProps) => {
   const { user } = useAuth();
-  const { isStaff } = useStaff();
+  const { isStaff, canAccessDocuments } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const navigate = useNavigate();
