@@ -280,6 +280,12 @@ export default function PaymentsDashboard() {
           ? `Status updated to ${response.newStatus}, plan: ${response.newPlan || '—'}`
           : 'Profile is in sync with Stripe.',
       });
+      logEvent('update', 'subscription', userId, {
+        action: 'manual_resync',
+        mismatch_found: response.mismatch,
+        new_status: response.newStatus,
+        new_plan: response.newPlan,
+      }, { contextHint: 'Billing re-sync' });
       await fetchData();
     } catch (err: any) {
       toast({ title: 'Re-sync failed', description: err.message, variant: 'destructive' });
