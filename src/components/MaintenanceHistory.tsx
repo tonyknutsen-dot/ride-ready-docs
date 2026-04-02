@@ -31,6 +31,9 @@ import ExportActionsDialog, { type ExportResult } from '@/components/ExportActio
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 import RelatedDefectsSection from '@/components/RelatedDefectsSection';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
 // Types
 type Ride = Tables<'rides'> & {
@@ -107,6 +110,21 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
 
   const { toast } = useToast();
   const { logEvent } = useAuditLog();
+  const { user } = useAuth();
+  const { isStaff, isOwner } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
+
+  // Staff can only edit/delete records they created (within same session day).
+  // Owners can edit/delete any record.
+  const canEditRecord = (record: MaintenanceRecord) => {
+    if (!isStaff) return true; // owners can always edit
+    // Staff can only edit records they logged themselves
+    return (record as any).logged_by_user_id === user?.id;
+  };
+  const canDeleteRecord = (record: MaintenanceRecord) => {
+    // Only owners can delete records
+    return !isStaff;
+  };
 
   const ALLOWED_TYPES = [
     'image/jpeg','image/png','image/gif','image/webp','image/heic',
@@ -161,11 +179,10 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
   };
 
   const loadPreviousReports = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!effectiveUserId) return;
     const { data } = await supabase
       .from('documents').select('*')
-      .eq('ride_id', ride.id).eq('user_id', user.id)
+      .eq('ride_id', ride.id).eq('user_id', effectiveUserId)
       .eq('document_type', 'maintenance_report')
       .order('uploaded_at', { ascending: false });
     setPreviousReports(data || []);
@@ -326,10 +343,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
     const documentIds: string[] = [];
     for (let i = 0; i < filePaths.length; i++) {
       const originalFile = newFiles[i];
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!effectiveUserId) throw new Error('User not authenticated');
       const { data, error } = await supabase.from('documents').insert([{
-        user_id: user.id, ride_id: ride.id, document_name: originalFile.name,
+        user_id: effectiveUserId, ride_id: ride.id, document_name: originalFile.name,
         document_type: 'maintenance', file_path: filePaths[i],
         mime_type: originalFile.type, file_size: originalFile.size,
         notes: `Maintenance record: ${recordDescription}`,
@@ -493,7 +509,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
         return;
       }
 
-      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+      const profileUserId = effectiveUserId || user.id;
+      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', profileUserId).single();
 
       let logoDataUrl: string | null = null;
       if (profile?.company_logo_path) {
@@ -641,8 +658,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
       }
 
       // Defect history
+      const defectUserId = effectiveUserId || user.id;
       const { data: defectsData } = await supabase.from('defects').select('*')
-        .eq('ride_id', ride.id).eq('user_id', user.id).order('reported_at', { ascending: false });
+        .eq('ride_id', ride.id).eq('user_id', defectUserId).order('reported_at', { ascending: false });
       const allDefects = defectsData || [];
       if (allDefects.length > 0) {
         doc.addPage(); yPos = 20;
@@ -712,12 +730,13 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
 
       // Show export actions dialog (no auto-save)
       const saveToDocuments = async (): Promise<string | void> => {
-        const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
+        const saveUserId = effectiveUserId || user.id;
+        const storagePath = `${saveUserId}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
 
         await supabase.from('documents').insert({
-          user_id: user.id, ride_id: ride.id, document_name: documentName,
+          user_id: saveUserId, ride_id: ride.id, document_name: documentName,
           document_type: 'maintenance_report', file_path: storagePath,
           mime_type: 'application/pdf', file_size: pdfBlob.size,
           notes: `Maintenance report: ${filteredRecords.length} records, ${periodLabel}`, is_global: false,
@@ -834,6 +853,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
                         {format(parseISO(record.maintenance_date), 'd MMM yyyy')}
                       </span>
                     </div>
+                    {(canEditRecord(record) || canDeleteRecord(record)) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground"
@@ -842,13 +862,20 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteRecordId(record.id); }}>
-                          <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                        </DropdownMenuItem>
+                        {canEditRecord(record) && (
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
+                        )}
+                        {canDeleteRecord(record) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteRecordId(record.id); }}>
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </div>
 
                   <div className="space-y-2">

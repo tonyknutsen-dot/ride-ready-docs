@@ -419,9 +419,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <Maintenance />
-                      </AppLayout>
+                      <StaffRoute requiredPermission="staff">
+                        <AppLayout>
+                          <Maintenance />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
