@@ -729,12 +729,13 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
 
       // Show export actions dialog (no auto-save)
       const saveToDocuments = async (): Promise<string | void> => {
-        const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
+        const saveUserId = effectiveUserId || user.id;
+        const storagePath = `${saveUserId}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
 
         await supabase.from('documents').insert({
-          user_id: user.id, ride_id: ride.id, document_name: documentName,
+          user_id: saveUserId, ride_id: ride.id, document_name: documentName,
           document_type: 'maintenance_report', file_path: storagePath,
           mime_type: 'application/pdf', file_size: pdfBlob.size,
           notes: `Maintenance report: ${filteredRecords.length} records, ${periodLabel}`, is_global: false,
