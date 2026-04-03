@@ -3,7 +3,8 @@ import { TrialStatus } from "@/components/TrialStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
-  Settings, Bell, AlertTriangle, ChevronRight, ShieldCheck
+  Settings, Bell, AlertTriangle, ChevronRight, ShieldCheck,
+  Wind, Gauge,
 } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
@@ -96,6 +97,20 @@ const Overview = () => {
       sublabel: 'Record a repair',
       onClick: () => navigate('/maintenance'),
     },
+    {
+      key: 'wind-log',
+      icon: Wind,
+      label: 'Wind Log',
+      sublabel: 'Record readings',
+      onClick: () => navigate('/wind-log'),
+    },
+    {
+      key: 'pressure',
+      icon: Gauge,
+      label: 'Pressure Readings',
+      sublabel: 'Log pressures',
+      onClick: () => navigate('/pressure-readings'),
+    },
   ].filter(Boolean) as Array<{
     key: string;
     icon: typeof CheckSquare;
@@ -150,7 +165,7 @@ const Overview = () => {
       <WelcomeModal />
       <StaffAccountBanner />
       <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
-        <div className="container mx-auto py-6 pb-24 md:pb-8 space-y-5" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
+        <div className="container mx-auto py-6 pb-24 md:pb-8 space-y-5 bg-muted/40">
           {/* ── HEADER ─────────────────────────────── */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-3">
