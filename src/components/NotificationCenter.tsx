@@ -609,25 +609,46 @@ const NotificationCenter = () => {
 
   /* ── Derived data ── */
 
+  /** For staff, remove notifications that point to blocked domains */
+  const isStaffBlockedNotification = useCallback((n: Notification): boolean => {
+    if (isController) return false;
+    const cat = getCategory(n);
+    if (STAFF_BLOCKED_DOMAINS.includes(cat as DomainTab)) return true;
+    const route = getActionRoute(n, true);
+    // If the route would have been non-null for controllers but is null for staff, it's blocked
+    if (route === null && getActionRoute(n, false) !== null) return true;
+    return false;
+  }, [isController]);
+
+  const staffFilteredNotifications = useMemo(() =>
+    notifications.filter(n => !isStaffBlockedNotification(n)),
+    [notifications, isStaffBlockedNotification]
+  );
+
   const criticalItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isCritical(n) && isActionable(n))
+    staffFilteredNotifications.filter(n => !n.is_read && isCritical(n) && isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [notifications]
+    [staffFilteredNotifications]
   );
 
   const actionItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isActionable(n) && !isCritical(n))
+    staffFilteredNotifications.filter(n => !n.is_read && isActionable(n) && !isCritical(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [notifications]
+    [staffFilteredNotifications]
   );
 
   const updateItems = useMemo(() =>
-    notifications.filter(n => n.is_read || !isActionable(n))
+    staffFilteredNotifications.filter(n => n.is_read || !isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [notifications]
+    [staffFilteredNotifications]
   );
 
   // Domain filtering for the browse section
+  const visibleDomainTabs = useMemo(() =>
+    isController ? DOMAIN_TABS : DOMAIN_TABS.filter(t => !STAFF_BLOCKED_DOMAINS.includes(t.id)),
+    [isController]
+  );
+
   const domainFiltered = useMemo(() => {
     const nonUrgent = updateItems;
     if (domainTab === 'all') return nonUrgent;
@@ -645,7 +666,7 @@ const NotificationCenter = () => {
   }, [updateItems]);
 
   const handleNavigate = useCallback(async (n: Notification) => {
-    const route = getActionRoute(n);
+    const route = getActionRoute(n, !isController);
     if (!route) return;
     if (!n.is_read && isController) await markAsRead(n.id);
     navigate(route);
