@@ -45,6 +45,8 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     overdueEventsResult,
     dueSoonEventsResult,
     openDefectsResult,
+    inflatableCheckResult,
+    pressureCheckResult,
   ] = await Promise.all([
     supabase
       .from('profiles')
