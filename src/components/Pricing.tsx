@@ -154,7 +154,7 @@ const Pricing = () => {
                 How does item-based pricing work?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                Your plan is based on the number of registered items you manage. Each item counts toward your plan allowance. Stalls, kiosks, generators, and support equipment are included free within any paid plan and don't count toward your total. Your billing adjusts automatically as you add or remove items. Need more than {SELF_SERVE_MAX} items? Contact us for a custom plan.
+                Your plan is based on the number of registered items you manage. Each item counts toward your plan allowance. Your billing adjusts automatically as you add or remove items. Need more than {SELF_SERVE_MAX} items? Contact us for a custom plan.
               </AccordionContent>
             </AccordionItem>
 
@@ -167,12 +167,12 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="stalls" className="border-2 border-accent/20 rounded-lg px-6 bg-gradient-to-r from-card to-accent/[0.02]">
+            <AccordionItem value="items" className="border-2 border-accent/20 rounded-lg px-6 bg-gradient-to-r from-card to-accent/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
-                Do stalls and generators count toward my plan?
+                What counts as a registered item?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                All registered items count toward your plan allowance. Your billing adjusts automatically as you add or remove items.
+                Every piece of equipment you register — rides, stalls, inflatables, generators, food units, and more — counts toward your plan allowance.
               </AccordionContent>
             </AccordionItem>
 
