@@ -52,7 +52,7 @@ const Checks = () => {
       <EquipmentSelector
         onRideSelect={handleRideSelect}
         placeholderIcon={CheckSquare}
-        emptyDescription="Add rides or equipment in the Rides section to start running checks."
+        emptyDescription="Add equipment in the Equipment section to start running checks."
       />
     </div>
   );

@@ -100,7 +100,7 @@ const Maintenance = () => {
           icon={<Wrench className="h-5 w-5 text-amber-600" />}
           iconBgClass="from-amber-500/20 to-amber-500/10"
           title={selectedRide.ride_name}
-          subtitle="Maintenance Management"
+          subtitle="Maintenance & repairs"
           showBackButton
           onBack={handleBack}
           actions={
