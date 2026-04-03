@@ -5,15 +5,6 @@ import { Database } from '@/integrations/supabase/types';
 
 type StaffRole = Database['public']['Enums']['staff_role'];
 
-interface FeaturePermissions {
-  calendar: boolean;
-  documents: boolean;
-  checks: boolean;
-  maintenance: boolean;
-  risk_assessments: boolean;
-  send_documents: boolean;
-}
-
 interface StaffMembership {
   organisationId: string;
   organisationName: string;
