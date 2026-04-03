@@ -79,7 +79,7 @@ const HowItWorks = () => {
       items: [
         "Generate inspection reports",
         "Export records for audits",
-        "Technical bulletin library",
+        "Document expiry tracking",
         "Calendar view of all events",
         "Automated reminder system"
       ]
