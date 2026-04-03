@@ -167,12 +167,12 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="stalls" className="border-2 border-accent/20 rounded-lg px-6 bg-gradient-to-r from-card to-accent/[0.02]">
+            <AccordionItem value="items" className="border-2 border-accent/20 rounded-lg px-6 bg-gradient-to-r from-card to-accent/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
-                Do stalls and generators count toward my plan?
+                What counts as a registered item?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                All registered items count toward your plan allowance. Your billing adjusts automatically as you add or remove items.
+                Every piece of equipment you register — rides, stalls, inflatables, generators, food units, and more — counts toward your plan allowance.
               </AccordionContent>
             </AccordionItem>
 

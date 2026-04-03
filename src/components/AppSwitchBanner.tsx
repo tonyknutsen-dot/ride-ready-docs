@@ -15,7 +15,7 @@ export default function AppSwitchBanner() {
 
   return (
     <div className="md:hidden text-center text-xs py-2 bg-secondary">
-      {isDocs ? "Need operations & maintenance?" : docsDescription}{" "}
+      {isDocs ? "Need checks & maintenance?" : docsDescription}{" "}
       <a href={otherUrl} className="font-semibold underline">
         Open the {isDocs ? "Operations" : "Docs"} app
       </a>
