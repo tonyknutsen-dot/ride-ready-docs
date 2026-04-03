@@ -218,9 +218,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <Calendar />
-                      </AppLayout>
+                      <StaffRoute ownerOnly>
+                        <AppLayout>
+                          <Calendar />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 

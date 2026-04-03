@@ -315,30 +315,19 @@ export function StaffManagement() {
                   </div>
                 </div>
 
-                {/* Permission control */}
+                {/* Read-only access summary */}
                 <div
-                  className="rounded-xl p-3 space-y-2"
+                  className="rounded-xl p-3 space-y-1.5"
                   style={{ background: 'hsl(var(--muted) / 0.4)', border: '1px solid hsl(var(--border))' }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                      <Shield className="h-3 w-3" />
-                      System Permissions
-                    </span>
-                    <PermissionBadge permission={member.permission_level} />
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Staff Access
+                  </span>
+                  <div className="space-y-0.5">
+                    <p className="text-[11px] text-foreground">✓ Assigned rides · Checks · Maintenance · Defects</p>
+                    <p className="text-[11px] text-muted-foreground/50">✗ Calendar · Documents · Billing · Settings</p>
                   </div>
-                  <select
-                    value={member.permission_level}
-                    onChange={(e) =>
-                      handlePermissionChange(member.id, e.target.value as StaffRole, member.email || 'this staff member')
-                    }
-                    className="w-full h-9 rounded-lg border text-xs px-2 bg-white"
-                    style={{ borderColor: 'hsl(var(--border))' }}
-                  >
-                    <option value="staff">Staff — Daily inspection sign-off</option>
-                    <option value="supervisor">Supervisor — Checks, maintenance & oversight</option>
-                    <option value="manager">Manager — All compliance modules</option>
-                  </select>
                 </div>
 
                 {/* Equipment row */}
