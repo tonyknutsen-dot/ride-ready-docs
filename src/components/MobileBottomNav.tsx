@@ -87,7 +87,7 @@ export default function MobileBottomNav() {
   ].filter((item) => item.visible !== false);
 
   const accountItems: DrawerItem[] = [
-    { icon: Bell, label: "Notifications", path: "/notifications", matchPaths: ["/notifications"], visible: !isStaff, badgeCount: unreadCount },
+    { icon: Bell, label: "Notifications", path: "/notifications", matchPaths: ["/notifications"], badgeCount: unreadCount },
     { icon: CreditCard, label: "Plan & Billing", path: "/billing", matchPaths: ["/billing"], visible: canAccessBilling },
     { icon: Settings, label: "Settings", path: "/settings", matchPaths: ["/settings"], visible: canAccessSettings },
     { icon: Users, label: "Staff Management", path: "/staff", matchPaths: ["/staff"], visible: canManageStaff },
