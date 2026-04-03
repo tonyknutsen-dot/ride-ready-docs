@@ -1,11 +1,9 @@
 /**
  * Centralised role-based permission checks.
  *
- * Roles (highest → lowest):
+ * There are exactly 2 roles:
  *   controller  – account owner (implicit via organisations.owner_id)
- *   staff       – org member with 'staff' permission_level
- *
- * "controller" is a virtual role resolved at runtime from isOwner.
+ *   staff       – org member; can access rides, checks, maintenance only
  */
 
 export type AppRole = 'controller' | 'staff';
@@ -61,21 +59,25 @@ export const ROLE_CONFIG: Record<string, {
   },
   staff: {
     label: 'Staff',
-    description: 'Can perform checks, maintenance, and other assigned tasks. Cannot access billing or settings.',
+    description: 'Can access assigned rides, complete checks, and log maintenance. Cannot access controller areas.',
     color: 'hsl(213 52% 24%)',
     bg: 'hsl(214 100% 97%)',
     border: 'hsl(213 52% 80%)',
   },
 };
 
-/** Permission checklist items derived from role */
-export const getRolePermissions = (role: AppRole) => [
-  { label: 'View rides', granted: true },
-  { label: 'Perform checks', granted: true },
+/** Fixed staff access summary — not editable */
+export const STAFF_ACCESS_SUMMARY = [
+  { label: 'Access assigned rides', granted: true },
+  { label: 'Complete checks', granted: true },
   { label: 'Log maintenance', granted: true },
-  { label: 'View documents', granted: role === 'controller' },
-  { label: 'Upload documents', granted: role === 'controller' },
-  { label: 'Mark compliance complete', granted: role === 'controller' },
-  { label: 'Create calendar events', granted: can_create_calendar_event(role) },
-  { label: 'Billing & subscription', granted: can_view_billing(role) },
+  { label: 'Report defects', granted: true },
+  { label: 'Calendar & compliance', granted: false },
+  { label: 'Documents', granted: false },
+  { label: 'Risk assessments', granted: false },
+  { label: 'Billing & subscription', granted: false },
+  { label: 'Settings', granted: false },
 ];
+
+/** Permission checklist items derived from role */
+export const getRolePermissions = (role: AppRole) => STAFF_ACCESS_SUMMARY;

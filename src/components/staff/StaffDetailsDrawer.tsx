@@ -1,18 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Check, X, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { StaffRoleBadge } from './StaffRoleBadge';
-import { ROLE_CONFIG, getRolePermissions, assignable_roles, can_change_role, type AppRole } from '@/utils/permissions';
+import { ROLE_CONFIG, STAFF_ACCESS_SUMMARY, type AppRole } from '@/utils/permissions';
 import type { StaffMemberData } from './StaffCard';
-import { Database } from '@/integrations/supabase/types';
-
-type StaffRole = Database['public']['Enums']['staff_role'];
 
 interface Ride {
   id: string;
@@ -35,11 +31,6 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
   const [accessMode, setAccessMode] = useState<'all' | 'assigned'>('all');
   const [selectedRides, setSelectedRides] = useState<string[]>([]);
   const [loadingRides, setLoadingRides] = useState(false);
-
-  const memberRole = member?.permission_level as AppRole || 'staff';
-  const canEditRole = can_change_role(actorRole, memberRole);
-  const availableRoles = assignable_roles(actorRole);
-  const permissions = getRolePermissions(memberRole);
 
   useEffect(() => {
     if (open && member && user) {
@@ -67,24 +58,6 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
     }
   };
 
-  const handleRoleChange = async (newRole: string) => {
-    if (!member) return;
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('organisation_members')
-        .update({ permission_level: newRole as StaffRole })
-        .eq('id', member.id);
-      if (error) throw error;
-      toast({ title: 'Role updated' });
-      onRefresh();
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const toggleRide = (rideId: string) => {
     setSelectedRides(prev =>
       prev.includes(rideId) ? prev.filter(id => id !== rideId) : [...prev, rideId]
@@ -95,17 +68,14 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
     if (!member || !user) return;
     setSaving(true);
     try {
-      // Update equipment_access_mode
       const { error: modeError } = await supabase
         .from('organisation_members')
         .update({ equipment_access_mode: accessMode } as any)
         .eq('id', member.id);
       if (modeError) throw modeError;
 
-      // Delete existing assignments
       await supabase.from('staff_equipment_assignments').delete().eq('member_id', member.id);
 
-      // Insert new if assigned mode
       if (accessMode === 'assigned' && selectedRides.length > 0) {
         const assignments = selectedRides.map(rideId => ({
           member_id: member.id,
@@ -140,8 +110,8 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
               style={{
-                background: ROLE_CONFIG[memberRole]?.bg || 'hsl(var(--muted))',
-                color: ROLE_CONFIG[memberRole]?.color || 'hsl(var(--foreground))',
+                background: ROLE_CONFIG['staff']?.bg || 'hsl(var(--muted))',
+                color: ROLE_CONFIG['staff']?.color || 'hsl(var(--foreground))',
               }}
             >
               {(member.display_name || member.email || '?')[0]?.toUpperCase()}
@@ -161,7 +131,7 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
 
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-5 pb-6 pt-2">
 
-          {/* 1) Role */}
+          {/* 1) Role — read-only */}
           <section className="space-y-1.5">
             <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</h4>
             <StaffRoleBadge role="staff" size="md" />
@@ -170,11 +140,11 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
             </p>
           </section>
 
-          {/* 2) Permissions */}
+          {/* 2) Access summary — read-only, not editable */}
           <section className="space-y-1.5">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Permissions</h4>
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Access</h4>
             <div className="rounded-lg border border-border p-2.5 space-y-1">
-              {permissions.map(p => (
+              {STAFF_ACCESS_SUMMARY.map(p => (
                 <div key={p.label} className="flex items-center gap-2">
                   {p.granted ? (
                     <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
@@ -189,7 +159,7 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
             </div>
           </section>
 
-          {/* 3) Ride Access */}
+          {/* 3) Ride Access — this is the only editable control */}
           <section className="space-y-2.5">
             <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Package className="h-3 w-3" />
