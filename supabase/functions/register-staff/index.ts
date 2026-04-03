@@ -147,12 +147,12 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ 
           is_active: true, 
           permission_level: invite.permission_level,
-          can_access_calendar: invite.can_access_calendar ?? true,
-          can_access_documents: invite.can_access_documents ?? false,
+          can_access_calendar: false,
+          can_access_documents: false,
           can_access_checks: invite.can_access_checks ?? true,
-          can_access_maintenance: invite.can_access_maintenance ?? false,
-          can_access_risk_assessments: invite.can_access_risk_assessments ?? false,
-          can_access_send_documents: invite.can_access_send_documents ?? false,
+          can_access_maintenance: invite.can_access_maintenance ?? true,
+          can_access_risk_assessments: false,
+          can_access_send_documents: false,
         })
         .eq("id", existingMember.id);
     }

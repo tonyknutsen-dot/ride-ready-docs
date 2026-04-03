@@ -18,10 +18,10 @@ const permissionLabels: Record<string, string> = {
   manager: 'Staff',
 };
 
-const permissionDescriptions = {
-  staff: 'You can perform safety checks on assigned equipment',
-  supervisor: 'You can perform checks, log maintenance, and view regulatory events',
-  manager: 'Full access to checks, maintenance, documents, and risk assessments',
+const permissionDescriptions: Record<string, string> = {
+  staff: 'You can perform checks, log maintenance, and record wind/pressure readings on assigned equipment',
+  supervisor: 'You can perform checks, log maintenance, and record wind/pressure readings on assigned equipment',
+  manager: 'You can perform checks, log maintenance, and record wind/pressure readings on assigned equipment',
 };
 
 export default function StaffInvite() {

@@ -146,12 +146,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const defaultPermissions: FeaturePermissions = {
-      calendar: true,
+      calendar: false,
       checks: true,
-      documents: permissionLevel === 'manager',
-      maintenance: permissionLevel === 'supervisor' || permissionLevel === 'manager',
-      risk_assessments: permissionLevel === 'manager',
-      send_documents: permissionLevel === 'manager',
+      documents: false,
+      maintenance: true,
+      risk_assessments: false,
+      send_documents: false,
     };
 
     const permissions = featurePermissions || defaultPermissions;
