@@ -23,6 +23,8 @@ export interface OverviewData {
   overdueCount: number;
   expiredDocsCount: number;
   openDefectsCount: number;
+  hasInflatables: boolean;
+  hasPressureTracked: boolean;
 }
 
 async function fetchOverviewData(userId: string): Promise<OverviewData> {
