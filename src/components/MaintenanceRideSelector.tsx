@@ -19,7 +19,7 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
     <EquipmentSelector
       onRideSelect={onRideSelect}
       placeholderIcon={Wrench}
-      emptyDescription="Add rides or equipment in the Rides section to start tracking maintenance."
+      emptyDescription="Add equipment in the Equipment section to start tracking maintenance."
     />
   );
 };

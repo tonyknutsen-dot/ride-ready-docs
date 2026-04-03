@@ -44,7 +44,7 @@ const RideMaintenanceManager = () => {
 
   return (
     <RideSelector
-      title="Maintenance Management"
+      title="Maintenance & Repairs"
       description="Select a ride, stall, or equipment to log and track maintenance activities. Record repairs, part replacements, and regular servicing."
       actionLabel="Manage Maintenance"
       icon={({ className }) => <div className={className}>🔧</div>}

@@ -132,7 +132,7 @@ const DEFECT_PRIORITY_CONFIG: Record<DefectPriority, { label: string; accent: st
 const EquipmentSelector = ({
   onRideSelect,
   placeholderIcon: PlaceholderIcon = Wrench,
-  emptyDescription = 'Add rides or equipment in the Rides section to get started.',
+  emptyDescription = 'Add equipment in the Equipment section to get started.',
   showKpis = true,
   categoryGroupFilter,
   pressureMode = false,

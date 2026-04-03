@@ -150,7 +150,7 @@ const DefectReport = () => {
         <EquipmentSelector
           onRideSelect={handleRideSelect}
           placeholderIcon={AlertTriangle}
-          emptyDescription="Add rides or equipment in the Rides section to report defects."
+          emptyDescription="Add equipment in the Equipment section to report defects."
           showKpis={false}
           defectMode
         />
