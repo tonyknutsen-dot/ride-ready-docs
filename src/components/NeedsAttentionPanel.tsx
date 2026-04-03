@@ -43,7 +43,7 @@ const NeedsAttentionPanel = () => {
       const todayStr = today.toISOString().split('T')[0];
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
-      const [defectsRes, docsRes, eventsRes, operatingRes, checksRes, pressureRes] = await Promise.all([
+      const [defectsRes, docsRes, eventsRes, checksRes, pressureRes] = await Promise.all([
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
@@ -68,13 +68,7 @@ const NeedsAttentionPanel = () => {
           .lte('due_date', thirtyDaysStr)
           .order('due_date', { ascending: true })
           .limit(50),
-        // Fetch which rides are in use today
-        supabase
-          .from('ride_daily_status' as any)
-          .select('ride_id')
-          .eq('status_date', todayStr)
-          .eq('is_operating', true) as any,
-        // Fetch today's completed checks (daily or preopening) to know if operational check was done
+        // Fetch today's completed checks (daily or preopening)
         supabase
           .from('checks')
           .select('ride_id, check_frequency')
@@ -90,11 +84,6 @@ const NeedsAttentionPanel = () => {
           .order('session_date', { ascending: false })
           .limit(100),
       ]);
-
-      // Build set of rides operating today
-      const operatingRideIds = new Set<string>(
-        (operatingRes.data || []).map((r: any) => r.ride_id)
-      );
 
       // Build set of rides that have completed any operational check today
       const operationalCheckDoneTodayIds = new Set<string>(
