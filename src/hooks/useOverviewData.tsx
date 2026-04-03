@@ -113,6 +113,20 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .neq('status', 'resolved'),
+    // Has any inflatable equipment?
+    supabase
+      .from('rides')
+      .select('id, ride_categories!inner(category_group)')
+      .eq('user_id', userId)
+      .eq('ride_categories.category_group', 'Inflatables')
+      .limit(1),
+    // Has any pressure-tracked equipment?
+    supabase
+      .from('rides')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('pressure_monitoring_enabled', true)
+      .limit(1),
   ]);
 
   const stats: OverviewStats = {
