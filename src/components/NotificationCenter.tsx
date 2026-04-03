@@ -107,22 +107,23 @@ const buildDefectRoute = (defectId?: string | null): string =>
 const buildCheckRoute = (checkId?: string | null): string =>
   checkId ? `/checks?checkId=${checkId}` : '/checks';
 
-const getActionRoute = (n: Notification): string | null => {
+const getActionRoute = (n: Notification, staffBlocked = false): string | null => {
   const title = n.title?.toLowerCase() ?? '';
-  if (isSentDocument(n)) return '/batch-send';
+  if (isSentDocument(n)) return staffBlocked ? null : '/batch-send';
   if (n.related_table === 'pressure_sessions' || title.includes('pressure')) return '/pressure-readings';
   if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
   if (n.related_table === 'checks') return buildCheckRoute(n.related_id);
   if (title.includes('check') || title.includes('missed')) return '/checks';
-  if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
-  if (n.related_table === 'documents' && n.related_id) return `/documents/${n.related_id}`;
+  if (title.includes('inspection') || title.includes('ndt')) return staffBlocked ? null : '/compliance';
+  if (n.related_table === 'documents' && n.related_id) return staffBlocked ? null : `/documents/${n.related_id}`;
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) {
+    if (staffBlocked) return null;
     return n.related_id ? `/documents/${n.related_id}` : '/global-documents';
   }
-  if (n.related_table === 'documents') return '/global-documents';
+  if (n.related_table === 'documents') return staffBlocked ? null : '/global-documents';
   if (title.includes('maintenance') || n.related_table === 'maintenance_records') return '/maintenance';
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return '/wind-log';
-  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return '/billing';
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return staffBlocked ? null : '/billing';
   return null;
 };
 
