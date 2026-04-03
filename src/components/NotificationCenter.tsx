@@ -41,6 +41,12 @@ interface Notification {
 
 type DomainTab = 'all' | 'defects' | 'compliance' | 'checks' | 'documents' | 'maintenance';
 
+/** Domains blocked for staff users */
+const STAFF_BLOCKED_DOMAINS: DomainTab[] = ['compliance', 'documents'];
+
+/** Routes staff must not navigate to */
+const STAFF_BLOCKED_ROUTES = ['/documents', '/global-documents', '/compliance', '/billing', '/settings', '/reports', '/batch-send'];
+
 /* ── Classification helpers ── */
 
 const getCategory = (n: Notification): NotificationCategory => getNotificationCategory(n);
@@ -101,22 +107,23 @@ const buildDefectRoute = (defectId?: string | null): string =>
 const buildCheckRoute = (checkId?: string | null): string =>
   checkId ? `/checks?checkId=${checkId}` : '/checks';
 
-const getActionRoute = (n: Notification): string | null => {
+const getActionRoute = (n: Notification, staffBlocked = false): string | null => {
   const title = n.title?.toLowerCase() ?? '';
-  if (isSentDocument(n)) return '/batch-send';
+  if (isSentDocument(n)) return staffBlocked ? null : '/batch-send';
   if (n.related_table === 'pressure_sessions' || title.includes('pressure')) return '/pressure-readings';
   if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
   if (n.related_table === 'checks') return buildCheckRoute(n.related_id);
   if (title.includes('check') || title.includes('missed')) return '/checks';
-  if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
-  if (n.related_table === 'documents' && n.related_id) return `/documents/${n.related_id}`;
+  if (title.includes('inspection') || title.includes('ndt')) return staffBlocked ? null : '/compliance';
+  if (n.related_table === 'documents' && n.related_id) return staffBlocked ? null : `/documents/${n.related_id}`;
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) {
+    if (staffBlocked) return null;
     return n.related_id ? `/documents/${n.related_id}` : '/global-documents';
   }
-  if (n.related_table === 'documents') return '/global-documents';
+  if (n.related_table === 'documents') return staffBlocked ? null : '/global-documents';
   if (title.includes('maintenance') || n.related_table === 'maintenance_records') return '/maintenance';
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return '/wind-log';
-  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return '/billing';
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return staffBlocked ? null : '/billing';
   return null;
 };
 
@@ -602,25 +609,46 @@ const NotificationCenter = () => {
 
   /* ── Derived data ── */
 
+  /** For staff, remove notifications that point to blocked domains */
+  const isStaffBlockedNotification = useCallback((n: Notification): boolean => {
+    if (isController) return false;
+    const cat = getCategory(n);
+    if (STAFF_BLOCKED_DOMAINS.includes(cat as DomainTab)) return true;
+    const route = getActionRoute(n, true);
+    // If the route would have been non-null for controllers but is null for staff, it's blocked
+    if (route === null && getActionRoute(n, false) !== null) return true;
+    return false;
+  }, [isController]);
+
+  const staffFilteredNotifications = useMemo(() =>
+    notifications.filter(n => !isStaffBlockedNotification(n)),
+    [notifications, isStaffBlockedNotification]
+  );
+
   const criticalItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isCritical(n) && isActionable(n))
+    staffFilteredNotifications.filter(n => !n.is_read && isCritical(n) && isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [notifications]
+    [staffFilteredNotifications]
   );
 
   const actionItems = useMemo(() =>
-    notifications.filter(n => !n.is_read && isActionable(n) && !isCritical(n))
+    staffFilteredNotifications.filter(n => !n.is_read && isActionable(n) && !isCritical(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [notifications]
+    [staffFilteredNotifications]
   );
 
   const updateItems = useMemo(() =>
-    notifications.filter(n => n.is_read || !isActionable(n))
+    staffFilteredNotifications.filter(n => n.is_read || !isActionable(n))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [notifications]
+    [staffFilteredNotifications]
   );
 
   // Domain filtering for the browse section
+  const visibleDomainTabs = useMemo(() =>
+    isController ? DOMAIN_TABS : DOMAIN_TABS.filter(t => !STAFF_BLOCKED_DOMAINS.includes(t.id)),
+    [isController]
+  );
+
   const domainFiltered = useMemo(() => {
     const nonUrgent = updateItems;
     if (domainTab === 'all') return nonUrgent;
@@ -638,7 +666,7 @@ const NotificationCenter = () => {
   }, [updateItems]);
 
   const handleNavigate = useCallback(async (n: Notification) => {
-    const route = getActionRoute(n);
+    const route = getActionRoute(n, !isController);
     if (!route) return;
     if (!n.is_read && isController) await markAsRead(n.id);
     navigate(route);
@@ -764,7 +792,7 @@ const NotificationCenter = () => {
 
           {/* Domain tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            {DOMAIN_TABS.map(tab => {
+            {visibleDomainTabs.map(tab => {
               const count = domainCounts[tab.id] || 0;
               const isActive = domainTab === tab.id;
               if (count === 0 && tab.id !== 'all') return null;

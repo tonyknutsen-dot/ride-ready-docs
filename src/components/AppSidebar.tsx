@@ -77,7 +77,7 @@ const toolsNavItems: NavItemDef[] = [
 ];
 
 const accountNavItems: NavItemDef[] = [
-  { title: 'Notifications', url: '/notifications', icon: Bell, ownerOnly: true, isNotification: true },
+  { title: 'Notifications', url: '/notifications', icon: Bell, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
   { title: 'Settings', url: '/settings', icon: Settings, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
