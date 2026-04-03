@@ -792,7 +792,7 @@ const NotificationCenter = () => {
 
           {/* Domain tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            {DOMAIN_TABS.map(tab => {
+            {visibleDomainTabs.map(tab => {
               const count = domainCounts[tab.id] || 0;
               const isActive = domainTab === tab.id;
               if (count === 0 && tab.id !== 'all') return null;
