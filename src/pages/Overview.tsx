@@ -97,6 +97,20 @@ const Overview = () => {
       sublabel: 'Record a repair',
       onClick: () => navigate('/maintenance'),
     },
+    {
+      key: 'wind-log',
+      icon: Wind,
+      label: 'Wind Log',
+      sublabel: 'Record readings',
+      onClick: () => navigate('/wind-log'),
+    },
+    {
+      key: 'pressure',
+      icon: Gauge,
+      label: 'Pressure Readings',
+      sublabel: 'Log pressures',
+      onClick: () => navigate('/pressure-readings'),
+    },
   ].filter(Boolean) as Array<{
     key: string;
     icon: typeof CheckSquare;
