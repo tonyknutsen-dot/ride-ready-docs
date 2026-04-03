@@ -17,23 +17,23 @@ const TermsOfService = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
                 <p className="text-muted-foreground">
-                  By accessing and using Ride Ready Docs ("the Service"), you accept and agree to be bound by these Terms of Service. This Service is designed specifically for fairground professionals to manage ride documents, inspections, and compliance records. If you do not agree to these terms, please do not use the Service.
+                  By accessing and using Ride Ready Docs ("the Service"), you accept and agree to be bound by these Terms of Service. This Service is designed specifically for fairground professionals to manage equipment records, inspections, and compliance documentation. If you do not agree to these terms, please do not use the Service.
                 </p>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold mb-4">2. Service Description</h2>
                 <p className="text-muted-foreground mb-4">
-                  Ride Ready Docs provides a cloud-based document management and compliance tracking platform that includes:
+                  Ride Ready Docs provides a cloud-based equipment management and compliance tracking platform that includes:
                 </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Storage and organization of ride documents and certificates</li>
-                  <li>Annual inspection and NDT testing schedule management</li>
+                  <li>Storage and organisation of equipment documents and certificates</li>
+                  <li>Inspection schedule management</li>
                   <li>Daily, monthly, and yearly check templates and logging</li>
-                  <li>Maintenance record tracking and reporting</li>
+                  <li>Maintenance and repair record tracking</li>
                   <li>Document expiry notifications and reminders</li>
-                  <li>Technical bulletin library and matching</li>
-                  <li>Report generation and compliance tracking</li>
+                  <li>Defect reporting and resolution tracking</li>
+                  <li>Wind log and pressure readings for relevant equipment</li>
                 </ul>
               </section>
 
@@ -46,12 +46,17 @@ const TermsOfService = () => {
                 
                 <h3 className="text-xl font-semibold mb-2">3.2 Eligibility</h3>
                 <p className="text-muted-foreground mb-4">
-                  You must be at least 18 years old and have the legal authority to enter into these terms on behalf of your business or organization. This Service is intended for professional business use.
+                  You must be at least 18 years old and have the legal authority to enter into these terms on behalf of your business or organisation. This Service is intended for professional business use.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-2">3.3 Account Security</h3>
+                <p className="text-muted-foreground mb-4">
+                  You are responsible for all activities under your account. Notify us immediately of any unauthorised access or security breaches.
+                </p>
+
+                <h3 className="text-xl font-semibold mb-2">3.4 Staff Accounts</h3>
                 <p className="text-muted-foreground">
-                  You are responsible for all activities under your account. Notify us immediately of any unauthorized access or security breaches.
+                  You may invite staff members to access your account. Staff have fixed access limited to assigned equipment, checks, maintenance, pressure readings, and wind logs. Staff cannot access documents, calendar, compliance, billing, or account settings. You are responsible for all activity performed by staff under your account.
                 </p>
               </section>
 
@@ -59,12 +64,12 @@ const TermsOfService = () => {
                 <h2 className="text-2xl font-semibold mb-4">4. Subscription Plans and Billing</h2>
                 <h3 className="text-xl font-semibold mb-2">4.1 Free Trial</h3>
                 <p className="text-muted-foreground mb-4">
-                  New users receive a 14-day free trial with full access to all features. No credit card is required to start the trial. Active users may receive an automatic extension to 21 days. At the end of the trial, you must select a paid plan to continue using the Service.
+                  New users receive a 14-day free trial with full access to all features. No credit card is required to start the trial. At the end of the trial, you must select a paid plan to continue using the Service.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-2">4.2 Subscription Plans</h3>
                 <p className="text-muted-foreground mb-2">
-                  Plans are priced by the number of rides you manage. All plans include every feature. Stalls, generators, and support equipment are included free.
+                  Plans are priced by the number of registered items. All plans include every feature.
                 </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
                   <li><strong>Starter:</strong> 1–5 items — £9.99/month</li>
@@ -101,7 +106,7 @@ const TermsOfService = () => {
                 <p className="text-muted-foreground mb-4">You agree not to:</p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                   <li>Upload malicious software or harmful content</li>
-                  <li>Share account access with unauthorized users</li>
+                  <li>Share account access with unauthorised users</li>
                   <li>Attempt to breach security or access other users' data</li>
                   <li>Use the Service for illegal purposes or fraud</li>
                   <li>Reverse engineer or copy the Service</li>
@@ -113,7 +118,7 @@ const TermsOfService = () => {
                 <h2 className="text-2xl font-semibold mb-4">6. Data Ownership and Usage</h2>
                 <h3 className="text-xl font-semibold mb-2">6.1 Your Data</h3>
                 <p className="text-muted-foreground mb-4">
-                  You retain all rights to your data, including ride information, documents, and records. We do not claim ownership of your content.
+                  You retain all rights to your data, including equipment information, documents, and records. We do not claim ownership of your content.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-2">6.2 Data Backup</h3>
@@ -136,7 +141,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-2">7.2 Support</h3>
                 <p className="text-muted-foreground">
-                  Email support is available to all subscribers. Operations & Maintenance users receive priority support. We aim to respond within 24 hours during business days.
+                  Email support is available to all subscribers. We aim to respond within 24 hours during business days.
                 </p>
               </section>
 
