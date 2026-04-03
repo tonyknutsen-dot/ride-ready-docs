@@ -41,6 +41,12 @@ interface Notification {
 
 type DomainTab = 'all' | 'defects' | 'compliance' | 'checks' | 'documents' | 'maintenance';
 
+/** Domains blocked for staff users */
+const STAFF_BLOCKED_DOMAINS: DomainTab[] = ['compliance', 'documents'];
+
+/** Routes staff must not navigate to */
+const STAFF_BLOCKED_ROUTES = ['/documents', '/global-documents', '/compliance', '/billing', '/settings', '/reports', '/batch-send'];
+
 /* ── Classification helpers ── */
 
 const getCategory = (n: Notification): NotificationCategory => getNotificationCategory(n);
