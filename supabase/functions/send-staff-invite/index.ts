@@ -146,12 +146,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const defaultPermissions: FeaturePermissions = {
-      calendar: true,
+      calendar: false,
       checks: true,
-      documents: permissionLevel === 'manager',
-      maintenance: permissionLevel === 'supervisor' || permissionLevel === 'manager',
-      risk_assessments: permissionLevel === 'manager',
-      send_documents: permissionLevel === 'manager',
+      documents: false,
+      maintenance: true,
+      risk_assessments: false,
+      send_documents: false,
     };
 
     const permissions = featurePermissions || defaultPermissions;
@@ -225,11 +225,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const featureList: string[] = [];
     if (permissions.checks) featureList.push("Safety checks");
-    if (permissions.calendar) featureList.push("Calendar & schedules");
     if (permissions.maintenance) featureList.push("Maintenance logging");
-    if (permissions.documents) featureList.push("Documents");
-    if (permissions.risk_assessments) featureList.push("Risk assessments");
-    if (permissions.send_documents) featureList.push("Send documents externally");
+    featureList.push("Wind & pressure readings");
+    featureList.push("Defect reporting");
 
     const subject = `You're invited to join ${companyName} on Ride Ready Docs`;
 

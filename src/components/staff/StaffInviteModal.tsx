@@ -85,7 +85,7 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
 
       const featurePermissions = {
         checks: true,
-        calendar: true,
+        calendar: false,
         maintenance: true,
         documents: false,
         risk_assessments: false,
