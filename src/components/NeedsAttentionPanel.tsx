@@ -128,11 +128,9 @@ const NeedsAttentionPanel = () => {
 
         // ── Showmen logic: daily/pre-opening checks are same-day reminders only ──
         // Skip operational checks from past days (don't accumulate overdue)
-        // Skip operational checks for today if the ride is NOT currently in use
         // Skip if an operational check was already completed today for this ride
         if (isOperationalCheck) {
           if (evt.due_date !== todayStr) return; // past-day → skip entirely
-          if (evt.ride_id && !operatingRideIds.has(evt.ride_id)) return; // not in use → skip
           if (evt.ride_id && operationalCheckDoneTodayIds.has(evt.ride_id)) return; // already checked today
         }
 
