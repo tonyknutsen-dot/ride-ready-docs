@@ -165,6 +165,8 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     overdueCount: totalOverdue,
     expiredDocsCount: expiredDocs.length,
     openDefectsCount: openDefectsResult.count || 0,
+    hasInflatables: (inflatableCheckResult.data?.length ?? 0) > 0,
+    hasPressureTracked: (pressureCheckResult.data?.length ?? 0) > 0,
   };
 }
 
