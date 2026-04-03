@@ -766,15 +766,17 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* Reports */}
+              {/* Reports — controller only */}
               <Route 
                 path="/reports"
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <Reports />
-                      </AppLayout>
+                      <StaffRoute ownerOnly>
+                        <AppLayout>
+                          <Reports />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 

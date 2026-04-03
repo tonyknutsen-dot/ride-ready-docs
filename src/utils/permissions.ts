@@ -72,9 +72,12 @@ export const STAFF_ACCESS_SUMMARY = [
   { label: 'Complete checks', granted: true },
   { label: 'Log maintenance', granted: true },
   { label: 'Report defects', granted: true },
+  { label: 'Pressure readings', granted: true },
+  { label: 'Wind log', granted: true },
   { label: 'Calendar & compliance', granted: false },
   { label: 'Documents', granted: false },
   { label: 'Risk assessments', granted: false },
+  { label: 'Reports', granted: false },
   { label: 'Billing & subscription', granted: false },
   { label: 'Settings', granted: false },
 ];
