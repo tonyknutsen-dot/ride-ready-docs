@@ -23,6 +23,8 @@ export interface OverviewData {
   overdueCount: number;
   expiredDocsCount: number;
   openDefectsCount: number;
+  hasInflatables: boolean;
+  hasPressureTracked: boolean;
 }
 
 async function fetchOverviewData(userId: string): Promise<OverviewData> {
@@ -43,6 +45,8 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     overdueEventsResult,
     dueSoonEventsResult,
     openDefectsResult,
+    inflatableCheckResult,
+    pressureCheckResult,
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -109,6 +113,20 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .neq('status', 'resolved'),
+    // Has any inflatable equipment?
+    supabase
+      .from('rides')
+      .select('id, ride_categories!inner(category_group)')
+      .eq('user_id', userId)
+      .eq('ride_categories.category_group', 'Inflatables')
+      .limit(1),
+    // Has any pressure-tracked equipment?
+    supabase
+      .from('rides')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('pressure_monitoring_enabled', true)
+      .limit(1),
   ]);
 
   const stats: OverviewStats = {
@@ -147,6 +165,8 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     overdueCount: totalOverdue,
     expiredDocsCount: expiredDocs.length,
     openDefectsCount: openDefectsResult.count || 0,
+    hasInflatables: (inflatableCheckResult.data?.length ?? 0) > 0,
+    hasPressureTracked: (pressureCheckResult.data?.length ?? 0) > 0,
   };
 }
 

@@ -97,14 +97,14 @@ const Overview = () => {
       sublabel: 'Record a repair',
       onClick: () => navigate('/maintenance'),
     },
-    {
+    (data?.hasInflatables) && {
       key: 'wind-log',
       icon: Wind,
       label: 'Wind Log',
       sublabel: 'Record readings',
       onClick: () => navigate('/wind-log'),
     },
-    {
+    (data?.hasPressureTracked) && {
       key: 'pressure',
       icon: Gauge,
       label: 'Pressure Readings',
