@@ -117,7 +117,7 @@ const NeedsAttentionPanel = () => {
           label: doc.document_name,
           sublabel: `${dateLabel}${doc.rides?.ride_name ? ` • ${doc.rides.ride_name}` : ''}`,
           urgency: expired || days <= 7 ? 'warning' : 'info',
-          path: doc.ride_id ? `/rides/${doc.ride_id}?tab=documents` : '/documents',
+          path: `/documents/${doc.id}`,
         });
       });
 
