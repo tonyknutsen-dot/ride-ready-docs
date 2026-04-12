@@ -512,6 +512,13 @@ const EquipmentSelector = ({
         const sb = defectSummaries[b.id]?.priority ?? 'no-defects';
         return order[sa] - order[sb];
       })
+    : checksMode
+    ? [...filteredRides].sort((a, b) => {
+        const order: Record<ChecksStatus, number> = { 'inspection-due': 0, 'has-checks': 1, 'has-templates': 2, 'no-checks': 3 };
+        const sa = checksSummaries[a.id]?.status ?? 'no-checks';
+        const sb = checksSummaries[b.id]?.status ?? 'no-checks';
+        return order[sa] - order[sb];
+      })
     : filteredRides;
 
   // Determine accent and icon class for a card
@@ -520,20 +527,26 @@ const EquipmentSelector = ({
     const statusKey = normalizeStatus(summary?.status ?? 'no-data');
     const statusCfg = STATUS_CONFIG[statusKey];
 
+    if (checksMode) {
+      const cSummary = checksSummaries[ride.id] ?? { status: 'no-checks' as ChecksStatus, label: 'No checks set up', checkCount: 0, templateCount: 0, inspectionsDue: 0 };
+      const cCfg = CHECKS_STATUS_CONFIG[cSummary.status];
+      return { accent: cCfg.accent, iconClass: cCfg.iconClass, statusCfg: cCfg, statusKey: cSummary.status, pSummary: null, pCfg: null, dSummary: null, dCfg: null, cSummary, cCfg };
+    }
+
     if (pressureMode) {
       const pSummary = pressureSummaries[ride.id] ?? { status: 'no-sessions' as PressureStatus, label: 'No pressure sessions logged yet', lastDate: null };
       const pCfg = PRESSURE_STATUS_CONFIG[pSummary.status];
-      return { accent: pCfg.accent, iconClass: pCfg.iconClass, statusCfg, statusKey, pSummary, pCfg, dSummary: null, dCfg: null };
+      return { accent: pCfg.accent, iconClass: pCfg.iconClass, statusCfg, statusKey, pSummary, pCfg, dSummary: null, dCfg: null, cSummary: null, cCfg: null };
     }
 
     if (defectMode) {
       const dSummary = defectSummaries[ride.id] ?? { priority: 'no-defects' as DefectPriority, label: 'No open defects', count: 0, hasCritical: false };
       const dCfg = DEFECT_PRIORITY_CONFIG[dSummary.priority];
-      return { accent: dCfg.accent, iconClass: dCfg.iconClass, statusCfg, statusKey, pSummary: null, pCfg: null, dSummary, dCfg };
+      return { accent: dCfg.accent, iconClass: dCfg.iconClass, statusCfg, statusKey, pSummary: null, pCfg: null, dSummary, dCfg, cSummary: null, cCfg: null };
     }
 
     // Standard mode — use maintenance status for accent and icon
-    return { accent: statusCfg.accent, iconClass: statusCfg.iconClass, statusCfg, statusKey, pSummary: null, pCfg: null, dSummary: null, dCfg: null };
+    return { accent: statusCfg.accent, iconClass: statusCfg.iconClass, statusCfg, statusKey, pSummary: null, pCfg: null, dSummary: null, dCfg: null, cSummary: null, cCfg: null };
   };
 
   if (loading) {
