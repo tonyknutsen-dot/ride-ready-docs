@@ -117,6 +117,9 @@ export default function UserManagement() {
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<UserFilters>(DEFAULT_FILTERS);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [updatingTesterUserId, setUpdatingTesterUserId] = useState<string | null>(null);
   const [suspendingUserId, setSuspendingUserId] = useState<string | null>(null);
@@ -135,6 +138,7 @@ export default function UserManagement() {
   const [showTimeTracking, setShowTimeTracking] = useState(false);
   const [timeViewMode, setTimeViewMode] = useState<'monthly' | 'alltime'>('alltime');
   const [managedUser, setManagedUser] = useState<UserCardData | null>(null);
+  const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const isMobile = useIsMobile();
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
