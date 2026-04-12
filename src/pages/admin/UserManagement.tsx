@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,6 +114,7 @@ const createProfileSnapshot = (user: Pick<UserWithProfile, 'profile'>): NonNulla
 });
 
 export default function UserManagement() {
+  const { user: currentAuthUser } = useAuth();
   
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
