@@ -93,21 +93,24 @@ export function StaffManagement() {
     try {
       const { data: members, error } = await supabase
         .from('organisation_members')
-        .select('id, user_id, permission_level, joined_at, is_active')
+        .select('id, user_id, permission_level, joined_at, is_active, invited_email')
         .eq('organisation_id', orgId)
         .eq('is_active', true);
       if (error) throw error;
 
       const staffWithDetails = await Promise.all(
         (members || []).map(async (member) => {
-          let email = '';
-          try {
-            const { data } = await supabase.functions.invoke('get-user-email', {
-              body: { userId: member.user_id },
-            });
-            email = data?.email || '';
-          } catch (e) {
-            console.error('Error fetching email:', e);
+          let email = (member as any).invited_email || '';
+
+          if (!email) {
+            try {
+              const { data } = await supabase.functions.invoke('get-user-email', {
+                body: { userId: member.user_id },
+              });
+              email = data?.email || '';
+            } catch (e) {
+              console.error('Error fetching email:', e);
+            }
           }
 
           const { data: assignments } = await supabase
