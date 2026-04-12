@@ -349,6 +349,17 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
     });
   }, [sessions, filterDateFrom, filterDateTo, filterType, searchTerm]);
 
+  // Auto-expand the most recent out-of-range session so actions are immediately visible
+  useEffect(() => {
+    if (filteredSessions.length > 0 && expandedId === null) {
+      const firstFailed = filteredSessions.find(s => {
+        const st = getSessionStatus(s);
+        return st.status === 'out_of_range';
+      });
+      if (firstFailed) setExpandedId(firstFailed.id);
+    }
+  }, [filteredSessions.length]); // only on initial load / session list change
+
   const hasFilters = !!filterDateFrom || !!filterDateTo || filterType !== 'all' || !!searchTerm;
   const activeFilterCount = [!!filterDateFrom || !!filterDateTo, filterType !== 'all', !!searchTerm].filter(Boolean).length;
 
@@ -831,6 +842,13 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                     <MapPin className="h-2.5 w-2.5 inline-block mr-0.5 -mt-px" />
                     {session.site_name}{session.site_address ? `, ${session.site_address}` : ''}
                   </p>
+                  {/* Collapsed hint for out-of-range sessions */}
+                  {!isExpanded && sessionStatus.status === 'out_of_range' && (
+                    <p className="text-[10px] text-red-600 dark:text-red-400 font-medium mt-1 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      Out of range — tap to review and raise defect
+                    </p>
+                  )}
                 </button>
 
                 {isExpanded && (
@@ -886,8 +904,8 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                             <p className="text-[12px] font-semibold text-red-700 dark:text-red-300">Action needed — readings out of range</p>
                             <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5 space-y-0.5">
                               <span className="block">One or more sections are outside the configured pressure range.</span>
-                              <span className="block">Retake readings and inspect the inflatable.</span>
-                              <span className="block">Raise a defect if the issue remains.</span>
+                              <span className="block">Retake readings or raise a defect using the buttons below.</span>
+                              <span className="block font-medium">Defects are not created automatically — use "Raise defect" to add to the Defect Register.</span>
                             </p>
                           </div>
                         </div>
