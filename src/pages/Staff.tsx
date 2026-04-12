@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Users, UserPlus, Loader2, WifiOff } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Loader2, WifiOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +7,7 @@ import { useAppRole } from '@/hooks/useAppRole';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSubscription } from '@/hooks/useSubscription';
 import { can_manage_staff } from '@/utils/permissions';
 import { StaffFilters } from '@/components/staff/StaffFilters';
 import { StaffCard, PendingInviteCard, type StaffMemberData, type PendingInviteData } from '@/components/staff/StaffCard';
@@ -26,7 +27,10 @@ const Staff = () => {
   const { logEvent } = useAuditLog();
   const appRole = useAppRole();
   const isOnline = useOnlineStatus();
+  const { subscription } = useSubscription();
   const canManage = can_manage_staff(appRole);
+  const isExpired = subscription?.isExpired === true;
+  const canInvite = canManage && !isExpired;
 
   const [staff, setStaff] = useState<StaffMemberData[]>([]);
   const [invites, setInvites] = useState<PendingInviteData[]>([]);
@@ -135,17 +139,38 @@ const Staff = () => {
     }
   };
 
+  const resendInvite = async (invite: PendingInviteData) => {
+    try {
+      const response = await supabase.functions.invoke('send-staff-invite', {
+        body: {
+          email: invite.email,
+          permissionLevel: invite.permission_level,
+          featurePermissions: {
+            checks: true,
+            maintenance: true,
+            calendar: false,
+            documents: false,
+            risk_assessments: false,
+            send_documents: false,
+          },
+        },
+      });
+      if (response.error) throw new Error(response.error.message || 'Failed to resend');
+      toast({ title: 'Invitation re-sent', description: `Re-sent to ${invite.email}` });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
   const removeStaff = async () => {
     if (!deleteTarget) return;
     try {
+      // Deactivate membership — do NOT hard-delete the user's profile
       const { error } = await supabase
         .from('organisation_members')
         .update({ is_active: false })
         .eq('id', deleteTarget.id);
       if (error) throw error;
-      if (deleteTarget.user_id) {
-        await supabase.from('profiles').delete().eq('user_id', deleteTarget.user_id);
-      }
 
       logEvent('delete', 'staff', deleteTarget.id, {
         name: deleteTarget.display_name || deleteTarget.email || 'Unknown',
@@ -161,7 +186,7 @@ const Staff = () => {
         },
         after: { is_active: false },
         changedFields: ['is_active'],
-        contextHint: 'staff member removed and profile deleted',
+        contextHint: 'staff member removed from organisation',
       });
 
       toast({ title: 'Staff member removed' });
@@ -240,12 +265,30 @@ const Staff = () => {
           </p>
         </div>
         {canManage && (
-          <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5 h-9">
+          <Button
+            size="sm"
+            onClick={() => setInviteOpen(true)}
+            disabled={isExpired}
+            className="gap-1.5 h-9"
+          >
             <UserPlus className="h-4 w-4" />
             <span className="hidden sm:inline">Invite</span>
           </Button>
         )}
       </div>
+
+      {/* Expired subscription banner */}
+      {isExpired && canManage && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-destructive">Subscription expired</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Resubscribe to invite new staff members. You can still view, remove, and manage existing staff.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Loading */}
       {loading ? (
@@ -271,7 +314,7 @@ const Staff = () => {
               <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
               <p className="text-sm font-medium mb-1">No staff members yet</p>
               <p className="text-xs text-muted-foreground mb-4">Invite your first team member to get started.</p>
-              {canManage && (
+              {canInvite && (
                 <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5">
                   <UserPlus className="h-4 w-4" />
                   Invite Staff
@@ -307,7 +350,7 @@ const Staff = () => {
                       key={invite.id}
                       invite={invite}
                       canManage={canManage}
-                      onResend={() => {}}
+                      onResend={() => resendInvite(invite)}
                       onCancel={() => cancelInvite(invite.id)}
                     />
                   ))}

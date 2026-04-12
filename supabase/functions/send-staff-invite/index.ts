@@ -90,6 +90,25 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check subscription status — block invites for expired accounts
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status, trial_ends_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const subStatus = profile?.subscription_status;
+    const trialEndsAt = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+    const isTrialExpired = subStatus === 'trial' && trialEndsAt && trialEndsAt <= new Date();
+    const isExpired = subStatus === 'expired' || isTrialExpired;
+
+    if (isExpired) {
+      return new Response(
+        JSON.stringify({ error: "Your subscription has expired. Please resubscribe before inviting new staff." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { email, permissionLevel, assignedRides, featurePermissions }: StaffInviteRequest = await req.json();
 
     if (!email) {
