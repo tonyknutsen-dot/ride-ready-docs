@@ -158,7 +158,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
                       </div>
 
                       <div className="flex-1 min-w-0 space-y-1.5">
-                        <p className="text-[13px] font-semibold text-foreground line-clamp-2 leading-snug">{defect.description}</p>
+                        <p className="text-[13px] font-semibold text-foreground line-clamp-2 leading-snug whitespace-pre-line">{defect.description}</p>
 
                         {defect.location_on_ride && (
                           <div className="flex items-center gap-1.5">

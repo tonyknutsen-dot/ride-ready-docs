@@ -143,7 +143,7 @@ const DefectDetailSheet = ({
       <section className="pt-7">
         <SectionLabel>Description</SectionLabel>
         <div className="p-4 rounded-xl bg-muted/40 border border-border mt-2">
-          <p className="text-sm text-foreground leading-relaxed">{defect.description}</p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{defect.description}</p>
         </div>
       </section>
 
@@ -876,7 +876,7 @@ const DefectRegister = () => {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{defect.description}</p>
+                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2 whitespace-pre-line">{defect.description}</p>
 
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <Wrench className="h-3 w-3 text-muted-foreground shrink-0" />
