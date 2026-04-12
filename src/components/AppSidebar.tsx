@@ -171,10 +171,10 @@ export function AppSidebar() {
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
-            <span className="relative flex-shrink-0">
+            <span className="relative flex-shrink-0 inline-flex">
               <Icon className={secondary ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />
               {showBadge && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                <span className="absolute -top-2 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 leading-none">
                   {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
               )}

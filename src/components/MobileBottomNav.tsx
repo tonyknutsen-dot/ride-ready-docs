@@ -127,10 +127,10 @@ export default function MobileBottomNav() {
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
         }`}
       >
-        <span className="relative flex-shrink-0">
+        <span className="relative flex-shrink-0 inline-flex">
           <Icon className="h-[18px] w-[18px]" />
           {!!item.badgeCount && item.badgeCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
+            <span className="absolute -top-2 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1 leading-none">
               {item.badgeCount > 9 ? "9+" : item.badgeCount}
             </span>
           )}
@@ -172,10 +172,10 @@ export default function MobileBottomNav() {
           }`}
           aria-label="Dashboard"
         >
-          <span className="relative">
+          <span className="relative inline-flex">
             <Home className={`h-6 w-6 ${isActive(["/overview"]) ? "text-[#1E3A5F]" : "text-[#64748B]"}`} strokeWidth={2} />
             {overdueCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
+              <span className="absolute -top-2 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1 leading-none">
                 {overdueCount > 9 ? "9+" : overdueCount}
               </span>
             )}
