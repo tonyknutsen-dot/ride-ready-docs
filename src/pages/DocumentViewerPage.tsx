@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedPdf, cachePdf, createCachedPdfUrl } from '@/lib/pdfCache';
 import { useAuth } from '@/contexts/AuthContext';
+import { isDocExpired, isDocExpiringSoon, daysUntilExpiry, getExpiryLabel } from '@/utils/documentHelpers';
 
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -14,11 +15,13 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader,
   DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
   MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
-  Image as ImageIcon, File,
+  Image as ImageIcon, File, Trash2, Pencil,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -49,6 +52,7 @@ interface DocumentMeta {
   status: string;
   isArchived: boolean;
   evidenceCount: number;
+  expiresAt: string | null;
 }
 
 interface TemporaryViewerState {
@@ -81,6 +85,7 @@ const DocumentViewerPage = () => {
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
   const [fallbackDocId, setFallbackDocId] = useState<string | null>(null);
+  const [fallbackDoc, setFallbackDoc] = useState<any>(null);
 
   // Version control state
   const [allVersions, setAllVersions] = useState<RideDocument[]>([]);
@@ -91,6 +96,9 @@ const DocumentViewerPage = () => {
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
+  const [editExpiryDialogOpen, setEditExpiryDialogOpen] = useState(false);
+  const [newExpiryDate, setNewExpiryDate] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (documentId && user) {
