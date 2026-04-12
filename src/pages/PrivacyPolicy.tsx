@@ -107,7 +107,7 @@ const PrivacyPolicy = () => {
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
                   <li><strong>Access:</strong> Request a copy of your personal data</li>
                   <li><strong>Correction:</strong> Update or correct inaccurate information</li>
-                  <li><strong>Deletion:</strong> Request deletion of your account and associated data</li>
+                  <li><strong>Deletion:</strong> Request deletion of your account and associated data. Note: if your account has created operational records (inspections, defect reports, maintenance logs), full deletion may not be possible to preserve audit integrity. In such cases, your account can be removed from the organisation and/or suspended, and personal data may be anonymised upon request.</li>
                   <li><strong>Export:</strong> Download your documents and records</li>
                   <li><strong>Opt-out:</strong> Unsubscribe from marketing communications (service notifications will continue)</li>
                 </ul>
@@ -115,8 +115,23 @@ const PrivacyPolicy = () => {
 
               <section>
                 <h2 className="text-2xl font-semibold mb-4">7. Data Retention</h2>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mb-4">
                   We retain your information for as long as your account is active or as needed to provide services. Due to the compliance nature of fairground operations, we recommend keeping inspection and maintenance records for at least 7 years as per industry best practices. Upon account closure, data will be deleted within 90 days unless legal obligations require longer retention.
+                </p>
+
+                <h3 className="text-xl font-semibold mb-2">7.1 Retention by Account State</h3>
+                <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
+                  <li><strong>Active accounts:</strong> All data is retained and accessible for the duration of the account's active status.</li>
+                  <li><strong>Pending invitations:</strong> Invitation records are retained only while the invitation is valid. Expired or revoked invitations are removed, though audit records of the invitation event may be preserved.</li>
+                  <li><strong>Staff removed from an organisation:</strong> Organisation membership is removed, but any operational records created by the staff member (checks, defect reports, maintenance logs, wind logs, pressure readings) are retained with their original attribution for audit and legal traceability. The staff member's personal account may continue to exist independently.</li>
+                  <li><strong>Suspended accounts:</strong> Minimal account data is retained to enforce the suspension (email, suspension status, suspension reason, and audit trail). Suspended accounts remain blocked from sign-in, new account creation with the same email, and invitation acceptance.</li>
+                  <li><strong>Test and demo accounts:</strong> Accounts with no real operational history may be permanently deleted by an administrator. All associated test data is removed.</li>
+                  <li><strong>Accounts with operational history:</strong> Accounts that have created real inspection records, defect reports, maintenance logs, or other compliance-related data cannot be hard-deleted. Instead, they should be removed from the organisation and/or suspended. This preserves the integrity of the operational audit trail.</li>
+                </ul>
+
+                <h3 className="text-xl font-semibold mb-2">7.2 Future Anonymisation</h3>
+                <p className="text-muted-foreground">
+                  In the future, we may introduce an anonymisation option for accounts with historical records. This would remove personally identifiable information while preserving the integrity of operational records for audit and compliance purposes (e.g., replacing a name with "Former Staff Member"). This ensures compliance with data minimisation principles while maintaining legal traceability.
                 </p>
               </section>
 

@@ -128,7 +128,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-2">6.3 Data Deletion</h3>
                 <p className="text-muted-foreground">
-                  Upon account closure or cancellation, your data will be retained for 90 days to allow for reactivation, after which it will be permanently deleted. You can request immediate deletion by contacting support.
+                  Upon account closure or cancellation, your data will be retained for 90 days to allow for reactivation, after which it will be permanently deleted unless operational records require longer retention for audit purposes. Accounts with compliance-critical history (inspections, defect reports, maintenance logs) may have personal data anonymised rather than fully deleted. You can request data review by contacting support.
                 </p>
               </section>
 
@@ -174,16 +174,36 @@ const TermsOfService = () => {
               </section>
 
               <section>
-                <h2 className="text-2xl font-semibold mb-4">11. Termination</h2>
+                <h2 className="text-2xl font-semibold mb-4">11. Termination and Account Lifecycle</h2>
                 <p className="text-muted-foreground mb-4">
                   We may terminate or suspend your account for:
                 </p>
-                <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+                <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
                   <li>Violation of these Terms</li>
                   <li>Non-payment of fees</li>
                   <li>Fraudulent or illegal activity</li>
                   <li>Extended period of inactivity</li>
                 </ul>
+
+                <h3 className="text-xl font-semibold mb-2">11.1 Account Suspension</h3>
+                <p className="text-muted-foreground mb-4">
+                  A suspended account is blocked from signing in, accepting organisation invitations, and creating a replacement account using the same email address. Suspended users will see the message: "This account is suspended. Contact support or your administrator." Suspension retains only the minimum data required for security, audit, and enforcement purposes.
+                </p>
+
+                <h3 className="text-xl font-semibold mb-2">11.2 Removal from Organisation</h3>
+                <p className="text-muted-foreground mb-4">
+                  Removing a staff member from an organisation revokes their access to that organisation's data but does not delete their user account. Any operational records they created (checks, defect reports, maintenance logs, wind logs, pressure readings) are retained with their original attribution to preserve the audit trail.
+                </p>
+
+                <h3 className="text-xl font-semibold mb-2">11.3 Account Deletion</h3>
+                <p className="text-muted-foreground mb-4">
+                  Permanent account deletion is only available for accounts with no operational history that requires retention (e.g., test or demo accounts). Accounts that have created real compliance records cannot be hard-deleted to protect the integrity of the operational audit trail. In such cases, accounts should be removed from the organisation and/or suspended. A future anonymisation option may allow personal data to be removed while preserving record integrity.
+                </p>
+
+                <h3 className="text-xl font-semibold mb-2">11.4 Duplicate Account Prevention</h3>
+                <p className="text-muted-foreground">
+                  If an account is suspended, the same email address cannot be used to create a new account or accept a new invitation. This prevents circumvention of enforcement actions.
+                </p>
               </section>
 
               <section>
