@@ -262,6 +262,11 @@ export function UserManageDrawer({
                 )}
                 {isSuspended ? 'Reactivate Account' : 'Suspend Account'}
               </Button>
+              <p className="text-xs text-muted-foreground -mt-1 pl-1">
+                {isSuspended
+                  ? 'Restores sign-in access. Does not affect organisation membership.'
+                  : 'Blocks sign-in, sign-up with same email, and invite acceptance. Retains minimal data for security/audit.'}
+              </p>
 
               {/* Admin toggle */}
               <Button
@@ -283,16 +288,21 @@ export function UserManageDrawer({
 
               {/* Remove from organisation */}
               {user.isStaffMember && onRemoveFromOrg && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start h-9 text-warning"
-                  disabled={isLoading}
-                  onClick={() => onRemoveFromOrg(user.id)}
-                >
-                  <UserMinus className="h-4 w-4 mr-2" />
-                  Remove from Organisation
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start h-9 text-warning"
+                    disabled={isLoading}
+                    onClick={() => onRemoveFromOrg(user.id)}
+                  >
+                    <UserMinus className="h-4 w-4 mr-2" />
+                    Remove from Organisation
+                  </Button>
+                  <p className="text-xs text-muted-foreground -mt-1 pl-1">
+                    Revokes organisation access only. The user account and any operational records they created are preserved for audit traceability.
+                  </p>
+                </>
               )}
 
               {/* Tester section */}
@@ -381,21 +391,27 @@ export function UserManageDrawer({
                   </h4>
 
                   {deleteBlockReason ? (
-                    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
-                      <p className="font-medium text-foreground mb-1">Delete blocked</p>
+                    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                      <p className="font-medium text-foreground">Delete blocked</p>
                       <p>{deleteBlockReason}</p>
+                      <p className="italic">Consider using "Remove from Organisation" or "Suspend Account" instead. Operational records require retained attribution for audit and legal purposes.</p>
                     </div>
                   ) : (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="w-full justify-start h-9"
-                      disabled={isLoading || isDeleting}
-                      onClick={() => { setShowDeleteDialog(true); setDeleteError(null); setDeleteConfirmText(''); }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete User Account
-                    </Button>
+                    <>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full justify-start h-9"
+                        disabled={isLoading || isDeleting}
+                        onClick={() => { setShowDeleteDialog(true); setDeleteError(null); setDeleteConfirmText(''); }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete User Account
+                      </Button>
+                      <p className="text-xs text-muted-foreground -mt-1 pl-1">
+                        Permanently removes the account and all associated data. Only available for test/demo accounts with no real operational history. This cannot be undone.
+                      </p>
+                    </>
                   )}
                 </>
               )}
