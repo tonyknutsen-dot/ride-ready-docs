@@ -478,6 +478,8 @@ export default function UserManagement() {
       usersData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setUsers(usersData);
+      // Keep drawer in sync with refreshed data
+      setManagedUser(prev => prev ? usersData.find(u => u.id === prev.id) || null : null);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
