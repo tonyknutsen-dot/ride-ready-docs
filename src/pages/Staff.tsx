@@ -139,6 +139,29 @@ const Staff = () => {
     }
   };
 
+  const resendInvite = async (invite: PendingInviteData) => {
+    try {
+      const response = await supabase.functions.invoke('send-staff-invite', {
+        body: {
+          email: invite.email,
+          permissionLevel: invite.permission_level,
+          featurePermissions: {
+            checks: true,
+            maintenance: true,
+            calendar: false,
+            documents: false,
+            risk_assessments: false,
+            send_documents: false,
+          },
+        },
+      });
+      if (response.error) throw new Error(response.error.message || 'Failed to resend');
+      toast({ title: 'Invitation re-sent', description: `Re-sent to ${invite.email}` });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
   const removeStaff = async () => {
     if (!deleteTarget) return;
     try {
