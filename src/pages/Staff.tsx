@@ -244,12 +244,30 @@ const Staff = () => {
           </p>
         </div>
         {canManage && (
-          <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5 h-9">
+          <Button
+            size="sm"
+            onClick={() => setInviteOpen(true)}
+            disabled={isExpired}
+            className="gap-1.5 h-9"
+          >
             <UserPlus className="h-4 w-4" />
             <span className="hidden sm:inline">Invite</span>
           </Button>
         )}
       </div>
+
+      {/* Expired subscription banner */}
+      {isExpired && canManage && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-destructive">Subscription expired</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Resubscribe to invite new staff members. You can still view, remove, and manage existing staff.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Loading */}
       {loading ? (
@@ -275,7 +293,7 @@ const Staff = () => {
               <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
               <p className="text-sm font-medium mb-1">No staff members yet</p>
               <p className="text-xs text-muted-foreground mb-4">Invite your first team member to get started.</p>
-              {canManage && (
+              {canInvite && (
                 <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5">
                   <UserPlus className="h-4 w-4" />
                   Invite Staff
