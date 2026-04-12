@@ -445,7 +445,7 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
-  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention', 'No Issues'] as const;
+  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention'] as const;
 
   const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'due_soon' | 'no_issues' | 'no_docs' => {
     // Stop-use defects take absolute priority
@@ -488,7 +488,7 @@ const Rides = () => {
             if (activeGroup === 'Inspections Overdue') return s === 'inspection_overdue';
             if (activeGroup === 'Due Soon') return s === 'due_soon';
             if (activeGroup === 'Attention') return s === 'attention' || s === 'stop_use';
-            if (activeGroup === 'No Issues') return s === 'no_issues' || s === 'no_docs';
+            return true;
             return true;
           })
         : rides.filter(r => r.ride_categories.category_group === activeGroup);
@@ -499,7 +499,7 @@ const Rides = () => {
   const inspectionsOverdueTotal = rides.filter(r => (rideStats[r.id]?.overdueCount ?? 0) > 0).length;
   const dueSoonTotal = rides.filter(r => getComplianceStatus(r.id) === 'due_soon').length;
   const attentionTotal = rides.filter(r => ['attention', 'stop_use'].includes(getComplianceStatus(r.id))).length;
-  const noIssuesTotal = rides.filter(r => ['no_issues', 'no_docs'].includes(getComplianceStatus(r.id))).length;
+  
 
   const groupCounts: Record<string, number> = {
     All: rides.length,
@@ -514,7 +514,7 @@ const Rides = () => {
     'Inspections Overdue': inspectionsOverdueTotal,
     'Due Soon': dueSoonTotal,
     Attention: attentionTotal,
-    'No Issues': noIssuesTotal,
+    
   };
 
   return (
@@ -553,7 +553,7 @@ const Rides = () => {
 
       {/* Compliance KPI Strip */}
       {rides.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <button
             onClick={() => setActiveGroup('Documents Overdue')}
             className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Documents Overdue' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card hover:border-destructive/30'}`}
@@ -581,13 +581,6 @@ const Rides = () => {
           >
             <span className="text-xl font-bold text-amber-600 dark:text-amber-400">{attentionTotal}</span>
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Attention</span>
-          </button>
-          <button
-            onClick={() => setActiveGroup('No Issues')}
-            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'No Issues' ? 'border-muted-foreground/30 bg-muted/30' : 'border-border bg-card hover:border-muted-foreground/20'}`}
-          >
-            <span className="text-xl font-bold text-muted-foreground">{noIssuesTotal}</span>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">No Issues</span>
           </button>
         </div>
       )}
