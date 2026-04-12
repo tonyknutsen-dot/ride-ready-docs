@@ -855,29 +855,8 @@ function CompletedItemRow({
   const { toast } = useToast();
 
   const handleCardClick = () => {
-    // Pending sync or failed -> show local details drawer
-    if (isPending || isFailed) {
-      onShowDetails();
-      return;
-    }
-    // No doc and offline -> show details with offline message
-    if (!onViewPdf && !isOnline) {
-      onShowDetails();
-      return;
-    }
-    // No doc at all -> show details as fallback
-    if (!onViewPdf) {
-      onShowDetails();
-      return;
-    }
-    if (loading) return;
-    setLoading(true);
-    try {
-      onViewPdf();
-    } catch {
-      toast({ title: 'Failed to open document', variant: 'destructive' });
-      setLoading(false);
-    }
+    // Always open the read-only detail sheet first
+    onShowDetails();
   };
 
   return (
