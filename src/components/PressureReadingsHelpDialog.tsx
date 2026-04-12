@@ -73,6 +73,13 @@ export const PressureReadingsHelpDialog = ({ open, onOpenChange }: Props) => (
         <div className="flex gap-3">
           <FileText className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
+            <p className="font-medium text-foreground">Out-of-range readings & defects</p>
+            <p>If readings fall outside configured limits, the session is flagged as <strong>Action Needed</strong>. Defects are <strong>not</strong> created automatically — expand the session card and use the <strong>Raise defect</strong> button to add it to the Defect Register. This ensures you can retake readings first and only log a defect when the issue is confirmed.</p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <FileText className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <div>
             <p className="font-medium text-foreground">Reports & documents</p>
             <p>Export CSV or PDF reports, save them to the inflatable's document register, or share them — following the same workflow as all other modules in the app.</p>
           </div>
