@@ -91,6 +91,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Block suspended accounts from accepting invites
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_suspended")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile?.is_suspended) {
+      return new Response(
+        JSON.stringify({
+          error: "This account is suspended. Contact support or your administrator.",
+          code: "ACCOUNT_SUSPENDED",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (user.email?.toLowerCase() !== invite.email.toLowerCase()) {
       return new Response(
         JSON.stringify({ 
