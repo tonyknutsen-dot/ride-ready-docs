@@ -33,7 +33,8 @@ export function useOverdueCompliance() {
           .eq('is_test_data', false)
           .neq('is_latest_version', false)
           .lt('expires_at', today)
-          .not('expires_at', 'is', null),
+          .not('expires_at', 'is', null)
+          .is('expiry_acknowledged_at', null),
       ]);
 
       return (eventsResult.count || 0) + (docsResult.count || 0);

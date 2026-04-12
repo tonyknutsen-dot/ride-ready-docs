@@ -58,6 +58,7 @@ const NeedsAttentionPanel = () => {
           .eq('is_latest_version', true)
           .not('expires_at', 'is', null)
           .lte('expires_at', thirtyDaysStr)
+          .is('expiry_acknowledged_at', null)
           .order('expires_at', { ascending: true })
           .limit(50),
         supabase
