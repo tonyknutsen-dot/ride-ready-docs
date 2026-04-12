@@ -1,7 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Shield, FlaskConical, Ban, Users, Building } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Shield, FlaskConical, Ban, Users } from 'lucide-react';
 import type { UserCardData } from './UserCard';
+import {
+  getAccountStatusMeta,
+  getBillingStatusMeta,
+  getOrgRoleLabel,
+  getPlatformRoleLabel,
+  getUserCompany,
+} from './userManagementMeta';
 
 interface UserListRowProps {
   user: UserCardData;
@@ -9,36 +17,29 @@ interface UserListRowProps {
 }
 
 export function UserListRow({ user, onManage }: UserListRowProps) {
+  const accountStatus = getAccountStatusMeta(user);
+  const billingStatus = getBillingStatusMeta(user);
+  const companyName = getUserCompany(user);
+  const orgRole = getOrgRoleLabel(user);
+  const platformRole = getPlatformRoleLabel(user);
+
   const getPlatformRole = () => {
-    if (user.isAdmin) return <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0"><Shield className="h-3 w-3 mr-0.5" />Admin</Badge>;
-    if (user.isTester) return <Badge className="bg-warning text-warning-foreground text-[10px] px-1.5 py-0"><FlaskConical className="h-3 w-3 mr-0.5" />Tester</Badge>;
+    if (platformRole === 'Admin') return <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0"><Shield className="h-3 w-3 mr-0.5" />Admin</Badge>;
+    if (platformRole === 'Tester') return <Badge className="bg-warning text-warning-foreground text-[10px] px-1.5 py-0"><FlaskConical className="h-3 w-3 mr-0.5" />Tester</Badge>;
     return <Badge variant="outline" className="text-[10px] px-1.5 py-0">User</Badge>;
   };
 
   const getOrgRole = () => {
-    if (!user.isStaffMember && !user.staffOrgName) {
-      if (user.profile?.company_name) return <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/40 text-primary">Controller</Badge>;
-      return <span className="text-[10px] text-muted-foreground">—</span>;
-    }
-    return <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/40"><Users className="h-3 w-3 mr-0.5" />Staff</Badge>;
-  };
-
-  const getStatusBadge = () => {
-    if (user.profile?.is_suspended) return <Badge variant="destructive" className="text-[10px] px-1.5 py-0"><Ban className="h-3 w-3 mr-0.5" />Suspended</Badge>;
-    const status = user.profile?.subscription_status;
-    if (!status) return <Badge variant="outline" className="text-[10px] px-1.5 py-0">No Sub</Badge>;
-    switch (status) {
-      case 'active': return <Badge className="bg-green-600 text-white text-[10px] px-1.5 py-0">Active</Badge>;
-      case 'trial': return <Badge className="bg-blue-600 text-white text-[10px] px-1.5 py-0">Trial</Badge>;
-      case 'past_due': return <Badge className="bg-yellow-500 text-black text-[10px] px-1.5 py-0">Past Due</Badge>;
-      case 'expired': return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Expired</Badge>;
-      case 'cancelled': return <Badge variant="outline" className="text-[10px] px-1.5 py-0">Cancelled</Badge>;
-      default: return <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{status}</Badge>;
-    }
+    if (orgRole === 'Controller') return <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/40 text-primary">Controller</Badge>;
+    if (orgRole === 'Staff') return <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/40"><Users className="h-3 w-3 mr-0.5" />Staff</Badge>;
+    return <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">None</Badge>;
   };
 
   return (
-    <tr className="border-b border-border hover:bg-muted/50 transition-colors">
+    <tr className={cn(
+      'border-b border-border transition-colors',
+      accountStatus.isSuspended ? 'bg-destructive/5 hover:bg-destructive/10' : 'hover:bg-muted/50',
+    )}>
       {/* Name / Email */}
       <td className="py-2 px-3">
         <p className="font-medium text-sm truncate max-w-[200px]">
@@ -49,7 +50,7 @@ export function UserListRow({ user, onManage }: UserListRowProps) {
       {/* Company */}
       <td className="py-2 px-3 hidden md:table-cell">
         <span className="text-xs text-muted-foreground truncate max-w-[160px] block">
-          {user.profile?.company_name || user.staffOrgName || '—'}
+          {companyName || '—'}
         </span>
       </td>
       {/* Platform Role */}
@@ -57,7 +58,23 @@ export function UserListRow({ user, onManage }: UserListRowProps) {
       {/* Org Role */}
       <td className="py-2 px-3 hidden lg:table-cell">{getOrgRole()}</td>
       {/* Status */}
-      <td className="py-2 px-3">{getStatusBadge()}</td>
+      <td className="py-2 px-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Account</span>
+            <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', accountStatus.className)}>
+              {accountStatus.isSuspended && <Ban className="h-3 w-3 mr-0.5" />}
+              {accountStatus.label}
+            </Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Billing</span>
+            <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', billingStatus.className)}>
+              {billingStatus.label}
+            </Badge>
+          </div>
+        </div>
+      </td>
       {/* Actions */}
       <td className="py-2 px-3 text-right">
         <Button variant="outline" size="sm" className="h-7 text-xs px-3" onClick={() => onManage(user)}>

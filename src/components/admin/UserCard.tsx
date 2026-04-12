@@ -37,6 +37,14 @@ import {
   Users,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import {
+  getAccountStatusMeta,
+  getBillingStatusMeta,
+  getOrgRoleLabel,
+  getPlatformRoleLabel,
+  getUserCompany,
+} from './userManagementMeta';
 
 interface UserProfile {
   company_name: string | null;
@@ -94,70 +102,18 @@ export function UserCard({
   const [suspendReason, setSuspendReason] = useState('');
   const [testerExpiryDays, setTesterExpiryDays] = useState('30');
   const [offboardReason, setOffboardReason] = useState('');
-
-  const getStatusBadge = () => {
-    if (user.profile?.is_suspended) {
-      return <Badge variant="destructive"><Ban className="h-3 w-3 mr-1" />Suspended</Badge>;
-    }
-    const status = user.profile?.subscription_status;
-    if (!status) {
-      // Staff/tester/admin-only accounts without a subscription — show role context instead
-      if (user.isStaffMember) return <Badge variant="outline">Staff Account</Badge>;
-      if (user.isTester) return <Badge variant="outline">Tester Account</Badge>;
-      if (user.isAdmin) return <Badge variant="outline">Admin Account</Badge>;
-      return <Badge variant="outline">No Subscription</Badge>;
-    }
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
-      case 'trial':
-        return <Badge className="bg-blue-500">Trial</Badge>;
-      case 'past_due':
-        return <Badge className="bg-yellow-500 text-black">Past Due</Badge>;
-      case 'expired':
-        return <Badge variant="destructive">Expired</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline" className="capitalize">{status}</Badge>;
-    }
-  };
-
-  const getRoleBadges = () => {
-    const badges = [];
-    if (user.isAdmin) {
-      badges.push(
-        <Badge key="admin" className="bg-primary">
-          <Shield className="h-3 w-3 mr-1" />
-          Admin
-        </Badge>
-      );
-    }
-    if (user.isStaffMember) {
-      badges.push(
-        <Badge key="staff" variant="outline" className="border-primary/40 text-primary">
-          <Users className="h-3 w-3 mr-1" />
-          Staff
-        </Badge>
-      );
-    }
-    if (user.isTester) {
-      badges.push(
-        <Badge key="tester" className="bg-warning text-warning-foreground">
-          <FlaskConical className="h-3 w-3 mr-1" />
-          Tester
-        </Badge>
-      );
-    }
-    if (badges.length === 0) {
-      badges.push(<Badge key="user" variant="outline">User</Badge>);
-    }
-    return badges;
-  };
+  const accountStatus = getAccountStatusMeta(user);
+  const billingStatus = getBillingStatusMeta(user);
+  const platformRole = getPlatformRoleLabel(user);
+  const orgRole = getOrgRoleLabel(user);
+  const companyName = getUserCompany(user);
 
   return (
     <>
-      <div className="rounded-lg border border-border bg-card p-3 space-y-2">
+      <div className={cn(
+        'rounded-lg border p-3 space-y-3',
+        accountStatus.isSuspended ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-card',
+      )}>
         {/* Row 1: Name + kebab */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
@@ -219,32 +175,46 @@ export function UserCard({
         </div>
 
         {/* Row 2: Company */}
-        {(user.profile?.company_name || user.staffOrgName) && (
+        {companyName && (
           <div className="flex items-center gap-1.5 text-xs text-foreground/60">
             <Building className="h-3 w-3 shrink-0" />
-            <span className="truncate">{user.profile?.company_name || user.staffOrgName}</span>
+            <span className="truncate">{companyName}</span>
           </div>
         )}
 
-        {/* Row 3: Badges */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {getStatusBadge()}
-          {getRoleBadges()}
-          {user.profile?.subscription_plan && (
-            <Badge variant="outline" className="capitalize text-[10px]">
-              {user.profile.subscription_plan}
+        {/* Row 3: Separated state summary */}
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="space-y-1 rounded-md border border-border/70 bg-background/80 p-2">
+            <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Account</span>
+            <Badge variant="outline" className={cn('max-w-full', accountStatus.className)}>
+              {accountStatus.isSuspended && <Ban className="h-3 w-3 mr-1" />}
+              {accountStatus.label}
             </Badge>
-          )}
-          {user.isTester && user.testerExpiresAt && (
-            <div className="flex items-center gap-1 text-[10px] text-foreground/60">
-              <Clock className="h-3 w-3" />
-              {new Date(user.testerExpiresAt) < new Date() ? (
-                <span className="text-destructive font-medium">Expired</span>
-              ) : (
-                <span>Exp {format(new Date(user.testerExpiresAt), 'MMM d, yy')}</span>
-              )}
-            </div>
-          )}
+          </div>
+          <div className="space-y-1 rounded-md border border-border/70 bg-background/80 p-2">
+            <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Billing</span>
+            <Badge variant="outline" className={billingStatus.className}>{billingStatus.label}</Badge>
+          </div>
+          <div className="space-y-1 rounded-md border border-border/70 bg-background/80 p-2">
+            <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Platform</span>
+            {platformRole === 'Admin' ? (
+              <Badge className="bg-primary text-primary-foreground"><Shield className="h-3 w-3 mr-1" />Admin</Badge>
+            ) : platformRole === 'Tester' ? (
+              <Badge className="bg-warning text-warning-foreground"><FlaskConical className="h-3 w-3 mr-1" />Tester</Badge>
+            ) : (
+              <Badge variant="outline">User</Badge>
+            )}
+          </div>
+          <div className="space-y-1 rounded-md border border-border/70 bg-background/80 p-2">
+            <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">Org Role</span>
+            {orgRole === 'Controller' ? (
+              <Badge variant="outline" className="border-primary/40 text-primary">Controller</Badge>
+            ) : orgRole === 'Staff' ? (
+              <Badge variant="outline" className="border-primary/40 text-primary"><Users className="h-3 w-3 mr-1" />Staff</Badge>
+            ) : (
+              <Badge variant="outline" className="text-muted-foreground">None</Badge>
+            )}
+          </div>
         </div>
 
         {/* Row 4: Meta */}
@@ -254,6 +224,12 @@ export function UserCard({
             {format(new Date(user.created_at), 'MMM d, yyyy')}
           </span>
           <span>{user.rideCount} ride{user.rideCount !== 1 ? 's' : ''}</span>
+          {user.isTester && user.testerExpiresAt && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {new Date(user.testerExpiresAt) < new Date() ? 'Tester expired' : `Exp ${format(new Date(user.testerExpiresAt), 'MMM d, yy')}`}
+            </span>
+          )}
           {user.profile?.country && <span>{user.profile.country}</span>}
         </div>
       </div>

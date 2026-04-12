@@ -22,6 +22,7 @@ import { UserCard } from '@/components/admin/UserCard';
 import { UserListRow } from '@/components/admin/UserListRow';
 import { UserManageDrawer } from '@/components/admin/UserManageDrawer';
 import type { UserCardData } from '@/components/admin/UserCard';
+import { getAdminUserSearchText } from '@/components/admin/userManagementMeta';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,6 +97,19 @@ interface TesterAllTimeData {
   last_session: string | null;
   has_active_session: boolean;
 }
+
+const createProfileSnapshot = (user: Pick<UserWithProfile, 'profile'>): NonNullable<UserWithProfile['profile']> => ({
+  company_name: user.profile?.company_name ?? null,
+  subscription_status: user.profile?.subscription_status ?? null,
+  subscription_plan: user.profile?.subscription_plan ?? null,
+  trial_ends_at: user.profile?.trial_ends_at ?? null,
+  country: user.profile?.country ?? null,
+  is_suspended: user.profile?.is_suspended ?? false,
+  suspended_at: user.profile?.suspended_at ?? null,
+  suspended_reason: user.profile?.suspended_reason ?? null,
+  stripe_customer_id: user.profile?.stripe_customer_id ?? null,
+  stripe_subscription_id: user.profile?.stripe_subscription_id ?? null,
+});
 
 export default function UserManagement() {
   
@@ -488,6 +502,36 @@ export default function UserManagement() {
     }
   };
 
+  const applyLocalSuspensionState = (userId: string, isSuspended: boolean, reason?: string | null) => {
+    const suspendedAt = isSuspended ? new Date().toISOString() : null;
+
+    const updateUserRecord = <T extends UserWithProfile | UserCardData>(user: T): T => ({
+      ...user,
+      profile: {
+        ...createProfileSnapshot(user),
+        is_suspended: isSuspended,
+        suspended_at: suspendedAt,
+        suspended_reason: isSuspended ? reason ?? null : null,
+      },
+    });
+
+    setUsers(prev => prev.map(user => user.id === userId ? updateUserRecord(user) : user));
+    setManagedUser(prev => prev && prev.id === userId ? updateUserRecord(prev) : prev);
+  };
+
+  const persistSuspensionState = async (userId: string, isSuspended: boolean, reason?: string | null) => {
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: userId,
+        is_suspended: isSuspended,
+        suspended_at: isSuspended ? new Date().toISOString() : null,
+        suspended_reason: isSuspended ? reason ?? null : null,
+      }, { onConflict: 'user_id' });
+
+    if (error) throw error;
+  };
+
   const toggleAdminRole = async (userId: string, currentlyAdmin: boolean) => {
     setUpdatingUserId(userId);
 
@@ -556,17 +600,14 @@ export default function UserManagement() {
 
       // If disabled, also suspend the account
       if (newRole === 'disabled') {
-        const { error: suspendError } = await supabase
-          .from('profiles')
-          .update({
-            is_suspended: true,
-            suspended_at: new Date().toISOString(),
-            suspended_reason: reason || 'Tester access ended',
-          })
-          .eq('user_id', userId);
+        const suspendReasonText = reason || 'Tester access ended';
+        const suspendPromise = persistSuspensionState(userId, true, suspendReasonText);
+        applyLocalSuspensionState(userId, true, suspendReasonText);
+        const { error: suspendError } = await suspendPromise.then(() => ({ error: null })).catch((error) => ({ error }));
 
         if (suspendError) {
           console.error('Failed to suspend account:', suspendError);
+          await fetchUsers();
         }
       }
 
@@ -668,24 +709,6 @@ export default function UserManagement() {
     }
   };
 
-  const getStatusBadge = (status: string | null, isSuspended: boolean) => {
-    if (isSuspended) {
-      return <Badge variant="destructive"><Ban className="h-3 w-3 mr-1" />Suspended</Badge>;
-    }
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
-      case 'trial':
-        return <Badge className="bg-blue-500">Trial</Badge>;
-      case 'expired':
-        return <Badge variant="destructive">Expired</Badge>;
-      case 'cancelled':
-        return <Badge variant="outline">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
-    }
-  };
-
   const toggleSuspension = async (userId: string, currentlySuspended: boolean, reason?: string) => {
     setSuspendingUserId(userId);
 
@@ -701,16 +724,8 @@ export default function UserManagement() {
 
       if (currentlySuspended) {
         // Reactivate user
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            is_suspended: false,
-            suspended_at: null,
-            suspended_reason: null,
-          })
-          .eq('user_id', userId);
-
-        if (error) throw error;
+        await persistSuspensionState(userId, false, null);
+        applyLocalSuspensionState(userId, false, null);
 
         // Send reactivation email
         if (emailData?.email) {
@@ -726,16 +741,8 @@ export default function UserManagement() {
         toast.success('User account reactivated');
       } else {
         // Suspend user
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            is_suspended: true,
-            suspended_at: new Date().toISOString(),
-            suspended_reason: effectiveReason || null,
-          })
-          .eq('user_id', userId);
-
-        if (error) throw error;
+        await persistSuspensionState(userId, true, effectiveReason || null);
+        applyLocalSuspensionState(userId, true, effectiveReason || null);
 
         // Send suspension email
         if (emailData?.email) {
@@ -765,14 +772,9 @@ export default function UserManagement() {
 
   const filteredUsers = users.filter(user => {
     const searchLower = searchQuery.toLowerCase();
-    return (
-      user.id.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower) ||
-      user.name?.toLowerCase().includes(searchLower) ||
-        user.staffOrgName?.toLowerCase().includes(searchLower) ||
-      user.profile?.company_name?.toLowerCase().includes(searchLower) ||
-      user.profile?.country?.toLowerCase().includes(searchLower)
-    );
+    if (!searchLower) return true;
+
+    return getAdminUserSearchText(user).includes(searchLower);
   });
 
   if (loading) {
