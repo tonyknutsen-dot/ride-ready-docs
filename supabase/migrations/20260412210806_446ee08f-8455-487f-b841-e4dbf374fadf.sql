@@ -1,0 +1,3 @@
+ALTER TABLE public.ride_documents
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS updated_by UUID;
