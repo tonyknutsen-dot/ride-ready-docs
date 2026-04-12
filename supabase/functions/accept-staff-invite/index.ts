@@ -147,6 +147,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Granular permissions — enforce staff defaults, matching register-staff logic
+    const memberPermissions = {
+      can_access_calendar: false,
+      can_access_documents: false,
+      can_access_checks: invite.can_access_checks ?? true,
+      can_access_maintenance: invite.can_access_maintenance ?? true,
+      can_access_risk_assessments: false,
+      can_access_send_documents: false,
+    };
+
     if (existingMember && !existingMember.is_active) {
       // Reactivate existing membership
       await supabase
@@ -155,6 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
           is_active: true, 
           permission_level: invite.permission_level,
           updated_at: new Date().toISOString(),
+          ...memberPermissions,
         })
         .eq("id", existingMember.id);
     } else {
@@ -166,6 +177,7 @@ const handler = async (req: Request): Promise<Response> => {
           organisation_id: invite.organisation_id,
           permission_level: invite.permission_level,
           invited_by: invite.invited_by,
+          ...memberPermissions,
         });
 
       if (memberError) {
