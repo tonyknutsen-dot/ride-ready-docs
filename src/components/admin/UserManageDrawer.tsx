@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Shield, ShieldOff, Ban, CheckCircle, FlaskConical, Clock,
-  Building, Calendar, Users, UserMinus, UserX, Loader2,
+  Building, Calendar, Users, UserMinus, UserX, Loader2, Trash2, AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { UserCardData } from './UserCard';
@@ -48,17 +48,25 @@ interface UserManageDrawerProps {
   onToggleTester: (userId: string, currentlyTester: boolean, expiryDays?: number) => void;
   onExtendTester: (userId: string, days: number) => void;
   onOffboardTester: (userId: string, newRole: 'user' | 'disabled', reason?: string) => void;
+  onRemoveFromOrg?: (userId: string) => void;
+  onDeleteUser?: (userId: string, confirmEmail: string) => Promise<{ error?: string }>;
+  currentUserId?: string;
 }
 
 export function UserManageDrawer({
   user, open, onOpenChange,
   updatingUserId, updatingTesterUserId, suspendingUserId,
   onToggleAdmin, onToggleSuspension, onToggleTester, onExtendTester, onOffboardTester,
+  onRemoveFromOrg, onDeleteUser, currentUserId,
 }: UserManageDrawerProps) {
   const [confirmAction, setConfirmAction] = useState<'suspend' | 'admin' | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
   const [testerExpiryDays, setTesterExpiryDays] = useState('30');
   const [offboardReason, setOffboardReason] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!user) return null;
 
@@ -70,6 +78,22 @@ export function UserManageDrawer({
   const companyName = getUserCompany(user);
   const isLoading = updatingUserId === user.id || updatingTesterUserId === user.id || suspendingUserId === user.id;
 
+  const isSelf = currentUserId === user.id;
+  const isOrgOwner = !!user.profile?.company_name && !user.isStaffMember;
+  const hasActiveOrg = user.isStaffMember;
+
+  // Determine delete blockers
+  const getDeleteBlockReason = (): string | null => {
+    if (isSelf) return 'You cannot delete your own account.';
+    if (user.isAdmin) return 'Cannot delete an admin account. Remove admin role first.';
+    if (isOrgOwner) return `This user is the controller/owner of an organisation. Transfer or delete the organisation first.`;
+    if (hasActiveOrg) return `Remove this user from their organisation before deleting the account.`;
+    // Non-test history check happens server-side — we show a general warning
+    return null;
+  };
+
+  const deleteBlockReason = getDeleteBlockReason();
+
   const handleConfirm = () => {
     if (confirmAction === 'suspend') {
       onToggleSuspension(user.id, isSuspended, suspendReason);
@@ -78,6 +102,26 @@ export function UserManageDrawer({
       onToggleAdmin(user.id, user.isAdmin);
     }
     setConfirmAction(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!onDeleteUser) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const result = await onDeleteUser(user.id, deleteConfirmText);
+      if (result.error) {
+        setDeleteError(result.error);
+      } else {
+        setShowDeleteDialog(false);
+        setDeleteConfirmText('');
+        onOpenChange(false);
+      }
+    } catch (err: any) {
+      setDeleteError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -128,7 +172,7 @@ export function UserManageDrawer({
               )}
             </div>
 
-            {/* Status Badges - separated */}
+            {/* Status Badges */}
             <div className="space-y-2">
               {accountStatus.isSuspended && (
                 <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
@@ -237,6 +281,20 @@ export function UserManageDrawer({
                 {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
               </Button>
 
+              {/* Remove from organisation */}
+              {user.isStaffMember && onRemoveFromOrg && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start h-9 text-warning"
+                  disabled={isLoading}
+                  onClick={() => onRemoveFromOrg(user.id)}
+                >
+                  <UserMinus className="h-4 w-4 mr-2" />
+                  Remove from Organisation
+                </Button>
+              )}
+
               {/* Tester section */}
               {!user.isAdmin && (
                 <>
@@ -313,12 +371,40 @@ export function UserManageDrawer({
                   )}
                 </>
               )}
+
+              {/* Danger Zone */}
+              {onDeleteUser && (
+                <>
+                  <Separator />
+                  <h4 className="text-sm font-semibold text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Danger Zone
+                  </h4>
+
+                  {deleteBlockReason ? (
+                    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground mb-1">Delete blocked</p>
+                      <p>{deleteBlockReason}</p>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full justify-start h-9"
+                      disabled={isLoading || isDeleting}
+                      onClick={() => { setShowDeleteDialog(true); setDeleteError(null); setDeleteConfirmText(''); }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete User Account
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* Confirmation Dialog */}
+      {/* Confirmation Dialog — Suspend/Admin */}
       <AlertDialog open={confirmAction !== null} onOpenChange={(o) => { if (!o) { setConfirmAction(null); setSuspendReason(''); } }}>
         <AlertDialogContent className="w-[95vw] max-w-sm">
           <AlertDialogHeader>
@@ -346,6 +432,46 @@ export function UserManageDrawer({
                 ? (isSuspended ? 'Reactivate' : 'Suspend')
                 : (user.isAdmin ? 'Remove Admin' : 'Grant Admin')}
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog — type-to-confirm */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={(o) => { if (!o) { setShowDeleteDialog(false); setDeleteConfirmText(''); setDeleteError(null); } }}>
+        <AlertDialogContent className="w-[95vw] max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" /> Permanently Delete User?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>This will permanently delete the user account for <strong>{user.email}</strong>. This action cannot be undone.</p>
+              <p className="text-destructive font-medium">Type the user's email address to confirm:</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Input
+              placeholder={user.email || 'Type email to confirm'}
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="text-sm"
+              autoComplete="off"
+            />
+            {deleteError && (
+              <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                {deleteError}
+              </div>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmText.toLowerCase() !== (user.email || '').toLowerCase() || isDeleting}
+              onClick={handleDeleteUser}
+            >
+              {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete Permanently
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
