@@ -389,6 +389,63 @@ const EquipmentSelector = ({
     }
   };
 
+  const loadChecksSummaries = async (ridesList: Ride[]) => {
+    try {
+      const rideIds = ridesList.map(r => r.id);
+
+      const [templatesRes, checksRes, inspectionsRes] = await Promise.all([
+        supabase
+          .from('daily_check_templates')
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('is_active', true),
+        supabase
+          .from('checks')
+          .select('ride_id')
+          .in('ride_id', rideIds),
+        supabase
+          .from('compliance_events')
+          .select('ride_id')
+          .eq('user_id', effectiveUserId!)
+          .in('ride_id', rideIds)
+          .in('category', ['inspection', 'ndt'])
+          .in('status', ['open', 'scheduled']),
+      ]);
+
+      const templates = templatesRes.data || [];
+      const checks = checksRes.data || [];
+      const inspections = inspectionsRes.data || [];
+
+      const result: Record<string, ChecksSummary> = {};
+
+      for (const ride of ridesList) {
+        const templateCount = templates.filter(t => t.ride_id === ride.id).length;
+        const checkCount = checks.filter(c => c.ride_id === ride.id).length;
+        const inspectionsDue = inspections.filter(i => i.ride_id === ride.id).length;
+
+        let status: ChecksStatus = 'no-checks';
+        let label = 'No checks set up';
+
+        if (inspectionsDue > 0) {
+          status = 'inspection-due';
+          label = `${inspectionsDue} inspection${inspectionsDue > 1 ? 's' : ''} due`;
+        } else if (checkCount > 0) {
+          status = 'has-checks';
+          label = `${checkCount} check record${checkCount > 1 ? 's' : ''}`;
+        } else if (templateCount > 0) {
+          status = 'has-templates';
+          label = `${templateCount} template${templateCount > 1 ? 's' : ''} ready`;
+        }
+
+        result[ride.id] = { status, label, checkCount, templateCount, inspectionsDue };
+      }
+
+      setChecksSummaries(result);
+    } catch (e) {
+      console.warn('Could not load checks summaries:', e);
+    }
+  };
+
   const loadThumbnails = async (ridesList: Ride[]) => {
     try {
       const { data: docs } = await supabase
