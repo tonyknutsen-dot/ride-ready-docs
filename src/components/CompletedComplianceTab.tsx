@@ -66,6 +66,7 @@ interface CompletedItem {
   fullDocumentId: string | null;
   completedByName: string | null;
   completedByRole: string | null;
+  nextDueDate: string | null;
   isDocArchived?: boolean;
   isPendingSync?: boolean;
   syncFailed?: boolean;
@@ -100,7 +101,7 @@ const PAGE_SIZE = 25;
 async function fetchCompletedEvents(userId: string, days: DaysFilter) {
   const query = supabase
     .from('compliance_events')
-    .select('id, event_name, event_type, category, ride_id, due_date, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id, completed_by_name, completed_by_role')
+    .select('id, event_name, event_type, category, ride_id, due_date, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id, completed_by_name, completed_by_role, next_event_id')
     .eq('user_id', userId)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false });
@@ -114,7 +115,6 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
   const [ridesRes, eventsRes, archivedDocsRes] = await Promise.all([
     supabase.from('rides').select('id, ride_name').eq('user_id', userId),
     query,
-    // Get event IDs of archived or superseded ride_documents to exclude from stats
     supabase
       .from('ride_documents')
       .select('related_event_id')
@@ -127,12 +127,25 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
 
   const rideList = Array.from(rideMap.entries()).map(([id, name]) => ({ id, name }));
 
-  // Build set of event IDs that have ONLY archived/superseded docs (no active non-archived doc)
   const archivedEventIds = new Set(
     (archivedDocsRes.data || [])
       .map(d => d.related_event_id)
       .filter(Boolean) as string[]
   );
+
+  // Fetch next due dates for recurring events
+  const nextEventIds = (eventsRes.data || [])
+    .map(e => (e as any).next_event_id)
+    .filter(Boolean) as string[];
+  
+  let nextDueDateMap = new Map<string, string>();
+  if (nextEventIds.length > 0) {
+    const { data: nextEvents } = await supabase
+      .from('compliance_events')
+      .select('id, due_date')
+      .in('id', nextEventIds);
+    (nextEvents || []).forEach(ne => nextDueDateMap.set(ne.id, ne.due_date));
+  }
 
   const items: CompletedItem[] = (eventsRes.data || []).map(e => ({
     id: e.id,
@@ -151,6 +164,7 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
     fullDocumentId: (e as any).full_document_id || null,
     completedByName: (e as any).completed_by_name || null,
     completedByRole: (e as any).completed_by_role || null,
+    nextDueDate: (e as any).next_event_id ? nextDueDateMap.get((e as any).next_event_id) || null : null,
     isDocArchived: archivedEventIds.has(e.id),
   }));
 
@@ -185,8 +199,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // Edit sheet
   const [editingEvent, setEditingEvent] = useState<CompletedItem | null>(null);
 
-  // Local details drawer (for pending/offline items)
+  // Completion record drawer
   const [detailItem, setDetailItem] = useState<CompletedItem | null>(null);
+  const [detailDoc, setDetailDoc] = useState<RideDocument | null>(null);
 
   // Version history dialog
   const [versionDialogDoc, setVersionDialogDoc] = useState<RideDocument | null>(null);
@@ -223,6 +238,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       fullDocumentId: null,
       completedByName: null,
       completedByRole: null,
+      nextDueDate: null,
       isPendingSync: c.syncStatus === 'pending' || c.syncStatus === 'syncing',
       syncFailed: c.syncStatus === 'failed',
       syncError: c.syncError,
@@ -644,7 +660,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                                   onArchive={doc && !doc.archived_at ? () => setArchiveDialogDoc(doc) : undefined}
                                   onRestore={doc?.archived_at ? () => handleRestore(doc) : undefined}
                                   onOpenInDocs={item.fullDocumentId ? () => window.open(`/documents?highlight=${item.fullDocumentId}`, '_blank') : undefined}
-                                  onShowDetails={() => setDetailItem(item)}
+                                  onShowDetails={() => { setDetailItem(item); setDetailDoc(doc); }}
                                 />
                               );
                             })}
@@ -669,15 +685,19 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         })}
       </div>
 
-      {/* Local Details Drawer for pending/offline items */}
-      <Sheet open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}>
-        <SheetContent side="bottom" className="max-h-[70vh] rounded-t-2xl">
+      {/* Completion Record Drawer */}
+      <Sheet open={!!detailItem} onOpenChange={open => { if (!open) { setDetailItem(null); setDetailDoc(null); } }}>
+        <SheetContent side="bottom" className="max-h-[80vh] rounded-t-2xl overflow-y-auto">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-base">{detailItem?.eventName}</SheetTitle>
-            <SheetDescription className="sr-only">Completion details</SheetDescription>
+            <SheetTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-success" />
+              {detailItem?.eventName}
+            </SheetTitle>
+            <SheetDescription className="sr-only">Completion record details</SheetDescription>
           </SheetHeader>
           {detailItem && (
-            <div className="space-y-3 px-1 pb-4">
+            <div className="space-y-4 px-1 pb-6">
+              {/* Sync status banners */}
               {(detailItem.isPendingSync || detailItem.syncFailed) && (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
                   detailItem.syncFailed
@@ -690,44 +710,125 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                     : 'Pending sync – PDF will be generated when online.'}
                 </div>
               )}
-              {!detailItem.isPendingSync && !detailItem.syncFailed && !isOnline && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
-                  <CloudOff className="h-3.5 w-3.5 shrink-0" />
-                  PDF not available offline. Connect to download.
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+
+              {/* Completion details grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Equipment</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Type</p>
+                  <p className="font-medium">{detailItem.eventType}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Equipment</p>
                   <p className="font-medium">{detailItem.rideName}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Completed</p>
-                  <p className="font-medium">{detailItem.completedAt ? formatDateUK(detailItem.completedAt) : '–'}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Completed</p>
+                  <p className="font-medium">
+                    {detailItem.completedAt ? format(parseISO(detailItem.completedAt), 'd MMM yyyy, HH:mm') : '–'}
+                  </p>
                 </div>
-                {detailItem.certificateReference && (
-                  <div>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Reference</p>
-                    <p className="font-medium font-mono text-xs">{detailItem.certificateReference}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Completed By</p>
+                  <p className="font-medium">
+                    {detailItem.completedByName || '–'}
+                    {detailItem.completedByRole && (
+                      <span className="text-muted-foreground text-xs"> ({detailItem.completedByRole})</span>
+                    )}
+                  </p>
+                </div>
                 {detailItem.inspectorCompany && (
                   <div>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Inspector</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Inspector / Company</p>
                     <p className="font-medium">{detailItem.inspectorCompany}</p>
                   </div>
                 )}
+                {detailItem.certificateReference && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Certificate Ref</p>
+                    <p className="font-medium font-mono text-xs">{detailItem.certificateReference}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Due Date</p>
+                  <p className="font-medium">{detailItem.dueDate ? formatDateUK(detailItem.dueDate) : '–'}</p>
+                </div>
+                {detailItem.nextDueDate && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Next Due</p>
+                    <p className="font-medium text-primary">{formatDateUK(detailItem.nextDueDate)}</p>
+                  </div>
+                )}
+                {detailItem.fullDocumentId && (
+                  <div className="col-span-2">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Document ID</p>
+                    <p className="font-medium font-mono text-xs">{detailItem.fullDocumentId}</p>
+                  </div>
+                )}
               </div>
+
+              {/* Notes */}
               {detailItem.completionNotes && (
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
-                  <p className="text-sm bg-muted/50 rounded-md p-2">{detailItem.completionNotes}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Completion Notes</p>
+                  <p className="text-sm bg-muted/50 rounded-lg p-3 whitespace-pre-wrap">{detailItem.completionNotes}</p>
                 </div>
               )}
+
+              {/* Evidence / Attachments */}
+              {detailItem.evidenceUrls && detailItem.evidenceUrls.length > 0 && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                    Attachments ({detailItem.evidenceUrls.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detailItem.evidenceUrls.map((url, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">
+                        {url.split('/').pop()?.slice(0, 25) || `File ${i + 1}`}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sync error */}
               {detailItem.syncFailed && detailItem.syncError && (
                 <div>
-                  <p className="text-[11px] text-destructive uppercase tracking-wider mb-1">Error</p>
+                  <p className="text-[11px] text-destructive uppercase tracking-wider font-semibold mb-1">Sync Error</p>
                   <p className="text-xs text-destructive bg-destructive/5 rounded-md p-2">{detailItem.syncError}</p>
+                </div>
+              )}
+
+              {/* Document Actions */}
+              {!detailItem.isPendingSync && !detailItem.syncFailed && (
+                <div className="space-y-2 pt-1 border-t border-border">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Document</p>
+                  {detailDoc ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => { handleViewPdf(detailDoc); }}
+                      >
+                        <Eye className="h-3.5 w-3.5" /> View Document
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => { handleDownload(detailDoc); }}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </Button>
+                    </div>
+                  ) : !isOnline ? (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
+                      <CloudOff className="h-3.5 w-3.5 shrink-0" />
+                      Document not available offline.
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No linked document found for this record.</p>
+                  )}
                 </div>
               )}
             </div>
@@ -840,29 +941,8 @@ function CompletedItemRow({
   const { toast } = useToast();
 
   const handleCardClick = () => {
-    // Pending sync or failed -> show local details drawer
-    if (isPending || isFailed) {
-      onShowDetails();
-      return;
-    }
-    // No doc and offline -> show details with offline message
-    if (!onViewPdf && !isOnline) {
-      onShowDetails();
-      return;
-    }
-    // No doc at all -> show details as fallback
-    if (!onViewPdf) {
-      onShowDetails();
-      return;
-    }
-    if (loading) return;
-    setLoading(true);
-    try {
-      onViewPdf();
-    } catch {
-      toast({ title: 'Failed to open document', variant: 'destructive' });
-      setLoading(false);
-    }
+    // Always open the read-only detail sheet first
+    onShowDetails();
   };
 
   return (
