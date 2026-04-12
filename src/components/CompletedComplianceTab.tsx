@@ -660,7 +660,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                                   onArchive={doc && !doc.archived_at ? () => setArchiveDialogDoc(doc) : undefined}
                                   onRestore={doc?.archived_at ? () => handleRestore(doc) : undefined}
                                   onOpenInDocs={item.fullDocumentId ? () => window.open(`/documents?highlight=${item.fullDocumentId}`, '_blank') : undefined}
-                                  onShowDetails={() => setDetailItem(item)}
+                                  onShowDetails={() => { setDetailItem(item); setDetailDoc(doc); }}
                                 />
                               );
                             })}
