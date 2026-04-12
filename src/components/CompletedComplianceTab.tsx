@@ -685,15 +685,19 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         })}
       </div>
 
-      {/* Local Details Drawer for pending/offline items */}
-      <Sheet open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}>
-        <SheetContent side="bottom" className="max-h-[70vh] rounded-t-2xl">
+      {/* Completion Record Drawer */}
+      <Sheet open={!!detailItem} onOpenChange={open => { if (!open) { setDetailItem(null); setDetailDoc(null); } }}>
+        <SheetContent side="bottom" className="max-h-[80vh] rounded-t-2xl overflow-y-auto">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-base">{detailItem?.eventName}</SheetTitle>
-            <SheetDescription className="sr-only">Completion details</SheetDescription>
+            <SheetTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-success" />
+              {detailItem?.eventName}
+            </SheetTitle>
+            <SheetDescription className="sr-only">Completion record details</SheetDescription>
           </SheetHeader>
           {detailItem && (
-            <div className="space-y-3 px-1 pb-4">
+            <div className="space-y-4 px-1 pb-6">
+              {/* Sync status banners */}
               {(detailItem.isPendingSync || detailItem.syncFailed) && (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
                   detailItem.syncFailed
@@ -706,44 +710,125 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                     : 'Pending sync – PDF will be generated when online.'}
                 </div>
               )}
-              {!detailItem.isPendingSync && !detailItem.syncFailed && !isOnline && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
-                  <CloudOff className="h-3.5 w-3.5 shrink-0" />
-                  PDF not available offline. Connect to download.
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+
+              {/* Completion details grid */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Equipment</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Type</p>
+                  <p className="font-medium">{detailItem.eventType}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Equipment</p>
                   <p className="font-medium">{detailItem.rideName}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Completed</p>
-                  <p className="font-medium">{detailItem.completedAt ? formatDateUK(detailItem.completedAt) : '–'}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Completed</p>
+                  <p className="font-medium">
+                    {detailItem.completedAt ? format(parseISO(detailItem.completedAt), 'd MMM yyyy, HH:mm') : '–'}
+                  </p>
                 </div>
-                {detailItem.certificateReference && (
-                  <div>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Reference</p>
-                    <p className="font-medium font-mono text-xs">{detailItem.certificateReference}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Completed By</p>
+                  <p className="font-medium">
+                    {detailItem.completedByName || '–'}
+                    {detailItem.completedByRole && (
+                      <span className="text-muted-foreground text-xs"> ({detailItem.completedByRole})</span>
+                    )}
+                  </p>
+                </div>
                 {detailItem.inspectorCompany && (
                   <div>
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Inspector</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Inspector / Company</p>
                     <p className="font-medium">{detailItem.inspectorCompany}</p>
                   </div>
                 )}
+                {detailItem.certificateReference && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Certificate Ref</p>
+                    <p className="font-medium font-mono text-xs">{detailItem.certificateReference}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Due Date</p>
+                  <p className="font-medium">{detailItem.dueDate ? formatDateUK(detailItem.dueDate) : '–'}</p>
+                </div>
+                {detailItem.nextDueDate && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Next Due</p>
+                    <p className="font-medium text-primary">{formatDateUK(detailItem.nextDueDate)}</p>
+                  </div>
+                )}
+                {detailItem.fullDocumentId && (
+                  <div className="col-span-2">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Document ID</p>
+                    <p className="font-medium font-mono text-xs">{detailItem.fullDocumentId}</p>
+                  </div>
+                )}
               </div>
+
+              {/* Notes */}
               {detailItem.completionNotes && (
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
-                  <p className="text-sm bg-muted/50 rounded-md p-2">{detailItem.completionNotes}</p>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Completion Notes</p>
+                  <p className="text-sm bg-muted/50 rounded-lg p-3 whitespace-pre-wrap">{detailItem.completionNotes}</p>
                 </div>
               )}
+
+              {/* Evidence / Attachments */}
+              {detailItem.evidenceUrls && detailItem.evidenceUrls.length > 0 && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                    Attachments ({detailItem.evidenceUrls.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detailItem.evidenceUrls.map((url, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">
+                        {url.split('/').pop()?.slice(0, 25) || `File ${i + 1}`}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sync error */}
               {detailItem.syncFailed && detailItem.syncError && (
                 <div>
-                  <p className="text-[11px] text-destructive uppercase tracking-wider mb-1">Error</p>
+                  <p className="text-[11px] text-destructive uppercase tracking-wider font-semibold mb-1">Sync Error</p>
                   <p className="text-xs text-destructive bg-destructive/5 rounded-md p-2">{detailItem.syncError}</p>
+                </div>
+              )}
+
+              {/* Document Actions */}
+              {!detailItem.isPendingSync && !detailItem.syncFailed && (
+                <div className="space-y-2 pt-1 border-t border-border">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Document</p>
+                  {detailDoc ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => { handleViewPdf(detailDoc); }}
+                      >
+                        <Eye className="h-3.5 w-3.5" /> View Document
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => { handleDownload(detailDoc); }}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Download
+                      </Button>
+                    </div>
+                  ) : !isOnline ? (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
+                      <CloudOff className="h-3.5 w-3.5 shrink-0" />
+                      Document not available offline.
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No linked document found for this record.</p>
+                  )}
                 </div>
               )}
             </div>
