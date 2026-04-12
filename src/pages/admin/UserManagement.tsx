@@ -995,6 +995,41 @@ export default function UserManagement() {
           onToggleTester={toggleTesterRole}
           onExtendTester={extendTesterExpiry}
           onOffboardTester={offboardTester}
+          currentUserId={currentAuthUser?.id}
+          onRemoveFromOrg={async (uid) => {
+            try {
+              const { error } = await supabase
+                .from('organisation_members')
+                .update({ is_active: false })
+                .eq('user_id', uid)
+                .eq('is_active', true);
+              if (error) throw error;
+              toast.success('User removed from organisation');
+              fetchUsers();
+            } catch (err: any) {
+              console.error('Error removing from org:', err);
+              toast.error('Failed to remove user from organisation');
+            }
+          }}
+          onDeleteUser={async (uid, confirmEmail) => {
+            try {
+              const { data, error: invokeError } = await supabase.functions.invoke('delete-user-admin', {
+                body: { userId: uid, confirmEmail },
+              });
+              if (invokeError) {
+                return { error: invokeError.message || 'Failed to delete user' };
+              }
+              if (data?.error) {
+                return { error: data.error };
+              }
+              toast.success('User account permanently deleted');
+              setManagedUser(null);
+              fetchUsers();
+              return {};
+            } catch (err: any) {
+              return { error: err.message || 'An unexpected error occurred' };
+            }
+          }}
         />
 
         {/* Tester Time Tracking */}
