@@ -512,6 +512,11 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                     Next occurrence will be created automatically on completion.
                   </p>
                 )}
+                <p className="text-[10px] text-muted-foreground/70 mt-1 border-t border-border/30 pt-1.5">
+                  Press <span className="font-semibold text-muted-foreground">Complete</span> to record this inspection as done — this removes it from your dashboard and Inspections Due list.
+                  {event.is_recurring ? ' A new due date will be created automatically.' : ''}
+                  {' '}You can optionally attach a report or certificate during completion.
+                </p>
               </CardContent>
             </Card>
           ))}

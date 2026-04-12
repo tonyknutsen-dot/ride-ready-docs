@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+
+let unreadInstanceCounter = 0;
 
 export function useUnreadNotifications() {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const channelRef = useRef(`unread-notifications-${++unreadInstanceCounter}`);
 
   useEffect(() => {
     if (!user) return;
@@ -21,9 +24,8 @@ export function useUnreadNotifications() {
 
     fetchCount();
 
-    // Subscribe to realtime changes
     const channel = supabase
-      .channel('unread-notifications')
+      .channel(channelRef.current)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
