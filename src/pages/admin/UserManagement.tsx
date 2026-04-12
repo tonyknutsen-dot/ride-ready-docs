@@ -19,6 +19,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { UserCard } from '@/components/admin/UserCard';
+import { UserListRow } from '@/components/admin/UserListRow';
+import { UserManageDrawer } from '@/components/admin/UserManageDrawer';
+import type { UserCardData } from '@/components/admin/UserCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { TesterInviteDialog } from '@/components/admin/TesterInviteDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserWithProfile {
   id: string;
@@ -115,6 +119,8 @@ export default function UserManagement() {
   const [allTimeLoading, setAllTimeLoading] = useState(false);
   const [showTimeTracking, setShowTimeTracking] = useState(false);
   const [timeViewMode, setTimeViewMode] = useState<'monthly' | 'alltime'>('alltime');
+  const [managedUser, setManagedUser] = useState<UserCardData | null>(null);
+  const isMobile = useIsMobile();
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -472,6 +478,8 @@ export default function UserManagement() {
       usersData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setUsers(usersData);
+      // Keep drawer in sync with refreshed data
+      setManagedUser(prev => prev ? usersData.find(u => u.id === prev.id) || null : null);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
@@ -888,26 +896,48 @@ export default function UserManagement() {
               {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-              {filteredUsers.map((user) => (
-                <UserCard
-                  key={user.id}
-                  user={user}
-                  updatingUserId={updatingUserId}
-                  updatingTesterUserId={updatingTesterUserId}
-                  suspendingUserId={suspendingUserId}
-                  onToggleAdmin={toggleAdminRole}
-                  onToggleSuspension={(uid, suspended, reason) => {
-                    if (reason) setSuspendReason(reason);
-                    toggleSuspension(uid, suspended);
-                  }}
-                  onToggleTester={toggleTesterRole}
-                  onExtendTester={extendTesterExpiry}
-                  onOffboardTester={offboardTester}
-                />
-              ))}
-            </div>
+          <CardContent className="p-0 md:p-0">
+            {isMobile ? (
+              <div className="grid grid-cols-1 gap-2 p-4">
+                {filteredUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    updatingUserId={updatingUserId}
+                    updatingTesterUserId={updatingTesterUserId}
+                    suspendingUserId={suspendingUserId}
+                    onToggleAdmin={toggleAdminRole}
+                    onToggleSuspension={(uid, suspended, reason) => {
+                      if (reason) setSuspendReason(reason);
+                      toggleSuspension(uid, suspended);
+                    }}
+                    onToggleTester={toggleTesterRole}
+                    onExtendTester={extendTesterExpiry}
+                    onOffboardTester={offboardTester}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Name / Email</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs hidden md:table-cell">Company</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs hidden lg:table-cell">Platform</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs hidden lg:table-cell">Org Role</th>
+                      <th className="text-left py-2 px-3 font-medium text-muted-foreground text-xs">Status</th>
+                      <th className="text-right py-2 px-3 font-medium text-muted-foreground text-xs w-24"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((user) => (
+                      <UserListRow key={user.id} user={user} onManage={setManagedUser} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {filteredUsers.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
@@ -916,6 +946,24 @@ export default function UserManagement() {
             )}
           </CardContent>
         </Card>
+
+        {/* Manage Drawer */}
+        <UserManageDrawer
+          user={managedUser}
+          open={managedUser !== null}
+          onOpenChange={(open) => { if (!open) setManagedUser(null); }}
+          updatingUserId={updatingUserId}
+          updatingTesterUserId={updatingTesterUserId}
+          suspendingUserId={suspendingUserId}
+          onToggleAdmin={(uid, admin) => { toggleAdminRole(uid, admin); }}
+          onToggleSuspension={(uid, suspended, reason) => {
+            if (reason) setSuspendReason(reason);
+            toggleSuspension(uid, suspended);
+          }}
+          onToggleTester={toggleTesterRole}
+          onExtendTester={extendTesterExpiry}
+          onOffboardTester={offboardTester}
+        />
 
         {/* Tester Time Tracking */}
         <Card>
