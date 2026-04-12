@@ -10,15 +10,6 @@ import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, Che
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { UserCard } from '@/components/admin/UserCard';
 import {
   AlertDialog,
