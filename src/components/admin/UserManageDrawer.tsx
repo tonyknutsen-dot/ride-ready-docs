@@ -28,6 +28,13 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { UserCardData } from './UserCard';
+import {
+  getAccountStatusMeta,
+  getBillingStatusMeta,
+  getOrgRoleLabel,
+  getPlatformRoleLabel,
+  getUserCompany,
+} from './userManagementMeta';
 
 interface UserManageDrawerProps {
   user: UserCardData | null;
@@ -56,6 +63,11 @@ export function UserManageDrawer({
   if (!user) return null;
 
   const isSuspended = user.profile?.is_suspended ?? false;
+  const accountStatus = getAccountStatusMeta(user);
+  const billingStatus = getBillingStatusMeta(user);
+  const orgRole = getOrgRoleLabel(user);
+  const platformRole = getPlatformRoleLabel(user);
+  const companyName = getUserCompany(user);
   const isLoading = updatingUserId === user.id || updatingTesterUserId === user.id || suspendingUserId === user.id;
 
   const handleConfirm = () => {
@@ -82,12 +94,12 @@ export function UserManageDrawer({
           {/* User Info */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
-              {(user.profile?.company_name || user.staffOrgName) && (
+              {companyName && (
                 <div>
                   <span className="text-xs text-muted-foreground block">Company</span>
                   <span className="flex items-center gap-1 font-medium">
                     <Building className="h-3 w-3 text-muted-foreground" />
-                    {user.profile?.company_name || user.staffOrgName}
+                    {companyName}
                   </span>
                 </div>
               )}
@@ -118,11 +130,21 @@ export function UserManageDrawer({
 
             {/* Status Badges - separated */}
             <div className="space-y-2">
+              {accountStatus.isSuspended && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Ban className="h-4 w-4" /> Account suspended
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This account is suspended independently of billing state.
+                  </p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground w-20 shrink-0">Platform:</span>
-                {user.isAdmin ? (
+                {platformRole === 'Admin' ? (
                   <Badge className="bg-primary text-primary-foreground"><Shield className="h-3 w-3 mr-1" />Admin</Badge>
-                ) : user.isTester ? (
+                ) : platformRole === 'Tester' ? (
                   <Badge className="bg-warning text-warning-foreground"><FlaskConical className="h-3 w-3 mr-1" />Tester</Badge>
                 ) : (
                   <Badge variant="outline">User</Badge>
@@ -130,30 +152,26 @@ export function UserManageDrawer({
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground w-20 shrink-0">Org Role:</span>
-                {user.isStaffMember ? (
+                {orgRole === 'Staff' ? (
                   <Badge variant="outline" className="border-muted-foreground/40"><Users className="h-3 w-3 mr-1" />Staff</Badge>
-                ) : user.profile?.company_name ? (
+                ) : orgRole === 'Controller' ? (
                   <Badge variant="outline" className="border-primary/40 text-primary">Controller</Badge>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
+                  <Badge variant="outline" className="text-muted-foreground">None</Badge>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-20 shrink-0">Status:</span>
-                {isSuspended ? (
-                  <Badge variant="destructive"><Ban className="h-3 w-3 mr-1" />Suspended</Badge>
-                ) : (() => {
-                  const s = user.profile?.subscription_status;
-                  if (!s) return <Badge variant="outline">No Subscription</Badge>;
-                  switch (s) {
-                    case 'active': return <Badge className="bg-green-600 text-white">Active</Badge>;
-                    case 'trial': return <Badge className="bg-blue-600 text-white">Trial</Badge>;
-                    case 'past_due': return <Badge className="bg-yellow-500 text-black">Past Due</Badge>;
-                    case 'expired': return <Badge variant="destructive">Expired</Badge>;
-                    case 'cancelled': return <Badge variant="outline">Cancelled</Badge>;
-                    default: return <Badge variant="outline" className="capitalize">{s}</Badge>;
-                  }
-                })()}
+                <span className="text-xs text-muted-foreground w-20 shrink-0">Account:</span>
+                <Badge variant="outline" className={accountStatus.className}>
+                  {accountStatus.isSuspended && <Ban className="h-3 w-3 mr-1" />}
+                  {accountStatus.label}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-20 shrink-0">Billing:</span>
+                <Badge variant="outline" className={billingStatus.className}>
+                  {billingStatus.label}
+                </Badge>
               </div>
               {user.isTester && user.testerExpiresAt && (
                 <div className="flex items-center gap-2">
