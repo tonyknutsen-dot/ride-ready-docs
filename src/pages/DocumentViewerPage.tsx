@@ -713,6 +713,7 @@ const DocumentViewerPage = () => {
   };
 
 
+  const handleRestore = async () => {
     if (!rideDoc) return;
     const ok = await restoreRideDocument(rideDoc.id);
     if (ok) {
