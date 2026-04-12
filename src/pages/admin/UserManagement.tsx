@@ -119,6 +119,8 @@ export default function UserManagement() {
   const [allTimeLoading, setAllTimeLoading] = useState(false);
   const [showTimeTracking, setShowTimeTracking] = useState(false);
   const [timeViewMode, setTimeViewMode] = useState<'monthly' | 'alltime'>('alltime');
+  const [managedUser, setManagedUser] = useState<UserCardData | null>(null);
+  const isMobile = useIsMobile();
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
