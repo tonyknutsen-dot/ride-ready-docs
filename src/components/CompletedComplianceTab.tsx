@@ -199,8 +199,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // Edit sheet
   const [editingEvent, setEditingEvent] = useState<CompletedItem | null>(null);
 
-  // Local details drawer (for pending/offline items)
+  // Completion record drawer
   const [detailItem, setDetailItem] = useState<CompletedItem | null>(null);
+  const [detailDoc, setDetailDoc] = useState<RideDocument | null>(null);
 
   // Version history dialog
   const [versionDialogDoc, setVersionDialogDoc] = useState<RideDocument | null>(null);
