@@ -236,6 +236,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       documentId: null,
       fullDocumentId: null,
       completedByName: null,
+      completedByRole: null,
       nextDueDate: null,
       isPendingSync: c.syncStatus === 'pending' || c.syncStatus === 'syncing',
       syncFailed: c.syncStatus === 'failed',
