@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import PdfJsViewer from '@/components/PdfJsViewer';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateComplianceQueries as invalidateComplianceQueriesShared, invalidateDocumentQueries } from '@/utils/queryInvalidation';
