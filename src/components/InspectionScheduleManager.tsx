@@ -11,10 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2, MoreVertical } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2, MoreVertical, FileText, Download, User, Building2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
+import { openDocumentById } from '@/utils/documentOpen';
+import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import MarkCompleteSheet from '@/components/MarkCompleteSheet';
 import { format, differenceInDays, isBefore } from 'date-fns';
+import { formatDateUK } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +55,7 @@ const INSPECTION_TYPES = [
 const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => {
   const [events, setEvents] = useState<ComplianceEvent[]>([]);
   const { guardWrite } = useBillingWriteGuard();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ComplianceEvent | null>(null);
@@ -58,7 +63,52 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
   const [markingComplete, setMarkingComplete] = useState<string | null>(null);
   const [markCompleteSheetOpen, setMarkCompleteSheetOpen] = useState(false);
   const [markCompleteTarget, setMarkCompleteTarget] = useState<ComplianceEvent | null>(null);
+  const [detailEvent, setDetailEvent] = useState<ComplianceEvent | null>(null);
+  const [linkedDocId, setLinkedDocId] = useState<string | null>(null);
+  const [loadingDoc, setLoadingDoc] = useState(false);
   const { toast } = useToast();
+  // Look up linked document when a completed event is selected
+  useEffect(() => {
+    if (!detailEvent) { setLinkedDocId(null); return; }
+    let cancelled = false;
+    setLoadingDoc(true);
+    (async () => {
+      const { data: rdoc } = await supabase
+        .from('ride_documents')
+        .select('id')
+        .eq('related_event_id', detailEvent.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) {
+        setLinkedDocId(rdoc?.id || null);
+        setLoadingDoc(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [detailEvent]);
+
+  const handleViewDocument = () => {
+    if (!linkedDocId) return;
+    openDocumentById({ documentId: linkedDocId, navigate, sourceComponent: 'InspectionScheduleManager', toast });
+  };
+
+  const handleDownloadDocument = async () => {
+    if (!linkedDocId) return;
+    const { data: rdoc } = await supabase
+      .from('ride_documents')
+      .select('file_url, title')
+      .eq('id', linkedDocId)
+      .maybeSingle();
+    if (!rdoc?.file_url) { toast({ title: 'No file available', variant: 'destructive' }); return; }
+    const url = await getSignedStorageUrl(rdoc.file_url);
+    if (!url) { toast({ title: 'Could not generate download link', variant: 'destructive' }); return; }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = rdoc.title || 'document.pdf';
+    a.click();
+  };
+
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -527,7 +577,12 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
             <div className="space-y-1.5 pt-2">
               <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Completed</h4>
               {completedEvents.slice(0, 5).map((event) => (
-                <div key={event.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 gap-3">
+                <button
+                  key={event.id}
+                  type="button"
+                  onClick={() => setDetailEvent(event)}
+                  className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 gap-3 text-left hover:bg-muted/50 transition-colors cursor-pointer"
+                >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
                     <div className="min-w-0">
@@ -541,7 +596,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                   <span className="text-[10px] text-muted-foreground shrink-0">
                     {event.completed_at ? format(new Date(event.completed_at), 'd MMM yyyy') : ''}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -549,6 +604,121 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
       )}
 
       {/* Mark Complete Sheet */}
+
+      {/* Completed Detail Drawer */}
+      <Sheet open={!!detailEvent} onOpenChange={(open) => { if (!open) setDetailEvent(null); }}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-base">{detailEvent?.event_name}</SheetTitle>
+            <SheetDescription>
+              {INSPECTION_TYPES.find(t => t.value === detailEvent?.event_type)?.label || detailEvent?.event_type} · {ride.ride_name}
+            </SheetDescription>
+          </SheetHeader>
+
+          {detailEvent && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Completed</p>
+                  <p className="text-sm font-medium">
+                    {detailEvent.completed_at
+                      ? format(new Date(detailEvent.completed_at), "d MMM yyyy 'at' HH:mm")
+                      : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Due Date</p>
+                  <p className="text-sm font-medium">{formatDateUK(new Date(detailEvent.due_date))}</p>
+                </div>
+              </div>
+
+              {(detailEvent.completed_by_name || detailEvent.completed_by_role) && (
+                <div className="flex items-start gap-2">
+                  <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Completed By</p>
+                    <p className="text-sm font-medium">
+                      {detailEvent.completed_by_name || '—'}
+                      {detailEvent.completed_by_role && (
+                        <Badge variant="outline" className="ml-1.5 text-[10px] px-1.5 py-0">{detailEvent.completed_by_role}</Badge>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {detailEvent.inspector_company && (
+                <div className="flex items-start gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Inspector / Company</p>
+                    <p className="text-sm font-medium">{detailEvent.inspector_company}</p>
+                  </div>
+                </div>
+              )}
+
+              {detailEvent.certificate_reference && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Certificate / Report Ref</p>
+                  <p className="text-sm font-mono">{detailEvent.certificate_reference}</p>
+                </div>
+              )}
+
+              {detailEvent.full_document_id && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Document ID</p>
+                  <p className="text-xs font-mono text-muted-foreground">{detailEvent.full_document_id}</p>
+                </div>
+              )}
+
+              {detailEvent.is_recurring && detailEvent.next_event_id && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Next Due Date</p>
+                  <Badge variant="secondary" className="text-xs mt-0.5">Recurring — next occurrence created</Badge>
+                </div>
+              )}
+
+              {detailEvent.completion_notes && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Notes</p>
+                  <p className="text-sm whitespace-pre-wrap bg-muted/30 rounded-md p-2 mt-1">{detailEvent.completion_notes}</p>
+                </div>
+              )}
+
+              {detailEvent.evidence_urls && detailEvent.evidence_urls.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Attachments ({detailEvent.evidence_urls.length})</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {detailEvent.evidence_urls.map((url, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">
+                        {url.split('/').pop()?.slice(0, 25) || `File ${i + 1}`}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="border-t border-border pt-3 space-y-2">
+                {loadingDoc ? (
+                  <p className="text-xs text-muted-foreground">Looking up linked document…</p>
+                ) : linkedDocId ? (
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 gap-1.5" onClick={handleViewDocument}>
+                      <FileText className="h-3.5 w-3.5" /> View Document
+                    </Button>
+                    <Button size="sm" variant="outline" className="gap-1.5" onClick={handleDownloadDocument}>
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No linked document found for this completion.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
       {markCompleteTarget && (
         <MarkCompleteSheet
           open={markCompleteSheetOpen}
