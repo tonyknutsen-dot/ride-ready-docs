@@ -644,6 +644,42 @@ const DocumentViewerPage = () => {
     queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
     queryClient.invalidateQueries({ queryKey: ['compliance'] });
     queryClient.invalidateQueries({ queryKey: ['overview'] });
+    queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
+  };
+
+  const handleEditExpiry = async () => {
+    if (!fallbackDocId || !newExpiryDate) return;
+    const { error } = await supabase
+      .from('documents')
+      .update({ expires_at: newExpiryDate })
+      .eq('id', fallbackDocId);
+    if (error) {
+      toast({ title: 'Failed to update expiry', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Expiry date updated' });
+    setEditExpiryDialogOpen(false);
+    setNewExpiryDate('');
+    invalidateComplianceQueries();
+    // Reload to reflect new meta
+    loadDocument(fallbackDocId);
+  };
+
+  const handleDeleteUploadedDoc = async () => {
+    if (!fallbackDocId || !fallbackDoc) return;
+    // Delete from storage first
+    if (fallbackDoc.file_path) {
+      await supabase.storage.from('ride-documents').remove([fallbackDoc.file_path]);
+    }
+    const { error } = await supabase.from('documents').delete().eq('id', fallbackDocId);
+    if (error) {
+      toast({ title: 'Failed to delete document', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Document deleted' });
+    setDeleteDialogOpen(false);
+    invalidateComplianceQueries();
+    navigate(-1);
   };
 
   const handleRestore = async () => {
