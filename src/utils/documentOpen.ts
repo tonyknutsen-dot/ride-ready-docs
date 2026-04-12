@@ -80,7 +80,7 @@ export async function openDocumentById({
       });
 
       if (resolvedUrl) {
-        window.location.assign(resolvedUrl);
+        navigate(`/documents/${documentId}`);
         return;
       }
 
@@ -148,7 +148,7 @@ export async function openDocumentById({
     });
 
     if (resolvedUrl) {
-      window.location.assign(resolvedUrl);
+      navigate(`/documents/${documentId}`);
       return;
     }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import PdfJsViewer from '@/components/PdfJsViewer';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateComplianceQueries as invalidateComplianceQueriesShared, invalidateDocumentQueries } from '@/utils/queryInvalidation';
@@ -1003,33 +1004,28 @@ const DocumentViewerPage = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Document Viewer — routed, full-page, native-first */}
         <div className="flex-1">
-          {fileType === 'pdf' && (
-            <div className="h-full w-full bg-background">
-              <iframe
-                key={pdfUrl || 'pdf-viewer'}
-                src={pdfUrl || undefined}
-                title={docTitle || 'Document viewer'}
-                allow="fullscreen"
-                className="h-full w-full border-0 bg-background"
-                onLoad={() => {
-                  debugViewer('viewer-mount-success', {
-                    documentId: documentId ?? fallbackDocId ?? null,
-                    fileType,
-                    resolvedUrl: pdfUrl,
-                  });
-                }}
-                onError={() => {
-                  const message = 'The PDF viewer could not load this file.';
-                  setViewerError(message);
-                  debugViewer('viewer-mount-failed', {
-                    documentId: documentId ?? fallbackDocId ?? null,
-                    fileType,
-                    resolvedUrl: pdfUrl,
-                    error: message,
-                  });
-                }}
-              />
-            </div>
+          {fileType === 'pdf' && pdfUrl && (
+            <PdfJsViewer
+              url={pdfUrl}
+              title={docTitle}
+              className="h-full w-full"
+              onLoad={() => {
+                debugViewer('viewer-mount-success', {
+                  documentId: documentId ?? fallbackDocId ?? null,
+                  fileType,
+                  resolvedUrl: pdfUrl,
+                });
+              }}
+              onError={(message) => {
+                setViewerError(message);
+                debugViewer('viewer-mount-failed', {
+                  documentId: documentId ?? fallbackDocId ?? null,
+                  fileType,
+                  resolvedUrl: pdfUrl,
+                  error: message,
+                });
+              }}
+            />
           )}
           {fileType === 'image' && pdfUrl && (
             <div className="w-full h-full overflow-auto bg-background">
