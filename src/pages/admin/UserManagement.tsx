@@ -850,103 +850,51 @@ export default function UserManagement() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
-                Total Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{users.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
-                Active Subs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {users.filter(u => u.profile?.subscription_status === 'active').length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
-                Staff Members
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {users.filter(u => u.isStaffMember).length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
-                Testers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-warning-foreground">
-                {users.filter(u => u.isTester).length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
-                Admin Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {users.filter(u => u.isAdmin).length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground leading-tight">
-                Suspended
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">
-                {users.filter(u => u.profile?.is_suspended).length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* KPI Cards — clickable filter controls */}
+        <KpiCards counts={kpiCounts} activeKpi={filters.kpi} onKpiClick={handleKpiClick} />
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, company, country, or user ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+        {/* Search + Filters */}
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, email, company, country, or user ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <FilterBar
+            filters={filters}
+            onChange={setFilters}
+            onClear={() => setFilters(DEFAULT_FILTERS)}
           />
         </div>
 
         {/* Users List */}
         <Card>
-          <CardHeader>
-            <CardTitle>All Users</CardTitle>
-            <CardDescription>
-              {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
-            </CardDescription>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>
+                  {filters.kpi === 'pending_invites' ? 'Pending Invites' : 
+                   filters.kpi !== 'all' ? `${filters.kpi.charAt(0).toUpperCase() + filters.kpi.slice(1).replace('_', ' ')}` : 'All Users'}
+                </CardTitle>
+                <CardDescription>
+                  {filteredUsers.length} result{filteredUsers.length !== 1 ? 's' : ''}
+                  {totalPages > 1 && ` · Page ${page} of ${totalPages}`}
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0 md:p-0">
-            {isMobile ? (
+            {filters.kpi === 'pending_invites' ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                Pending invites are managed on the Staff page of each organisation.
+              </div>
+            ) : isMobile ? (
               <div className="grid grid-cols-1 gap-2 p-4">
-                {filteredUsers.map((user) => (
+                {paginatedUsers.map((user) => (
                   <UserCard
                     key={user.id}
                     user={user}
@@ -977,7 +925,7 @@ export default function UserManagement() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user) => (
+                    {paginatedUsers.map((user) => (
                       <UserListRow key={user.id} user={user} onManage={setManagedUser} />
                     ))}
                   </tbody>
@@ -985,9 +933,48 @@ export default function UserManagement() {
               </div>
             )}
 
-            {filteredUsers.length === 0 && (
+            {filteredUsers.length === 0 && filters.kpi !== 'pending_invites' && (
               <div className="text-center py-8 text-muted-foreground">
-                No users found matching your search.
+                No users found matching your filters.
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredUsers.length)} of {filteredUsers.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline" size="sm" className="h-7 w-7 p-0"
+                    disabled={page <= 1}
+                    onClick={() => setPage(p => p - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    const pageNum = totalPages <= 5 ? i + 1 : Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === page ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-7 w-7 p-0 text-xs"
+                        onClick={() => setPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  <Button
+                    variant="outline" size="sm" className="h-7 w-7 p-0"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
