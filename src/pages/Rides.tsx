@@ -445,7 +445,7 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
-  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention', 'No Issues'] as const;
+  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention'] as const;
 
   const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'due_soon' | 'no_issues' | 'no_docs' => {
     // Stop-use defects take absolute priority
@@ -488,7 +488,7 @@ const Rides = () => {
             if (activeGroup === 'Inspections Overdue') return s === 'inspection_overdue';
             if (activeGroup === 'Due Soon') return s === 'due_soon';
             if (activeGroup === 'Attention') return s === 'attention' || s === 'stop_use';
-            if (activeGroup === 'No Issues') return s === 'no_issues' || s === 'no_docs';
+            return true;
             return true;
           })
         : rides.filter(r => r.ride_categories.category_group === activeGroup);
@@ -499,7 +499,7 @@ const Rides = () => {
   const inspectionsOverdueTotal = rides.filter(r => (rideStats[r.id]?.overdueCount ?? 0) > 0).length;
   const dueSoonTotal = rides.filter(r => getComplianceStatus(r.id) === 'due_soon').length;
   const attentionTotal = rides.filter(r => ['attention', 'stop_use'].includes(getComplianceStatus(r.id))).length;
-  const noIssuesTotal = rides.filter(r => ['no_issues', 'no_docs'].includes(getComplianceStatus(r.id))).length;
+  
 
   const groupCounts: Record<string, number> = {
     All: rides.length,
@@ -514,7 +514,7 @@ const Rides = () => {
     'Inspections Overdue': inspectionsOverdueTotal,
     'Due Soon': dueSoonTotal,
     Attention: attentionTotal,
-    'No Issues': noIssuesTotal,
+    
   };
 
   return (
