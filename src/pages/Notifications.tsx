@@ -19,8 +19,8 @@ const Notifications = () => {
             </h1>
             <p className="text-[13px] text-muted-foreground">
               {actionCount > 0
-                ? `${actionCount} item${actionCount !== 1 ? 's' : ''} need${actionCount === 1 ? 's' : ''} attention`
-                : 'All clear'}
+                ? `${actionCount} unread alert${actionCount !== 1 ? 's' : ''}`
+                : 'No unread alerts'}
             </p>
           </div>
         </div>

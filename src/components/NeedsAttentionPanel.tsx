@@ -296,7 +296,10 @@ const NeedsAttentionPanel = () => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Needs Attention</h2>
+        <div>
+          <h2 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Needs Attention</h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Current action items across your account</p>
+        </div>
         <span className="text-xs text-muted-foreground">{items.length} item{items.length !== 1 ? 's' : ''}</span>
       </div>
       <div className="h-px bg-border" />
