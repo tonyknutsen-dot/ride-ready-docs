@@ -249,7 +249,7 @@ const NeedsAttentionPanel = () => {
       },
       {
         type: 'doc_expiring',
-        title: 'Documents Expiring',
+        title: 'Expired / Expiring Documents',
         icon: FileText,
         defaultOpen: false,
         tier: 'warning',
