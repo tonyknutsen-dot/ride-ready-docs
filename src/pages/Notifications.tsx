@@ -22,6 +22,9 @@ const Notifications = () => {
                 ? `${actionCount} unread alert${actionCount !== 1 ? 's' : ''}`
                 : 'No unread alerts'}
             </p>
+            <p className="text-[11px] text-muted-foreground/70">
+              Reminder messages — one issue may generate multiple alerts
+            </p>
           </div>
         </div>
       </div>
