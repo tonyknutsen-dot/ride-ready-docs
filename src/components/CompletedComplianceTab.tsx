@@ -66,6 +66,7 @@ interface CompletedItem {
   fullDocumentId: string | null;
   completedByName: string | null;
   completedByRole: string | null;
+  nextDueDate: string | null;
   isDocArchived?: boolean;
   isPendingSync?: boolean;
   syncFailed?: boolean;
