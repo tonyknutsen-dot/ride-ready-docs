@@ -99,6 +99,11 @@ const DocumentViewerPage = () => {
   const [editExpiryDialogOpen, setEditExpiryDialogOpen] = useState(false);
   const [newExpiryDate, setNewExpiryDate] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [acknowledgeDialogOpen, setAcknowledgeDialogOpen] = useState(false);
+  const [acknowledgeNote, setAcknowledgeNote] = useState('');
+  const [isAcknowledged, setIsAcknowledged] = useState(false);
+  const [acknowledgedAt, setAcknowledgedAt] = useState<string | null>(null);
+  const [acknowledgedBy, setAcknowledgedBy] = useState<string | null>(null);
 
   useEffect(() => {
     if (documentId && user) {
@@ -471,6 +476,9 @@ const DocumentViewerPage = () => {
     setLatestVersion(null);
     setRideDoc(null);
     setDocTitle(doc.document_name);
+    setIsAcknowledged(!!doc.expiry_acknowledged_at);
+    setAcknowledgedAt(doc.expiry_acknowledged_at || null);
+    setAcknowledgedBy(doc.expiry_acknowledged_by || null);
 
     const ft = detectFileType(doc.file_path || '', doc.mime_type);
     setFileType(ft);
@@ -681,6 +689,29 @@ const DocumentViewerPage = () => {
     invalidateComplianceQueries();
     navigate(-1);
   };
+  const handleAcknowledgeExpiry = async () => {
+    if (!fallbackDocId || !user) return;
+    const { error } = await supabase
+      .from('documents')
+      .update({
+        expiry_acknowledged_at: new Date().toISOString(),
+        expiry_acknowledged_by: user.id,
+        expiry_acknowledgement_note: acknowledgeNote || null,
+      })
+      .eq('id', fallbackDocId);
+    if (error) {
+      toast({ title: 'Failed to acknowledge expiry', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Expiry acknowledged', description: 'This document has been removed from the dashboard queue.' });
+    setAcknowledgeDialogOpen(false);
+    setAcknowledgeNote('');
+    setIsAcknowledged(true);
+    setAcknowledgedAt(new Date().toISOString());
+    setAcknowledgedBy(user.id);
+    invalidateComplianceQueries();
+  };
+
 
   const handleRestore = async () => {
     if (!rideDoc) return;
@@ -791,6 +822,26 @@ const DocumentViewerPage = () => {
         const expiringSoon = isDocExpiringSoon(meta.expiresAt);
         if (!expired && !expiringSoon) return null;
         const label = getExpiryLabel(meta.expiresAt);
+
+        // Already acknowledged — show neutral confirmation banner
+        if (isAcknowledged) {
+          return (
+            <div className="border-b px-4 py-3 flex items-center gap-2.5 bg-muted/50 border-border">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  {label} — Reviewed and acknowledged
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {acknowledgedAt && <>Acknowledged {format(parseISO(acknowledgedAt), 'dd MMM yyyy')} · </>}
+                  This document remains in the register but is no longer on the dashboard queue.
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        // Not yet acknowledged — show actionable banner
         return (
           <div className={`border-b px-4 py-3 flex items-center justify-between gap-3 ${
             expired
@@ -808,7 +859,19 @@ const DocumentViewerPage = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+              {/* Primary: Acknowledge */}
+              {fallbackDocId && (
+                <Button
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => setAcknowledgeDialogOpen(true)}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Acknowledge expiry
+                </Button>
+              )}
+              {/* Secondary: Edit expiry */}
               <Button
                 size="sm"
                 variant="outline"
@@ -821,17 +884,6 @@ const DocumentViewerPage = () => {
                 <Pencil className="h-3.5 w-3.5" />
                 Edit expiry
               </Button>
-              {fallbackDocId && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              )}
             </div>
           </div>
         );
@@ -1244,6 +1296,33 @@ const DocumentViewerPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeleteUploadedDoc}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Acknowledge Expiry Dialog */}
+      <Dialog open={acknowledgeDialogOpen} onOpenChange={() => { setAcknowledgeDialogOpen(false); setAcknowledgeNote(''); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Acknowledge Expiry</DialogTitle>
+            <DialogDescription>
+              This will remove the document from the dashboard "Documents Expiring" queue. The document will remain in the register with its expired status visible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">{docTitle}</p>
+            <Textarea
+              placeholder="Optional note (e.g. replacement ordered, awaiting renewal)"
+              value={acknowledgeNote}
+              onChange={e => setAcknowledgeNote(e.target.value)}
+              rows={2}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAcknowledgeDialogOpen(false); setAcknowledgeNote(''); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAcknowledgeExpiry}>Acknowledge</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

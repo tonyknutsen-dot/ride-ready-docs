@@ -1291,6 +1291,9 @@ export type Database = {
           document_name: string
           document_type: string
           expires_at: string | null
+          expiry_acknowledged_at: string | null
+          expiry_acknowledged_by: string | null
+          expiry_acknowledgement_note: string | null
           file_path: string
           file_size: number | null
           id: string
@@ -1311,6 +1314,9 @@ export type Database = {
           document_name: string
           document_type: string
           expires_at?: string | null
+          expiry_acknowledged_at?: string | null
+          expiry_acknowledged_by?: string | null
+          expiry_acknowledgement_note?: string | null
           file_path: string
           file_size?: number | null
           id?: string
@@ -1331,6 +1337,9 @@ export type Database = {
           document_name?: string
           document_type?: string
           expires_at?: string | null
+          expiry_acknowledged_at?: string | null
+          expiry_acknowledged_by?: string | null
+          expiry_acknowledgement_note?: string | null
           file_path?: string
           file_size?: number | null
           id?: string
