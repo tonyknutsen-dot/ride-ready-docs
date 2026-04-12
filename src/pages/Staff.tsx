@@ -142,14 +142,12 @@ const Staff = () => {
   const removeStaff = async () => {
     if (!deleteTarget) return;
     try {
+      // Deactivate membership — do NOT hard-delete the user's profile
       const { error } = await supabase
         .from('organisation_members')
         .update({ is_active: false })
         .eq('id', deleteTarget.id);
       if (error) throw error;
-      if (deleteTarget.user_id) {
-        await supabase.from('profiles').delete().eq('user_id', deleteTarget.user_id);
-      }
 
       logEvent('delete', 'staff', deleteTarget.id, {
         name: deleteTarget.display_name || deleteTarget.email || 'Unknown',
@@ -165,7 +163,7 @@ const Staff = () => {
         },
         after: { is_active: false },
         changedFields: ['is_active'],
-        contextHint: 'staff member removed and profile deleted',
+        contextHint: 'staff member removed from organisation',
       });
 
       toast({ title: 'Staff member removed' });
