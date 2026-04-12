@@ -326,14 +326,12 @@ const MarkCompleteSheet = ({
   };
 
   const handleViewDocument = () => {
+    const docId = completionResult?.documentId;
     handleClose();
-    if (completionResult?.documentId) {
-      openDocumentById({
-        documentId: completionResult.documentId,
-        navigate,
-        sourceComponent: 'MarkCompleteSheet',
-        toast,
-      });
+    if (docId) {
+      // Navigate directly to the in-app document viewer (not openDocumentById
+      // which uses window.location.assign and can show blank on mobile)
+      navigate(`/documents/${docId}`);
     } else if (rideId) {
       navigate(`/rides/${rideId}?tab=documents`);
     } else {

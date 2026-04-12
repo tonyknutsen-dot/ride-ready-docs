@@ -216,7 +216,7 @@ const NeedsAttentionPanel = () => {
               id: `pressure-${s.id}`,
               type: 'pressure_failed',
               label: `Pressure — ${(s as any).rides?.ride_name || 'Equipment'}`,
-              sublabel: `Out of range · ${s.session_date}`,
+              sublabel: `Out of range · ${s.session_date} · No defect raised yet`,
               urgency: 'warning',
               path: `/pressure-readings/register?rideId=${s.ride_id}`,
             });
@@ -267,7 +267,7 @@ const NeedsAttentionPanel = () => {
       },
       {
         type: 'pressure_failed',
-        title: 'Pressure Action Needed',
+        title: 'Pressure — Review Required',
         icon: Gauge,
         defaultOpen: true,
         tier: 'warning',
