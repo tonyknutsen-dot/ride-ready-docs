@@ -822,6 +822,26 @@ const DocumentViewerPage = () => {
         const expiringSoon = isDocExpiringSoon(meta.expiresAt);
         if (!expired && !expiringSoon) return null;
         const label = getExpiryLabel(meta.expiresAt);
+
+        // Already acknowledged — show neutral confirmation banner
+        if (isAcknowledged) {
+          return (
+            <div className="border-b px-4 py-3 flex items-center gap-2.5 bg-muted/50 border-border">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  {label} — Reviewed and acknowledged
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {acknowledgedAt && <>Acknowledged {format(parseISO(acknowledgedAt), 'dd MMM yyyy')} · </>}
+                  This document remains in the register but is no longer on the dashboard queue.
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        // Not yet acknowledged — show actionable banner
         return (
           <div className={`border-b px-4 py-3 flex items-center justify-between gap-3 ${
             expired
@@ -839,7 +859,19 @@ const DocumentViewerPage = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+              {/* Primary: Acknowledge */}
+              {fallbackDocId && (
+                <Button
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={() => setAcknowledgeDialogOpen(true)}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Acknowledge expiry
+                </Button>
+              )}
+              {/* Secondary: Edit expiry */}
               <Button
                 size="sm"
                 variant="outline"
@@ -852,17 +884,6 @@ const DocumentViewerPage = () => {
                 <Pencil className="h-3.5 w-3.5" />
                 Edit expiry
               </Button>
-              {fallbackDocId && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              )}
             </div>
           </div>
         );
