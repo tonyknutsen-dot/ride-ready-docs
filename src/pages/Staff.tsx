@@ -327,7 +327,7 @@ const Staff = () => {
                       key={invite.id}
                       invite={invite}
                       canManage={canManage}
-                      onResend={() => {}}
+                      onResend={() => resendInvite(invite)}
                       onCancel={() => cancelInvite(invite.id)}
                     />
                   ))}
