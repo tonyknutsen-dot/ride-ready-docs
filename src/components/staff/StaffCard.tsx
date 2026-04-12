@@ -129,13 +129,23 @@ export function PendingInviteCard({ invite, canManage, onResend, onCancel }: Pen
             Invite pending
           </span>
           {canManage && (
-            <button
-              onClick={onCancel}
-              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-destructive/10 transition-colors -mr-1"
-              title="Cancel invite"
-            >
-              <X className="h-3.5 w-3.5 text-destructive" />
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors -mr-1">
+                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={onResend}>
+                  <Mail className="h-3.5 w-3.5 mr-2" />
+                  Resend invite
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onCancel} className="text-destructive focus:text-destructive">
+                  <X className="h-3.5 w-3.5 mr-2" />
+                  Revoke invite
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

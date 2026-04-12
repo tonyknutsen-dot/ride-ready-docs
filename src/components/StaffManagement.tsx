@@ -162,15 +162,12 @@ export function StaffManagement() {
 
   const removeStaff = async (memberId: string) => {
     try {
-      const memberToRemove = staff.find(s => s.id === memberId);
+      // Deactivate membership — do NOT hard-delete the user's profile
       const { error } = await supabase
         .from('organisation_members')
         .update({ is_active: false })
         .eq('id', memberId);
       if (error) throw error;
-      if (memberToRemove?.user_id) {
-        await supabase.from('profiles').delete().eq('user_id', memberToRemove.user_id);
-      }
       toast({ title: 'Staff member removed' });
       if (organisationId) fetchStaff(organisationId);
     } catch (error: any) {
