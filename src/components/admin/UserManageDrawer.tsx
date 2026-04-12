@@ -259,12 +259,12 @@ export function UserManageDrawer({
                 ) : (
                   <Ban className="h-4 w-4 mr-2" />
                 )}
-                {isSuspended ? 'Reactivate Account' : 'Suspend Account'}
+                {isSuspended ? 'Reactivate Account' : 'Suspend Platform Account'}
               </Button>
               <p className="text-xs text-muted-foreground -mt-1 pl-1">
                 {isSuspended
                   ? 'Restores sign-in access. Does not affect organisation membership.'
-                  : 'Blocks sign-in, sign-up with same email, and invite acceptance. Retains minimal data for security/audit.'}
+                  : 'Platform-wide suspension. Blocks sign-in, sign-up with same email, and invite acceptance across all organisations. This is not org-specific — use "Remove from this organisation" for org-level access changes.'}
               </p>
 
               {/* Admin toggle */}
@@ -285,7 +285,7 @@ export function UserManageDrawer({
                 {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
               </Button>
 
-              {/* Remove from organisation */}
+              {/* Remove from organisation — org-level action, not account deletion */}
               {user.isStaffMember && onRemoveFromOrg && (
                 <>
                   <Button
@@ -296,10 +296,10 @@ export function UserManageDrawer({
                     onClick={() => onRemoveFromOrg(user.id)}
                   >
                     <UserMinus className="h-4 w-4 mr-2" />
-                    Remove from Organisation
+                    Remove from {user.staffOrgName || 'this organisation'}
                   </Button>
                   <p className="text-xs text-muted-foreground -mt-1 pl-1">
-                    Revokes organisation access only. The user account and any operational records they created are preserved for audit traceability.
+                    Removes this user's membership in {user.staffOrgName ? `"${user.staffOrgName}"` : 'this organisation'} only. Their user account remains active and any other organisation memberships are unaffected. Operational records (checks, defects, logs) they created are preserved for audit traceability.
                   </p>
                 </>
               )}
