@@ -689,8 +689,30 @@ const DocumentViewerPage = () => {
     invalidateComplianceQueries();
     navigate(-1);
   };
+  const handleAcknowledgeExpiry = async () => {
+    if (!fallbackDocId || !user) return;
+    const { error } = await supabase
+      .from('documents')
+      .update({
+        expiry_acknowledged_at: new Date().toISOString(),
+        expiry_acknowledged_by: user.id,
+        expiry_acknowledgement_note: acknowledgeNote || null,
+      })
+      .eq('id', fallbackDocId);
+    if (error) {
+      toast({ title: 'Failed to acknowledge expiry', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Expiry acknowledged', description: 'This document has been removed from the dashboard queue.' });
+    setAcknowledgeDialogOpen(false);
+    setAcknowledgeNote('');
+    setIsAcknowledged(true);
+    setAcknowledgedAt(new Date().toISOString());
+    setAcknowledgedBy(user.id);
+    invalidateComplianceQueries();
+  };
 
-  const handleRestore = async () => {
+
     if (!rideDoc) return;
     const ok = await restoreRideDocument(rideDoc.id);
     if (ok) {
