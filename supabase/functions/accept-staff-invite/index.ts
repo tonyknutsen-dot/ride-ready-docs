@@ -165,6 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
           is_active: true, 
           permission_level: invite.permission_level,
           updated_at: new Date().toISOString(),
+          invited_email: invite.email,
           ...memberPermissions,
         })
         .eq("id", existingMember.id);
@@ -177,6 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
           organisation_id: invite.organisation_id,
           permission_level: invite.permission_level,
           invited_by: invite.invited_by,
+          invited_email: invite.email,
           ...memberPermissions,
         });
 
