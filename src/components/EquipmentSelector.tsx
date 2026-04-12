@@ -689,14 +689,30 @@ const EquipmentSelector = ({
                             {defectCount} defect{defectCount > 1 ? 's' : ''}
                           </span>
                         )}
-                        {/* Status chip (non-pressure, non-defect mode) */}
-                        {!pressureMode && !defectMode && (
+                        {/* Status chip — checksMode uses checks config */}
+                        {checksMode && cCfg && (
+                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${cCfg.chipClass}`}>
+                            {cCfg.label}
+                          </span>
+                        )}
+                        {/* Status chip (non-pressure, non-defect, non-checks mode) */}
+                        {!pressureMode && !defectMode && !checksMode && (
                           <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${statusCfg.chipClass}`}>
                             {statusCfg.label}
                           </span>
                         )}
                       </div>
                     </div>
+
+                    {/* Checks status line (checks mode) */}
+                    {checksMode && cSummary && cCfg && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className={cn('inline-block h-2 w-2 rounded-full shrink-0', cCfg.dotClass)} />
+                        <span className={cn('text-[11px] font-medium', cCfg.textClass)}>
+                          {cSummary.label}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Pressure status line (pressure mode) */}
                     {pressureMode && pSummary && pCfg && (
@@ -735,14 +751,14 @@ const EquipmentSelector = ({
                       </div>
                     )}
 
-                    {/* Status line for standard mode (Checks / Maintenance) */}
-                    {!pressureMode && !defectMode && (
+                    {/* Status line for standard mode (Maintenance) */}
+                    {!pressureMode && !defectMode && !checksMode && (
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className={cn('inline-block h-2 w-2 rounded-full shrink-0', statusCfg.dotClass)} />
                         <span className={cn('text-[11px] font-medium', statusCfg.textClass)}>
-                          {statusKey === 'overdue' ? 'Overdue – service needed' :
-                           statusKey === 'due-soon' ? 'Due soon' :
-                           statusKey === 'up-to-date' ? 'Up to date' :
+                          {statusKey === 'overdue' ? 'Overdue – maintenance needed' :
+                           statusKey === 'due-soon' ? 'Maintenance due soon' :
+                           statusKey === 'up-to-date' ? 'Maintenance up to date' :
                            summary?.lastServiceDate ? 'No due date set' : 'No maintenance logged'}
                         </span>
                         {summary?.nextDueDate && statusKey !== 'no-data' && (
