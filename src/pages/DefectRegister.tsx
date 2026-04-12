@@ -876,7 +876,7 @@ const DefectRegister = () => {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{defect.description}</p>
+                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2 whitespace-pre-line">{defect.description}</p>
 
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <Wrench className="h-3 w-3 text-muted-foreground shrink-0" />
