@@ -207,6 +207,9 @@ const EquipmentSelector = ({
         if (defectMode) {
           loaders.push(loadDefectSummaries(typedRides));
         }
+        if (checksMode) {
+          loaders.push(loadChecksSummaries(typedRides));
+        }
         await Promise.all(loaders);
       }
     } catch (e) {
