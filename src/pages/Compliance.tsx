@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateComplianceQueries } from "@/utils/queryInvalidation";
 import { useOfflineQuery } from "@/hooks/useOfflineQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
@@ -259,8 +260,7 @@ const Compliance = () => {
   };
 
   const handleCompleted = () => {
-    queryClient.invalidateQueries({ queryKey: ["compliance"] });
-    queryClient.invalidateQueries({ queryKey: ["compliance-completed"] });
+    invalidateComplianceQueries(queryClient);
     setSelectedIds(new Set());
     setBulkMode(false);
   };

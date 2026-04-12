@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateComplianceQueries } from '@/utils/queryInvalidation';
 import { useOfflineQuery } from '@/hooks/useOfflineQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -434,11 +435,10 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     setVersions(v);
   };
 
-  const invalidateComplianceQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
-    queryClient.invalidateQueries({ queryKey: ['compliance'] });
-    queryClient.invalidateQueries({ queryKey: ['overview'] });
+  const invalidateAll = () => {
+    invalidateComplianceQueries(queryClient);
   };
+
 
   const handleArchive = async () => {
     if (!archiveDialogDoc || !user) return;
@@ -449,7 +449,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       setArchiveReason('');
       const rideId = archiveDialogDoc.ride_id;
       setRideDocsCache(prev => { const n = { ...prev }; delete n[rideId]; return n; });
-      invalidateComplianceQueries();
+      invalidateAll();
     } else {
       toast({ title: 'Failed to archive', variant: 'destructive' });
     }
@@ -460,7 +460,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     if (ok) {
       toast({ title: 'Document restored' });
       setRideDocsCache(prev => { const n = { ...prev }; delete n[doc.ride_id]; return n; });
-      invalidateComplianceQueries();
+      invalidateAll();
     } else {
       toast({ title: 'Failed to restore', variant: 'destructive' });
     }

@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateComplianceQueries } from '@/utils/queryInvalidation';
 import { EmptyState } from '@/components/EmptyState';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -200,7 +201,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
       setSheetOpen(false);
       resetForm();
       loadEvents();
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
+      invalidateComplianceQueries(queryClient);
     } catch (error) {
       console.error('Error saving inspection schedule:', error);
       toast({ title: "Error", description: "Failed to save inspection schedule", variant: "destructive" });
@@ -216,7 +217,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
       if (error) throw error;
       toast({ title: "Removed", description: "Inspection schedule removed." });
       loadEvents();
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
+      invalidateComplianceQueries(queryClient);
     } catch (error) {
       console.error('Error deleting inspection schedule:', error);
       toast({ title: "Error", description: "Failed to delete inspection schedule", variant: "destructive" });
@@ -230,7 +231,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
 
   const handleMarkCompleteFinished = () => {
     loadEvents();
-    queryClient.invalidateQueries({ queryKey: ['compliance'] });
+    invalidateComplianceQueries(queryClient);
   };
 
   const getStatusBadge = (event: ComplianceEvent) => {

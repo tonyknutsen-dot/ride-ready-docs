@@ -35,6 +35,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateComplianceQueries } from '@/utils/queryInvalidation';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { z } from 'zod';
 import { Tables } from '@/integrations/supabase/types';
@@ -319,7 +320,7 @@ const CalendarView = () => {
       setEventDetailOpen(false);
       setSelectedEvent(null);
       loadCalendarEvents();
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
+      invalidateComplianceQueries(queryClient);
     } catch {
       toast({ title: "Error", description: "Could not delete event.", variant: "destructive" });
     }
@@ -454,7 +455,7 @@ const CalendarView = () => {
       setAddDialogOpen(false);
       resetForm();
       loadCalendarEvents();
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
+      invalidateComplianceQueries(queryClient);
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { invalidateDefectQueries } from '@/utils/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { format, formatDistanceToNow, parseISO, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
@@ -461,11 +462,7 @@ const DefectRegister = () => {
   };
 
   const handleDefectUpdated = () => {
-    queryClient.invalidateQueries({ queryKey: ['defect-register'] });
-    queryClient.invalidateQueries({ queryKey: ['open-critical-defects'] });
-    queryClient.invalidateQueries({ queryKey: ['all-rides-critical-defects'] });
-    queryClient.invalidateQueries({ queryKey: ['all-rides-open-defects'] });
-    queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
+    invalidateDefectQueries(queryClient);
     closeDetail();
   };
 

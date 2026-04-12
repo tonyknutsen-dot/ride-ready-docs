@@ -16,6 +16,7 @@ import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateDefectQueries } from '@/utils/queryInvalidation';
 import { compressImage } from '@/utils/imageCompression';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -201,11 +202,7 @@ const DefectClosureDialog = ({
       });
       toast({ title: 'Defect closed', description: `Defect on ${rideName} has been closed.` });
 
-      queryClient.invalidateQueries({ queryKey: ['open-critical-defects'] });
-      queryClient.invalidateQueries({ queryKey: ['all-rides-critical-defects'] });
-      queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
-      queryClient.invalidateQueries({ queryKey: ['defect-register'] });
-      queryClient.invalidateQueries({ queryKey: ['all-rides-open-defects'] });
+      invalidateDefectQueries(queryClient);
 
       onDefectUpdated();
       handleClose();

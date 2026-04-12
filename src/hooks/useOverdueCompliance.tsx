@@ -22,7 +22,7 @@ export function useOverdueCompliance() {
           .from('compliance_events')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .eq('status', 'scheduled')
+          .in('status', ['scheduled', 'open'])
           .eq('event_category', 'regulatory')
           .lt('due_date', today),
         // Expired documents (latest version or null, not archived)

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateComplianceQueries } from '@/utils/queryInvalidation';
 import { format } from 'date-fns';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 import { createComplianceDocument, categoryToDocTypeCode } from '@/utils/complianceDocumentCreator';
@@ -191,8 +192,7 @@ const MarkCompleteSheet = ({
         });
 
         setOfflineCompleted(true);
-        queryClient.invalidateQueries({ queryKey: ['compliance'] });
-        queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
+        invalidateComplianceQueries(queryClient);
         onCompleted?.();
 
         toast({
@@ -300,7 +300,7 @@ const MarkCompleteSheet = ({
         console.warn('Auto-recurrence check failed:', e);
       }
 
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
+      invalidateComplianceQueries(queryClient);
       onCompleted?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Could not complete event.", variant: "destructive" });

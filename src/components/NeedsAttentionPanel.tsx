@@ -227,7 +227,7 @@ const NeedsAttentionPanel = () => {
       return result;
     },
     enabled: !!effectiveUserId,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 30, // 30s — kept short so invalidation triggers refetch promptly
   });
 
   // Group items by type

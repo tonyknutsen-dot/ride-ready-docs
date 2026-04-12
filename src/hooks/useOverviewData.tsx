@@ -94,7 +94,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .from('compliance_events')
       .select('id')
       .eq('user_id', userId)
-      .eq('status', 'scheduled')
+      .in('status', ['scheduled', 'open'])
       .eq('event_category', 'regulatory')
       .lt('due_date', todayStr)
       .limit(20),
@@ -103,7 +103,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .from('compliance_events')
       .select('id')
       .eq('user_id', userId)
-      .eq('status', 'scheduled')
+      .in('status', ['scheduled', 'open'])
       .eq('event_category', 'regulatory')
       .gte('due_date', todayStr)
       .lte('due_date', thirtyDaysStr)
