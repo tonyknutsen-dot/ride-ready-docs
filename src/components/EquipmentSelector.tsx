@@ -35,6 +35,16 @@ interface PressureSummary {
   lastDate: string | null;
 }
 
+type ChecksStatus = 'has-checks' | 'has-templates' | 'inspection-due' | 'no-checks';
+
+interface ChecksSummary {
+  status: ChecksStatus;
+  label: string;
+  checkCount: number;
+  templateCount: number;
+  inspectionsDue: number;
+}
+
 type DefectPriority = 'stop-use' | 'open-defects' | 'low-severity' | 'no-defects';
 
 interface DefectSummary {
@@ -54,6 +64,8 @@ interface EquipmentSelectorProps {
   pressureMode?: boolean;
   /** When true, shows defect severity status */
   defectMode?: boolean;
+  /** When true, shows check template + inspection schedule status instead of maintenance */
+  checksMode?: boolean;
 }
 
 const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
@@ -68,8 +80,15 @@ const STATUS_CONFIG = {
   overdue:      { label: 'Overdue',      chipClass: 'bg-destructive/10 text-destructive border-destructive/30',              accent: 'border-l-destructive',            dotClass: 'bg-destructive',       textClass: 'text-destructive',                  iconClass: 'text-destructive' },
   'due-soon':   { label: 'Due soon',     chipClass: 'bg-warning/10 text-warning border-warning/30',                          accent: 'border-l-warning',                dotClass: 'bg-amber-500',         textClass: 'text-amber-700 dark:text-amber-400', iconClass: 'text-amber-500' },
   'up-to-date': { label: 'Up to date',   chipClass: 'bg-primary/10 text-primary border-primary/30',                          accent: 'border-l-primary',                dotClass: 'bg-emerald-500',       textClass: 'text-emerald-700 dark:text-emerald-400', iconClass: 'text-emerald-500' },
-  'no-data':    { label: 'No schedule',   chipClass: 'bg-muted/60 text-muted-foreground border-border',                      accent: 'border-l-muted-foreground/30',    dotClass: 'bg-muted-foreground/30', textClass: 'text-muted-foreground',           iconClass: 'text-muted-foreground/40' },
+  'no-data':    { label: 'No maintenance schedule', chipClass: 'bg-muted/60 text-muted-foreground border-border',                      accent: 'border-l-muted-foreground/30',    dotClass: 'bg-muted-foreground/30', textClass: 'text-muted-foreground',           iconClass: 'text-muted-foreground/40' },
 } as const;
+
+const CHECKS_STATUS_CONFIG: Record<ChecksStatus, { label: string; chipClass: string; accent: string; dotClass: string; textClass: string; iconClass: string }> = {
+  'inspection-due': { label: 'Inspection due', chipClass: 'bg-warning/10 text-warning border-warning/30', accent: 'border-l-warning', dotClass: 'bg-amber-500', textClass: 'text-amber-700 dark:text-amber-400', iconClass: 'text-amber-500' },
+  'has-checks':     { label: 'Checks active',  chipClass: 'bg-primary/10 text-primary border-primary/30', accent: 'border-l-primary', dotClass: 'bg-emerald-500', textClass: 'text-emerald-700 dark:text-emerald-400', iconClass: 'text-emerald-500' },
+  'has-templates':  { label: 'Templates set up', chipClass: 'bg-primary/10 text-primary border-primary/30', accent: 'border-l-primary', dotClass: 'bg-blue-500', textClass: 'text-blue-700 dark:text-blue-400', iconClass: 'text-blue-500' },
+  'no-checks':      { label: 'No checks set up', chipClass: 'bg-muted/60 text-muted-foreground border-border', accent: 'border-l-muted-foreground/30', dotClass: 'bg-muted-foreground/30', textClass: 'text-muted-foreground', iconClass: 'text-muted-foreground/40' },
+};
 
 const PRESSURE_STATUS_CONFIG: Record<PressureStatus, { label: string; chipClass: string; accent: string; iconClass: string }> = {
   'action-needed': {
