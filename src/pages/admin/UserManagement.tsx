@@ -909,8 +909,7 @@ export default function UserManagement() {
                     suspendingUserId={suspendingUserId}
                     onToggleAdmin={toggleAdminRole}
                     onToggleSuspension={(uid, suspended, reason) => {
-                      if (reason) setSuspendReason(reason);
-                      toggleSuspension(uid, suspended);
+                      toggleSuspension(uid, suspended, reason);
                     }}
                     onToggleTester={toggleTesterRole}
                     onExtendTester={extendTesterExpiry}
