@@ -439,6 +439,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     invalidateComplianceQueries(queryClient);
   };
 
+  // Keep old name as alias for existing call sites
+  const invalidateComplianceQueriesLocal = invalidateAll;
+
   const handleArchive = async () => {
     if (!archiveDialogDoc || !user) return;
     const ok = await archiveRideDocument(archiveDialogDoc.id, user.id, archiveReason);
