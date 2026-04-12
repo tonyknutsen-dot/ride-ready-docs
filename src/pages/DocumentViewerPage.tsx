@@ -1299,6 +1299,33 @@ const DocumentViewerPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Acknowledge Expiry Dialog */}
+      <Dialog open={acknowledgeDialogOpen} onOpenChange={() => { setAcknowledgeDialogOpen(false); setAcknowledgeNote(''); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Acknowledge Expiry</DialogTitle>
+            <DialogDescription>
+              This will remove the document from the dashboard "Documents Expiring" queue. The document will remain in the register with its expired status visible.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">{docTitle}</p>
+            <Textarea
+              placeholder="Optional note (e.g. replacement ordered, awaiting renewal)"
+              value={acknowledgeNote}
+              onChange={e => setAcknowledgeNote(e.target.value)}
+              rows={2}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAcknowledgeDialogOpen(false); setAcknowledgeNote(''); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAcknowledgeExpiry}>Acknowledge</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
