@@ -53,6 +53,8 @@ const Checks = () => {
         onRideSelect={handleRideSelect}
         placeholderIcon={CheckSquare}
         emptyDescription="Add equipment in the Equipment section to start running checks."
+        checksMode
+        showKpis={false}
       />
     </div>
   );
