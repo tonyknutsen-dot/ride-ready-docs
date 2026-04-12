@@ -156,6 +156,7 @@ const EquipmentSelector = ({
   categoryGroupFilter,
   pressureMode = false,
   defectMode = false,
+  checksMode = false,
 }: EquipmentSelectorProps) => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
@@ -165,6 +166,7 @@ const EquipmentSelector = ({
   const [summaries, setSummaries] = useState<Record<string, MaintenanceSummary>>({});
   const [pressureSummaries, setPressureSummaries] = useState<Record<string, PressureSummary>>({});
   const [defectSummaries, setDefectSummaries] = useState<Record<string, DefectSummary>>({});
+  const [checksSummaries, setChecksSummaries] = useState<Record<string, ChecksSummary>>({});
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
