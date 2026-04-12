@@ -855,7 +855,7 @@ const DocumentViewerPage = () => {
                   {label}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  This document is currently counted in Documents Expiring on the dashboard.
+                  This document is currently listed under Expired / Expiring Documents on the dashboard.
                 </p>
               </div>
             </div>
@@ -1306,7 +1306,7 @@ const DocumentViewerPage = () => {
           <DialogHeader>
             <DialogTitle>Acknowledge Expiry</DialogTitle>
             <DialogDescription>
-              This will remove the document from the dashboard "Documents Expiring" queue. The document will remain in the register with its expired status visible.
+              This will remove the document from the dashboard "Expired / Expiring Documents" queue. The document will remain in the register with its expired status visible.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
