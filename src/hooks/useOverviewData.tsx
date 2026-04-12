@@ -78,13 +78,14 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .from('maintenance_records')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId),
-    // Documents with expiry for compliance alerts
+    // Documents with expiry for compliance alerts (exclude acknowledged)
     supabase
       .from('documents')
       .select('document_name, expires_at, ride_id, is_global')
       .eq('user_id', userId)
       .not('expires_at', 'is', null)
       .eq('is_latest_version', true)
+      .is('expiry_acknowledged_at', null)
       .lte('expires_at', thirtyDaysStr)
       .order('expires_at', { ascending: true })
       .limit(20),
