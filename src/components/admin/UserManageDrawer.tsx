@@ -80,15 +80,14 @@ export function UserManageDrawer({
 
   const isSelf = currentUserId === user.id;
   const isOrgOwner = !!user.profile?.company_name && !user.isStaffMember;
-  const hasActiveOrg = user.isStaffMember;
 
-  // Determine delete blockers
+  // Determine delete blockers — these are for full ACCOUNT deletion only
   const getDeleteBlockReason = (): string | null => {
     if (isSelf) return 'You cannot delete your own account.';
     if (user.isAdmin) return 'Cannot delete an admin account. Remove admin role first.';
-    if (isOrgOwner) return `This user is the controller/owner of an organisation. Transfer or delete the organisation first.`;
-    if (hasActiveOrg) return `Remove this user from their organisation before deleting the account.`;
-    // Non-test history check happens server-side — we show a general warning
+    if (isOrgOwner) return 'This user is the controller/owner of an organisation. Transfer or delete the organisation first.';
+    // Active org membership blocks account deletion — remove from org first
+    if (user.isStaffMember) return `This user is a member of ${user.staffOrgName || 'an organisation'}. Remove them from the organisation first, then delete if needed.`;
     return null;
   };
 
@@ -260,12 +259,12 @@ export function UserManageDrawer({
                 ) : (
                   <Ban className="h-4 w-4 mr-2" />
                 )}
-                {isSuspended ? 'Reactivate Account' : 'Suspend Account'}
+                {isSuspended ? 'Reactivate Account' : 'Suspend Platform Account'}
               </Button>
               <p className="text-xs text-muted-foreground -mt-1 pl-1">
                 {isSuspended
                   ? 'Restores sign-in access. Does not affect organisation membership.'
-                  : 'Blocks sign-in, sign-up with same email, and invite acceptance. Retains minimal data for security/audit.'}
+                  : 'Platform-wide suspension. Blocks sign-in, sign-up with same email, and invite acceptance across all organisations. This is not org-specific — use "Remove from this organisation" for org-level access changes.'}
               </p>
 
               {/* Admin toggle */}
@@ -286,7 +285,7 @@ export function UserManageDrawer({
                 {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
               </Button>
 
-              {/* Remove from organisation */}
+              {/* Remove from organisation — org-level action, not account deletion */}
               {user.isStaffMember && onRemoveFromOrg && (
                 <>
                   <Button
@@ -297,10 +296,10 @@ export function UserManageDrawer({
                     onClick={() => onRemoveFromOrg(user.id)}
                   >
                     <UserMinus className="h-4 w-4 mr-2" />
-                    Remove from Organisation
+                    Remove from {user.staffOrgName || 'this organisation'}
                   </Button>
                   <p className="text-xs text-muted-foreground -mt-1 pl-1">
-                    Revokes organisation access only. The user account and any operational records they created are preserved for audit traceability.
+                    Removes this user's membership in {user.staffOrgName ? `"${user.staffOrgName}"` : 'this organisation'} only. Their user account remains active and any other organisation memberships are unaffected. Operational records (checks, defects, logs) they created are preserved for audit traceability.
                   </p>
                 </>
               )}
@@ -392,9 +391,9 @@ export function UserManageDrawer({
 
                   {deleteBlockReason ? (
                     <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                      <p className="font-medium text-foreground">Delete blocked</p>
+                      <p className="font-medium text-foreground">Account deletion blocked</p>
                       <p>{deleteBlockReason}</p>
-                      <p className="italic">Consider using "Remove from Organisation" or "Suspend Account" instead. Operational records require retained attribution for audit and legal purposes.</p>
+                      <p className="italic">To revoke access, use "Remove from {user.staffOrgName || 'organisation'}" or "Suspend Platform Account" instead. Deleting a user account is a separate action from removing an organisation membership. Operational records require retained attribution for audit and legal purposes.</p>
                     </div>
                   ) : (
                     <>
@@ -409,7 +408,7 @@ export function UserManageDrawer({
                         Delete User Account
                       </Button>
                       <p className="text-xs text-muted-foreground -mt-1 pl-1">
-                        Permanently removes the account and all associated data. Only available for test/demo accounts with no real operational history. This cannot be undone.
+                        Permanently removes the entire user account from the platform. This is not the same as removing someone from an organisation. Only available for test/demo accounts with no real operational history. This cannot be undone.
                       </p>
                     </>
                   )}
@@ -426,12 +425,12 @@ export function UserManageDrawer({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmAction === 'suspend'
-                ? (isSuspended ? 'Reactivate User Account?' : 'Suspend User Account?')
+                ? (isSuspended ? 'Reactivate User Account?' : 'Suspend Platform Account?')
                 : (user.isAdmin ? 'Remove Admin Access?' : 'Grant Admin Access?')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction === 'suspend'
-                ? (isSuspended ? "This will restore the user's access." : 'This will prevent the user from accessing their account.')
+                ? (isSuspended ? "This will restore the user's sign-in access across the platform." : 'This is a platform-wide suspension. The user will be unable to sign in, accept invites, or create a new account with the same email. This does not remove them from any organisation — use "Remove from organisation" for that.')
                 : (user.isAdmin ? 'This user will lose admin access.' : 'This user will gain full admin access.')}
             </AlertDialogDescription>
           </AlertDialogHeader>

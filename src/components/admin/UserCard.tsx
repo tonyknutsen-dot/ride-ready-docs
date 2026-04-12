@@ -69,6 +69,7 @@ export interface UserCardData {
   isTester: boolean;
   isStaffMember: boolean;
   staffOrgName: string | null;
+  staffOrgId: string | null;
   testerExpiresAt: string | null;
   rideCount: number;
 }

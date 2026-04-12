@@ -60,6 +60,7 @@ interface UserWithProfile {
   isTester: boolean;
   isStaffMember: boolean;
   staffOrgName: string | null;
+  staffOrgId: string | null;
   testerExpiresAt: string | null;
   rideCount: number;
 }
@@ -409,13 +410,13 @@ export default function UserManagement() {
       // Fetch staff (organisation members)
       const { data: orgMembers } = await supabase
         .from('organisation_members')
-        .select('user_id, is_active, organisations(name)')
+        .select('user_id, is_active, organisation_id, organisations(name)')
         .eq('is_active', true);
 
-      const staffMap = new Map<string, string | null>();
+      const staffMap = new Map<string, { orgName: string | null; orgId: string }>();
       for (const m of orgMembers || []) {
         const org = m.organisations as { name: string } | null;
-        staffMap.set(m.user_id, org?.name || null);
+        staffMap.set(m.user_id, { orgName: org?.name || null, orgId: m.organisation_id });
       }
 
       // Fetch user emails and names from edge function
@@ -490,7 +491,8 @@ export default function UserManagement() {
           isAdmin: adminUserIds.has(userId),
           isTester: testerRoles.has(userId) && !isTesterExpired,
           isStaffMember: staffMap.has(userId),
-          staffOrgName: staffMap.get(userId) || null,
+          staffOrgName: staffMap.get(userId)?.orgName || null,
+          staffOrgId: staffMap.get(userId)?.orgId || null,
           testerExpiresAt: testerExpiresAt,
           rideCount: rideCountMap.get(userId) || 0,
         };
@@ -999,14 +1001,24 @@ export default function UserManagement() {
           onOffboardTester={offboardTester}
           currentUserId={currentAuthUser?.id}
           onRemoveFromOrg={async (uid) => {
+            const targetUser = users.find(u => u.id === uid);
+            const orgId = targetUser?.staffOrgId;
             try {
-              const { error } = await supabase
+              let query = supabase
                 .from('organisation_members')
                 .update({ is_active: false })
                 .eq('user_id', uid)
                 .eq('is_active', true);
+              // Scope to specific org if known
+              if (orgId) {
+                query = query.eq('organisation_id', orgId);
+              }
+              const { error } = await query;
               if (error) throw error;
-              toast.success('User removed from organisation');
+              const orgName = targetUser?.staffOrgName;
+              toast.success(orgName
+                ? `Removed from ${orgName}`
+                : 'Removed from organisation');
               fetchUsers();
             } catch (err: any) {
               console.error('Error removing from org:', err);
