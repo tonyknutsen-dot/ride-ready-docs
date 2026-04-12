@@ -255,14 +255,14 @@ const handler = async (req: Request): Promise<Response> => {
       invite = createdInvite;
     }
 
-    const { data: profile } = await supabase
+    const { data: inviterProfile } = await supabase
       .from("profiles")
       .select("controller_name, company_name")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const inviterName = profile?.controller_name || profile?.company_name || "Your employer";
-    const companyName = profile?.company_name || organisation.name;
+    const inviterName = inviterProfile?.controller_name || inviterProfile?.company_name || "Your employer";
+    const companyName = inviterProfile?.company_name || organisation.name;
 
     const baseUrl = "https://ridereadydocs.com";
     const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
