@@ -143,6 +143,7 @@ const App = () => (
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
+              <Route path="/source-of-truth" element={<ProtectedRoute><ProfileGuard><AppLayout><SourceOfTruthAudit /></AppLayout></ProfileGuard></ProtectedRoute>} />
               <Route path="/staff-invite/:token" element={<StaffInvite />} />
               <Route path="/tester-invite/:token" element={<TesterInvite />} />
               <Route 
