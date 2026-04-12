@@ -88,6 +88,7 @@ const TesterInvite = lazy(() => import("./pages/TesterInvite"));
 const StaffInvite = lazy(() => import("./pages/StaffInvite"));
 const Staff = lazy(() => import("./pages/Staff"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
+const SourceOfTruthAudit = lazy(() => import("./pages/SourceOfTruthAudit"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 const Install = lazy(() => import("./pages/Install"));
 const DataIndependence = lazy(() => import("./pages/DataIndependence"));
