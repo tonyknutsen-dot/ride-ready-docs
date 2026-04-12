@@ -445,9 +445,9 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
-  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention', 'Compliant'] as const;
+  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention', 'No Issues'] as const;
 
-  const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'due_soon' | 'compliant' | 'no_docs' => {
+  const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'due_soon' | 'no_issues' | 'no_docs' => {
     // Stop-use defects take absolute priority
     const defects = openDefectsMap?.get(rideId);
     if (defects?.critical && defects.critical > 0) return 'stop_use';
@@ -455,7 +455,7 @@ const Rides = () => {
     if (defects?.nonCritical && defects.nonCritical > 0) return 'attention';
 
     const s = rideStats[rideId];
-    if (!s) return 'compliant';
+    if (!s) return 'no_issues';
 
     // Specific overdue reasons (no generic overdue badge)
     if (s.expiredDocCount > 0) return 'documents_overdue';
@@ -463,7 +463,7 @@ const Rides = () => {
 
     if (s.dueSoonCount > 0) return 'due_soon';
     if (s.docCount === 0) return 'no_docs';
-    return 'compliant';
+    return 'no_issues';
   };
 
   const getCategoryIcon = (group: string) => {
@@ -488,7 +488,7 @@ const Rides = () => {
             if (activeGroup === 'Inspections Overdue') return s === 'inspection_overdue';
             if (activeGroup === 'Due Soon') return s === 'due_soon';
             if (activeGroup === 'Attention') return s === 'attention' || s === 'stop_use';
-            if (activeGroup === 'Compliant') return s === 'compliant' || s === 'no_docs';
+            if (activeGroup === 'No Issues') return s === 'no_issues' || s === 'no_docs';
             return true;
           })
         : rides.filter(r => r.ride_categories.category_group === activeGroup);
@@ -499,7 +499,7 @@ const Rides = () => {
   const inspectionsOverdueTotal = rides.filter(r => (rideStats[r.id]?.overdueCount ?? 0) > 0).length;
   const dueSoonTotal = rides.filter(r => getComplianceStatus(r.id) === 'due_soon').length;
   const attentionTotal = rides.filter(r => ['attention', 'stop_use'].includes(getComplianceStatus(r.id))).length;
-  const compliantTotal = rides.filter(r => ['compliant', 'no_docs'].includes(getComplianceStatus(r.id))).length;
+  const noIssuesTotal = rides.filter(r => ['no_issues', 'no_docs'].includes(getComplianceStatus(r.id))).length;
 
   const groupCounts: Record<string, number> = {
     All: rides.length,
@@ -514,7 +514,7 @@ const Rides = () => {
     'Inspections Overdue': inspectionsOverdueTotal,
     'Due Soon': dueSoonTotal,
     Attention: attentionTotal,
-    Compliant: compliantTotal,
+    'No Issues': noIssuesTotal,
   };
 
   return (
@@ -583,11 +583,11 @@ const Rides = () => {
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Attention</span>
           </button>
           <button
-            onClick={() => setActiveGroup('Compliant')}
-            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Compliant' ? 'border-success/50 bg-success/5' : 'border-border bg-card hover:border-success/30'}`}
+            onClick={() => setActiveGroup('No Issues')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'No Issues' ? 'border-muted-foreground/30 bg-muted/30' : 'border-border bg-card hover:border-muted-foreground/20'}`}
           >
-            <span className="text-xl font-bold text-success">{compliantTotal}</span>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Compliant</span>
+            <span className="text-xl font-bold text-muted-foreground">{noIssuesTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">No Issues</span>
           </button>
         </div>
       )}
@@ -744,11 +744,7 @@ const Rides = () => {
                       <Clock className="h-2.5 w-2.5" /> Due Soon
                     </button>
                   );
-                  if (s === 'compliant') return (
-                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-success text-success-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
-                      <CheckCircle className="h-2.5 w-2.5" /> Compliant
-                    </span>
-                  );
+                  if (s === 'no_issues') return null;
                   return null;
                 })()}
               </div>

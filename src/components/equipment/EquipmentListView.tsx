@@ -32,7 +32,7 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
         const hasDocsOverdue = (stats?.expiredDocCount ?? 0) > 0;
         const hasInspectionsOverdue = (stats?.overdueCount ?? 0) > 0;
 
-        const status: 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'compliant' =
+        const status: 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'none' =
           hasCritical
             ? 'stop_use'
             : hasNonCritical
@@ -41,7 +41,7 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
                 ? 'documents_overdue'
                 : hasInspectionsOverdue
                   ? 'inspection_overdue'
-                  : 'compliant';
+                  : 'none';
 
         return (
           <button
@@ -54,7 +54,7 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
               status === 'attention' && 'border-l-4 border-l-amber-500',
               status === 'documents_overdue' && 'border-l-4 border-l-destructive/70',
               status === 'inspection_overdue' && 'border-l-4 border-l-warning',
-              status === 'compliant' && 'border-l-4 border-l-transparent'
+              status === 'none' && 'border-l-4 border-l-transparent'
             )}
           >
             {/* Thumbnail placeholder */}
