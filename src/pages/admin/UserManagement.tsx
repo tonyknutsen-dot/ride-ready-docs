@@ -491,7 +491,8 @@ export default function UserManagement() {
           isAdmin: adminUserIds.has(userId),
           isTester: testerRoles.has(userId) && !isTesterExpired,
           isStaffMember: staffMap.has(userId),
-          staffOrgName: staffMap.get(userId) || null,
+          staffOrgName: staffMap.get(userId)?.orgName || null,
+          staffOrgId: staffMap.get(userId)?.orgId || null,
           testerExpiresAt: testerExpiresAt,
           rideCount: rideCountMap.get(userId) || 0,
         };
@@ -1000,14 +1001,24 @@ export default function UserManagement() {
           onOffboardTester={offboardTester}
           currentUserId={currentAuthUser?.id}
           onRemoveFromOrg={async (uid) => {
+            const targetUser = users.find(u => u.id === uid);
+            const orgId = targetUser?.staffOrgId;
             try {
-              const { error } = await supabase
+              let query = supabase
                 .from('organisation_members')
                 .update({ is_active: false })
                 .eq('user_id', uid)
                 .eq('is_active', true);
+              // Scope to specific org if known
+              if (orgId) {
+                query = query.eq('organisation_id', orgId);
+              }
+              const { error } = await query;
               if (error) throw error;
-              toast.success('User removed from organisation');
+              const orgName = targetUser?.staffOrgName;
+              toast.success(orgName
+                ? `Removed from ${orgName}`
+                : 'Removed from organisation');
               fetchUsers();
             } catch (err: any) {
               console.error('Error removing from org:', err);
