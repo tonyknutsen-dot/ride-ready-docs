@@ -775,12 +775,51 @@ export default function UserManagement() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const searchLower = searchQuery.toLowerCase();
-    if (!searchLower) return true;
+  // KPI counts (from full unfiltered list — single source of truth)
+  const kpiCounts = useMemo(() => ({
+    total: users.length,
+    suspended: users.filter(u => u.profile?.is_suspended).length,
+    admins: users.filter(u => u.isAdmin).length,
+    testers: users.filter(u => u.isTester).length,
+    staff: users.filter(u => u.isStaffMember).length,
+    pendingInvites: pendingInviteCount,
+  }), [users, pendingInviteCount]);
 
-    return getAdminUserSearchText(user).includes(searchLower);
-  });
+  // Filtered + sorted + paginated list
+  const filteredUsers = useMemo(() => {
+    const filtered = applyUserFilters(users, filters, searchQuery);
+    return sortUsers(filtered, filters.sort);
+  }, [users, filters, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const paginatedUsers = useMemo(
+    () => filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredUsers, page],
+  );
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [filters, searchQuery]);
+
+  const handleKpiClick = (kpi: KpiFilter) => {
+    if (kpi === filters.kpi) {
+      setFilters({ ...DEFAULT_FILTERS });
+    } else {
+      // Reset other filters when clicking a KPI card for a clean slice
+      setFilters({ ...DEFAULT_FILTERS, kpi });
+    }
+  };
+
+  // Fetch pending invite count
+  useEffect(() => {
+    const fetchPendingInvites = async () => {
+      const { count } = await supabase
+        .from('staff_invites')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      setPendingInviteCount(count || 0);
+    };
+    fetchPendingInvites();
+  }, [users]);
 
   if (loading) {
     return (
