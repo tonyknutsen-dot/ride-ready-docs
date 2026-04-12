@@ -80,15 +80,14 @@ export function UserManageDrawer({
 
   const isSelf = currentUserId === user.id;
   const isOrgOwner = !!user.profile?.company_name && !user.isStaffMember;
-  const hasActiveOrg = user.isStaffMember;
 
-  // Determine delete blockers
+  // Determine delete blockers — these are for full ACCOUNT deletion only
   const getDeleteBlockReason = (): string | null => {
     if (isSelf) return 'You cannot delete your own account.';
     if (user.isAdmin) return 'Cannot delete an admin account. Remove admin role first.';
-    if (isOrgOwner) return `This user is the controller/owner of an organisation. Transfer or delete the organisation first.`;
-    if (hasActiveOrg) return `Remove this user from their organisation before deleting the account.`;
-    // Non-test history check happens server-side — we show a general warning
+    if (isOrgOwner) return 'This user is the controller/owner of an organisation. Transfer or delete the organisation first.';
+    // Active org membership blocks account deletion — remove from org first
+    if (user.isStaffMember) return `This user is a member of ${user.staffOrgName || 'an organisation'}. Remove them from the organisation first, then delete if needed.`;
     return null;
   };
 
