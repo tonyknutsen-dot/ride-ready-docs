@@ -413,6 +413,7 @@ const DocumentViewerPage = () => {
       status: rd.status,
       isArchived: !!rd.archived_at,
       evidenceCount: eventMeta.evidenceCount || 0,
+      expiresAt: null,
     });
   };
 
@@ -465,6 +466,7 @@ const DocumentViewerPage = () => {
 
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
+    setFallbackDoc(doc);
     setAllVersions([]);
     setLatestVersion(null);
     setRideDoc(null);
@@ -550,6 +552,7 @@ const DocumentViewerPage = () => {
       status: 'active',
       isArchived: false,
       evidenceCount: eventMeta.evidenceCount || 0,
+      expiresAt: doc.expires_at || null,
     });
   };
 
