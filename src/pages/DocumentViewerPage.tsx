@@ -1065,6 +1065,13 @@ const DocumentViewerPage = () => {
                     value={`${meta.evidenceCount} attachment${meta.evidenceCount !== 1 ? 's' : ''}`}
                   />
                 )}
+                {meta.expiresAt && (
+                  <MetaRow
+                    icon={Calendar}
+                    label="Expires"
+                    value={getExpiryLabel(meta.expiresAt)}
+                  />
+                )}
               </div>
 
               {/* Inline version list in sidebar */}
