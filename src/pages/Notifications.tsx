@@ -19,8 +19,11 @@ const Notifications = () => {
             </h1>
             <p className="text-[13px] text-muted-foreground">
               {actionCount > 0
-                ? `${actionCount} item${actionCount !== 1 ? 's' : ''} need${actionCount === 1 ? 's' : ''} attention`
-                : 'All clear'}
+                ? `${actionCount} unread alert${actionCount !== 1 ? 's' : ''}`
+                : 'No unread alerts'}
+            </p>
+            <p className="text-[11px] text-muted-foreground/70">
+              Reminder messages — one issue may generate multiple alerts
             </p>
           </div>
         </div>
