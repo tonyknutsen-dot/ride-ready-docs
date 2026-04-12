@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Look up the invite with organisation details
     const { data: invite, error: inviteError } = await supabase
       .from("staff_invites")
-      .select("*, organisations(id, name, owner_id)")
+      .select("*, organisations(id, name, owner_id), can_access_calendar, can_access_documents, can_access_checks, can_access_maintenance, can_access_risk_assessments, can_access_send_documents")
       .eq("invite_token", token)
       .single();
 
