@@ -391,9 +391,9 @@ export function UserManageDrawer({
 
                   {deleteBlockReason ? (
                     <div className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                      <p className="font-medium text-foreground">Delete blocked</p>
+                      <p className="font-medium text-foreground">Account deletion blocked</p>
                       <p>{deleteBlockReason}</p>
-                      <p className="italic">Consider using "Remove from Organisation" or "Suspend Account" instead. Operational records require retained attribution for audit and legal purposes.</p>
+                      <p className="italic">To revoke access, use "Remove from {user.staffOrgName || 'organisation'}" or "Suspend Platform Account" instead. Deleting a user account is a separate action from removing an organisation membership. Operational records require retained attribution for audit and legal purposes.</p>
                     </div>
                   ) : (
                     <>
@@ -425,12 +425,12 @@ export function UserManageDrawer({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmAction === 'suspend'
-                ? (isSuspended ? 'Reactivate User Account?' : 'Suspend User Account?')
+                ? (isSuspended ? 'Reactivate User Account?' : 'Suspend Platform Account?')
                 : (user.isAdmin ? 'Remove Admin Access?' : 'Grant Admin Access?')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction === 'suspend'
-                ? (isSuspended ? "This will restore the user's access." : 'This will prevent the user from accessing their account.')
+                ? (isSuspended ? "This will restore the user's sign-in access across the platform." : 'This is a platform-wide suspension. The user will be unable to sign in, accept invites, or create a new account with the same email. This does not remove them from any organisation — use "Remove from organisation" for that.')
                 : (user.isAdmin ? 'This user will lose admin access.' : 'This user will gain full admin access.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
