@@ -629,13 +629,13 @@ const EquipmentSelector = ({
       ) : (
         <div className="space-y-2">
           {sortedRides.map((ride) => {
-            const { accent, iconClass, statusCfg, statusKey, pSummary, pCfg, dSummary, dCfg } = getCardConfig(ride);
+            const { accent, iconClass, statusCfg, statusKey, pSummary, pCfg, dSummary, dCfg, cSummary, cCfg } = getCardConfig(ride);
             const summary = summaries[ride.id];
             const defectCount = summary?.openDefects ?? 0;
             const hasThumb = !!thumbs[ride.id];
 
             // Pick the right icon for current mode
-            const IconComponent = pressureMode ? Gauge : defectMode ? AlertOctagon : PlaceholderIcon;
+            const IconComponent = checksMode ? CheckSquare2 : pressureMode ? Gauge : defectMode ? AlertOctagon : PlaceholderIcon;
 
             return (
               <button
@@ -658,14 +658,17 @@ const EquipmentSelector = ({
                   ) : (
                     <div className={cn(
                       "w-14 h-14 rounded-lg flex items-center justify-center shrink-0",
+                      checksMode && cSummary?.status === 'inspection-due' ? 'bg-warning/10' :
+                      checksMode && cSummary?.status === 'has-checks' ? 'bg-emerald-500/10' :
+                      checksMode && cSummary?.status === 'has-templates' ? 'bg-blue-500/10' :
                       pressureMode && pSummary?.status === 'action-needed' ? 'bg-red-500/10' :
                       pressureMode && pSummary?.status === 'passed' ? 'bg-emerald-500/10' :
                       defectMode && dSummary?.priority === 'stop-use' ? 'bg-destructive/10' :
                       defectMode && dSummary?.priority === 'open-defects' ? 'bg-red-500/10' :
                       defectMode && dSummary?.priority === 'low-severity' ? 'bg-amber-500/10' :
-                      !pressureMode && !defectMode && statusKey === 'overdue' ? 'bg-destructive/10' :
-                      !pressureMode && !defectMode && statusKey === 'due-soon' ? 'bg-amber-500/10' :
-                      !pressureMode && !defectMode && statusKey === 'up-to-date' ? 'bg-emerald-500/10' :
+                      !pressureMode && !defectMode && !checksMode && statusKey === 'overdue' ? 'bg-destructive/10' :
+                      !pressureMode && !defectMode && !checksMode && statusKey === 'due-soon' ? 'bg-amber-500/10' :
+                      !pressureMode && !defectMode && !checksMode && statusKey === 'up-to-date' ? 'bg-emerald-500/10' :
                       'bg-muted/60',
                     )}>
                       <IconComponent className={cn("h-5 w-5", iconClass)} />
