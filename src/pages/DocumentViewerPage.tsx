@@ -99,6 +99,11 @@ const DocumentViewerPage = () => {
   const [editExpiryDialogOpen, setEditExpiryDialogOpen] = useState(false);
   const [newExpiryDate, setNewExpiryDate] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [acknowledgeDialogOpen, setAcknowledgeDialogOpen] = useState(false);
+  const [acknowledgeNote, setAcknowledgeNote] = useState('');
+  const [isAcknowledged, setIsAcknowledged] = useState(false);
+  const [acknowledgedAt, setAcknowledgedAt] = useState<string | null>(null);
+  const [acknowledgedBy, setAcknowledgedBy] = useState<string | null>(null);
 
   useEffect(() => {
     if (documentId && user) {
