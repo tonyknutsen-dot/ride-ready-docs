@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Users, CheckCircle, XCircle, Mail, ArrowRight, Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Mail, ArrowRight, Eye, EyeOff, AlertCircle, Shield, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import appLogo from '@/assets/app-logo.jpg';
 
 type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted';
 
@@ -214,20 +215,39 @@ export default function StaffInvite() {
       }
     } catch (err: any) {
       console.error('Sign in error:', err);
-      setFormError(err.message || 'Failed to sign in');
-      toast.error(err.message || 'Failed to sign in');
+      const msg = err.message?.toLowerCase() || '';
+      if (msg.includes('invalid login credentials')) {
+        setFormError('Invalid password for this email. If you haven\'t created an account with this email yet, use "Create Account & Join" instead.');
+      } else {
+        setFormError(err.message || 'Failed to sign in');
+      }
     } finally {
       setAuthLoading(false);
     }
   };
 
+  /** Shared branded header used across all states */
+  const BrandedHeader = () => (
+    <div className="text-center mb-2">
+      <img
+        src={appLogo}
+        alt="Ride Ready Docs"
+        className="h-16 w-16 rounded-full shadow-lg mx-auto mb-3"
+        width={64}
+        height={64}
+      />
+      <p className="text-xs font-semibold text-primary tracking-wide uppercase">Ride Ready Docs</p>
+    </div>
+  );
+
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 pb-8 text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary mb-4" />
-            <p className="text-muted-foreground">Validating your invite...</p>
+            <BrandedHeader />
+            <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary mb-4" />
+            <p className="text-muted-foreground">Validating your invite…</p>
           </CardContent>
         </Card>
       </div>
@@ -236,11 +256,12 @@ export default function StaffInvite() {
 
   if (status === 'invalid' || status === 'expired' || status === 'already_accepted') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-              <XCircle className="h-8 w-8 text-destructive" />
+            <BrandedHeader />
+            <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <XCircle className="h-7 w-7 text-destructive" />
             </div>
             <CardTitle>
               {status === 'expired' ? 'Invite Expired' : 
@@ -249,7 +270,7 @@ export default function StaffInvite() {
             </CardTitle>
             <CardDescription>
               {status === 'expired' 
-                ? 'This invite link has expired. Please ask for a new invite.'
+                ? 'This invite link has expired. Please ask your employer for a new invite.'
                 : status === 'already_accepted'
                 ? 'This invite has already been used. You can sign in to access your account.'
                 : errorMessage || 'This invite link is not valid.'}
@@ -267,11 +288,12 @@ export default function StaffInvite() {
 
   if (status === 'accepted') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-success" />
+            <BrandedHeader />
+            <div className="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-7 w-7 text-success" />
             </div>
             <CardTitle className="text-success">Welcome to the Team! 🎉</CardTitle>
             <CardDescription>
@@ -285,7 +307,7 @@ export default function StaffInvite() {
                 Your access level: <strong>{permissionLabels[permissionLevel]}</strong>
               </p>
             </div>
-            <p className="text-sm text-muted-foreground">Redirecting to the app...</p>
+            <p className="text-sm text-muted-foreground">Redirecting to the app…</p>
             <Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" />
           </CardContent>
         </Card>
@@ -294,36 +316,43 @@ export default function StaffInvite() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
-            <Users className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle>Join {organisationName}</CardTitle>
+        <CardHeader className="text-center pb-3">
+          <BrandedHeader />
+          <CardTitle className="text-xl">Join {organisationName}</CardTitle>
           <CardDescription>
             {isSignUp 
-              ? 'Create an account to join the team'
-              : 'Sign in to accept your invitation'}
+              ? 'Create a new account to accept your staff invitation'
+              : 'Sign in with your existing Ride Ready Docs account'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="p-4 rounded-lg bg-secondary border border-border">
-            <div className="flex items-center gap-3 mb-3">
+        <CardContent className="space-y-5">
+          {/* Invite details card */}
+          <div className="p-4 rounded-lg bg-secondary border border-border space-y-3">
+            <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-muted-foreground shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">Invited email</p>
-                <p className="font-medium">{inviteEmail}</p>
+                <p className="font-medium text-sm">{inviteEmail}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 text-muted-foreground shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">Access level</p>
-                <p className="font-medium">{permissionLabels[permissionLevel]}</p>
+                <p className="font-medium text-sm">{permissionLabels[permissionLevel]}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{permissionDescriptions[permissionLevel]}</p>
               </div>
             </div>
+          </div>
+
+          {/* Helper notice */}
+          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 flex items-start gap-2.5">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+              You must use the invited email shown above. If you already have a Ride Ready Docs account with <strong>this email</strong>, use "Sign In". Otherwise, use "Create Account & Join" to set a new password.
+            </p>
           </div>
 
           {formError && (
@@ -336,7 +365,7 @@ export default function StaffInvite() {
           {accepting ? (
             <div className="text-center py-4">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-              <p className="text-sm text-muted-foreground">Accepting your invite...</p>
+              <p className="text-sm text-muted-foreground">Accepting your invite…</p>
             </div>
           ) : user ? (
             <div className="text-center py-4 space-y-3">
@@ -455,7 +484,7 @@ export default function StaffInvite() {
                   className="text-sm text-primary hover:underline"
                   disabled={authLoading}
                 >
-                  Already have an account? Sign in
+                  Already have a Ride Ready Docs account? Sign in
                 </button>
               </div>
             </form>
@@ -481,7 +510,7 @@ export default function StaffInvite() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Enter your existing password"
                     required
                     disabled={authLoading}
                     autoComplete="current-password"
@@ -525,7 +554,7 @@ export default function StaffInvite() {
                   className="text-sm text-primary hover:underline"
                   disabled={authLoading}
                 >
-                  Need an account? Create one
+                  Don't have an account yet? Create one
                 </button>
               </div>
             </form>

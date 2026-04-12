@@ -15,7 +15,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { StaffRoute } from "@/components/StaffRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import { LastRouteTracker } from "@/components/LastRouteTracker";
-import CookieConsentBanner from "@/components/CookieConsentBanner";
+
 import { AppLayout } from "@/components/AppLayout";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { PWAUpdateModal } from "@/components/PWAUpdateModal";
@@ -848,8 +848,6 @@ const App = () => (
               </MaintenanceGuard>
               </LocationAwareOfflineSuspense>
               </LockScreenProvider>
-              {/* Cookie consent shown globally (lightweight) */}
-              <CookieConsentBanner />
               </StaffProvider>
             </TesterProvider>
           </AdminProvider>

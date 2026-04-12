@@ -229,7 +229,10 @@ const handler = async (req: Request): Promise<Response> => {
     featureList.push("Wind & pressure readings");
     featureList.push("Defect reporting");
 
-    const subject = `You're invited to join ${companyName} on Ride Ready Docs`;
+    const subject = `${inviterName} invited you to join ${companyName} on Ride Ready Docs`;
+
+    const expiresDate = new Date(invite.expires_at);
+    const expiresFormatted = expiresDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
@@ -240,31 +243,61 @@ const handler = async (req: Request): Promise<Response> => {
         <html>
         <head>
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #1F3A5F, #2F6FB2); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
-            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; background: #FCBA04; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
-            .badge { display: inline-block; background: #FCBA04; color: #000; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-            .feature-box { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; }
-            .feature-list { list-style: none; padding: 0; margin: 10px 0 0 0; }
-            .feature-list li { padding: 4px 0; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 560px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #1F3A5F, #2F6FB2); color: white; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
+            .header p { margin: 0; font-size: 13px; opacity: 0.85; }
+            .content { background: #f8f9fa; padding: 28px 30px; border-radius: 0 0 12px 12px; }
+            .detail-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+            .detail-table td { padding: 8px 0; vertical-align: top; font-size: 14px; }
+            .detail-label { color: #666; width: 130px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+            .detail-value { color: #111; font-weight: 500; }
+            .button { display: inline-block; background: #FCBA04; color: #000; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; font-size: 15px; }
+            .feature-box { background: #e8f4f8; padding: 14px 16px; border-radius: 8px; margin: 16px 0; }
+            .feature-box p { margin: 0 0 6px; font-weight: 600; font-size: 13px; }
+            .feature-list { list-style: none; padding: 0; margin: 0; }
+            .feature-list li { padding: 3px 0; font-size: 13px; }
             .feature-list li:before { content: "✓ "; color: #22c55e; font-weight: bold; }
+            .footer { text-align: center; color: #888; font-size: 11px; margin-top: 20px; padding: 0 20px; }
+            .help-text { font-size: 13px; color: #555; background: #fff8e1; padding: 12px 14px; border-radius: 8px; margin: 16px 0; border-left: 3px solid #FCBA04; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>👋 You're Invited!</h1>
-              <span class="badge">STAFF INVITE</span>
+              <h1>Ride Ready Docs</h1>
+              <p>Staff Invitation</p>
             </div>
             <div class="content">
-              <p>Hi there!</p>
-              <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on Ride Ready Docs.</p>
+              <p style="font-size: 16px; margin-top: 0;">Hi there 👋</p>
+              <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> as a staff member on Ride Ready Docs.</p>
               
+              <table class="detail-table">
+                <tr>
+                  <td class="detail-label">Invited by</td>
+                  <td class="detail-value">${inviterName}</td>
+                </tr>
+                <tr>
+                  <td class="detail-label">Organisation</td>
+                  <td class="detail-value">${companyName}</td>
+                </tr>
+                <tr>
+                  <td class="detail-label">Invited email</td>
+                  <td class="detail-value">${email}</td>
+                </tr>
+                <tr>
+                  <td class="detail-label">Role</td>
+                  <td class="detail-value">Staff</td>
+                </tr>
+                <tr>
+                  <td class="detail-label">Expires</td>
+                  <td class="detail-value">${expiresFormatted}</td>
+                </tr>
+              </table>
+
               <div class="feature-box">
-                <p style="margin: 0; font-weight: bold;">You'll have access to:</p>
+                <p>Your access will include:</p>
                 <ul class="feature-list">
                   ${featureList.map(f => `<li>${f}</li>`).join('')}
                 </ul>
@@ -274,12 +307,16 @@ const handler = async (req: Request): Promise<Response> => {
                 <a href="${inviteUrl}" class="button">Accept Invitation</a>
               </p>
               
-              <p style="font-size: 14px; color: #666;">
-                This invite expires in 7 days. If you didn't expect this invite, you can safely ignore this email.
+              <div class="help-text">
+                <strong>New to Ride Ready Docs?</strong> You'll create a password when you accept. If you already have an account with this email, just sign in on the invite page.
+              </div>
+
+              <p style="font-size: 12px; color: #999; margin-bottom: 0;">
+                If you didn't expect this invite, you can safely ignore this email.
               </p>
             </div>
             <div class="footer">
-              <p>Ride Ready Docs - Safety Documentation for Fairground Professionals</p>
+              <p>Sent by Ride Ready Docs &middot; <a href="https://ridereadydocs.com" style="color: #888;">ridereadydocs.com</a></p>
             </div>
           </div>
         </body>
