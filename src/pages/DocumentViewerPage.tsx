@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedPdf, cachePdf, createCachedPdfUrl } from '@/lib/pdfCache';
 import { useAuth } from '@/contexts/AuthContext';
+import { isDocExpired, isDocExpiringSoon, daysUntilExpiry, getExpiryLabel } from '@/utils/documentHelpers';
 
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -14,11 +15,13 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader,
   DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
   MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
-  Image as ImageIcon, File,
+  Image as ImageIcon, File, Trash2, Pencil,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -49,6 +52,7 @@ interface DocumentMeta {
   status: string;
   isArchived: boolean;
   evidenceCount: number;
+  expiresAt: string | null;
 }
 
 interface TemporaryViewerState {
@@ -81,6 +85,7 @@ const DocumentViewerPage = () => {
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
   const [fallbackDocId, setFallbackDocId] = useState<string | null>(null);
+  const [fallbackDoc, setFallbackDoc] = useState<any>(null);
 
   // Version control state
   const [allVersions, setAllVersions] = useState<RideDocument[]>([]);
@@ -91,6 +96,9 @@ const DocumentViewerPage = () => {
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
+  const [editExpiryDialogOpen, setEditExpiryDialogOpen] = useState(false);
+  const [newExpiryDate, setNewExpiryDate] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     if (documentId && user) {
@@ -405,6 +413,7 @@ const DocumentViewerPage = () => {
       status: rd.status,
       isArchived: !!rd.archived_at,
       evidenceCount: eventMeta.evidenceCount || 0,
+      expiresAt: null,
     });
   };
 
@@ -457,6 +466,7 @@ const DocumentViewerPage = () => {
 
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
+    setFallbackDoc(doc);
     setAllVersions([]);
     setLatestVersion(null);
     setRideDoc(null);
@@ -542,6 +552,7 @@ const DocumentViewerPage = () => {
       status: 'active',
       isArchived: false,
       evidenceCount: eventMeta.evidenceCount || 0,
+      expiresAt: doc.expires_at || null,
     });
   };
 
@@ -633,6 +644,42 @@ const DocumentViewerPage = () => {
     queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
     queryClient.invalidateQueries({ queryKey: ['compliance'] });
     queryClient.invalidateQueries({ queryKey: ['overview'] });
+    queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
+  };
+
+  const handleEditExpiry = async () => {
+    if (!fallbackDocId || !newExpiryDate) return;
+    const { error } = await supabase
+      .from('documents')
+      .update({ expires_at: newExpiryDate })
+      .eq('id', fallbackDocId);
+    if (error) {
+      toast({ title: 'Failed to update expiry', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Expiry date updated' });
+    setEditExpiryDialogOpen(false);
+    setNewExpiryDate('');
+    invalidateComplianceQueries();
+    // Reload to reflect new meta
+    loadDocument(fallbackDocId);
+  };
+
+  const handleDeleteUploadedDoc = async () => {
+    if (!fallbackDocId || !fallbackDoc) return;
+    // Delete from storage first
+    if (fallbackDoc.file_path) {
+      await supabase.storage.from('ride-documents').remove([fallbackDoc.file_path]);
+    }
+    const { error } = await supabase.from('documents').delete().eq('id', fallbackDocId);
+    if (error) {
+      toast({ title: 'Failed to delete document', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Document deleted' });
+    setDeleteDialogOpen(false);
+    invalidateComplianceQueries();
+    navigate(-1);
   };
 
   const handleRestore = async () => {
@@ -737,6 +784,58 @@ const DocumentViewerPage = () => {
           </Button>
         </div>
       )}
+
+      {/* ── Expiry Banner ── */}
+      {meta?.expiresAt && (() => {
+        const expired = isDocExpired(meta.expiresAt);
+        const expiringSoon = isDocExpiringSoon(meta.expiresAt);
+        if (!expired && !expiringSoon) return null;
+        const label = getExpiryLabel(meta.expiresAt);
+        return (
+          <div className={`border-b px-4 py-3 flex items-center justify-between gap-3 ${
+            expired
+              ? 'bg-destructive/10 border-destructive/20'
+              : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+          }`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AlertTriangle className={`h-4 w-4 shrink-0 ${expired ? 'text-destructive' : 'text-amber-600 dark:text-amber-400'}`} />
+              <div className="min-w-0">
+                <p className={`text-sm font-semibold ${expired ? 'text-destructive' : 'text-amber-800 dark:text-amber-300'}`}>
+                  {label}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This document is currently counted in Documents Expiring on the dashboard.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => {
+                  setNewExpiryDate(meta.expiresAt || '');
+                  setEditExpiryDialogOpen(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit expiry
+              </Button>
+              {fallbackDocId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Superseded Version Banner ── */}
       {isViewingOldVersion && meta && (
@@ -966,6 +1065,13 @@ const DocumentViewerPage = () => {
                     value={`${meta.evidenceCount} attachment${meta.evidenceCount !== 1 ? 's' : ''}`}
                   />
                 )}
+                {meta.expiresAt && (
+                  <MetaRow
+                    icon={Calendar}
+                    label="Expires"
+                    value={getExpiryLabel(meta.expiresAt)}
+                  />
+                )}
               </div>
 
               {/* Inline version list in sidebar */}
@@ -1093,6 +1199,51 @@ const DocumentViewerPage = () => {
               Cancel
             </Button>
             <Button onClick={handleArchive}>Archive</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Expiry Dialog */}
+      <Dialog open={editExpiryDialogOpen} onOpenChange={setEditExpiryDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Expiry Date</DialogTitle>
+            <DialogDescription>
+              Update the expiry date to remove this document from the dashboard warning.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">{docTitle}</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="expiry-date">New expiry date</Label>
+              <Input
+                id="expiry-date"
+                type="date"
+                value={newExpiryDate?.split('T')[0] || ''}
+                onChange={(e) => setNewExpiryDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditExpiryDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditExpiry} disabled={!newExpiryDate}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Document Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the document and remove it from the dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm font-medium">{docTitle}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteUploadedDoc}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
