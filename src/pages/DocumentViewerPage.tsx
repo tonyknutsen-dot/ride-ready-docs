@@ -785,6 +785,58 @@ const DocumentViewerPage = () => {
         </div>
       )}
 
+      {/* ── Expiry Banner ── */}
+      {meta?.expiresAt && (() => {
+        const expired = isDocExpired(meta.expiresAt);
+        const expiringSoon = isDocExpiringSoon(meta.expiresAt);
+        if (!expired && !expiringSoon) return null;
+        const label = getExpiryLabel(meta.expiresAt);
+        return (
+          <div className={`border-b px-4 py-3 flex items-center justify-between gap-3 ${
+            expired
+              ? 'bg-destructive/10 border-destructive/20'
+              : 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800'
+          }`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AlertTriangle className={`h-4 w-4 shrink-0 ${expired ? 'text-destructive' : 'text-amber-600 dark:text-amber-400'}`} />
+              <div className="min-w-0">
+                <p className={`text-sm font-semibold ${expired ? 'text-destructive' : 'text-amber-800 dark:text-amber-300'}`}>
+                  {label}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This document is currently counted in Documents Expiring on the dashboard.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => {
+                  setNewExpiryDate(meta.expiresAt || '');
+                  setEditExpiryDialogOpen(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit expiry
+              </Button>
+              {fallbackDocId && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Superseded Version Banner ── */}
       {isViewingOldVersion && meta && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5 flex items-center justify-between gap-3">
