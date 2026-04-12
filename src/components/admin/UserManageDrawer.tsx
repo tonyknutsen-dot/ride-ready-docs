@@ -408,7 +408,7 @@ export function UserManageDrawer({
                         Delete User Account
                       </Button>
                       <p className="text-xs text-muted-foreground -mt-1 pl-1">
-                        Permanently removes the account and all associated data. Only available for test/demo accounts with no real operational history. This cannot be undone.
+                        Permanently removes the entire user account from the platform. This is not the same as removing someone from an organisation. Only available for test/demo accounts with no real operational history. This cannot be undone.
                       </p>
                     </>
                   )}
