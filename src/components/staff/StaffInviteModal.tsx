@@ -104,6 +104,13 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
 
       if (response.error) throw new Error(response.error.message || 'Failed to send invite');
 
+      // Check for application-level errors in response data
+      const responseData = response.data;
+      if (responseData?.error) {
+        toast({ title: 'Cannot send invite', description: responseData.error, variant: 'destructive' });
+        return;
+      }
+
       toast({ title: 'Invitation sent', description: `Invite sent to ${email}` });
       onOpenChange(false);
       onSuccess?.();

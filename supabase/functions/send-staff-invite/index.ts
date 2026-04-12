@@ -127,6 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const normalizedEmail = email.toLowerCase();
 
+    // Check for existing pending invite for this org
     const { data: existingInvite } = await supabase
       .from("staff_invites")
       .select("id, status, invite_token, expires_at")
@@ -140,14 +141,22 @@ const handler = async (req: Request): Promise<Response> => {
         .from("staff_invites")
         .update({ status: "expired" })
         .eq("id", existingInvite.id);
+    } else if (existingInvite) {
+      // Still valid pending invite — block duplicate
+      return new Response(
+        JSON.stringify({ error: "This email already has a pending invite for your organisation." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
+    // Check if user already exists in auth
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     const targetUser = existingUsers?.users?.find(
       (u) => u.email?.toLowerCase() === normalizedEmail
     );
     
     if (targetUser) {
+      // Check if already an active member of this org
       const { data: existingMember } = await supabase
         .from("organisation_members")
         .select("id")
@@ -158,7 +167,23 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (existingMember) {
         return new Response(
-          JSON.stringify({ error: "This person is already a staff member" }),
+          JSON.stringify({ error: "This email is already a member of your organisation." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check if user belongs to another organisation
+      const { data: otherOrgMember } = await supabase
+        .from("organisation_members")
+        .select("id, organisations(name)")
+        .eq("user_id", targetUser.id)
+        .eq("is_active", true)
+        .neq("organisation_id", organisation.id)
+        .maybeSingle();
+
+      if (otherOrgMember) {
+        return new Response(
+          JSON.stringify({ error: "This email already has a Ride Ready Docs account with another organisation. They must be removed from that organisation first." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -230,14 +255,14 @@ const handler = async (req: Request): Promise<Response> => {
       invite = createdInvite;
     }
 
-    const { data: profile } = await supabase
+    const { data: inviterProfile } = await supabase
       .from("profiles")
       .select("controller_name, company_name")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const inviterName = profile?.controller_name || profile?.company_name || "Your employer";
-    const companyName = profile?.company_name || organisation.name;
+    const inviterName = inviterProfile?.controller_name || inviterProfile?.company_name || "Your employer";
+    const companyName = inviterProfile?.company_name || organisation.name;
 
     const baseUrl = "https://ridereadydocs.com";
     const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
