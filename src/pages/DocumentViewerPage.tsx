@@ -1195,6 +1195,51 @@ const DocumentViewerPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Expiry Dialog */}
+      <Dialog open={editExpiryDialogOpen} onOpenChange={setEditExpiryDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Expiry Date</DialogTitle>
+            <DialogDescription>
+              Update the expiry date to remove this document from the dashboard warning.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">{docTitle}</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="expiry-date">New expiry date</Label>
+              <Input
+                id="expiry-date"
+                type="date"
+                value={newExpiryDate?.split('T')[0] || ''}
+                onChange={(e) => setNewExpiryDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditExpiryDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditExpiry} disabled={!newExpiryDate}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Document Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the document and remove it from the dashboard.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm font-medium">{docTitle}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteUploadedDoc}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
