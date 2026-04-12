@@ -410,13 +410,13 @@ export default function UserManagement() {
       // Fetch staff (organisation members)
       const { data: orgMembers } = await supabase
         .from('organisation_members')
-        .select('user_id, is_active, organisations(name)')
+        .select('user_id, is_active, organisation_id, organisations(name)')
         .eq('is_active', true);
 
-      const staffMap = new Map<string, string | null>();
+      const staffMap = new Map<string, { orgName: string | null; orgId: string }>();
       for (const m of orgMembers || []) {
         const org = m.organisations as { name: string } | null;
-        staffMap.set(m.user_id, org?.name || null);
+        staffMap.set(m.user_id, { orgName: org?.name || null, orgId: m.organisation_id });
       }
 
       // Fetch user emails and names from edge function
