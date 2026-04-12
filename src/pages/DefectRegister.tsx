@@ -143,7 +143,7 @@ const DefectDetailSheet = ({
       <section className="pt-7">
         <SectionLabel>Description</SectionLabel>
         <div className="p-4 rounded-xl bg-muted/40 border border-border mt-2">
-          <p className="text-sm text-foreground leading-relaxed">{defect.description}</p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{defect.description}</p>
         </div>
       </section>
 
