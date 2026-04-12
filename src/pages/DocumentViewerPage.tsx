@@ -653,6 +653,8 @@ const DocumentViewerPage = () => {
     queryClient.invalidateQueries({ queryKey: ['compliance'] });
     queryClient.invalidateQueries({ queryKey: ['overview'] });
     queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
+    queryClient.invalidateQueries({ queryKey: ['overdue-compliance-count'] });
+    queryClient.invalidateQueries({ queryKey: ['defect-summary'] });
   };
 
   const handleEditExpiry = async () => {

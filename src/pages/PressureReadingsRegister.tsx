@@ -918,13 +918,42 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                               const failedLines = (session.lines || [])
                                 .map((l, idx) => ({ ...l, status: getLineStatus(idx, l.pressure_value) }))
                                 .filter(l => l.status.status === 'below_minimum' || l.status.status === 'above_maximum');
-                              const sectionNames = failedLines.map(l => `${l.section_name} (${l.pressure_value} ${l.pressure_unit} — ${l.status.label})`).join('; ');
-                              const limitsInfo = failedLines.map(l => {
+                              const unit = defaultUnit || 'psi';
+                              const affectedSections = failedLines.map(l => {
                                 const limits = findSectionLimits(sectionConfig as SectionLimits[], l.section_number - 1);
-                                return `${l.section_name}: ${limits?.min_pressure != null ? `min ${limits.min_pressure}` : ''}${limits?.max_pressure != null ? ` max ${limits.max_pressure}` : ''} ${defaultUnit}`;
-                              }).join('; ');
-                              const reader = [session.reader_make, session.reader_model, session.reader_serial ? `S/N ${session.reader_serial}` : null].filter(Boolean).join(' ');
-                              return `Pressure reading out of range — ${rideName}\n\nSession: ${session.session_date} ${session.session_time.slice(0,5)} (${SESSION_TYPE_LABELS[session.session_type] || session.session_type})\nSite: ${session.site_name}${session.site_address ? ', ' + session.site_address : ''}\n\nFailed sections: ${sectionNames}\nConfigured limits: ${limitsInfo}\nReader: ${reader}\n\nOne or more readings were outside configured limits. Review inflatable condition.`;
+                                const boundLabel = l.status.status === 'below_minimum' ? `min ${limits?.min_pressure}` : `max ${limits?.max_pressure}`;
+                                return `  • ${l.section_name}: ${l.pressure_value} ${unit} (${boundLabel})`;
+                              }).join('\n');
+                              const configuredLimits = failedLines.map(l => {
+                                const limits = findSectionLimits(sectionConfig as SectionLimits[], l.section_number - 1);
+                                const parts: string[] = [];
+                                if (limits?.min_pressure != null) parts.push(`${limits.min_pressure}`);
+                                if (limits?.max_pressure != null) parts.push(`${limits.max_pressure}`);
+                                return `  • ${l.section_name}: ${parts.join(' to ')} ${unit}`;
+                              }).join('\n');
+                              const reader = [session.reader_make, session.reader_model, session.reader_serial ? `S/N ${session.reader_serial}` : null].filter(Boolean).join(', ');
+                              const sessionTime = session.session_time ? session.session_time.slice(0, 5) : '';
+                              const sessionLabel = `${session.session_date}${sessionTime ? ', ' + sessionTime : ''}`;
+                              const site = [session.site_name, session.site_address].filter(Boolean).join(', ');
+
+                              return [
+                                'Pressure reading out of range',
+                                'One or more sections recorded pressure outside the configured limits during operation.',
+                                '',
+                                `Session: ${sessionLabel}`,
+                                `Equipment: ${rideName}`,
+                                site ? `Site: ${site}` : null,
+                                '',
+                                'Affected sections:',
+                                affectedSections,
+                                '',
+                                'Configured limits:',
+                                configuredLimits,
+                                '',
+                                reader ? `Reader: ${reader}` : null,
+                                '',
+                                'Recommended action: Inspect inflatable condition and verify pressure setup before further use.',
+                              ].filter(line => line !== null).join('\n');
                             })()}
                           />
                         </div>
