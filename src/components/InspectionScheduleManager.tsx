@@ -716,7 +716,9 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                     </Button>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No linked document found for this completion.</p>
+                  <p className="text-xs text-muted-foreground">
+                    This completion was recorded before document linking was available. No linked completion document exists for this historical record.
+                  </p>
                 )}
               </div>
             </div>
