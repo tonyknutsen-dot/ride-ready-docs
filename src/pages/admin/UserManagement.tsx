@@ -19,6 +19,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { UserCard } from '@/components/admin/UserCard';
+import { UserListRow } from '@/components/admin/UserListRow';
+import { UserManageDrawer } from '@/components/admin/UserManageDrawer';
+import type { UserCardData } from '@/components/admin/UserCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { TesterInviteDialog } from '@/components/admin/TesterInviteDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserWithProfile {
   id: string;
