@@ -476,6 +476,9 @@ const DocumentViewerPage = () => {
     setLatestVersion(null);
     setRideDoc(null);
     setDocTitle(doc.document_name);
+    setIsAcknowledged(!!doc.expiry_acknowledged_at);
+    setAcknowledgedAt(doc.expiry_acknowledged_at || null);
+    setAcknowledgedBy(doc.expiry_acknowledged_by || null);
 
     const ft = detectFileType(doc.file_path || '', doc.mime_type);
     setFileType(ft);
