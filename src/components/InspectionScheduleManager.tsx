@@ -582,7 +582,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                   type="button"
                   onClick={() => setDetailEvent(event)}
                   aria-label={`View completion record for ${event.event_name}`}
-                  className="w-full flex items-center justify-between py-2.5 px-3 rounded-lg border border-border/50 bg-muted/30 gap-3 text-left hover:bg-muted/60 hover:border-border active:bg-muted/80 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="w-full flex items-center justify-between py-3 px-3.5 rounded-lg border border-border bg-card gap-3 text-left shadow-sm hover:shadow hover:border-foreground/20 active:bg-muted/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
