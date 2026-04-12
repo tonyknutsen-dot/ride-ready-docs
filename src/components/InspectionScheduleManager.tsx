@@ -730,6 +730,11 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
           onOpenChange={(open) => { setMarkCompleteSheetOpen(open); if (!open) setMarkCompleteTarget(null); }}
           eventId={markCompleteTarget.id}
           eventName={markCompleteTarget.event_name}
+          eventCategory={markCompleteTarget.category}
+          eventType={markCompleteTarget.event_type}
+          rideId={ride.id}
+          rideName={ride.ride_name}
+          dueDate={markCompleteTarget.due_date}
           isRecurring={markCompleteTarget.is_recurring}
           recurrenceRule={markCompleteTarget.recurrence_rule}
           onCompleted={handleMarkCompleteFinished}
