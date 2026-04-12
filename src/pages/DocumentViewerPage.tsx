@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateComplianceQueries as invalidateComplianceQueriesShared, invalidateDocumentQueries } from '@/utils/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { getCachedPdf, cachePdf, createCachedPdfUrl } from '@/lib/pdfCache';
 import { useAuth } from '@/contexts/AuthContext';
@@ -649,12 +650,8 @@ const DocumentViewerPage = () => {
 
 
   const invalidateComplianceQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
-    queryClient.invalidateQueries({ queryKey: ['compliance'] });
-    queryClient.invalidateQueries({ queryKey: ['overview'] });
-    queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
-    queryClient.invalidateQueries({ queryKey: ['overdue-compliance-count'] });
-    queryClient.invalidateQueries({ queryKey: ['defect-summary'] });
+    invalidateComplianceQueriesShared(queryClient);
+    invalidateDocumentQueries(queryClient);
   };
 
   const handleEditExpiry = async () => {

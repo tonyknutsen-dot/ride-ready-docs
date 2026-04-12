@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateComplianceQueries } from "@/utils/queryInvalidation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -181,7 +182,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
       }
 
       toast.success("Record updated – new version created");
-      queryClient.invalidateQueries({ queryKey: ["compliance-completed"] });
+      invalidateComplianceQueries(queryClient);
       onOpenChange(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to save");

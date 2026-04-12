@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { invalidateComplianceQueries } from '@/utils/queryInvalidation';
 import { useOfflineQuery } from '@/hooks/useOfflineQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -434,10 +435,8 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     setVersions(v);
   };
 
-  const invalidateComplianceQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
-    queryClient.invalidateQueries({ queryKey: ['compliance'] });
-    queryClient.invalidateQueries({ queryKey: ['overview'] });
+  const invalidateAll = () => {
+    invalidateComplianceQueries(queryClient);
   };
 
   const handleArchive = async () => {
