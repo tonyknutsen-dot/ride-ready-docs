@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2, MoreVertical, FileText, Download, User, Building2 } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2, MoreVertical, FileText, Download, User, Building2, ChevronRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { openDocumentById } from '@/utils/documentOpen';
@@ -581,7 +581,8 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                   key={event.id}
                   type="button"
                   onClick={() => setDetailEvent(event)}
-                  className="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 gap-3 text-left hover:bg-muted/50 transition-colors cursor-pointer"
+                  aria-label={`View completion record for ${event.event_name}`}
+                  className="w-full flex items-center justify-between py-2.5 px-3 rounded-lg border border-border/60 bg-card gap-3 text-left hover:bg-accent/50 active:bg-accent/70 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
@@ -591,11 +592,15 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                         {INSPECTION_TYPES.find(t => t.value === event.event_type)?.label || event.event_type}
                         {event.completed_by_name && <span> · {event.completed_by_name}</span>}
                       </p>
+                      <p className="text-[10px] text-primary/70 mt-0.5">View completion record</p>
                     </div>
                   </div>
-                  <span className="text-[10px] text-muted-foreground shrink-0">
-                    {event.completed_at ? format(new Date(event.completed_at), 'd MMM yyyy') : ''}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] text-muted-foreground">
+                      {event.completed_at ? format(new Date(event.completed_at), 'd MMM yyyy') : ''}
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  </div>
                 </button>
               ))}
             </div>
