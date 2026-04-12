@@ -71,21 +71,25 @@ const Staff = () => {
     try {
       const { data: members } = await supabase
         .from('organisation_members')
-        .select('id, user_id, permission_level, joined_at, is_active, equipment_access_mode')
+        .select('id, user_id, permission_level, joined_at, is_active, equipment_access_mode, invited_email')
         .eq('organisation_id', orgId)
         .eq('is_active', true);
 
       const staffWithDetails = await Promise.all(
         (members || []).map(async member => {
-          let email = '';
+          // Use invited_email from DB as primary source (always available)
+          let email = (member as any).invited_email || '';
           let display_name = '';
-          try {
-            const { data } = await supabase.functions.invoke('get-user-email', {
-              body: { userId: member.user_id },
-            });
-            email = data?.email || '';
-            display_name = data?.name || '';
-          } catch (_) {}
+
+          // If no invited_email stored, fall back to edge function
+          if (!email) {
+            try {
+              const { data } = await supabase.functions.invoke('get-user-email', {
+                body: { userId: member.user_id },
+              });
+              email = data?.email || '';
+            } catch (_) {}
+          }
 
           const { data: assignments } = await supabase
             .from('staff_equipment_assignments')

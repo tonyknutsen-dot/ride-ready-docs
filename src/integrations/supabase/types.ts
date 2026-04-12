@@ -2075,6 +2075,7 @@ export type Database = {
           equipment_access_mode: string
           id: string
           invited_by: string
+          invited_email: string | null
           is_active: boolean
           joined_at: string
           organisation_id: string
@@ -2093,6 +2094,7 @@ export type Database = {
           equipment_access_mode?: string
           id?: string
           invited_by: string
+          invited_email?: string | null
           is_active?: boolean
           joined_at?: string
           organisation_id: string
@@ -2111,6 +2113,7 @@ export type Database = {
           equipment_access_mode?: string
           id?: string
           invited_by?: string
+          invited_email?: string | null
           is_active?: boolean
           joined_at?: string
           organisation_id?: string

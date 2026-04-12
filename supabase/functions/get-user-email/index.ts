@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
 
@@ -16,23 +15,15 @@ const handler = async (req: Request): Promise<Response> => {
     if (!userId) {
       return new Response(
         JSON.stringify({ error: "Missing userId" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // AUTHENTICATE THE CALLER
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -46,84 +37,71 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
 
     if (authError || !user) {
-      console.error("Authentication failed:", authError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // VERIFY CALLER IS ADMIN
-    const { data: isAdmin, error: roleError } = await supabaseUser.rpc("has_role", {
+    // Service role client for lookups
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    // CHECK ACCESS: caller must be platform admin OR org owner of the target user
+    const { data: isAdmin } = await supabaseUser.rpc("has_role", {
       _user_id: user.id,
       _role: "admin",
     });
 
-    if (roleError) {
-      console.error("Error checking admin role:", roleError.message);
-      return new Response(
-        JSON.stringify({ error: "Failed to verify permissions" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+    let hasAccess = isAdmin === true;
 
-    if (!isAdmin) {
-      console.error("Non-admin user attempted to access get-user-email:", user.id);
-      return new Response(
-        JSON.stringify({ error: "Forbidden: Admin access required" }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+    if (!hasAccess) {
+      // Check if caller owns an org that the target user is a member of
+      const { data: orgCheck } = await supabaseAdmin
+        .from("organisation_members")
+        .select("organisation_id, organisations!inner(owner_id)")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
 
-    // NOW use service role to get email (only after admin verification)
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
+      if (orgCheck) {
+        const org = orgCheck.organisations as unknown as { owner_id: string };
+        if (org.owner_id === user.id) {
+          hasAccess = true;
+        }
       }
-    );
+    }
+
+    if (!hasAccess) {
+      console.error("User lacks permission to look up email:", user.id, "->", userId);
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     const { data: userData, error } = await supabaseAdmin.auth.admin.getUserById(userId);
 
     if (error) {
-      console.error("Error fetching user:", error);
       return new Response(
         JSON.stringify({ error: "User not found" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
     return new Response(
       JSON.stringify({ email: userData.user?.email }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("Error in get-user-email:", error);
     return new Response(
       JSON.stringify({ error: "Failed to get user email" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
