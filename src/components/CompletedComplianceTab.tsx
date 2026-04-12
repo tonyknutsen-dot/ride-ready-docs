@@ -101,7 +101,7 @@ const PAGE_SIZE = 25;
 async function fetchCompletedEvents(userId: string, days: DaysFilter) {
   const query = supabase
     .from('compliance_events')
-    .select('id, event_name, event_type, category, ride_id, due_date, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id, completed_by_name, completed_by_role')
+    .select('id, event_name, event_type, category, ride_id, due_date, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id, completed_by_name, completed_by_role, next_event_id')
     .eq('user_id', userId)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false });
@@ -115,7 +115,6 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
   const [ridesRes, eventsRes, archivedDocsRes] = await Promise.all([
     supabase.from('rides').select('id, ride_name').eq('user_id', userId),
     query,
-    // Get event IDs of archived or superseded ride_documents to exclude from stats
     supabase
       .from('ride_documents')
       .select('related_event_id')
@@ -128,12 +127,25 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
 
   const rideList = Array.from(rideMap.entries()).map(([id, name]) => ({ id, name }));
 
-  // Build set of event IDs that have ONLY archived/superseded docs (no active non-archived doc)
   const archivedEventIds = new Set(
     (archivedDocsRes.data || [])
       .map(d => d.related_event_id)
       .filter(Boolean) as string[]
   );
+
+  // Fetch next due dates for recurring events
+  const nextEventIds = (eventsRes.data || [])
+    .map(e => (e as any).next_event_id)
+    .filter(Boolean) as string[];
+  
+  let nextDueDateMap = new Map<string, string>();
+  if (nextEventIds.length > 0) {
+    const { data: nextEvents } = await supabase
+      .from('compliance_events')
+      .select('id, due_date')
+      .in('id', nextEventIds);
+    (nextEvents || []).forEach(ne => nextDueDateMap.set(ne.id, ne.due_date));
+  }
 
   const items: CompletedItem[] = (eventsRes.data || []).map(e => ({
     id: e.id,
@@ -152,6 +164,7 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
     fullDocumentId: (e as any).full_document_id || null,
     completedByName: (e as any).completed_by_name || null,
     completedByRole: (e as any).completed_by_role || null,
+    nextDueDate: (e as any).next_event_id ? nextDueDateMap.get((e as any).next_event_id) || null : null,
     isDocArchived: archivedEventIds.has(e.id),
   }));
 
