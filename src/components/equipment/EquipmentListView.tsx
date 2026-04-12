@@ -129,9 +129,7 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
                     <AlertTriangle className="h-3.5 w-3.5" />
                     <span>Inspection overdue</span>
                   </button>
-                ) : (
-                  <span className="text-xs text-success font-medium">Compliant</span>
-                )}
+                ) : null}
               </div>
 
               {/* Docs count */}
