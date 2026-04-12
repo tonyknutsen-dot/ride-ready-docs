@@ -148,12 +148,14 @@ const NeedsAttentionPanel = () => {
         let path = '/calendar';
         if (evtType === 'pre_opening_check' || evtType === 'daily_check') {
           path = evt.ride_id ? `/checks/${evt.ride_id}/daily/execute` : '/checks';
-        } else if (evtType === 'ndt') {
-          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=ndt` : '/calendar';
-        } else if (evtCategory === 'inspection' || evtType === 'in-service' || evtType === 'electrical') {
-          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=annual` : '/calendar';
         } else if (evtCategory === 'doc_expiry') {
           path = evt.ride_id ? `/rides/${evt.ride_id}?tab=documents&eventId=${evt.id}` : '/documents';
+        } else if (
+          evtCategory === 'inspection' || evtCategory === 'ndt' ||
+          evtType === 'ndt' || evtType === 'in-service' || evtType === 'electrical'
+        ) {
+          // All scheduled inspection types → Annual tab (InspectionScheduleManager handles both inspection + ndt categories)
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=annual` : '/calendar';
         } else if (evt.ride_id) {
           path = `/rides/${evt.ride_id}?tab=overview`;
         }
