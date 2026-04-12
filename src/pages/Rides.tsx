@@ -553,7 +553,7 @@ const Rides = () => {
 
       {/* Compliance KPI Strip */}
       {rides.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <button
             onClick={() => setActiveGroup('Documents Overdue')}
             className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Documents Overdue' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card hover:border-destructive/30'}`}
@@ -581,13 +581,6 @@ const Rides = () => {
           >
             <span className="text-xl font-bold text-amber-600 dark:text-amber-400">{attentionTotal}</span>
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Attention</span>
-          </button>
-          <button
-            onClick={() => setActiveGroup('No Issues')}
-            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'No Issues' ? 'border-muted-foreground/30 bg-muted/30' : 'border-border bg-card hover:border-muted-foreground/20'}`}
-          >
-            <span className="text-xl font-bold text-muted-foreground">{noIssuesTotal}</span>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">No Issues</span>
           </button>
         </div>
       )}
