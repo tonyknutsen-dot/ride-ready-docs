@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus, UserMinus, UserX, History, ArrowRight } from 'lucide-react';
+import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus, UserMinus, UserX, History, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
@@ -22,7 +22,8 @@ import { UserCard } from '@/components/admin/UserCard';
 import { UserListRow } from '@/components/admin/UserListRow';
 import { UserManageDrawer } from '@/components/admin/UserManageDrawer';
 import type { UserCardData } from '@/components/admin/UserCard';
-import { getAdminUserSearchText } from '@/components/admin/userManagementMeta';
+import { getAdminUserSearchText, applyUserFilters, sortUsers } from '@/components/admin/userManagementMeta';
+import { KpiCards, FilterBar, DEFAULT_FILTERS, hasActiveFilters, type UserFilters, type KpiFilter } from '@/components/admin/UserManagementFilters';
 import {
   AlertDialog,
   AlertDialogAction,
