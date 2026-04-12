@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { openDocumentById } from '@/utils/documentOpen';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -326,7 +327,14 @@ const MarkCompleteSheet = ({
 
   const handleViewDocument = () => {
     handleClose();
-    if (rideId) {
+    if (completionResult?.documentId) {
+      openDocumentById({
+        documentId: completionResult.documentId,
+        navigate,
+        sourceComponent: 'MarkCompleteSheet',
+        toast,
+      });
+    } else if (rideId) {
       navigate(`/rides/${rideId}?tab=documents`);
     } else {
       navigate('/documents');
