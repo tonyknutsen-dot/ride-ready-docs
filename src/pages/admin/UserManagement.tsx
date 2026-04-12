@@ -686,9 +686,10 @@ export default function UserManagement() {
     }
   };
 
-  const toggleSuspension = async (userId: string, currentlySuspended: boolean) => {
+  const toggleSuspension = async (userId: string, currentlySuspended: boolean, reason?: string) => {
     setSuspendingUserId(userId);
 
+    const effectiveReason = reason ?? suspendReason;
     // Find user info for email
     const targetUser = users.find(u => u.id === userId);
 
@@ -730,7 +731,7 @@ export default function UserManagement() {
           .update({
             is_suspended: true,
             suspended_at: new Date().toISOString(),
-            suspended_reason: suspendReason || null,
+            suspended_reason: effectiveReason || null,
           })
           .eq('user_id', userId);
 
@@ -743,7 +744,7 @@ export default function UserManagement() {
               email: emailData.email,
               companyName: targetUser?.profile?.company_name,
               isSuspended: true,
-              reason: suspendReason || undefined,
+              reason: effectiveReason || undefined,
             }
           }).catch(e => console.error('Failed to send suspension email:', e));
         }
@@ -753,7 +754,7 @@ export default function UserManagement() {
 
       setShowSuspendDialog(null);
       setSuspendReason('');
-      fetchUsers();
+      await fetchUsers();
     } catch (error: any) {
       console.error('Error updating suspension:', error);
       toast.error('Failed to update account status');
