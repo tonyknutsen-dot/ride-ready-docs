@@ -2663,6 +2663,8 @@ export type Database = {
           ride_id: string
           status: string
           title: string
+          updated_at: string
+          updated_by: string | null
           version: number
         }
         Insert: {
@@ -2681,6 +2683,8 @@ export type Database = {
           ride_id: string
           status?: string
           title: string
+          updated_at?: string
+          updated_by?: string | null
           version?: number
         }
         Update: {
@@ -2699,6 +2703,8 @@ export type Database = {
           ride_id?: string
           status?: string
           title?: string
+          updated_at?: string
+          updated_by?: string | null
           version?: number
         }
         Relationships: [
