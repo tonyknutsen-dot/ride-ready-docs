@@ -451,7 +451,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       setArchiveReason('');
       const rideId = archiveDialogDoc.ride_id;
       setRideDocsCache(prev => { const n = { ...prev }; delete n[rideId]; return n; });
-      invalidateComplianceQueries();
+      invalidateAll();
     } else {
       toast({ title: 'Failed to archive', variant: 'destructive' });
     }
@@ -462,7 +462,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     if (ok) {
       toast({ title: 'Document restored' });
       setRideDocsCache(prev => { const n = { ...prev }; delete n[doc.ride_id]; return n; });
-      invalidateComplianceQueries();
+      invalidateAll();
     } else {
       toast({ title: 'Failed to restore', variant: 'destructive' });
     }
