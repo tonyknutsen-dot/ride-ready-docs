@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Users, UserPlus, Loader2, WifiOff } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Loader2, WifiOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +7,7 @@ import { useAppRole } from '@/hooks/useAppRole';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useSubscription } from '@/hooks/useSubscription';
 import { can_manage_staff } from '@/utils/permissions';
 import { StaffFilters } from '@/components/staff/StaffFilters';
 import { StaffCard, PendingInviteCard, type StaffMemberData, type PendingInviteData } from '@/components/staff/StaffCard';
@@ -26,7 +27,10 @@ const Staff = () => {
   const { logEvent } = useAuditLog();
   const appRole = useAppRole();
   const isOnline = useOnlineStatus();
+  const { subscription } = useSubscription();
   const canManage = can_manage_staff(appRole);
+  const isExpired = subscription?.isExpired === true;
+  const canInvite = canManage && !isExpired;
 
   const [staff, setStaff] = useState<StaffMemberData[]>([]);
   const [invites, setInvites] = useState<PendingInviteData[]>([]);
