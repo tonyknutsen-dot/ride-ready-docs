@@ -147,12 +147,9 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: 
   }, [checks, searchTerm, frequencyFilter, statusFilter]);
 
   const getDateRange = () => {
-    const today = new Date();
-    const startDate = dateFrom || subDays(today, 30);
-    const endDate = dateTo || today;
     return { 
-      startDate: format(startDate, 'yyyy-MM-dd'), 
-      endDate: format(endDate, 'yyyy-MM-dd') 
+      startDate: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
+      endDate: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
     };
   };
 
@@ -161,7 +158,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: 
       setLoading(true);
       const { startDate, endDate } = getDateRange();
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('checks')
         .select(`
           *,
@@ -174,10 +171,12 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: 
         .eq('user_id', effectiveUserId)
         .eq('ride_id', rideId)
         .in('check_frequency', frequency === 'daily' ? ['daily', 'preopening'] : [frequency])
-        .eq('is_test_data', false)
-        .gte('check_date', startDate)
-        .lte('check_date', endDate)
-        .order('check_date', { ascending: false });
+        .eq('is_test_data', false);
+
+      if (startDate) query = query.gte('check_date', startDate);
+      if (endDate) query = query.lte('check_date', endDate);
+
+      const { data, error } = await query.order('check_date', { ascending: false });
 
       if (error) throw error;
 
