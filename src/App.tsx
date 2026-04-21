@@ -417,7 +417,9 @@ const App = () => (
                   <ProtectedRoute>
                     <ProfileGuard>
                       <StaffRoute requiredPermission="staff">
-                        <ChecklistExecutionPage />
+                        <AppLayout>
+                          <ChecklistExecutionPage />
+                        </AppLayout>
                       </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
