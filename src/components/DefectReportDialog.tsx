@@ -508,7 +508,7 @@ const DefectReportDialog = ({
                 variant={severity === 'stop_operation' ? 'destructive' : 'default'}
                 className="rounded-lg gap-1.5"
               >
-                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Reporting...</> : 'Report Defect'}
+                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />{isEdit ? 'Saving…' : 'Reporting…'}</> : (isEdit ? 'Save Changes' : 'Report Defect')}
               </Button>
             </div>
           </>
