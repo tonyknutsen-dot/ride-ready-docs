@@ -34,6 +34,10 @@ interface CheckSubmission {
   startNoticeAcknowledgedAt?: string;
   startNoticeAcknowledgedBy?: string;
   startNoticeSnapshot?: string;
+  finishNoticeAcknowledged?: boolean;
+  finishNoticeAcknowledgedAt?: string;
+  finishNoticeAcknowledgedBy?: string;
+  finishNoticeSnapshot?: string;
   results: {
     templateItemId: string;
     isChecked: boolean;
@@ -47,6 +51,18 @@ export function useOfflineCheck() {
   const { effectiveUserId } = useEffectiveUserId();
   const { isOnline } = useOnlineStatus();
   const { toast } = useToast();
+
+  const withTimeout = async <T,>(promise: PromiseLike<T>, timeoutMs = 12000): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Save timed out')), timeoutMs);
+    });
+    try {
+      return await Promise.race([Promise.resolve(promise), timeout]);
+    } finally {
+      clearTimeout(timeoutId!);
+    }
+  };
 
   const submitCheck = useCallback(async (check: CheckSubmission): Promise<{ success: boolean; isOffline: boolean; checkId?: string }> => {
     if (!user || !effectiveUserId) return { success: false, isOffline: false };
@@ -81,11 +97,18 @@ export function useOfflineCheck() {
           insertPayload.start_notice_snapshot = check.startNoticeSnapshot;
         }
 
-        const { data: checkData, error: checkError } = await supabase
+        if (check.finishNoticeAcknowledged) {
+          insertPayload.finish_notice_acknowledged = true;
+          insertPayload.finish_notice_acknowledged_at = check.finishNoticeAcknowledgedAt;
+          insertPayload.finish_notice_acknowledged_by = check.finishNoticeAcknowledgedBy;
+          insertPayload.finish_notice_snapshot = check.finishNoticeSnapshot;
+        }
+
+        const { data: checkData, error: checkError } = await withTimeout(supabase
           .from('checks')
           .insert(insertPayload)
           .select()
-          .single();
+          .single());
 
         if (checkError) throw checkError;
 
@@ -99,9 +122,9 @@ export function useOfflineCheck() {
             notes: r.notes,
           }));
 
-          const { error: resultsError } = await supabase
+          const { error: resultsError } = await withTimeout(supabase
             .from('check_results')
-            .insert(results);
+            .insert(results));
 
           if (resultsError) throw resultsError;
         }
@@ -139,6 +162,10 @@ export function useOfflineCheck() {
         startNoticeAcknowledgedAt: check.startNoticeAcknowledgedAt,
         startNoticeAcknowledgedBy: check.startNoticeAcknowledgedBy,
         startNoticeSnapshot: check.startNoticeSnapshot,
+        finishNoticeAcknowledged: check.finishNoticeAcknowledged,
+        finishNoticeAcknowledgedAt: check.finishNoticeAcknowledgedAt,
+        finishNoticeAcknowledgedBy: check.finishNoticeAcknowledgedBy,
+        finishNoticeSnapshot: check.finishNoticeSnapshot,
         results: check.results.map(r => ({
           templateItemId: r.templateItemId,
           isChecked: r.isChecked,
