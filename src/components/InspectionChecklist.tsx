@@ -1103,7 +1103,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               </h2>
               <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
             </div>
-            {/* Overflow menu — hide admin actions from staff */}
+            {!isStaff && (
+              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="h-8 gap-1.5 text-[12px] shrink-0">
+                <Settings className="h-3.5 w-3.5" />
+                Edit Checklist
+              </Button>
+            )}
+            {/* Overflow menu — hide secondary admin actions from staff */}
             {!isStaff && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1647,6 +1653,25 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               </p>
            )}
 
+            {(activeTemplate as any).finish_notice_required && (activeTemplate as any).finish_notice_text?.trim() && (
+              <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 space-y-2">
+                <p className="text-[11px] font-bold text-warning uppercase">Before you finish</p>
+                <p className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
+                <label className="flex items-start gap-2 text-[12px] font-medium text-slate-700 cursor-pointer">
+                  <Checkbox
+                    checked={finishNoticeAcknowledged}
+                    onCheckedChange={(checked) => {
+                      setFinishNoticeAcknowledged(!!checked);
+                      setFinishNoticeAcknowledgedAt(checked ? new Date().toISOString() : null);
+                    }}
+                    className="mt-0.5"
+                    disabled={getProgress() < 100}
+                  />
+                  I have completed these close-out checks.
+                </label>
+              </div>
+            )}
+
           <div className="border-t border-slate-100 pt-3">
              <label className={`flex items-start gap-2.5 group ${
                getProgress() < 100
@@ -1726,7 +1751,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           </button>
           <button
             type="button"
-            disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100}
+            disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100 || (!!(activeTemplate as any).finish_notice_required && !!(activeTemplate as any).finish_notice_text?.trim() && !finishNoticeAcknowledged)}
             onClick={handleSubmitChecks}
             className="flex-1 t-btn-primary rounded-md py-2.5 text-[13px]"
           >
