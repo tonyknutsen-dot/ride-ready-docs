@@ -1016,6 +1016,7 @@ export type Database = {
           ride_id: string
           severity: Database["public"]["Enums"]["defect_severity"]
           status: Database["public"]["Enums"]["defect_status"]
+          template_item_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1035,6 +1036,7 @@ export type Database = {
           ride_id: string
           severity?: Database["public"]["Enums"]["defect_severity"]
           status?: Database["public"]["Enums"]["defect_status"]
+          template_item_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1054,6 +1056,7 @@ export type Database = {
           ride_id?: string
           severity?: Database["public"]["Enums"]["defect_severity"]
           status?: Database["public"]["Enums"]["defect_status"]
+          template_item_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1070,6 +1073,13 @@ export type Database = {
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defects_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_template_items"
             referencedColumns: ["id"]
           },
         ]
