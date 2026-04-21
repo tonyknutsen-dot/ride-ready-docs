@@ -34,7 +34,6 @@ await supabase.from('profiles').update({
   trial_started_at: new Date(Date.now() - 86400000).toISOString(),
   trial_ends_at: new Date(Date.now() + 14 * 86400000).toISOString(),
   subscription_plan: 'operator',
-  app_mode: 'checks',
 }).eq('user_id', userId);
 
 let category = requireOk(await supabase
