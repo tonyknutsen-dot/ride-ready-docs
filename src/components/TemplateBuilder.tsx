@@ -95,6 +95,9 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const [startNoticeText, setStartNoticeText] = useState(template?.start_notice_text ?? '');
   const [startNoticeRequired, setStartNoticeRequired] = useState(template?.start_notice_required ?? false);
   const [startNoticeOpen, setStartNoticeOpen] = useState(!!(template?.start_notice_text?.trim()));
+  const [finishNoticeText, setFinishNoticeText] = useState((template as any)?.finish_notice_text ?? '');
+  const [finishNoticeRequired, setFinishNoticeRequired] = useState((template as any)?.finish_notice_required ?? false);
+  const [finishNoticeOpen, setFinishNoticeOpen] = useState(!!((template as any)?.finish_notice_text?.trim()));
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -302,6 +305,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             template_name: templateName.trim(),
             start_notice_text: startNoticeText.trim() || null,
             start_notice_required: startNoticeText.trim() ? startNoticeRequired : false,
+            finish_notice_text: finishNoticeText.trim() || null,
+            finish_notice_required: finishNoticeText.trim() ? finishNoticeRequired : false,
           } as any)
           .eq('id', template.id);
         if (updateError) throw updateError;
@@ -323,6 +328,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             is_active: true,
             start_notice_text: startNoticeText.trim() || null,
             start_notice_required: startNoticeText.trim() ? startNoticeRequired : false,
+            finish_notice_text: finishNoticeText.trim() || null,
+            finish_notice_required: finishNoticeText.trim() ? finishNoticeRequired : false,
           } as any)
           .select()
           .single();
