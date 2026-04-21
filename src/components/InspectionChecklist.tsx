@@ -118,6 +118,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [submitting, setSubmitting] = useState(false);
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
+  const [finishNoticeAcknowledged, setFinishNoticeAcknowledged] = useState(false);
+  const [finishNoticeAcknowledgedAt, setFinishNoticeAcknowledgedAt] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -169,6 +171,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       custom_interval_days: null,
       start_notice_required: false,
       start_notice_text: null,
+      finish_notice_required: false,
+      finish_notice_text: null,
       daily_check_template_items: cached.items.map(item => ({
         id: item.id,
         template_id: cached.id,
