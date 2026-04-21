@@ -805,6 +805,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         startNoticeAcknowledgedAt: startNoticeAcknowledgedAt || undefined,
         startNoticeAcknowledgedBy: startNoticeAcknowledged ? inspectorName.trim() : undefined,
         startNoticeSnapshot: startNoticeAcknowledged ? (activeTemplate as any).start_notice_text : undefined,
+        finishNoticeAcknowledged: finishNoticeAcknowledged || undefined,
+        finishNoticeAcknowledgedAt: finishNoticeAcknowledgedAt || undefined,
+        finishNoticeAcknowledgedBy: finishNoticeAcknowledged ? inspectorName.trim() : undefined,
+        finishNoticeSnapshot: finishNoticeAcknowledged ? (activeTemplate as any).finish_notice_text : undefined,
         results: activeTemplate.daily_check_template_items.map(item => {
           const result = itemResults[item.id] || 'na';
           return {
@@ -838,6 +842,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setDeclarationChecked(false);
       setStartNoticeAcknowledged(false);
       setStartNoticeAcknowledgedAt(null);
+      setFinishNoticeAcknowledged(false);
+      setFinishNoticeAcknowledgedAt(null);
       setItemDefects({});
       setItemDefectRaised({});
 
@@ -865,10 +871,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         // Fire-and-forget: defect fetch + inspection record + cache invalidation
         (async () => {
           try {
+            const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
+            if (linkedDefectIds.length > 0) {
+              await supabase
+                .from('defects')
+                .update({ check_id: checkId } as any)
+                .in('id', linkedDefectIds)
+                .is('check_id', null);
+            }
+
             const { data: linkedDefects } = await supabase
               .from('defects')
               .select('id, severity')
-              .eq('check_id', checkId);
+              .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
             const defectIds = (linkedDefects || []).map(d => d.id);
 
             await createInspectionRecord({
