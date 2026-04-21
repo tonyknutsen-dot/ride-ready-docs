@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
-import { format, subMonths, parseISO } from 'date-fns';
-import { CalendarIcon, FileDown, Filter, Clock, CheckSquare, AlertTriangle, Wrench, Shield, GitBranch, Loader2, FileText } from 'lucide-react';
+import { format, subMonths } from 'date-fns';
+import { FileDown, Filter, Clock, CheckSquare, AlertTriangle, Wrench, Shield, GitBranch, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -17,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import PageHeader from '@/components/PageHeader';
 import { generateTimelineReportPdf, storeTimelineReportPdf, type TimelineEvent } from '@/utils/timelineReportPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
+import ExportDateRangePicker, { type DateRange } from '@/components/ExportDateRangePicker';
 
 const EVENT_TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; borderColor: string; label: string }> = {
   CHECK: { icon: CheckSquare, color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', label: 'Check' },
@@ -34,10 +31,13 @@ interface ReportsPageProps {
 export default function Reports({ preFilterRideId, preFilterRideName }: ReportsPageProps) {
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
-  const [startDate, setStartDate] = useState<Date>(subMonths(new Date(), 3));
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const [startCalOpen, setStartCalOpen] = useState(false);
-  const [endCalOpen, setEndCalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subMonths(new Date(), 3),
+    to: new Date(),
+    preset: '3m',
+  });
+  const startDate = dateRange.from ?? subMonths(new Date(), 12);
+  const endDate = dateRange.to ?? new Date();
   const [selectedRideId, setSelectedRideId] = useState<string>(preFilterRideId || 'all');
   const [rides, setRides] = useState<Array<{ id: string; ride_name: string; ride_code: string }>>([]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
