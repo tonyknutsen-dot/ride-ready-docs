@@ -29,18 +29,36 @@ interface DefectReportDialogProps {
   rideName?: string;
   checkId?: string;
   checkFrequency?: string;
-  onDefectReported?: () => void;
+  /** Optional template item link — when set, the defect is bound to that failed checklist item. */
+  templateItemId?: string;
+  /** When provided, the dialog opens in EDIT mode and hydrates the existing defect. */
+  editDefectId?: string;
+  onDefectReported?: (info?: { defectId: string; photoCount: number; severity: DefectSeverity }) => void;
   onCriticalDefectReported?: () => void;
   trigger?: React.ReactNode;
   defaultDescription?: string;
+  /** Controlled open state — if provided, parent owns the dialog. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const DefectReportDialog = ({ 
   rideId, rideName, checkId, checkFrequency,
+  templateItemId, editDefectId,
   onDefectReported, onCriticalDefectReported, trigger,
   defaultDescription,
+  open: controlledOpen, onOpenChange: controlledOnOpenChange,
 }: DefectReportDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (isControlled) controlledOnOpenChange?.(v);
+    else setInternalOpen(v);
+  };
+  const isEdit = !!editDefectId;
+  const [hydrating, setHydrating] = useState(false);
+  const [existingPhotoPaths, setExistingPhotoPaths] = useState<string[]>([]);
   const { guardWrite } = useBillingWriteGuard();
   const [description, setDescription] = useState(defaultDescription || '');
   const [severity, setSeverity] = useState<DefectSeverity>('non_urgent');
