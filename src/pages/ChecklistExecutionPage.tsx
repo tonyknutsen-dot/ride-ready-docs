@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CheckSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
-import { useAuth } from '@/contexts/AuthContext';
 import InspectionChecklist from '@/components/InspectionChecklist';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
+import PageHeader from '@/components/PageHeader';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -19,7 +19,7 @@ type Ride = Tables<'rides'> & {
 
 const FREQUENCY_LABELS: Record<string, string> = {
   preopening: 'Pre-Opening Check',
-  daily: 'Daily Check',
+  daily: 'Daily / Pre-Opening Check',
   weekly: 'Weekly Check',
   monthly: 'Monthly Check',
   yearly: 'Yearly Check',
@@ -30,11 +30,8 @@ const ChecklistExecutionPage = () => {
   const navigate = useNavigate();
   const { effectiveUserId } = useEffectiveUserId();
   const { isStaff } = useStaff();
-  const { user } = useAuth();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Start notice removed in showmen simplification
 
   useEffect(() => {
     if (effectiveUserId && rideId) {
@@ -64,20 +61,16 @@ const ChecklistExecutionPage = () => {
     }
   };
 
-
-  const freqLabel = FREQUENCY_LABELS[frequency ?? ''] ?? `${frequency ?? ''} Safety Check`;
-
-  const handleBack = () => {
-    navigate(`/rides/${rideId}?tab=checks`);
-  };
-
+  const freqLabel = FREQUENCY_LABELS[frequency ?? ''] ?? `${frequency ?? ''} Check`;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-primary animate-pulse" />
-          <p className="text-sm text-muted-foreground">Loading checklist…</p>
+      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+        <div className="min-h-[40vh] flex items-center justify-center">
+          <div className="text-center space-y-3">
+            <CheckCircle2 className="mx-auto h-10 w-10 text-primary animate-pulse" />
+            <p className="text-sm text-muted-foreground">Loading checklist…</p>
+          </div>
         </div>
       </div>
     );
@@ -85,63 +78,42 @@ const ChecklistExecutionPage = () => {
 
   if (!ride) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center space-y-4">
-          <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
-          <p className="text-muted-foreground">Equipment not found.</p>
-          <button
-            onClick={() => navigate('/checks')}
-            className="text-primary text-sm font-semibold"
-          >
-            Back to Checks
-          </button>
+      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+        <div className="min-h-[40vh] flex items-center justify-center text-center">
+          <div className="space-y-4">
+            <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
+            <p className="text-muted-foreground">Equipment not found.</p>
+            <button
+              onClick={() => navigate('/checks')}
+              className="text-primary text-sm font-semibold"
+            >
+              Back to Checks
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F3F4F6' }}>
+    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <StaffAccountBanner />
 
-      {/* ── STICKY HEADER ─────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white border-b border-slate-300 shadow-sm">
-        <div className="max-w-xl mx-auto px-3 py-2 flex items-center gap-2.5">
-          <button
-            onClick={handleBack}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-md border border-slate-300 bg-white hover:bg-slate-50 transition-colors"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4 text-slate-700" />
-          </button>
+      <PageHeader
+        icon={<CheckSquare className="h-5 w-5 text-primary" />}
+        iconBgClass="from-primary/20 to-primary/10"
+        title={ride.ride_name}
+        subtitle={freqLabel}
+        showBackButton
+        backTo={`/checks/register?rideId=${rideId}`}
+      />
 
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[14px] font-bold text-slate-900 leading-tight truncate">
-              {freqLabel}
-            </h1>
-            <p className="text-[11px] text-slate-500 truncate">
-              {ride.ride_name}{ride.ride_code ? ` · ${ride.ride_code}` : ''}
-            </p>
-          </div>
-
-          <button
-            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-            aria-label="Help"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
-
-      {/* ── MAIN CONTENT ──────────────────────────────────── */}
-      <main className="max-w-xl mx-auto">
-        <InspectionChecklist
-          ride={ride}
-          frequency={frequency ?? 'daily'}
-          onChecklistSaved={() => navigate(`/rides/${rideId}?tab=checks`)}
-          startImmediately
-        />
-      </main>
+      <InspectionChecklist
+        ride={ride}
+        frequency={frequency ?? 'daily'}
+        onChecklistSaved={() => navigate(`/checks/register?rideId=${rideId}`)}
+        startImmediately
+      />
     </div>
   );
 };
