@@ -819,84 +819,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         throw new Error('Failed to submit check');
       }
 
-      // If submitted online, create inspection record and generate PDF (non-blocking)
-      if (!isOffline && checkId) {
-        const savedInspectorName = inspectorName;
+      // ✅ Primary save succeeded — release the UI immediately so the spinner can never hang on side-effects
+      setSubmitting(false);
 
-        // Determine overall result
-        const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
-        const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
-        const totalCount = activeTemplate.daily_check_template_items.length;
-        const overallResult = failedCount > 0 ? 'failed' : passedCount === totalCount ? 'passed' : 'partial';
-
-        // Build item results snapshot
-        const itemResultSnapshots: ItemResultSnapshot[] = activeTemplate.daily_check_template_items.map(item => ({
-          template_item_id: item.id,
-          check_item_text: item.check_item_text,
-          category: item.category || null,
-          result: (itemResults[item.id] || 'na') as 'pass' | 'fail' | 'na',
-          notes: notes[item.id]?.trim() || null,
-          is_required: item.is_required ?? false,
-        }));
-
-        // Fetch defect IDs linked to this check
-        const { data: linkedDefects } = await supabase
-          .from('defects')
-          .select('id, severity')
-          .eq('check_id', checkId);
-        const defectIds = (linkedDefects || []).map(d => d.id);
-        const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
-        const totalDefectCount = (linkedDefects || []).length;
-
-        // Create immutable inspection record (v1)
-        const recordId = await createInspectionRecord({
-          checkId,
-          rideId: ride.id,
-          userId: effectiveUserId!,
-          inspectorName: savedInspectorName.trim(),
-          checkDate: new Date().toISOString().split('T')[0],
-          checkFrequency: frequency,
-          templateId: activeTemplate.id,
-          templateName: activeTemplate.template_name,
-          overallResult,
-          itemResults: itemResultSnapshots,
-          notes: inspectorNotes.trim() || null,
-          weatherConditions: null,
-          location: location.trim() || null,
-          environmentNotes: null,
-          complianceOfficer: null,
-          signatureData: null,
-          defectIds,
-        });
-
-        // Inspection record saved to checks log — PDF generation is on-demand from the Checks Log
-        if (recordId) {
-          queryClient.invalidateQueries({ queryKey: ['overview'] });
-          queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
-        }
-
-        // Show completion toast with defect summary
-        if (failedCount > 0) {
-          const defectSummary = totalDefectCount > 0 
-            ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
-            : '';
-          toast({
-            title: failedCount > 0 ? "⚠️ Check completed with failures" : "Check completed ✓",
-            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
-            variant: criticalDefectCount > 0 ? 'destructive' : 'default',
-          });
-        } else {
-          toast({
-            title: "Check completed ✓",
-            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
-          });
-        }
-
-        // Critical defect warning kept as simple toast (no complex modal)
-      }
-      // If offline, the useOfflineCheck hook already shows a toast
-
-      // Reset form
+      // Reset form (safe to do now)
       setItemResults({});
       setNotes({});
       setInspectorName('');
@@ -908,17 +834,91 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setDeclarationChecked(false);
       setStartNoticeAcknowledged(false);
       setStartNoticeAcknowledgedAt(null);
+      setItemDefects({});
+      setItemDefectRaised({});
 
-      // Reload recent checks (will be empty if offline but that's expected)
-      if (!isOffline) {
-        await loadRecentChecks();
-        queryClient.invalidateQueries({ queryKey: ['overview'] });
-        queryClient.invalidateQueries({ queryKey: ['checks'] });
-        queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
-      }
-
-      // Notify parent (e.g. navigate back from execute page)
+      // Notify parent first — navigation should not wait on side-effects
       onChecklistSaved?.();
+
+      // ── SIDE-EFFECTS (non-blocking) ──────────────────────────────────
+      // Each side-effect runs in its own try/catch. A failure here will surface
+      // as a non-blocking toast but will NEVER prevent the save from completing.
+      if (!isOffline && checkId) {
+        const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
+        const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
+        const totalCount = activeTemplate.daily_check_template_items.length;
+        const overallResult = failedCount > 0 ? 'failed' : passedCount === totalCount ? 'passed' : 'partial';
+
+        const itemResultSnapshots: ItemResultSnapshot[] = activeTemplate.daily_check_template_items.map(item => ({
+          template_item_id: item.id,
+          check_item_text: item.check_item_text,
+          category: item.category || null,
+          result: (itemResults[item.id] || 'na') as 'pass' | 'fail' | 'na',
+          notes: notes[item.id]?.trim() || null,
+          is_required: item.is_required ?? false,
+        }));
+
+        // Fire-and-forget: defect fetch + inspection record + cache invalidation
+        (async () => {
+          try {
+            const { data: linkedDefects } = await supabase
+              .from('defects')
+              .select('id, severity')
+              .eq('check_id', checkId);
+            const defectIds = (linkedDefects || []).map(d => d.id);
+
+            await createInspectionRecord({
+              checkId,
+              rideId: ride.id,
+              userId: effectiveUserId!,
+              inspectorName: inspectorName.trim() || 'Inspector',
+              checkDate: new Date().toISOString().split('T')[0],
+              checkFrequency: frequency,
+              templateId: activeTemplate.id,
+              templateName: activeTemplate.template_name,
+              overallResult,
+              itemResults: itemResultSnapshots,
+              notes: inspectorNotes.trim() || null,
+              weatherConditions: null,
+              location: location.trim() || null,
+              environmentNotes: null,
+              complianceOfficer: null,
+              signatureData: null,
+              defectIds,
+            });
+
+            queryClient.invalidateQueries({ queryKey: ['overview'] });
+            queryClient.invalidateQueries({ queryKey: ['checks'] });
+            queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+            loadRecentChecks().catch(() => {});
+
+            const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
+            const totalDefectCount = (linkedDefects || []).length;
+            if (failedCount > 0) {
+              const defectSummary = totalDefectCount > 0
+                ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
+                : '';
+              toast({
+                title: '⚠️ Check completed with failures',
+                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
+                variant: criticalDefectCount > 0 ? 'destructive' : 'default',
+              });
+            } else {
+              toast({
+                title: 'Check completed ✓',
+                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`,
+              });
+            }
+          } catch (sideEffectError) {
+            console.error('Post-save side-effect failed (check is still saved):', sideEffectError);
+            toast({
+              title: 'Check saved — some follow-up steps failed',
+              description: 'The check was saved successfully but the inspection record or summary could not be generated. You can regenerate from the Checks Log.',
+              variant: 'default',
+            });
+          }
+        })();
+      }
     } catch (error) {
       // Rollback optimistic update
       if (previousOverview) {
@@ -926,11 +926,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       }
       console.error('Error submitting checks:', error);
       toast({
-        title: "Error",
-        description: "Failed to save check",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to save check',
+        variant: 'destructive',
       });
-    } finally {
       setSubmitting(false);
     }
   };
