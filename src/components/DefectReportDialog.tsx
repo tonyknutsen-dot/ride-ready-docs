@@ -202,20 +202,47 @@ const DefectReportDialog = ({
 
     setSubmitting(true);
     try {
-      const photoPaths = await uploadPhotos();
-      const { error } = await supabase.from('defects').insert({
-        ride_id: effectiveRideId,
-        check_id: checkId || null,
-        user_id: effectiveUserId,
-        description: description.trim(),
-        severity,
-        location_on_ride: locationOnRide.trim() || null,
-        photo_paths: photoPaths,
-        status: 'open'
-      });
-      if (error) throw error;
+      const newPhotoPaths = await uploadPhotos();
+      const mergedPhotoPaths = [...existingPhotoPaths, ...newPhotoPaths];
 
-      if (isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
+      let savedDefectId: string | null = editDefectId ?? null;
+
+      if (isEdit && editDefectId) {
+        // EDIT MODE — update the existing defect (preserve all linkage)
+        const { error } = await supabase
+          .from('defects')
+          .update({
+            description: description.trim(),
+            severity,
+            location_on_ride: locationOnRide.trim() || null,
+            photo_paths: mergedPhotoPaths,
+          })
+          .eq('id', editDefectId);
+        if (error) throw error;
+      } else {
+        // CREATE MODE
+        const insertPayload: any = {
+          ride_id: effectiveRideId,
+          check_id: checkId || null,
+          user_id: effectiveUserId,
+          description: description.trim(),
+          severity,
+          location_on_ride: locationOnRide.trim() || null,
+          photo_paths: mergedPhotoPaths,
+          status: 'open',
+        };
+        if (templateItemId) insertPayload.template_item_id = templateItemId;
+
+        const { data: inserted, error } = await supabase
+          .from('defects')
+          .insert(insertPayload)
+          .select('id')
+          .single();
+        if (error) throw error;
+        savedDefectId = inserted?.id ?? null;
+      }
+
+      if (!isEdit && isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
         const severityLabel = severity === 'stop_operation' ? '🛑 STOP USE' : severity === 'urgent' ? '⚠️ Important' : 'Low';
         await supabase.from('notifications').insert({
           user_id: effectiveUserId,
@@ -226,16 +253,16 @@ const DefectReportDialog = ({
         });
       }
 
-      logEvent('create', 'defect', undefined, { 
+      logEvent(isEdit ? 'update' : 'create', 'defect', savedDefectId ?? undefined, { 
         ride: effectiveRideName, severity, 
         description: description.trim().substring(0, 100) 
       });
 
       toast({
-        title: "Defect reported",
+        title: isEdit ? 'Defect updated' : 'Defect reported',
         description: severity === 'stop_operation'
           ? "⛔ STOP USE: Equipment must not be used until repaired"
-          : "The defect has been logged",
+          : (isEdit ? 'Changes saved' : 'The defect has been logged'),
         variant: severity === 'stop_operation' ? 'destructive' : 'default'
       });
 
@@ -247,8 +274,10 @@ const DefectReportDialog = ({
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setPhotos([]);
       setPhotoPreviewUrls([]);
+      setExistingPhotoPaths([]);
       setOpen(false);
-      onDefectReported?.();
+
+      onDefectReported?.(savedDefectId ? { defectId: savedDefectId, photoCount: mergedPhotoPaths.length, severity } : undefined);
       if (severity === 'stop_operation') onCriticalDefectReported?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to report defect", variant: "destructive" });
