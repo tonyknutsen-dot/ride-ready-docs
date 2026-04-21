@@ -60,6 +60,7 @@ export default function CheckLibraryDialog({
           .eq("frequency", frequency)
           .eq("is_active", true)
           .eq("equipment_group", resolvedGroup)
+          .eq("item_kind", "operational") // exclude compliance/document items from operational checklists
           .order("sort_index", { ascending: true });
 
         if (cat) {

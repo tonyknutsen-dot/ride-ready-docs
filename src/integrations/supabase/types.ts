@@ -549,6 +549,7 @@ export type Database = {
           hint: string | null
           id: string
           is_active: boolean
+          item_kind: string
           label: string
           ride_category_id: string | null
           risk_level: string | null
@@ -562,6 +563,7 @@ export type Database = {
           hint?: string | null
           id?: string
           is_active?: boolean
+          item_kind?: string
           label: string
           ride_category_id?: string | null
           risk_level?: string | null
@@ -575,6 +577,7 @@ export type Database = {
           hint?: string | null
           id?: string
           is_active?: boolean
+          item_kind?: string
           label?: string
           ride_category_id?: string | null
           risk_level?: string | null

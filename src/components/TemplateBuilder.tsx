@@ -137,6 +137,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         .eq('frequency', frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening")
         .eq('is_active', true)
         .eq('equipment_group', resolvedGroup)
+        .eq('item_kind', 'operational') // operational checklist items only — compliance/admin items live in Compliance/Documents
         .order('sort_index', { ascending: true });
 
       if (cat) {
