@@ -1458,64 +1458,75 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        />
 
                        <div className="flex gap-2">
+                          {!itemDefects[item.id] ? (
+                            <DefectReportDialog
+                              rideId={ride.id}
+                              rideName={ride.ride_name}
+                              checkFrequency={frequency}
+                              templateItemId={item.id}
+                              defaultDescription={notes[item.id] || ''}
+                              onDefectReported={(info) => {
+                                setDefectRefreshKey(prev => prev + 1);
+                                setItemDefectRaised(prev => ({ ...prev, [item.id]: true }));
+                                if (info) {
+                                  setItemDefects(prev => ({ ...prev, [item.id]: { id: info.defectId, photoCount: info.photoCount, severity: info.severity } }));
+                                }
+                              }}
+                              trigger={
+                                <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                                  Raise Defect
+                                </button>
+                              }
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setEditingDefectForItem(item.id)}
+                              className="h-9 rounded-md border border-green-300 bg-green-50 text-xs font-bold flex items-center justify-center gap-1.5 text-green-800 hover:bg-green-100 flex-1 transition-colors"
+                            >
+                              <CheckCircle className="h-3 w-3 shrink-0" />
+                              View / Edit defect
+                              {itemDefects[item.id].photoCount > 0 && (
+                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-white border border-green-300 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+                                  📷 {itemDefects[item.id].photoCount}
+                                </span>
+                              )}
+                            </button>
+                          )}
+                       </div>
+
+                        {/* Edit-defect dialog (controlled, hydrates the existing defect) */}
+                        {editingDefectForItem === item.id && itemDefects[item.id] && (
                           <DefectReportDialog
                             rideId={ride.id}
                             rideName={ride.ride_name}
                             checkFrequency={frequency}
-                            onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
-                            trigger={
-                              <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
-                                <AlertTriangle className="h-3 w-3 shrink-0" />
-                                Raise Defect
-                              </button>
-                            }
+                            templateItemId={item.id}
+                            editDefectId={itemDefects[item.id].id}
+                            open={true}
+                            onOpenChange={(v) => { if (!v) setEditingDefectForItem(null); }}
+                            onDefectReported={(info) => {
+                              setDefectRefreshKey(prev => prev + 1);
+                              if (info) {
+                                setItemDefects(prev => ({ ...prev, [item.id]: { id: info.defectId, photoCount: info.photoCount, severity: info.severity } }));
+                              }
+                              setEditingDefectForItem(null);
+                            }}
                           />
-                         <label className="h-9 rounded-md border border-slate-300 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer hover:border-slate-400 hover:text-slate-800 transition-colors flex-1">
-                           📷 Add Photo
-                           <input
-                             type="file"
-                             accept="image/*"
-                             capture="environment"
-                             className="hidden"
-                             onChange={(e) => {
-                               const files = Array.from(e.target.files || []);
-                               if (!files.length) return;
-                               setItemAttachments(prev => ({ ...prev, [item.id]: [...(prev[item.id] || []), ...files] }));
-                               e.currentTarget.value = '';
-                             }}
-                           />
-                         </label>
-                       </div>
-
-                       {(itemAttachments[item.id]?.length ?? 0) > 0 && (
-                         <div className="flex flex-wrap gap-1.5">
-                           {itemAttachments[item.id].map((f, idx) => (
-                             <div key={`${f.name}-${idx}`} className="flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">
-                               <span className="max-w-[100px] truncate text-slate-700">{f.name}</span>
-                               <button
-                                 type="button"
-                                 className="text-red-600 font-bold shrink-0"
-                                 onClick={() => setItemAttachments(prev => ({
-                                   ...prev,
-                                   [item.id]: (prev[item.id] || []).filter((_, i) => i !== idx)
-                                 }))}
-                               >×</button>
-                             </div>
-                           ))}
-                         </div>
-                       )}
+                        )}
 
                        {/* Defect status */}
                        {!itemDefectRaised[item.id] && (
                          <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
                            <AlertTriangle className="h-3 w-3 shrink-0" />
-                           Defect must be raised before completion
+                           Raise a defect to record evidence and complete this item
                          </p>
                        )}
                        {itemDefectRaised[item.id] && (
                          <p className="text-[11px] font-semibold text-green-700 flex items-center gap-1">
                            <CheckCircle className="h-3 w-3 shrink-0" />
-                           Defect raised
+                           Defect linked{itemDefects[item.id]?.photoCount ? ` · ${itemDefects[item.id].photoCount} photo${itemDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}
                          </p>
                        )}
                      </div>
