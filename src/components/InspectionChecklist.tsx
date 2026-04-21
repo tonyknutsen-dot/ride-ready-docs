@@ -94,7 +94,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [inspectorName, setInspectorName] = useState('');
   const [inspectorNameError, setInspectorNameError] = useState(false);
   const [locationError, setLocationError] = useState(false);
-  const [wizardStep, setWizardStep] = useState<'details' | 'start-notice' | 'checklist'>('details');
+  const [wizardStep, setWizardStep] = useState<'details' | 'checklist'>(startImmediately ? 'details' : 'details');
   const [inspectorNotes, setInspectorNotes] = useState('');
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(true);
@@ -298,58 +298,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       [itemId]: note
     }));
   };
-
-  useEffect(() => {
-    if (!activeTemplate || !effectiveUserId) return;
-
-    const failedItemIds = Object.entries(itemResults)
-      .filter(([, result]) => result === 'fail')
-      .map(([itemId]) => itemId)
-      .filter(itemId => !itemDefects[itemId]);
-
-    if (failedItemIds.length === 0) return;
-
-    let cancelled = false;
-    (async () => {
-      let query = supabase
-        .from('defects')
-        .select('id, template_item_id, photo_paths, severity')
-        .eq('ride_id', ride.id)
-        .in('template_item_id', failedItemIds)
-        .neq('status', 'resolved')
-        .order('updated_at', { ascending: false });
-
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
-
-      const { data, error } = await query;
-      if (cancelled || error || !data?.length) return;
-
-      setItemDefects(prev => {
-        const next = { ...prev };
-        data.forEach((defect: any) => {
-          if (!defect.template_item_id || next[defect.template_item_id]) return;
-          next[defect.template_item_id] = {
-            id: defect.id,
-            photoCount: Array.isArray(defect.photo_paths) ? defect.photo_paths.length : 0,
-            severity: defect.severity,
-          };
-        });
-        return next;
-      });
-
-      setItemDefectRaised(prev => {
-        const next = { ...prev };
-        data.forEach((defect: any) => {
-          if (defect.template_item_id) next[defect.template_item_id] = true;
-        });
-        return next;
-      });
-    })();
-
-    return () => { cancelled = true; };
-  }, [activeTemplate, effectiveUserId, isStaff, itemDefects, itemResults, ride.id]);
 
   const getProgress = () => {
     if (!activeTemplate?.daily_check_template_items) return 0;
@@ -855,7 +803,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         // Start notice acknowledgement
         startNoticeAcknowledged: startNoticeAcknowledged || undefined,
         startNoticeAcknowledgedAt: startNoticeAcknowledgedAt || undefined,
-        startNoticeAcknowledgedBy: startNoticeAcknowledged ? user?.id : undefined,
+        startNoticeAcknowledgedBy: startNoticeAcknowledged ? inspectorName.trim() : undefined,
         startNoticeSnapshot: startNoticeAcknowledged ? (activeTemplate as any).start_notice_text : undefined,
         finishNoticeAcknowledged: finishNoticeAcknowledged || undefined,
         finishNoticeAcknowledgedAt: finishNoticeAcknowledgedAt || undefined,
@@ -1316,7 +1264,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   // If template has a start notice, show it before proceeding
                   const tmpl = activeTemplate as any;
                   if (tmpl?.start_notice_required && tmpl?.start_notice_text?.trim()) {
-                    setWizardStep('start-notice');
+                    setWizardStep('start-notice' as any);
                   } else {
                     setWizardStep('checklist');
                     setCheckStarted(true);
@@ -1335,7 +1283,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       )}
 
       {/* ── START NOTICE GATE ── */}
-      {wizardStep === 'start-notice' && activeTemplate && (
+      {wizardStep === ('start-notice' as any) && activeTemplate && (
         <div className="mx-4 mt-3">
           <div className="bg-white border border-warning/40 rounded-md shadow-sm overflow-hidden">
             <div className="px-4 pt-4 pb-1">
