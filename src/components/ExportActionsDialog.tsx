@@ -160,9 +160,9 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
             {/* ── Pre-save actions ── */}
             {!saved && (
               <>
-                <ActionRow icon={Eye} label="View" onClick={handleView} loading={autoSaving} accent />
-                <ActionRow icon={Download} label="Save to Device" onClick={handleDownload} />
-                <ActionRow icon={Send} label="Send" onClick={handleSend} loading={autoSaving} />
+                <ActionRow icon={Eye} label="View" hint="Open the report now without saving" onClick={handleView} loading={autoSaving} accent />
+                <ActionRow icon={Download} label="Save to Device" hint="Download a copy to your device" onClick={handleDownload} />
+                <ActionRow icon={Send} label="Send" hint="Share via email or your device's share menu" onClick={handleSend} loading={autoSaving} />
 
                 {result.onSaveToDocuments && (
                   <>
@@ -175,6 +175,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                     <ActionRow
                       icon={FolderPlus}
                       label={result.saveLabel || 'Save to Documents'}
+                      hint="Store inside the app's document register"
                       onClick={handleSaveToDocuments}
                       loading={saving}
                     />
@@ -199,14 +200,14 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                 </div>
 
                 {savedDocId && (
-                  <ActionRow icon={Eye} label="View Saved Document" onClick={handleViewSavedDocument} accent />
+                  <ActionRow icon={Eye} label="View Saved Document" hint="Open the saved report" onClick={handleViewSavedDocument} accent />
                 )}
-                <ActionRow icon={Download} label="Save to Device" onClick={handleDownload} />
+                <ActionRow icon={Download} label="Save to Device" hint="Download a copy to your device" onClick={handleDownload} />
                 {savedDocId && (
-                  <ActionRow icon={Send} label="Send" onClick={() => setSendDialogOpen(true)} />
+                  <ActionRow icon={Send} label="Send" hint="Share via email or your device's share menu" onClick={() => setSendDialogOpen(true)} />
                 )}
                 {savedDocId && (
-                  <ActionRow icon={Link2} label="Copy Link" onClick={handleCopyLink} loading={copyingLink} />
+                  <ActionRow icon={Link2} label="Copy Link" hint="Copy a link to this saved document" onClick={handleCopyLink} loading={copyingLink} />
                 )}
 
                 <Button
@@ -235,10 +236,11 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   );
 };
 
-/** Compact action row — single line with icon + label */
+/** Compact action row — icon + label + optional helper text */
 function ActionRow({
   icon: Icon,
   label,
+  hint,
   onClick,
   loading,
   disabled,
@@ -246,6 +248,7 @@ function ActionRow({
 }: {
   icon: typeof Download;
   label: string;
+  hint?: string;
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -269,7 +272,10 @@ function ActionRow({
       )}>
         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
       </div>
-      <p className="text-sm font-medium text-foreground">{label}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground leading-tight">{label}</p>
+        {hint && <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{hint}</p>}
+      </div>
     </button>
   );
 }
