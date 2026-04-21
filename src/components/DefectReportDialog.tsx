@@ -467,9 +467,18 @@ const DefectReportDialog = ({
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence photos</Label>
                     <span className="text-[10px] text-muted-foreground">{existingPhotoPaths.length + photos.length}/{MAX_PHOTOS_PER_DEFECT}</span>
                   </div>
-                  {existingPhotoPaths.length > 0 && (
+                  {existingPhotoUrls.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {existingPhotoUrls.map((url, index) => (
+                        <div key={url} className="relative aspect-square">
+                          <img src={url} alt={`Evidence photo ${index + 1}`} className="w-full h-full object-cover rounded-xl border border-border" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {existingPhotoPaths.length > 0 && existingPhotoUrls.length === 0 && (
                     <p className="text-[11px] text-muted-foreground">
-                      {existingPhotoPaths.length} existing photo{existingPhotoPaths.length === 1 ? '' : 's'} attached. Add more below if needed.
+                      {existingPhotoPaths.length} existing photo{existingPhotoPaths.length === 1 ? '' : 's'} attached.
                     </p>
                   )}
                   {photoPreviewUrls.length > 0 && (
