@@ -372,7 +372,7 @@ const DefectReportDialog = ({
                   <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
                     <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   </div>
-                  Report Defect
+                  {isEdit ? 'Edit Defect' : 'Report Defect'}
                 </DialogTitle>
                 <DialogDescription className="pt-1">
                   <span className="flex items-center gap-1.5 flex-wrap">
