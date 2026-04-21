@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from './useEffectiveUserId';
 import { useOnlineStatus } from './useOnlineStatus';
 import { useToast } from './use-toast';
 import {
@@ -22,6 +23,7 @@ import { generateDocumentId } from '@/utils/pdfTemplate';
 
 export function useOfflineSync() {
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const { isOnline, wasOffline, acknowledgeReconnection } = useOnlineStatus();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
@@ -110,7 +112,16 @@ export function useOfflineSync() {
           signature_data: check.signatureData,
           compliance_officer: check.complianceOfficer,
           environment_notes: check.environmentNotes,
-          user_id: user.id,
+          user_id: effectiveUserId || user.id,
+          performed_by_user_id: user.id,
+          start_notice_acknowledged: check.startNoticeAcknowledged || false,
+          start_notice_acknowledged_at: check.startNoticeAcknowledgedAt,
+          start_notice_acknowledged_by: check.startNoticeAcknowledgedBy,
+          start_notice_snapshot: check.startNoticeSnapshot,
+          finish_notice_acknowledged: check.finishNoticeAcknowledged || false,
+          finish_notice_acknowledged_at: check.finishNoticeAcknowledgedAt,
+          finish_notice_acknowledged_by: check.finishNoticeAcknowledgedBy,
+          finish_notice_snapshot: check.finishNoticeSnapshot,
         })
         .select()
         .single();
