@@ -242,15 +242,27 @@ const NotificationCenter = () => {
 
   const ensureNotification = async (title: string, message: string, type: string, relatedTable?: string, relatedId?: string) => {
     try {
-      const cutoff = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
-      const { data: existing } = await supabase
+      // Dedup strategy: when we have a concrete related record, dedup by (related_table, related_id)
+      // so two different defects on the same ride can BOTH produce a notification.
+      // Fall back to title-based dedup for synthesised notifications without a related row.
+      let existsQuery = supabase
         .from('notifications')
         .select('id')
-        .eq('user_id', user?.id)
-        .eq('title', title)
-        .gte('created_at', cutoff)
-        .limit(1);
+        .eq('user_id', user?.id);
+
+      if (relatedTable && relatedId) {
+        existsQuery = existsQuery
+          .eq('related_table', relatedTable)
+          .eq('related_id', relatedId)
+          .eq('is_read', false);
+      } else {
+        const cutoff = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
+        existsQuery = existsQuery.eq('title', title).gte('created_at', cutoff);
+      }
+
+      const { data: existing } = await existsQuery.limit(1);
       if (existing && existing.length > 0) return;
+
       const row: any = { user_id: user?.id, title, message, type };
       if (relatedTable) row.related_table = relatedTable;
       if (relatedId) row.related_id = relatedId;
