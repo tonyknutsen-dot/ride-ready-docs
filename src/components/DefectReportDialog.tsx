@@ -105,6 +105,32 @@ const DefectReportDialog = ({
     }
   }, [open, needsRideSelection, effectiveUserId]);
 
+  // EDIT MODE — hydrate the existing defect when the dialog opens
+  useEffect(() => {
+    if (!open || !editDefectId) return;
+    let cancelled = false;
+    setHydrating(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from('defects')
+        .select('id, description, severity, location_on_ride, photo_paths')
+        .eq('id', editDefectId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        toast({ title: 'Could not load defect', description: 'The linked defect was not found.', variant: 'destructive' });
+        setHydrating(false);
+        return;
+      }
+      setDescription(data.description || '');
+      setSeverity((data.severity as DefectSeverity) || 'non_urgent');
+      setLocationOnRide(data.location_on_ride || '');
+      setExistingPhotoPaths((data.photo_paths as string[] | null) || []);
+      setHydrating(false);
+    })();
+    return () => { cancelled = true; };
+  }, [open, editDefectId, toast]);
+
   const loadRides = async () => {
     setLoadingRides(true);
     try {
