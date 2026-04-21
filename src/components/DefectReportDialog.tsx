@@ -29,18 +29,36 @@ interface DefectReportDialogProps {
   rideName?: string;
   checkId?: string;
   checkFrequency?: string;
-  onDefectReported?: () => void;
+  /** Optional template item link — when set, the defect is bound to that failed checklist item. */
+  templateItemId?: string;
+  /** When provided, the dialog opens in EDIT mode and hydrates the existing defect. */
+  editDefectId?: string;
+  onDefectReported?: (info?: { defectId: string; photoCount: number; severity: DefectSeverity }) => void;
   onCriticalDefectReported?: () => void;
   trigger?: React.ReactNode;
   defaultDescription?: string;
+  /** Controlled open state — if provided, parent owns the dialog. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const DefectReportDialog = ({ 
   rideId, rideName, checkId, checkFrequency,
+  templateItemId, editDefectId,
   onDefectReported, onCriticalDefectReported, trigger,
   defaultDescription,
+  open: controlledOpen, onOpenChange: controlledOnOpenChange,
 }: DefectReportDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (isControlled) controlledOnOpenChange?.(v);
+    else setInternalOpen(v);
+  };
+  const isEdit = !!editDefectId;
+  const [hydrating, setHydrating] = useState(false);
+  const [existingPhotoPaths, setExistingPhotoPaths] = useState<string[]>([]);
   const { guardWrite } = useBillingWriteGuard();
   const [description, setDescription] = useState(defaultDescription || '');
   const [severity, setSeverity] = useState<DefectSeverity>('non_urgent');
@@ -86,6 +104,32 @@ const DefectReportDialog = ({
       loadRides();
     }
   }, [open, needsRideSelection, effectiveUserId]);
+
+  // EDIT MODE — hydrate the existing defect when the dialog opens
+  useEffect(() => {
+    if (!open || !editDefectId) return;
+    let cancelled = false;
+    setHydrating(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from('defects')
+        .select('id, description, severity, location_on_ride, photo_paths')
+        .eq('id', editDefectId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        toast({ title: 'Could not load defect', description: 'The linked defect was not found.', variant: 'destructive' });
+        setHydrating(false);
+        return;
+      }
+      setDescription(data.description || '');
+      setSeverity((data.severity as DefectSeverity) || 'non_urgent');
+      setLocationOnRide(data.location_on_ride || '');
+      setExistingPhotoPaths((data.photo_paths as string[] | null) || []);
+      setHydrating(false);
+    })();
+    return () => { cancelled = true; };
+  }, [open, editDefectId, toast]);
 
   const loadRides = async () => {
     setLoadingRides(true);
@@ -158,20 +202,47 @@ const DefectReportDialog = ({
 
     setSubmitting(true);
     try {
-      const photoPaths = await uploadPhotos();
-      const { error } = await supabase.from('defects').insert({
-        ride_id: effectiveRideId,
-        check_id: checkId || null,
-        user_id: effectiveUserId,
-        description: description.trim(),
-        severity,
-        location_on_ride: locationOnRide.trim() || null,
-        photo_paths: photoPaths,
-        status: 'open'
-      });
-      if (error) throw error;
+      const newPhotoPaths = await uploadPhotos();
+      const mergedPhotoPaths = [...existingPhotoPaths, ...newPhotoPaths];
 
-      if (isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
+      let savedDefectId: string | null = editDefectId ?? null;
+
+      if (isEdit && editDefectId) {
+        // EDIT MODE — update the existing defect (preserve all linkage)
+        const { error } = await supabase
+          .from('defects')
+          .update({
+            description: description.trim(),
+            severity,
+            location_on_ride: locationOnRide.trim() || null,
+            photo_paths: mergedPhotoPaths,
+          })
+          .eq('id', editDefectId);
+        if (error) throw error;
+      } else {
+        // CREATE MODE
+        const insertPayload: any = {
+          ride_id: effectiveRideId,
+          check_id: checkId || null,
+          user_id: effectiveUserId,
+          description: description.trim(),
+          severity,
+          location_on_ride: locationOnRide.trim() || null,
+          photo_paths: mergedPhotoPaths,
+          status: 'open',
+        };
+        if (templateItemId) insertPayload.template_item_id = templateItemId;
+
+        const { data: inserted, error } = await supabase
+          .from('defects')
+          .insert(insertPayload)
+          .select('id')
+          .single();
+        if (error) throw error;
+        savedDefectId = inserted?.id ?? null;
+      }
+
+      if (!isEdit && isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
         const severityLabel = severity === 'stop_operation' ? '🛑 STOP USE' : severity === 'urgent' ? '⚠️ Important' : 'Low';
         await supabase.from('notifications').insert({
           user_id: effectiveUserId,
@@ -182,16 +253,16 @@ const DefectReportDialog = ({
         });
       }
 
-      logEvent('create', 'defect', undefined, { 
+      logEvent(isEdit ? 'update' : 'create', 'defect', savedDefectId ?? undefined, { 
         ride: effectiveRideName, severity, 
         description: description.trim().substring(0, 100) 
       });
 
       toast({
-        title: "Defect reported",
+        title: isEdit ? 'Defect updated' : 'Defect reported',
         description: severity === 'stop_operation'
           ? "⛔ STOP USE: Equipment must not be used until repaired"
-          : "The defect has been logged",
+          : (isEdit ? 'Changes saved' : 'The defect has been logged'),
         variant: severity === 'stop_operation' ? 'destructive' : 'default'
       });
 
@@ -203,8 +274,10 @@ const DefectReportDialog = ({
       photoPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setPhotos([]);
       setPhotoPreviewUrls([]);
+      setExistingPhotoPaths([]);
       setOpen(false);
-      onDefectReported?.();
+
+      onDefectReported?.(savedDefectId ? { defectId: savedDefectId, photoCount: mergedPhotoPaths.length, severity } : undefined);
       if (severity === 'stop_operation') onCriticalDefectReported?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to report defect", variant: "destructive" });
@@ -299,7 +372,7 @@ const DefectReportDialog = ({
                   <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
                     <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   </div>
-                  Report Defect
+                  {isEdit ? 'Edit Defect' : 'Report Defect'}
                 </DialogTitle>
                 <DialogDescription className="pt-1">
                   <span className="flex items-center gap-1.5 flex-wrap">
@@ -381,8 +454,13 @@ const DefectReportDialog = ({
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence photos</Label>
-                    <span className="text-[10px] text-muted-foreground">{photos.length}/{MAX_PHOTOS_PER_DEFECT}</span>
+                    <span className="text-[10px] text-muted-foreground">{existingPhotoPaths.length + photos.length}/{MAX_PHOTOS_PER_DEFECT}</span>
                   </div>
+                  {existingPhotoPaths.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {existingPhotoPaths.length} existing photo{existingPhotoPaths.length === 1 ? '' : 's'} attached. Add more below if needed.
+                    </p>
+                  )}
                   {photoPreviewUrls.length > 0 && (
                     <div className="grid grid-cols-3 gap-2">
                       {photoPreviewUrls.map((url, index) => (
@@ -435,7 +513,7 @@ const DefectReportDialog = ({
                 variant={severity === 'stop_operation' ? 'destructive' : 'default'}
                 className="rounded-lg gap-1.5"
               >
-                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Reporting...</> : 'Report Defect'}
+                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />{isEdit ? 'Saving…' : 'Reporting…'}</> : (isEdit ? 'Save Changes' : 'Report Defect')}
               </Button>
             </div>
           </>

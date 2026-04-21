@@ -111,6 +111,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
   const [itemDefectRaised, setItemDefectRaised] = useState<Record<string, boolean>>({});
+  // Map of failed item id → linked defect summary (id + photo count + severity)
+  const [itemDefects, setItemDefects] = useState<Record<string, { id: string; photoCount: number; severity: string }>>({});
+  // Which item is currently editing its linked defect
+  const [editingDefectForItem, setEditingDefectForItem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
@@ -815,84 +819,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         throw new Error('Failed to submit check');
       }
 
-      // If submitted online, create inspection record and generate PDF (non-blocking)
-      if (!isOffline && checkId) {
-        const savedInspectorName = inspectorName;
+      // ✅ Primary save succeeded — release the UI immediately so the spinner can never hang on side-effects
+      setSubmitting(false);
 
-        // Determine overall result
-        const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
-        const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
-        const totalCount = activeTemplate.daily_check_template_items.length;
-        const overallResult = failedCount > 0 ? 'failed' : passedCount === totalCount ? 'passed' : 'partial';
-
-        // Build item results snapshot
-        const itemResultSnapshots: ItemResultSnapshot[] = activeTemplate.daily_check_template_items.map(item => ({
-          template_item_id: item.id,
-          check_item_text: item.check_item_text,
-          category: item.category || null,
-          result: (itemResults[item.id] || 'na') as 'pass' | 'fail' | 'na',
-          notes: notes[item.id]?.trim() || null,
-          is_required: item.is_required ?? false,
-        }));
-
-        // Fetch defect IDs linked to this check
-        const { data: linkedDefects } = await supabase
-          .from('defects')
-          .select('id, severity')
-          .eq('check_id', checkId);
-        const defectIds = (linkedDefects || []).map(d => d.id);
-        const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
-        const totalDefectCount = (linkedDefects || []).length;
-
-        // Create immutable inspection record (v1)
-        const recordId = await createInspectionRecord({
-          checkId,
-          rideId: ride.id,
-          userId: effectiveUserId!,
-          inspectorName: savedInspectorName.trim(),
-          checkDate: new Date().toISOString().split('T')[0],
-          checkFrequency: frequency,
-          templateId: activeTemplate.id,
-          templateName: activeTemplate.template_name,
-          overallResult,
-          itemResults: itemResultSnapshots,
-          notes: inspectorNotes.trim() || null,
-          weatherConditions: null,
-          location: location.trim() || null,
-          environmentNotes: null,
-          complianceOfficer: null,
-          signatureData: null,
-          defectIds,
-        });
-
-        // Inspection record saved to checks log — PDF generation is on-demand from the Checks Log
-        if (recordId) {
-          queryClient.invalidateQueries({ queryKey: ['overview'] });
-          queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
-        }
-
-        // Show completion toast with defect summary
-        if (failedCount > 0) {
-          const defectSummary = totalDefectCount > 0 
-            ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
-            : '';
-          toast({
-            title: failedCount > 0 ? "⚠️ Check completed with failures" : "Check completed ✓",
-            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
-            variant: criticalDefectCount > 0 ? 'destructive' : 'default',
-          });
-        } else {
-          toast({
-            title: "Check completed ✓",
-            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
-          });
-        }
-
-        // Critical defect warning kept as simple toast (no complex modal)
-      }
-      // If offline, the useOfflineCheck hook already shows a toast
-
-      // Reset form
+      // Reset form (safe to do now)
       setItemResults({});
       setNotes({});
       setInspectorName('');
@@ -904,17 +834,91 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setDeclarationChecked(false);
       setStartNoticeAcknowledged(false);
       setStartNoticeAcknowledgedAt(null);
+      setItemDefects({});
+      setItemDefectRaised({});
 
-      // Reload recent checks (will be empty if offline but that's expected)
-      if (!isOffline) {
-        await loadRecentChecks();
-        queryClient.invalidateQueries({ queryKey: ['overview'] });
-        queryClient.invalidateQueries({ queryKey: ['checks'] });
-        queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
-      }
-
-      // Notify parent (e.g. navigate back from execute page)
+      // Notify parent first — navigation should not wait on side-effects
       onChecklistSaved?.();
+
+      // ── SIDE-EFFECTS (non-blocking) ──────────────────────────────────
+      // Each side-effect runs in its own try/catch. A failure here will surface
+      // as a non-blocking toast but will NEVER prevent the save from completing.
+      if (!isOffline && checkId) {
+        const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
+        const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
+        const totalCount = activeTemplate.daily_check_template_items.length;
+        const overallResult = failedCount > 0 ? 'failed' : passedCount === totalCount ? 'passed' : 'partial';
+
+        const itemResultSnapshots: ItemResultSnapshot[] = activeTemplate.daily_check_template_items.map(item => ({
+          template_item_id: item.id,
+          check_item_text: item.check_item_text,
+          category: item.category || null,
+          result: (itemResults[item.id] || 'na') as 'pass' | 'fail' | 'na',
+          notes: notes[item.id]?.trim() || null,
+          is_required: item.is_required ?? false,
+        }));
+
+        // Fire-and-forget: defect fetch + inspection record + cache invalidation
+        (async () => {
+          try {
+            const { data: linkedDefects } = await supabase
+              .from('defects')
+              .select('id, severity')
+              .eq('check_id', checkId);
+            const defectIds = (linkedDefects || []).map(d => d.id);
+
+            await createInspectionRecord({
+              checkId,
+              rideId: ride.id,
+              userId: effectiveUserId!,
+              inspectorName: inspectorName.trim() || 'Inspector',
+              checkDate: new Date().toISOString().split('T')[0],
+              checkFrequency: frequency,
+              templateId: activeTemplate.id,
+              templateName: activeTemplate.template_name,
+              overallResult,
+              itemResults: itemResultSnapshots,
+              notes: inspectorNotes.trim() || null,
+              weatherConditions: null,
+              location: location.trim() || null,
+              environmentNotes: null,
+              complianceOfficer: null,
+              signatureData: null,
+              defectIds,
+            });
+
+            queryClient.invalidateQueries({ queryKey: ['overview'] });
+            queryClient.invalidateQueries({ queryKey: ['checks'] });
+            queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+            loadRecentChecks().catch(() => {});
+
+            const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
+            const totalDefectCount = (linkedDefects || []).length;
+            if (failedCount > 0) {
+              const defectSummary = totalDefectCount > 0
+                ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
+                : '';
+              toast({
+                title: '⚠️ Check completed with failures',
+                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
+                variant: criticalDefectCount > 0 ? 'destructive' : 'default',
+              });
+            } else {
+              toast({
+                title: 'Check completed ✓',
+                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`,
+              });
+            }
+          } catch (sideEffectError) {
+            console.error('Post-save side-effect failed (check is still saved):', sideEffectError);
+            toast({
+              title: 'Check saved — some follow-up steps failed',
+              description: 'The check was saved successfully but the inspection record or summary could not be generated. You can regenerate from the Checks Log.',
+              variant: 'default',
+            });
+          }
+        })();
+      }
     } catch (error) {
       // Rollback optimistic update
       if (previousOverview) {
@@ -922,11 +926,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       }
       console.error('Error submitting checks:', error);
       toast({
-        title: "Error",
-        description: "Failed to save check",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to save check',
+        variant: 'destructive',
       });
-    } finally {
       setSubmitting(false);
     }
   };
@@ -1454,64 +1457,75 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        />
 
                        <div className="flex gap-2">
+                          {!itemDefects[item.id] ? (
+                            <DefectReportDialog
+                              rideId={ride.id}
+                              rideName={ride.ride_name}
+                              checkFrequency={frequency}
+                              templateItemId={item.id}
+                              defaultDescription={notes[item.id] || ''}
+                              onDefectReported={(info) => {
+                                setDefectRefreshKey(prev => prev + 1);
+                                setItemDefectRaised(prev => ({ ...prev, [item.id]: true }));
+                                if (info) {
+                                  setItemDefects(prev => ({ ...prev, [item.id]: { id: info.defectId, photoCount: info.photoCount, severity: info.severity } }));
+                                }
+                              }}
+                              trigger={
+                                <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                                  Raise Defect
+                                </button>
+                              }
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setEditingDefectForItem(item.id)}
+                              className="h-9 rounded-md border border-green-300 bg-green-50 text-xs font-bold flex items-center justify-center gap-1.5 text-green-800 hover:bg-green-100 flex-1 transition-colors"
+                            >
+                              <CheckCircle className="h-3 w-3 shrink-0" />
+                              View / Edit defect
+                              {itemDefects[item.id].photoCount > 0 && (
+                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-white border border-green-300 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+                                  📷 {itemDefects[item.id].photoCount}
+                                </span>
+                              )}
+                            </button>
+                          )}
+                       </div>
+
+                        {/* Edit-defect dialog (controlled, hydrates the existing defect) */}
+                        {editingDefectForItem === item.id && itemDefects[item.id] && (
                           <DefectReportDialog
                             rideId={ride.id}
                             rideName={ride.ride_name}
                             checkFrequency={frequency}
-                            onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
-                            trigger={
-                              <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
-                                <AlertTriangle className="h-3 w-3 shrink-0" />
-                                Raise Defect
-                              </button>
-                            }
+                            templateItemId={item.id}
+                            editDefectId={itemDefects[item.id].id}
+                            open={true}
+                            onOpenChange={(v) => { if (!v) setEditingDefectForItem(null); }}
+                            onDefectReported={(info) => {
+                              setDefectRefreshKey(prev => prev + 1);
+                              if (info) {
+                                setItemDefects(prev => ({ ...prev, [item.id]: { id: info.defectId, photoCount: info.photoCount, severity: info.severity } }));
+                              }
+                              setEditingDefectForItem(null);
+                            }}
                           />
-                         <label className="h-9 rounded-md border border-slate-300 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer hover:border-slate-400 hover:text-slate-800 transition-colors flex-1">
-                           📷 Add Photo
-                           <input
-                             type="file"
-                             accept="image/*"
-                             capture="environment"
-                             className="hidden"
-                             onChange={(e) => {
-                               const files = Array.from(e.target.files || []);
-                               if (!files.length) return;
-                               setItemAttachments(prev => ({ ...prev, [item.id]: [...(prev[item.id] || []), ...files] }));
-                               e.currentTarget.value = '';
-                             }}
-                           />
-                         </label>
-                       </div>
-
-                       {(itemAttachments[item.id]?.length ?? 0) > 0 && (
-                         <div className="flex flex-wrap gap-1.5">
-                           {itemAttachments[item.id].map((f, idx) => (
-                             <div key={`${f.name}-${idx}`} className="flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">
-                               <span className="max-w-[100px] truncate text-slate-700">{f.name}</span>
-                               <button
-                                 type="button"
-                                 className="text-red-600 font-bold shrink-0"
-                                 onClick={() => setItemAttachments(prev => ({
-                                   ...prev,
-                                   [item.id]: (prev[item.id] || []).filter((_, i) => i !== idx)
-                                 }))}
-                               >×</button>
-                             </div>
-                           ))}
-                         </div>
-                       )}
+                        )}
 
                        {/* Defect status */}
                        {!itemDefectRaised[item.id] && (
                          <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
                            <AlertTriangle className="h-3 w-3 shrink-0" />
-                           Defect must be raised before completion
+                           Raise a defect to record evidence and complete this item
                          </p>
                        )}
                        {itemDefectRaised[item.id] && (
                          <p className="text-[11px] font-semibold text-green-700 flex items-center gap-1">
                            <CheckCircle className="h-3 w-3 shrink-0" />
-                           Defect raised
+                           Defect linked{itemDefects[item.id]?.photoCount ? ` · ${itemDefects[item.id].photoCount} photo${itemDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}
                          </p>
                        )}
                      </div>
