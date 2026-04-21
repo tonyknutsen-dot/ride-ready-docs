@@ -118,6 +118,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [submitting, setSubmitting] = useState(false);
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
+  const [finishNoticeAcknowledged, setFinishNoticeAcknowledged] = useState(false);
+  const [finishNoticeAcknowledgedAt, setFinishNoticeAcknowledgedAt] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -169,6 +171,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       custom_interval_days: null,
       start_notice_required: false,
       start_notice_text: null,
+      finish_notice_required: false,
+      finish_notice_text: null,
       daily_check_template_items: cached.items.map(item => ({
         id: item.id,
         template_id: cached.id,
@@ -801,6 +805,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         startNoticeAcknowledgedAt: startNoticeAcknowledgedAt || undefined,
         startNoticeAcknowledgedBy: startNoticeAcknowledged ? inspectorName.trim() : undefined,
         startNoticeSnapshot: startNoticeAcknowledged ? (activeTemplate as any).start_notice_text : undefined,
+        finishNoticeAcknowledged: finishNoticeAcknowledged || undefined,
+        finishNoticeAcknowledgedAt: finishNoticeAcknowledgedAt || undefined,
+        finishNoticeAcknowledgedBy: finishNoticeAcknowledged ? inspectorName.trim() : undefined,
+        finishNoticeSnapshot: finishNoticeAcknowledged ? (activeTemplate as any).finish_notice_text : undefined,
         results: activeTemplate.daily_check_template_items.map(item => {
           const result = itemResults[item.id] || 'na';
           return {
@@ -834,6 +842,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setDeclarationChecked(false);
       setStartNoticeAcknowledged(false);
       setStartNoticeAcknowledgedAt(null);
+      setFinishNoticeAcknowledged(false);
+      setFinishNoticeAcknowledgedAt(null);
       setItemDefects({});
       setItemDefectRaised({});
 
@@ -861,10 +871,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         // Fire-and-forget: defect fetch + inspection record + cache invalidation
         (async () => {
           try {
+            const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
+            if (linkedDefectIds.length > 0) {
+              await supabase
+                .from('defects')
+                .update({ check_id: checkId } as any)
+                .in('id', linkedDefectIds)
+                .is('check_id', null);
+            }
+
             const { data: linkedDefects } = await supabase
               .from('defects')
               .select('id, severity')
-              .eq('check_id', checkId);
+              .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
             const defectIds = (linkedDefects || []).map(d => d.id);
 
             await createInspectionRecord({
@@ -1084,7 +1103,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               </h2>
               <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
             </div>
-            {/* Overflow menu — hide admin actions from staff */}
+            {!isStaff && (
+              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="h-8 gap-1.5 text-[12px] shrink-0">
+                <Settings className="h-3.5 w-3.5" />
+                Edit Checklist
+              </Button>
+            )}
+            {/* Overflow menu — hide secondary admin actions from staff */}
             {!isStaff && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1628,6 +1653,25 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               </p>
            )}
 
+            {(activeTemplate as any).finish_notice_required && (activeTemplate as any).finish_notice_text?.trim() && (
+              <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 space-y-2">
+                <p className="text-[11px] font-bold text-warning uppercase">Before you finish</p>
+                <p className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
+                <label className="flex items-start gap-2 text-[12px] font-medium text-slate-700 cursor-pointer">
+                  <Checkbox
+                    checked={finishNoticeAcknowledged}
+                    onCheckedChange={(checked) => {
+                      setFinishNoticeAcknowledged(!!checked);
+                      setFinishNoticeAcknowledgedAt(checked ? new Date().toISOString() : null);
+                    }}
+                    className="mt-0.5"
+                    disabled={getProgress() < 100}
+                  />
+                  I have completed these close-out checks.
+                </label>
+              </div>
+            )}
+
           <div className="border-t border-slate-100 pt-3">
              <label className={`flex items-start gap-2.5 group ${
                getProgress() < 100
@@ -1707,7 +1751,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           </button>
           <button
             type="button"
-            disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100}
+            disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100 || (!!(activeTemplate as any).finish_notice_required && !!(activeTemplate as any).finish_notice_text?.trim() && !finishNoticeAcknowledged)}
             onClick={handleSubmitChecks}
             className="flex-1 t-btn-primary rounded-md py-2.5 text-[13px]"
           >

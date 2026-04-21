@@ -95,6 +95,9 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const [startNoticeText, setStartNoticeText] = useState(template?.start_notice_text ?? '');
   const [startNoticeRequired, setStartNoticeRequired] = useState(template?.start_notice_required ?? false);
   const [startNoticeOpen, setStartNoticeOpen] = useState(!!(template?.start_notice_text?.trim()));
+  const [finishNoticeText, setFinishNoticeText] = useState((template as any)?.finish_notice_text ?? '');
+  const [finishNoticeRequired, setFinishNoticeRequired] = useState((template as any)?.finish_notice_required ?? false);
+  const [finishNoticeOpen, setFinishNoticeOpen] = useState(!!((template as any)?.finish_notice_text?.trim()));
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -302,6 +305,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             template_name: templateName.trim(),
             start_notice_text: startNoticeText.trim() || null,
             start_notice_required: startNoticeText.trim() ? startNoticeRequired : false,
+            finish_notice_text: finishNoticeText.trim() || null,
+            finish_notice_required: finishNoticeText.trim() ? finishNoticeRequired : false,
           } as any)
           .eq('id', template.id);
         if (updateError) throw updateError;
@@ -323,6 +328,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             is_active: true,
             start_notice_text: startNoticeText.trim() || null,
             start_notice_required: startNoticeText.trim() ? startNoticeRequired : false,
+            finish_notice_text: finishNoticeText.trim() || null,
+            finish_notice_required: finishNoticeText.trim() ? finishNoticeRequired : false,
           } as any)
           .select()
           .single();
@@ -615,6 +622,40 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             />
           </div>
 
+          {/* Notices — high in settings so they are not missed */}
+          <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+            <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-medium">Before you start</span>
+                  {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
+                  <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2 pb-1">
+                <p className="text-xs text-muted-foreground">Optional notice shown before this check starts.</p>
+                <Textarea value={startNoticeText} onChange={(e) => { setStartNoticeText(e.target.value); if (!e.target.value.trim()) setStartNoticeRequired(false); else if (!startNoticeRequired) setStartNoticeRequired(true); }} placeholder="e.g., Ensure PPE is worn. Check ground stability." rows={2} className="text-sm" />
+                {startNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="startNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="startNoticeToggle" checked={startNoticeRequired} onCheckedChange={setStartNoticeRequired} /></div>}
+              </CollapsibleContent>
+            </Collapsible>
+            <Collapsible open={finishNoticeOpen} onOpenChange={setFinishNoticeOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
+                  <CheckSquare className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-medium">Before you finish</span>
+                  {finishNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
+                  <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${finishNoticeOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2 pb-1">
+                <p className="text-xs text-muted-foreground">Optional close-out notice shown before completion.</p>
+                <Textarea value={finishNoticeText} onChange={(e) => { setFinishNoticeText(e.target.value); if (!e.target.value.trim()) setFinishNoticeRequired(false); else if (!finishNoticeRequired) setFinishNoticeRequired(true); }} placeholder="e.g., All covers secure; tools removed; area left safe." rows={2} className="text-sm" />
+                {finishNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="finishNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="finishNoticeToggle" checked={finishNoticeRequired} onCheckedChange={setFinishNoticeRequired} /></div>}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
           {/* Final item list */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -736,8 +777,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             )}
           </div>
 
-          {/* Start Notice — collapsed by default */}
-          <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
+          {/* Start Notice moved to the settings area above */}
+          {false && <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -772,7 +813,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 </div>
               )}
             </CollapsibleContent>
-          </Collapsible>
+          </Collapsible>}
 
           {/* Save — single action */}
           <Button

@@ -31,6 +31,11 @@ export interface OfflineCheck {
   startNoticeAcknowledgedAt?: string;
   startNoticeAcknowledgedBy?: string;
   startNoticeSnapshot?: string;
+  // Finish notice acknowledgement
+  finishNoticeAcknowledged?: boolean;
+  finishNoticeAcknowledgedAt?: string;
+  finishNoticeAcknowledgedBy?: string;
+  finishNoticeSnapshot?: string;
 }
 
 export type CheckItemResult = 'pass' | 'fail' | 'na';

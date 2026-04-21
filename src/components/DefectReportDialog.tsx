@@ -59,6 +59,7 @@ const DefectReportDialog = ({
   const isEdit = !!editDefectId;
   const [hydrating, setHydrating] = useState(false);
   const [existingPhotoPaths, setExistingPhotoPaths] = useState<string[]>([]);
+  const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
   const { guardWrite } = useBillingWriteGuard();
   const [description, setDescription] = useState(defaultDescription || '');
   const [severity, setSeverity] = useState<DefectSeverity>('non_urgent');
@@ -125,7 +126,16 @@ const DefectReportDialog = ({
       setDescription(data.description || '');
       setSeverity((data.severity as DefectSeverity) || 'non_urgent');
       setLocationOnRide(data.location_on_ride || '');
-      setExistingPhotoPaths((data.photo_paths as string[] | null) || []);
+      const paths = (data.photo_paths as string[] | null) || [];
+      setExistingPhotoPaths(paths);
+      if (paths.length > 0) {
+        const { data: signed } = await supabase.storage
+          .from('defect-photos')
+          .createSignedUrls(paths, 60 * 10);
+        setExistingPhotoUrls((signed || []).map(item => item.signedUrl).filter(Boolean));
+      } else {
+        setExistingPhotoUrls([]);
+      }
       setHydrating(false);
     })();
     return () => { cancelled = true; };
@@ -275,6 +285,7 @@ const DefectReportDialog = ({
       setPhotos([]);
       setPhotoPreviewUrls([]);
       setExistingPhotoPaths([]);
+      setExistingPhotoUrls([]);
       setOpen(false);
 
       onDefectReported?.(savedDefectId ? { defectId: savedDefectId, photoCount: mergedPhotoPaths.length, severity } : undefined);
@@ -456,9 +467,18 @@ const DefectReportDialog = ({
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence photos</Label>
                     <span className="text-[10px] text-muted-foreground">{existingPhotoPaths.length + photos.length}/{MAX_PHOTOS_PER_DEFECT}</span>
                   </div>
-                  {existingPhotoPaths.length > 0 && (
+                  {existingPhotoUrls.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {existingPhotoUrls.map((url, index) => (
+                        <div key={url} className="relative aspect-square">
+                          <img src={url} alt={`Evidence photo ${index + 1}`} className="w-full h-full object-cover rounded-xl border border-border" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {existingPhotoPaths.length > 0 && existingPhotoUrls.length === 0 && (
                     <p className="text-[11px] text-muted-foreground">
-                      {existingPhotoPaths.length} existing photo{existingPhotoPaths.length === 1 ? '' : 's'} attached. Add more below if needed.
+                      {existingPhotoPaths.length} existing photo{existingPhotoPaths.length === 1 ? '' : 's'} attached.
                     </p>
                   )}
                   {photoPreviewUrls.length > 0 && (

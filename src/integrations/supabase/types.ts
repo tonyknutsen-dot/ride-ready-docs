@@ -645,6 +645,10 @@ export type Database = {
           compliance_officer: string | null
           created_at: string
           environment_notes: string | null
+          finish_notice_acknowledged: boolean
+          finish_notice_acknowledged_at: string | null
+          finish_notice_acknowledged_by: string | null
+          finish_notice_snapshot: string | null
           id: string
           inspector_name: string
           is_test_data: boolean
@@ -668,6 +672,10 @@ export type Database = {
           compliance_officer?: string | null
           created_at?: string
           environment_notes?: string | null
+          finish_notice_acknowledged?: boolean
+          finish_notice_acknowledged_at?: string | null
+          finish_notice_acknowledged_by?: string | null
+          finish_notice_snapshot?: string | null
           id?: string
           inspector_name: string
           is_test_data?: boolean
@@ -691,6 +699,10 @@ export type Database = {
           compliance_officer?: string | null
           created_at?: string
           environment_notes?: string | null
+          finish_notice_acknowledged?: boolean
+          finish_notice_acknowledged_at?: string | null
+          finish_notice_acknowledged_by?: string | null
+          finish_notice_snapshot?: string | null
           id?: string
           inspector_name?: string
           is_test_data?: boolean
@@ -946,6 +958,8 @@ export type Database = {
           created_at: string
           custom_interval_days: number | null
           description: string | null
+          finish_notice_required: boolean
+          finish_notice_text: string | null
           id: string
           is_active: boolean | null
           is_archived: boolean
@@ -962,6 +976,8 @@ export type Database = {
           created_at?: string
           custom_interval_days?: number | null
           description?: string | null
+          finish_notice_required?: boolean
+          finish_notice_text?: string | null
           id?: string
           is_active?: boolean | null
           is_archived?: boolean
@@ -978,6 +994,8 @@ export type Database = {
           created_at?: string
           custom_interval_days?: number | null
           description?: string | null
+          finish_notice_required?: boolean
+          finish_notice_text?: string | null
           id?: string
           is_active?: boolean | null
           is_archived?: boolean
