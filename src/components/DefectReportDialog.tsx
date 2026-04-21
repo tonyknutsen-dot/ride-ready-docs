@@ -59,6 +59,7 @@ const DefectReportDialog = ({
   const isEdit = !!editDefectId;
   const [hydrating, setHydrating] = useState(false);
   const [existingPhotoPaths, setExistingPhotoPaths] = useState<string[]>([]);
+  const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
   const { guardWrite } = useBillingWriteGuard();
   const [description, setDescription] = useState(defaultDescription || '');
   const [severity, setSeverity] = useState<DefectSeverity>('non_urgent');
@@ -125,7 +126,16 @@ const DefectReportDialog = ({
       setDescription(data.description || '');
       setSeverity((data.severity as DefectSeverity) || 'non_urgent');
       setLocationOnRide(data.location_on_ride || '');
-      setExistingPhotoPaths((data.photo_paths as string[] | null) || []);
+      const paths = (data.photo_paths as string[] | null) || [];
+      setExistingPhotoPaths(paths);
+      if (paths.length > 0) {
+        const { data: signed } = await supabase.storage
+          .from('defect-photos')
+          .createSignedUrls(paths, 60 * 10);
+        setExistingPhotoUrls((signed || []).map(item => item.signedUrl).filter(Boolean));
+      } else {
+        setExistingPhotoUrls([]);
+      }
       setHydrating(false);
     })();
     return () => { cancelled = true; };
@@ -275,6 +285,7 @@ const DefectReportDialog = ({
       setPhotos([]);
       setPhotoPreviewUrls([]);
       setExistingPhotoPaths([]);
+      setExistingPhotoUrls([]);
       setOpen(false);
 
       onDefectReported?.(savedDefectId ? { defectId: savedDefectId, photoCount: mergedPhotoPaths.length, severity } : undefined);
