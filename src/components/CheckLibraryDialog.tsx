@@ -211,10 +211,17 @@ export default function CheckLibraryDialog({
             {loading ? (
               <div className="text-sm text-muted-foreground py-8 text-center">Loading check items…</div>
             ) : filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground py-8 text-center">
-                {rows.length === 0 
-                  ? `No ${frequency} check items found in library.`
-                  : "No items match your search."}
+              <div className="text-sm text-muted-foreground py-8 text-center space-y-2">
+                {rows.length === 0 ? (
+                  <p>No {frequency} check items found in library.</p>
+                ) : tab === "specific" && !q.trim() ? (
+                  <>
+                    <p className="font-medium text-foreground">No items specific to {specificLabel} yet.</p>
+                    <p className="text-xs">Try the <button type="button" onClick={() => setTab("general")} className="underline text-primary">General</button> tab or add your own.</p>
+                  </>
+                ) : (
+                  <p>No items match your search.</p>
+                )}
               </div>
             ) : (
               filtered.map((r) => (
