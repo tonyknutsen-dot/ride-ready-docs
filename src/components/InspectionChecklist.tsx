@@ -1187,9 +1187,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             className="t-btn-primary w-full py-3.5 text-sm"
             type="button"
             onClick={() => {
-              // Origin-aware launch: from Equipment hub vs side /checks flow
-              const fromEquipment = window.location.pathname.startsWith('/rides/');
-              navigate(`/checks/${ride.id}/${frequency}/execute?from=${fromEquipment ? 'equipment' : 'checks'}`);
+              // Preserve `from=checks` so Back returns to /checks rather than /rides.
+              const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
+              navigate(`/checks/${ride.id}/${frequency}/execute${fromChecks ? '?from=checks' : ''}`);
             }}
           >
             <PlayCircle className="h-4 w-4 shrink-0" />

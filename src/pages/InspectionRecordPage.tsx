@@ -43,14 +43,14 @@ const InspectionRecordPage = () => {
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
 
-  // Origin-aware back navigation: 'equipment' returns to Equipment hub, otherwise /checks register
+  // Origin-aware back navigation: always returns to the canonical hub
+  // (`/rides/:id?tab=checks`); `from=checks` makes the hub bounce to `/checks`.
   const fromParam = searchParams.get('from');
   const fromRideId = searchParams.get('rideId');
   const goBack = () => {
-    if (fromParam === 'equipment' && fromRideId) {
-      navigate(`/rides/${fromRideId}?tab=checks`);
-    } else if (fromRideId) {
-      navigate(`/checks/register?rideId=${fromRideId}`);
+    if (fromRideId) {
+      const suffix = fromParam === 'checks' ? '&from=checks' : '';
+      navigate(`/rides/${fromRideId}?tab=checks${suffix}`);
     } else {
       navigate(-1);
     }
