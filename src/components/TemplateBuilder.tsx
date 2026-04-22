@@ -79,10 +79,21 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const { user } = useAuth();
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
+  const isMobile = useIsMobile();
   const freqLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
   const equipmentGroup = getEquipmentGroup(ride.ride_categories?.category_group ?? '');
   const defaultTemplateName = `${freqLabel} Safety Check`;
   const isEditing = !!template;
+
+  // ── Mobile builder mode: hide global app shell while building ──
+  // CSS in index.css uses html[data-builder-mode="mobile"] to hide
+  // [data-builder-hide="mobile"] elements (MobileBottomNav, asset
+  // sticky header, asset tab strip). Desktop/tablet is untouched.
+  useEffect(() => {
+    if (!isMobile) return;
+    document.documentElement.setAttribute('data-builder-mode', 'mobile');
+    return () => document.documentElement.removeAttribute('data-builder-mode');
+  }, [isMobile]);
 
   // Wizard state — always start at Step 1 (Notices & Setup) so notices remain editable on existing checklists
   const [step, setStep] = useState(0);
