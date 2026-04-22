@@ -610,7 +610,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 <div className="space-y-3 max-h-72 overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
-                    <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] text-foreground">
+                    <div className="rounded-md border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-foreground">
                       No ride-specific items have been created for{' '}
                       <span className="font-semibold">{ride.ride_categories?.name || 'this ride type'}</span>{' '}
                       yet — showing general items only.
