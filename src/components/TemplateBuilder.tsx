@@ -82,8 +82,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const defaultTemplateName = `${freqLabel} Safety Check`;
   const isEditing = !!template;
 
-  // Wizard state
-  const [step, setStep] = useState(isEditing ? 2 : 0);
+  // Wizard state — always start at Step 1 (Notices & Setup) so notices remain editable on existing checklists
+  const [step, setStep] = useState(0);
   const [templateName, setTemplateName] = useState(template?.template_name || defaultTemplateName);
   const [selectedItems, setSelectedItems] = useState<BuilderItem[]>([]);
   const [customItemText, setCustomItemText] = useState('');
@@ -445,7 +445,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Start notice shown before user begins this checklist</span>
+                  <span className="font-medium">Start notice shown before operator starts this checklist <span className="text-muted-foreground font-normal">(optional)</span></span>
                   {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
                   <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -460,7 +460,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
                   <CheckSquare className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Finish notice shown before user completes this checklist</span>
+                  <span className="font-medium">Finish notice shown before operator completes / signs off this checklist <span className="text-muted-foreground font-normal">(optional)</span></span>
                   {finishNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
                   <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${finishNoticeOpen ? 'rotate-180' : ''}`} />
                 </button>
