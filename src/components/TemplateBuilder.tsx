@@ -380,9 +380,9 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={step > 0 && !isEditing ? () => setStep(step - 1) : onCancel}>
+        <Button variant="ghost" size="sm" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
-          {step > 0 && !isEditing ? 'Back' : 'Cancel'}
+          {step > 0 ? 'Back' : 'Cancel'}
         </Button>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">
@@ -397,15 +397,18 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
+          // In edit mode, all values are prefilled — allow jumping to any step.
+          // In create mode, only allow returning to already-completed steps.
+          const canNavigate = isEditing ? i !== step : isDone;
           return (
             <div key={i} className="flex items-center gap-2">
               {i > 0 && <div className={`h-px w-3 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />}
               <button
-                onClick={() => { if (isDone && !isEditing) setStep(i); }}
-                disabled={i > step || isEditing}
+                onClick={() => { if (canNavigate) setStep(i); }}
+                disabled={!canNavigate}
                 className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
                   isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                } ${isDone && !isEditing ? 'cursor-pointer' : ''}`}
+                } ${canNavigate ? 'cursor-pointer' : ''}`}
               >
                 {isDone ? <Check className="h-3 w-3" /> : i + 1}
               </button>
