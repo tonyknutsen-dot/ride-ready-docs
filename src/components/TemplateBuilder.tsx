@@ -525,9 +525,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </Collapsible>
           </div>
 
-          <Button onClick={() => setStep(1)} className="w-full gap-2" disabled={!templateName.trim()}>
-            Continue to Build Checklist <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="md:static md:p-0 md:bg-transparent md:border-0 fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border/60">
+            <Button onClick={() => setStep(1)} className="w-full gap-2" disabled={!templateName.trim()}>
+              Continue to Build Checklist <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -750,9 +752,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </div>
           )}
 
-          <Button onClick={() => setStep(2)} className="w-full gap-2" disabled={selectedItems.length === 0}>
-            Review & Save <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="md:static md:p-0 md:bg-transparent md:border-0 fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border/60">
+            <div className="md:hidden text-[11px] text-muted-foreground text-center pb-1">
+              {selectedItems.length} item{selectedItems.length === 1 ? '' : 's'} added
+            </div>
+            <Button onClick={() => setStep(2)} className="w-full gap-2" disabled={selectedItems.length === 0}>
+              Review & Save <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -887,14 +894,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           </div>
 
           {/* Save — single action */}
-          <Button
-            onClick={handleSaveTemplate}
-            disabled={loading || selectedItems.length === 0}
-            className="w-full gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {loading ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Start Using'}
-          </Button>
+          <div className="md:static md:p-0 md:bg-transparent md:border-0 fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border/60">
+            <Button
+              onClick={handleSaveTemplate}
+              disabled={loading || selectedItems.length === 0}
+              className="w-full gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {loading ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Start Using'}
+            </Button>
+          </div>
         </div>
       )}
     </div>
