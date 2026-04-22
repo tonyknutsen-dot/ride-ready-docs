@@ -52,6 +52,7 @@ const DefectReportForm = ({
   const lastSubmitRef = useRef<{ rideId: string; description: string; time: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
