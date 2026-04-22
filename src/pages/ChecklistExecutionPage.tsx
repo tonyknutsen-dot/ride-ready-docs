@@ -92,10 +92,10 @@ const ChecklistExecutionPage = () => {
             <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
             <p className="text-muted-foreground">Equipment not found.</p>
             <button
-              onClick={() => navigate('/checks')}
+              onClick={() => navigate(backTo)}
               className="text-primary text-sm font-semibold"
             >
-              Back to Checks
+              {isFromEquipment ? 'Back to Equipment' : 'Back to Checks'}
             </button>
           </div>
         </div>
@@ -113,13 +113,13 @@ const ChecklistExecutionPage = () => {
         title={ride.ride_name}
         subtitle={freqLabel}
         showBackButton
-        backTo={`/checks/register?rideId=${rideId}`}
+        backTo={backTo}
       />
 
       <InspectionChecklist
         ride={ride}
         frequency={frequency ?? 'daily'}
-        onChecklistSaved={() => navigate(`/checks/register?rideId=${rideId}`)}
+        onChecklistSaved={() => navigate(backTo)}
         startImmediately
       />
     </div>
