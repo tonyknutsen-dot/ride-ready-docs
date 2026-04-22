@@ -187,19 +187,19 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
 
   const handleAcceptSuggestions = () => {
-    const labels = suggestions.filter(s => selectedSuggestions[s.id]).map(s => s.label);
-    if (labels.length === 0) return;
-    const newItems: BuilderItem[] = labels.map((label, i) => ({
-      check_item_text: label,
+    const chosen = suggestions.filter(s => selectedSuggestions[s.id]);
+    if (chosen.length === 0) return;
+    const newItems: BuilderItem[] = chosen.map((s, i) => ({
+      check_item_text: s.label,
       is_required: true,
-      category: 'library',
+      category: s.ride_category_id === ride.category_id ? 'specific' : 'general',
       sort_order: selectedItems.length + i,
       isNew: true,
     }));
     setSelectedItems(prev => [...prev, ...newItems]);
     setSelectedSuggestions({});
     toast({
-      title: `${labels.length} item${labels.length > 1 ? 's' : ''} added`,
+      title: `${chosen.length} item${chosen.length > 1 ? 's' : ''} added`,
       description: 'Suggested items added to your checklist',
     });
   };
