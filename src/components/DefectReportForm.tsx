@@ -249,17 +249,19 @@ const DefectReportForm = ({
             <div className="flex gap-2">
               <input ref={fileInputRef} type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoSelect} className="hidden" />
               <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 gap-2 h-10 rounded-xl">
-                <Camera className="h-4 w-4" /> Take Photo
+                {isMobile ? <><Camera className="h-4 w-4" /> Take Photo</> : <><Upload className="h-4 w-4" /> Upload Photo</>}
               </Button>
-              <Button type="button" variant="outline" onClick={() => {
-                if (fileInputRef.current) {
-                  fileInputRef.current.removeAttribute('capture');
-                  fileInputRef.current.click();
-                  setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 100);
-                }
-              }} className="flex-1 gap-2 h-10 rounded-xl">
-                <Upload className="h-4 w-4" /> Upload
-              </Button>
+              {isMobile && (
+                <Button type="button" variant="outline" onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.removeAttribute('capture');
+                    fileInputRef.current.click();
+                    setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 100);
+                  }
+                }} className="flex-1 gap-2 h-10 rounded-xl">
+                  <Upload className="h-4 w-4" /> From Library
+                </Button>
+              )}
             </div>
           )}
         </div>
