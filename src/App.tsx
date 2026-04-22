@@ -51,7 +51,7 @@ const Security = lazy(() => import("./pages/Security"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const Checks = lazy(() => import("./pages/Checks"));
-const ChecksRegister = lazy(() => import("./pages/ChecksRegister"));
+
 const ChecklistExecutionPage = lazy(() => import("./pages/ChecklistExecutionPage"));
 const Maintenance = lazy(() => import("./pages/Maintenance"));
 const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
@@ -395,21 +395,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* Per-equipment Checks Register */}
-              <Route 
-                path="/checks/register" 
-                element={
-                  <ProtectedRoute>
-                    <ProfileGuard>
-                      <StaffRoute requiredPermission="staff">
-                        <AppLayout>
-                          <ChecksRegister />
-                        </AppLayout>
-                      </StaffRoute>
-                    </ProfileGuard>
-                  </ProtectedRoute>
-                } 
-              />
+              {/* /checks/register removed — side-nav Checks now routes directly into the
+                  canonical Equipment → Asset → Checks hub at /rides/:id?tab=checks&from=checks */}
               {/* Checklist Execution route */}
               <Route 
                 path="/checks/:rideId/:frequency/execute" 
