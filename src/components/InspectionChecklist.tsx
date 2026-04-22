@@ -1608,6 +1608,50 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                            Defect linked{itemDefects[item.id]?.photoCount ? ` · ${itemDefects[item.id].photoCount} photo${itemDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}
                          </p>
                        )}
+
+                       {/* Prior open defect — display-only, explicit reopen */}
+                       {!itemDefects[item.id] && priorOpenDefects[item.id] && (
+                         <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 flex items-start gap-2">
+                           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700 mt-0.5" />
+                           <div className="flex-1 min-w-0">
+                             <p className="text-[11px] font-bold text-amber-900">
+                               Previous open defect exists
+                             </p>
+                             <p className="text-[10px] text-amber-800 mt-0.5">
+                               From an earlier check on this item{priorOpenDefects[item.id].photoCount ? ` · ${priorOpenDefects[item.id].photoCount} photo${priorOpenDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}. Not linked to this run.
+                             </p>
+                             <button
+                               type="button"
+                               onClick={() => setReopeningPriorForItem(item.id)}
+                               className="mt-1.5 h-7 px-2.5 rounded border border-amber-400 bg-white text-[11px] font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
+                             >
+                               Review / reopen
+                             </button>
+                           </div>
+                         </div>
+                       )}
+
+                       {/* Reopen-prior dialog (explicit user action only) */}
+                       {reopeningPriorForItem === item.id && priorOpenDefects[item.id] && (
+                         <DefectReportDialog
+                           rideId={ride.id}
+                           rideName={ride.ride_name}
+                           checkFrequency={frequency}
+                           templateItemId={item.id}
+                           editDefectId={priorOpenDefects[item.id].id}
+                           open={true}
+                           onOpenChange={(v) => { if (!v) setReopeningPriorForItem(null); }}
+                           onDefectReported={(info) => {
+                             setDefectRefreshKey(prev => prev + 1);
+                             if (info) {
+                               setItemDefects(prev => ({ ...prev, [item.id]: { id: info.defectId, photoCount: info.photoCount, severity: info.severity } }));
+                               setItemDefectRaised(prev => ({ ...prev, [item.id]: true }));
+                               setPriorOpenDefects(prev => { const { [item.id]: _, ...rest } = prev; return rest; });
+                             }
+                             setReopeningPriorForItem(null);
+                           }}
+                         />
+                       )}
                      </div>
                    )}
 
