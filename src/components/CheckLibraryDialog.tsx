@@ -41,7 +41,7 @@ export default function CheckLibraryDialog({
   const [rows, setRows] = useState<CheckLibraryItem[]>([]);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<FilterTab>("all");
+  const [tab, setTab] = useState<FilterTab>("specific");
   const { toast } = useToast();
 
   const resolvedGroup = equipmentGroup || 'rides'; // fallback only for legacy rides without equipmentGroup prop
@@ -75,6 +75,9 @@ export default function CheckLibraryDialog({
         const specific = (data || []).filter((r: CheckLibraryItem) => r.ride_category_id === cat);
         const generic = (data || []).filter((r: CheckLibraryItem) => !r.ride_category_id);
         setRows([...specific, ...generic]);
+
+        // Default to ride-specific tab when items exist; otherwise show General
+        setTab(specific.length > 0 ? "specific" : "general");
       } catch (error: any) {
         console.error("Error loading library items:", error);
         toast({
@@ -146,9 +149,9 @@ export default function CheckLibraryDialog({
   };
 
   const tabs: { key: FilterTab; label: string; count: number }[] = [
-    { key: "all", label: "All", count: rows.length },
-    { key: "general", label: "General", count: generalCount },
     ...(hasSpecific ? [{ key: "specific" as FilterTab, label: specificLabel, count: specificCount }] : []),
+    { key: "general", label: "General", count: generalCount },
+    { key: "all", label: "All", count: rows.length },
   ];
 
   return (
@@ -157,7 +160,7 @@ export default function CheckLibraryDialog({
       if (!v) { 
         setSel({}); 
         setQ(""); 
-        setTab("all");
+        setTab("specific");
       } 
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -208,10 +211,17 @@ export default function CheckLibraryDialog({
             {loading ? (
               <div className="text-sm text-muted-foreground py-8 text-center">Loading check items…</div>
             ) : filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground py-8 text-center">
-                {rows.length === 0 
-                  ? `No ${frequency} check items found in library.`
-                  : "No items match your search."}
+              <div className="text-sm text-muted-foreground py-8 text-center space-y-2">
+                {rows.length === 0 ? (
+                  <p>No {frequency} check items found in library.</p>
+                ) : tab === "specific" && !q.trim() ? (
+                  <>
+                    <p className="font-medium text-foreground">No items specific to {specificLabel} yet.</p>
+                    <p className="text-xs">Try the <button type="button" onClick={() => setTab("general")} className="underline text-primary">General</button> tab or add your own.</p>
+                  </>
+                ) : (
+                  <p>No items match your search.</p>
+                )}
               </div>
             ) : (
               filtered.map((r) => (
