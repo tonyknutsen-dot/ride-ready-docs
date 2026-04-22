@@ -606,38 +606,57 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   </span>
                 </div>
 
-                <div className="space-y-1 max-h-72 overflow-y-auto">
-                  {filteredSuggestions.map((item) => (
-                    <label
-                      key={item.id}
-                      className={`flex items-start gap-3 rounded-lg p-2 cursor-pointer transition-colors border ${
-                        selectedSuggestions[item.id]
-                          ? 'border-primary/40 bg-primary/5'
-                          : 'border-transparent hover:bg-background'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!!selectedSuggestions[item.id]}
-                        onChange={(e) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: e.target.checked }))}
-                        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium flex items-start gap-1.5">
-                          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-                          {item.label}
-                        </div>
-                        {item.hint && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
-                        )}
-                        {item.risk_level && (
-                          <Badge className={`text-[10px] mt-1 ${getRiskBadgeClass(item.risk_level)}`}>
-                            {item.risk_level.toUpperCase()}
-                          </Badge>
-                        )}
+                <div className="space-y-3 max-h-72 overflow-y-auto">
+                  {/* Specific to this ride type */}
+                  {specificSuggestions.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 px-1">
+                        <Sparkles className="h-3 w-3 text-primary" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+                          Specific to {ride.ride_categories?.name || 'this type'}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{specificSuggestions.length}</Badge>
                       </div>
-                    </label>
-                  ))}
+                      {specificSuggestions.map((item) => (
+                        <SuggestionRow
+                          key={item.id}
+                          item={item}
+                          checked={!!selectedSuggestions[item.id]}
+                          onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
+                          getRiskBadgeClass={getRiskBadgeClass}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* General items */}
+                  {generalSuggestions.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 px-1">
+                        <Library className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          General
+                        </span>
+                        <Badge variant="outline" className="text-[10px] h-4 px-1.5">{generalSuggestions.length}</Badge>
+                      </div>
+                      {generalSuggestions.map((item) => (
+                        <SuggestionRow
+                          key={item.id}
+                          item={item}
+                          checked={!!selectedSuggestions[item.id]}
+                          onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
+                          getRiskBadgeClass={getRiskBadgeClass}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty: no specific items for this ride type */}
+                  {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
+                    <div className="rounded-md border border-dashed border-border bg-background/50 p-2 text-[11px] text-muted-foreground">
+                      No items specific to <span className="font-medium text-foreground">{ride.ride_categories?.name || 'this ride type'}</span> yet — showing General only.
+                    </div>
+                  )}
                 </div>
 
                 <Button
