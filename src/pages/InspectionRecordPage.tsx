@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addHours } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,12 +35,26 @@ import { cn } from '@/lib/utils';
 
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const role = useAppRole();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
+
+  // Origin-aware back navigation: 'equipment' returns to Equipment hub, otherwise /checks register
+  const fromParam = searchParams.get('from');
+  const fromRideId = searchParams.get('rideId');
+  const goBack = () => {
+    if (fromParam === 'equipment' && fromRideId) {
+      navigate(`/rides/${fromRideId}?tab=checks`);
+    } else if (fromRideId) {
+      navigate(`/checks/register?rideId=${fromRideId}`);
+    } else {
+      navigate(-1);
+    }
+  };
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['inspection-record', recordId],
