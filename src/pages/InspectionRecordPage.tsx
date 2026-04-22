@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addHours } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,12 +35,26 @@ import { cn } from '@/lib/utils';
 
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const role = useAppRole();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
+
+  // Origin-aware back navigation: 'equipment' returns to Equipment hub, otherwise /checks register
+  const fromParam = searchParams.get('from');
+  const fromRideId = searchParams.get('rideId');
+  const goBack = () => {
+    if (fromParam === 'equipment' && fromRideId) {
+      navigate(`/rides/${fromRideId}?tab=checks`);
+    } else if (fromRideId) {
+      navigate(`/checks/register?rideId=${fromRideId}`);
+    } else {
+      navigate(-1);
+    }
+  };
 
   const { data: record, isLoading } = useQuery({
     queryKey: ['inspection-record', recordId],
@@ -104,7 +118,7 @@ const InspectionRecordPage = () => {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <FileText className="h-12 w-12 text-muted-foreground/40" />
         <p className="text-muted-foreground">Record not found</p>
-        <Button variant="outline" onClick={() => navigate(-1)}>
+        <Button variant="outline" onClick={goBack}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Go back
         </Button>
       </div>
@@ -163,7 +177,7 @@ const InspectionRecordPage = () => {
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={goBack} aria-label="Go back">
               <ArrowLeft className="h-4.5 w-4.5" />
             </Button>
             <div className="min-w-0">

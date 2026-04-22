@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, CheckSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -27,11 +27,19 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 const ChecklistExecutionPage = () => {
   const { rideId, frequency } = useParams<{ rideId: string; frequency: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { effectiveUserId } = useEffectiveUserId();
   const { isStaff } = useStaff();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Origin-aware back target: 'equipment' → Equipment hub, anything else → side /checks flow
+  const fromParam = searchParams.get('from');
+  const isFromEquipment = fromParam === 'equipment';
+  const backTo = isFromEquipment
+    ? `/rides/${rideId}?tab=checks`
+    : `/checks/register?rideId=${rideId}`;
 
   useEffect(() => {
     if (effectiveUserId && rideId) {
@@ -55,7 +63,7 @@ const ChecklistExecutionPage = () => {
       setRide(data as Ride);
     } catch (err) {
       console.error('Error loading ride:', err);
-      navigate('/checks');
+      navigate(backTo);
     } finally {
       setLoading(false);
     }
@@ -84,10 +92,10 @@ const ChecklistExecutionPage = () => {
             <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
             <p className="text-muted-foreground">Equipment not found.</p>
             <button
-              onClick={() => navigate('/checks')}
+              onClick={() => navigate(backTo)}
               className="text-primary text-sm font-semibold"
             >
-              Back to Checks
+              {isFromEquipment ? 'Back to Equipment' : 'Back to Checks'}
             </button>
           </div>
         </div>
@@ -105,13 +113,13 @@ const ChecklistExecutionPage = () => {
         title={ride.ride_name}
         subtitle={freqLabel}
         showBackButton
-        backTo={`/checks/register?rideId=${rideId}`}
+        backTo={backTo}
       />
 
       <InspectionChecklist
         ride={ride}
         frequency={frequency ?? 'daily'}
-        onChecklistSaved={() => navigate(`/checks/register?rideId=${rideId}`)}
+        onChecklistSaved={() => navigate(backTo)}
         startImmediately
       />
     </div>

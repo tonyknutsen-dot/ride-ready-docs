@@ -89,7 +89,7 @@ const ChecksRegister = () => {
         backTo="/checks"
       />
 
-      <ChecksHistory rideId={rideId} rideName={ride.ride_name} onStartCheck={() => navigate(`/checks/${rideId}/daily/execute`)} />
+      <ChecksHistory rideId={rideId} rideName={ride.ride_name} onStartCheck={() => navigate(`/checks/${rideId}/daily/execute?from=checks`)} />
     </div>
   );
 };
