@@ -149,9 +149,9 @@ export default function CheckLibraryDialog({
   };
 
   const tabs: { key: FilterTab; label: string; count: number }[] = [
-    { key: "all", label: "All", count: rows.length },
-    { key: "general", label: "General", count: generalCount },
     ...(hasSpecific ? [{ key: "specific" as FilterTab, label: specificLabel, count: specificCount }] : []),
+    { key: "general", label: "General", count: generalCount },
+    { key: "all", label: "All", count: rows.length },
   ];
 
   return (
