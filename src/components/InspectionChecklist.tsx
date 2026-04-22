@@ -43,6 +43,7 @@ import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import TemplateBuilder from './TemplateBuilder';
 import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
+import PriorDefectReviewDialog from './PriorDefectReviewDialog';
 import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -117,7 +118,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [priorOpenDefects, setPriorOpenDefects] = useState<Record<string, { id: string; photoCount: number; severity: string }>>({});
   // Which item is currently editing its linked defect
   const [editingDefectForItem, setEditingDefectForItem] = useState<string | null>(null);
-  // Which item is currently reopening a prior defect (explicit user action)
+  // Which item is currently reviewing the prior defect (read-only review modal)
+  const [reviewingPriorForItem, setReviewingPriorForItem] = useState<string | null>(null);
+  // Which item is currently reopening a prior defect (explicit user action — opens edit dialog)
   const [reopeningPriorForItem, setReopeningPriorForItem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
@@ -1609,7 +1612,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                          </p>
                        )}
 
-                       {/* Prior open defect — display-only, explicit reopen */}
+                       {/* Prior open defect — display-only, explicit review/reopen */}
                        {!itemDefects[item.id] && priorOpenDefects[item.id] && (
                          <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 flex items-start gap-2">
                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700 mt-0.5" />
@@ -1618,20 +1621,38 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                                Previous open defect exists
                              </p>
                              <p className="text-[10px] text-amber-800 mt-0.5">
-                               From an earlier check on this item{priorOpenDefects[item.id].photoCount ? ` · ${priorOpenDefects[item.id].photoCount} photo${priorOpenDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}. Not linked to this run.
+                               Recorded on an earlier check of this item{priorOpenDefects[item.id].photoCount ? ` · ${priorOpenDefects[item.id].photoCount} photo${priorOpenDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}. <span className="font-semibold">Not linked to this run.</span>
                              </p>
                              <button
                                type="button"
-                               onClick={() => setReopeningPriorForItem(item.id)}
+                               onClick={() => setReviewingPriorForItem(item.id)}
                                className="mt-1.5 h-7 px-2.5 rounded border border-amber-400 bg-white text-[11px] font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
                              >
-                               Review / reopen
+                               Review previous defect
                              </button>
                            </div>
                          </div>
                        )}
 
-                       {/* Reopen-prior dialog (explicit user action only) */}
+                       {/* Prior defect REVIEW dialog (read-only summary + explicit choice) */}
+                       {reviewingPriorForItem === item.id && priorOpenDefects[item.id] && (
+                         <PriorDefectReviewDialog
+                           open={true}
+                           onOpenChange={(v) => { if (!v) setReviewingPriorForItem(null); }}
+                           defectId={priorOpenDefects[item.id].id}
+                           onReopen={() => {
+                             setReviewingPriorForItem(null);
+                             setReopeningPriorForItem(item.id);
+                           }}
+                           onRaiseNew={() => {
+                             setReviewingPriorForItem(null);
+                             // Drop the prior chip so the standard "Raise Defect" path is used
+                             setPriorOpenDefects(prev => { const { [item.id]: _, ...rest } = prev; return rest; });
+                           }}
+                         />
+                       )}
+
+                       {/* Reopen-prior dialog (only mounts after explicit Reopen click) */}
                        {reopeningPriorForItem === item.id && priorOpenDefects[item.id] && (
                          <DefectReportDialog
                            rideId={ride.id}

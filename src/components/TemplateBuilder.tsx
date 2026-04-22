@@ -445,14 +445,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Before you start</span>
+                  <span className="font-medium">Start notice shown before user begins this checklist</span>
                   {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
                   <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 pt-2 pb-1">
-                <p className="text-xs text-muted-foreground">Optional notice shown before this check starts (PPE, isolation, ground checks, etc.).</p>
-                <Textarea value={startNoticeText} onChange={(e) => { setStartNoticeText(e.target.value); if (!e.target.value.trim()) setStartNoticeRequired(false); else if (!startNoticeRequired) setStartNoticeRequired(true); }} placeholder="e.g., Ensure PPE is worn. Check ground stability." rows={2} className="text-sm" />
+                <p className="text-xs text-muted-foreground">Displayed to the operator <span className="font-medium text-foreground">before they start</span> this checklist. Use it for safety reminders, PPE, isolation, or ground checks.<br /><span className="italic">Examples: "Ensure PPE is worn before starting." · "Check ground stability and isolate power."</span></p>
+                <Textarea value={startNoticeText} onChange={(e) => { setStartNoticeText(e.target.value); if (!e.target.value.trim()) setStartNoticeRequired(false); else if (!startNoticeRequired) setStartNoticeRequired(true); }} placeholder='e.g., "Ensure PPE is worn. Check ground stability."' rows={2} className="text-sm" />
                 {startNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="startNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="startNoticeToggle" checked={startNoticeRequired} onCheckedChange={setStartNoticeRequired} /></div>}
               </CollapsibleContent>
             </Collapsible>
@@ -460,14 +460,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               <CollapsibleTrigger asChild>
                 <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
                   <CheckSquare className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Before you finish</span>
+                  <span className="font-medium">Finish notice shown before user completes this checklist</span>
                   {finishNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
                   <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${finishNoticeOpen ? 'rotate-180' : ''}`} />
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 pt-2 pb-1">
-                <p className="text-xs text-muted-foreground">Optional close-out notice shown before completion.</p>
-                <Textarea value={finishNoticeText} onChange={(e) => { setFinishNoticeText(e.target.value); if (!e.target.value.trim()) setFinishNoticeRequired(false); else if (!finishNoticeRequired) setFinishNoticeRequired(true); }} placeholder="e.g., All covers secure; tools removed; area left safe." rows={2} className="text-sm" />
+                <p className="text-xs text-muted-foreground">Displayed to the operator <span className="font-medium text-foreground">before they sign off</span> this checklist. Use it as a close-out reminder.<br /><span className="italic">Examples: "All covers secure; tools removed; area left safe." · "Confirm e-stop tested and gates locked."</span></p>
+                <Textarea value={finishNoticeText} onChange={(e) => { setFinishNoticeText(e.target.value); if (!e.target.value.trim()) setFinishNoticeRequired(false); else if (!finishNoticeRequired) setFinishNoticeRequired(true); }} placeholder='e.g., "All covers secure; tools removed; area left safe."' rows={2} className="text-sm" />
                 {finishNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="finishNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="finishNoticeToggle" checked={finishNoticeRequired} onCheckedChange={setFinishNoticeRequired} /></div>}
               </CollapsibleContent>
             </Collapsible>

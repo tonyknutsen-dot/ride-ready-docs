@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
@@ -49,6 +50,7 @@ const DefectReportDialog = ({
   defaultDescription,
   open: controlledOpen, onOpenChange: controlledOnOpenChange,
 }: DefectReportDialogProps) => {
+  const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -497,17 +499,19 @@ const DefectReportDialog = ({
                     <div className="flex gap-2">
                       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoSelect} className="hidden" />
                       <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 gap-2 h-10 rounded-xl">
-                        <Camera className="h-4 w-4" /> Take Photo
+                        {isMobile ? <><Camera className="h-4 w-4" /> Take Photo</> : <><Upload className="h-4 w-4" /> Upload Photo</>}
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => {
-                        if (fileInputRef.current) {
-                          fileInputRef.current.removeAttribute('capture');
-                          fileInputRef.current.click();
-                          setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 100);
-                        }
-                      }} className="flex-1 gap-2 h-10 rounded-xl">
-                        <Upload className="h-4 w-4" /> Upload
-                      </Button>
+                      {isMobile && (
+                        <Button type="button" variant="outline" onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.removeAttribute('capture');
+                            fileInputRef.current.click();
+                            setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 100);
+                          }
+                        }} className="flex-1 gap-2 h-10 rounded-xl">
+                          <Upload className="h-4 w-4" /> From Library
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
