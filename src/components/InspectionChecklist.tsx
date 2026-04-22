@@ -111,10 +111,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
   const [itemDefectRaised, setItemDefectRaised] = useState<Record<string, boolean>>({});
-  // Map of failed item id → linked defect summary (id + photo count + severity)
+  // Map of failed item id → defect raised IN THIS RUN (id + photo count + severity)
   const [itemDefects, setItemDefects] = useState<Record<string, { id: string; photoCount: number; severity: string }>>({});
+  // Map of failed item id → previously open defect from prior runs (display-only, never auto-linked)
+  const [priorOpenDefects, setPriorOpenDefects] = useState<Record<string, { id: string; photoCount: number; severity: string }>>({});
   // Which item is currently editing its linked defect
   const [editingDefectForItem, setEditingDefectForItem] = useState<string | null>(null);
+  // Which item is currently reopening a prior defect (explicit user action)
+  const [reopeningPriorForItem, setReopeningPriorForItem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
@@ -299,13 +303,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     }));
   };
 
+  // Detect (but never auto-link) prior still-open defects on failed items.
+  // These are surfaced as a separate "Previous open defect — review / reopen"
+  // affordance. The current run's defect state is NOT touched here.
   useEffect(() => {
     if (!activeTemplate || !effectiveUserId) return;
 
     const failedItemIds = Object.entries(itemResults)
       .filter(([, result]) => result === 'fail')
       .map(([itemId]) => itemId)
-      .filter(itemId => !itemDefects[itemId]);
+      .filter(itemId => !itemDefects[itemId] && !priorOpenDefects[itemId]);
 
     if (failedItemIds.length === 0) return;
 
@@ -326,7 +333,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       const { data, error } = await query;
       if (cancelled || error || !data?.length) return;
 
-      setItemDefects(prev => {
+      setPriorOpenDefects(prev => {
         const next = { ...prev };
         data.forEach((defect: any) => {
           if (!defect.template_item_id || next[defect.template_item_id]) return;
@@ -338,18 +345,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         });
         return next;
       });
-
-      setItemDefectRaised(prev => {
-        const next = { ...prev };
-        data.forEach((defect: any) => {
-          if (defect.template_item_id) next[defect.template_item_id] = true;
-        });
-        return next;
-      });
     })();
 
     return () => { cancelled = true; };
-  }, [activeTemplate, effectiveUserId, isStaff, itemDefects, itemResults, ride.id]);
+  }, [activeTemplate, effectiveUserId, isStaff, itemDefects, priorOpenDefects, itemResults, ride.id]);
 
   const getProgress = () => {
     if (!activeTemplate?.daily_check_template_items) return 0;
@@ -1608,6 +1607,50 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                            <CheckCircle className="h-3 w-3 shrink-0" />
                            Defect linked{itemDefects[item.id]?.photoCount ? ` · ${itemDefects[item.id].photoCount} photo${itemDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}
                          </p>
+                       )}
+
+                       {/* Prior open defect — display-only, explicit reopen */}
+                       {!itemDefects[item.id] && priorOpenDefects[item.id] && (
+                         <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 flex items-start gap-2">
+                           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-700 mt-0.5" />
+                           <div className="flex-1 min-w-0">
+                             <p className="text-[11px] font-bold text-amber-900">
+                               Previous open defect exists
+                             </p>
+                             <p className="text-[10px] text-amber-800 mt-0.5">
+                               From an earlier check on this item{priorOpenDefects[item.id].photoCount ? ` · ${priorOpenDefects[item.id].photoCount} photo${priorOpenDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}. Not linked to this run.
+                             </p>
+                             <button
+                               type="button"
+                               onClick={() => setReopeningPriorForItem(item.id)}
+                               className="mt-1.5 h-7 px-2.5 rounded border border-amber-400 bg-white text-[11px] font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
+                             >
+                               Review / reopen
+                             </button>
+                           </div>
+                         </div>
+                       )}
+
+                       {/* Reopen-prior dialog (explicit user action only) */}
+                       {reopeningPriorForItem === item.id && priorOpenDefects[item.id] && (
+                         <DefectReportDialog
+                           rideId={ride.id}
+                           rideName={ride.ride_name}
+                           checkFrequency={frequency}
+                           templateItemId={item.id}
+                           editDefectId={priorOpenDefects[item.id].id}
+                           open={true}
+                           onOpenChange={(v) => { if (!v) setReopeningPriorForItem(null); }}
+                           onDefectReported={(info) => {
+                             setDefectRefreshKey(prev => prev + 1);
+                             if (info) {
+                               setItemDefects(prev => ({ ...prev, [item.id]: { id: info.defectId, photoCount: info.photoCount, severity: info.severity } }));
+                               setItemDefectRaised(prev => ({ ...prev, [item.id]: true }));
+                               setPriorOpenDefects(prev => { const { [item.id]: _, ...rest } = prev; return rest; });
+                             }
+                             setReopeningPriorForItem(null);
+                           }}
+                         />
                        )}
                      </div>
                    )}
