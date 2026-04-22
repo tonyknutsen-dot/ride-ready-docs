@@ -303,13 +303,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     }));
   };
 
+  // Detect (but never auto-link) prior still-open defects on failed items.
+  // These are surfaced as a separate "Previous open defect — review / reopen"
+  // affordance. The current run's defect state is NOT touched here.
   useEffect(() => {
     if (!activeTemplate || !effectiveUserId) return;
 
     const failedItemIds = Object.entries(itemResults)
       .filter(([, result]) => result === 'fail')
       .map(([itemId]) => itemId)
-      .filter(itemId => !itemDefects[itemId]);
+      .filter(itemId => !itemDefects[itemId] && !priorOpenDefects[itemId]);
 
     if (failedItemIds.length === 0) return;
 
@@ -330,7 +333,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       const { data, error } = await query;
       if (cancelled || error || !data?.length) return;
 
-      setItemDefects(prev => {
+      setPriorOpenDefects(prev => {
         const next = { ...prev };
         data.forEach((defect: any) => {
           if (!defect.template_item_id || next[defect.template_item_id]) return;
@@ -342,18 +345,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         });
         return next;
       });
-
-      setItemDefectRaised(prev => {
-        const next = { ...prev };
-        data.forEach((defect: any) => {
-          if (defect.template_item_id) next[defect.template_item_id] = true;
-        });
-        return next;
-      });
     })();
 
     return () => { cancelled = true; };
-  }, [activeTemplate, effectiveUserId, isStaff, itemDefects, itemResults, ride.id]);
+  }, [activeTemplate, effectiveUserId, isStaff, itemDefects, priorOpenDefects, itemResults, ride.id]);
 
   const getProgress = () => {
     if (!activeTemplate?.daily_check_template_items) return 0;
