@@ -26,6 +26,9 @@ const RideDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'overview';
+  const fromParam = searchParams.get('from');
+  // Origin-aware back: arrived via side-nav /checks launcher → return to /checks.
+  const backTarget = fromParam === 'checks' ? '/checks' : '/rides';
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isStaff } = useStaff();
@@ -131,7 +134,7 @@ const RideDetailPage = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/rides')}
+            onClick={() => navigate(backTarget)}
             className="h-9 w-9 -ml-2 mb-4 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -144,9 +147,9 @@ const RideDetailPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center space-y-4">
           <p className="text-muted-foreground">Equipment not found</p>
-          <Button onClick={() => navigate('/rides')} className="h-11">
+          <Button onClick={() => navigate(backTarget)} className="h-11">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Equipment
+            {backTarget === '/checks' ? 'Checks' : 'Equipment'}
           </Button>
         </div>
       </div>
@@ -169,7 +172,7 @@ const RideDetailPage = () => {
       <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60" />
       <RideDetail 
         ride={ride}
-        onBack={() => navigate('/rides')}
+        onBack={() => navigate(backTarget)}
         onUpdate={loadRide}
         initialTab={initialTab}
       />

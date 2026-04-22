@@ -21,7 +21,9 @@ const Checks = () => {
   const [showGuide, setShowGuide] = useState(false);
 
   const handleRideSelect = (ride: Ride) => {
-    navigate(`/checks/register?rideId=${ride.id}`);
+    // Route into the canonical Equipment → Asset → Checks hub.
+    // `from=checks` makes Back return to /checks instead of /rides.
+    navigate(`/rides/${ride.id}?tab=checks&from=checks`);
   };
 
   return (

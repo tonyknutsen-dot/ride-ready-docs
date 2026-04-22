@@ -251,9 +251,10 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   };
 
   const handleViewRecord = (record: InspectionRecord) => {
-    // Origin-aware: preserve whether user came via Equipment hub or /checks register
-    const fromEquipment = window.location.pathname.startsWith('/rides/');
-    navigate(`/inspection-record/${record.id}?from=${fromEquipment ? 'equipment' : 'checks'}&rideId=${record.ride_id}`);
+    // Preserve `from=checks` so Back chain returns to /checks when applicable.
+    const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
+    const fromSuffix = fromChecks ? '&from=checks' : '';
+    navigate(`/inspection-record/${record.id}?rideId=${record.ride_id}${fromSuffix}`);
   };
 
   const handleSaveToDocuments = async (record: InspectionRecord) => {

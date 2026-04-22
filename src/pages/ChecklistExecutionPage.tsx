@@ -34,12 +34,14 @@ const ChecklistExecutionPage = () => {
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Origin-aware back target: 'equipment' → Equipment hub, anything else → side /checks flow
+  // Origin-aware back target. Both paths now return to the canonical hub
+  // (`/rides/:id?tab=checks`); the `from=checks` suffix lets the hub bounce
+  // Back to `/checks` instead of `/rides`.
   const fromParam = searchParams.get('from');
-  const isFromEquipment = fromParam === 'equipment';
-  const backTo = isFromEquipment
-    ? `/rides/${rideId}?tab=checks`
-    : `/checks/register?rideId=${rideId}`;
+  const isFromChecks = fromParam === 'checks';
+  const backTo = isFromChecks
+    ? `/rides/${rideId}?tab=checks&from=checks`
+    : `/rides/${rideId}?tab=checks`;
 
   useEffect(() => {
     if (effectiveUserId && rideId) {
@@ -95,7 +97,7 @@ const ChecklistExecutionPage = () => {
               onClick={() => navigate(backTo)}
               className="text-primary text-sm font-semibold"
             >
-              {isFromEquipment ? 'Back to Equipment' : 'Back to Checks'}
+              {isFromChecks ? 'Back to Checks' : 'Back to Equipment'}
             </button>
           </div>
         </div>
