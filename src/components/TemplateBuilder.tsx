@@ -871,34 +871,52 @@ interface SuggestionRowProps {
   rideTypeName?: string;
 }
 
-const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => (
-  <label
-    className={`flex items-start gap-3 rounded-lg p-2 cursor-pointer transition-colors border ${
-      checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
-    }`}
-  >
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(e) => onToggle(e.target.checked)}
-      className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-    />
-    <div className="min-w-0 flex-1">
-      <div className="text-sm font-medium flex items-start gap-1.5">
-        {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-        <span className="min-w-0 break-words">{item.label}</span>
-      </div>
-      {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
-      <div className="flex items-center gap-1 mt-1 flex-wrap">
-        <SourcePill source={source} rideTypeName={rideTypeName} />
+const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => {
+  const riskDotClass =
+    item.risk_level === 'high' ? 'bg-destructive'
+    : item.risk_level === 'med' ? 'bg-yellow-500'
+    : item.risk_level === 'low' ? 'bg-green-500'
+    : '';
+  return (
+    <label
+      className={`flex items-start gap-2.5 md:gap-3 rounded-lg p-1.5 md:p-2 cursor-pointer transition-colors border ${
+        checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onToggle(e.target.checked)}
+        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium flex items-start gap-1.5">
+          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+          {item.risk_level && item.risk_level !== 'high' && (
+            <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
+          )}
+          <span className="min-w-0 break-words">{item.label}</span>
+          <span className="ml-auto shrink-0">
+            <SourcePill source={source} rideTypeName={rideTypeName} />
+          </span>
+        </div>
+        {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
+        {/* Risk badge: full chip on desktop, only HIGH chip on mobile */}
         {item.risk_level && (
-          <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
-            {item.risk_level.toUpperCase()}
-          </Badge>
+          <div className="mt-1 hidden md:flex items-center gap-1 flex-wrap">
+            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
+              {item.risk_level.toUpperCase()}
+            </Badge>
+          </div>
+        )}
+        {item.risk_level === 'high' && (
+          <div className="mt-1 flex md:hidden">
+            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>HIGH</Badge>
+          </div>
         )}
       </div>
-    </div>
-  </label>
-);
+    </label>
+  );
+};
 
 export default TemplateBuilder;
