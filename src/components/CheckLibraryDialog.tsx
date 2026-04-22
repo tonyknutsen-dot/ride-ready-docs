@@ -41,7 +41,7 @@ export default function CheckLibraryDialog({
   const [rows, setRows] = useState<CheckLibraryItem[]>([]);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<FilterTab>("all");
+  const [tab, setTab] = useState<FilterTab>("specific");
   const { toast } = useToast();
 
   const resolvedGroup = equipmentGroup || 'rides'; // fallback only for legacy rides without equipmentGroup prop
