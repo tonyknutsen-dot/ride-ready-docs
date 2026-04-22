@@ -111,10 +111,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
   const [itemDefectRaised, setItemDefectRaised] = useState<Record<string, boolean>>({});
-  // Map of failed item id → linked defect summary (id + photo count + severity)
+  // Map of failed item id → defect raised IN THIS RUN (id + photo count + severity)
   const [itemDefects, setItemDefects] = useState<Record<string, { id: string; photoCount: number; severity: string }>>({});
+  // Map of failed item id → previously open defect from prior runs (display-only, never auto-linked)
+  const [priorOpenDefects, setPriorOpenDefects] = useState<Record<string, { id: string; photoCount: number; severity: string }>>({});
   // Which item is currently editing its linked defect
   const [editingDefectForItem, setEditingDefectForItem] = useState<string | null>(null);
+  // Which item is currently reopening a prior defect (explicit user action)
+  const [reopeningPriorForItem, setReopeningPriorForItem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
