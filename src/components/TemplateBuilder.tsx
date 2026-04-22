@@ -663,13 +663,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                       ))}
                     </div>
                   )}
-
-                  {/* Empty: no specific items for this ride type */}
-                  {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
-                    <div className="rounded-md border border-dashed border-border bg-background/50 p-2 text-[11px] text-muted-foreground">
-                      No items specific to <span className="font-medium text-foreground">{ride.ride_categories?.name || 'this ride type'}</span> yet — showing General only.
-                    </div>
-                  )}
                 </div>
 
                 <Button
