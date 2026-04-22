@@ -50,6 +50,7 @@ const DefectReportDialog = ({
   defaultDescription,
   open: controlledOpen, onOpenChange: controlledOnOpenChange,
 }: DefectReportDialogProps) => {
+  const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;

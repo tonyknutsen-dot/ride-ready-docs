@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useAuditLog } from '@/hooks/useAuditLog';
