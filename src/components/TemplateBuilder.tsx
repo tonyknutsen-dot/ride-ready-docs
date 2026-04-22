@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ArrowLeft, ArrowRight, Plus, Trash2, Save, Library, Pencil, Check, X, Sparkles, CheckSquare, ListChecks, AlertTriangle, Search, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -78,10 +79,21 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const { user } = useAuth();
   const { toast } = useToast();
   const { guardWrite } = useBillingWriteGuard();
+  const isMobile = useIsMobile();
   const freqLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
   const equipmentGroup = getEquipmentGroup(ride.ride_categories?.category_group ?? '');
   const defaultTemplateName = `${freqLabel} Safety Check`;
   const isEditing = !!template;
+
+  // ── Mobile builder mode: hide global app shell while building ──
+  // CSS in index.css uses html[data-builder-mode="mobile"] to hide
+  // [data-builder-hide="mobile"] elements (MobileBottomNav, asset
+  // sticky header, asset tab strip). Desktop/tablet is untouched.
+  useEffect(() => {
+    if (!isMobile) return;
+    document.documentElement.setAttribute('data-builder-mode', 'mobile');
+    return () => document.documentElement.removeAttribute('data-builder-mode');
+  }, [isMobile]);
 
   // Wizard state — always start at Step 1 (Notices & Setup) so notices remain editable on existing checklists
   const [step, setStep] = useState(0);
@@ -387,9 +399,36 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-3 md:space-y-4 pb-24 md:pb-0">
+      {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
+          Desktop/tablet keeps the original header layout below. ── */}
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/60">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 -ml-1"
+            onClick={step > 0 ? () => setStep(step - 1) : onCancel}
+            aria-label={step > 0 ? 'Back a step' : 'Cancel'}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[13px] font-semibold leading-tight truncate">
+              {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
+            </h3>
+            <p className="text-[11px] text-muted-foreground truncate leading-tight">
+              {ride.ride_name} · {STEPS[step].label}
+            </p>
+          </div>
+          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-1 shrink-0">
+            {step + 1}/{STEPS.length}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Desktop/tablet header ── */}
+      <div className="hidden md:flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
@@ -402,8 +441,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </div>
       </div>
 
-      {/* Compact mobile stepper — dots + active label */}
-      <div className="flex items-center gap-2">
+      {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
+      <div className="hidden md:flex items-center gap-2">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
@@ -486,9 +525,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </Collapsible>
           </div>
 
-          <Button onClick={() => setStep(1)} className="w-full gap-2" disabled={!templateName.trim()}>
-            Continue to Build Checklist <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="md:static md:p-0 md:bg-transparent md:border-0 fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border/60">
+            <Button onClick={() => setStep(1)} className="w-full gap-2" disabled={!templateName.trim()}>
+              Continue to Build Checklist <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -711,9 +752,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </div>
           )}
 
-          <Button onClick={() => setStep(2)} className="w-full gap-2" disabled={selectedItems.length === 0}>
-            Review & Save <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="md:static md:p-0 md:bg-transparent md:border-0 fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border/60">
+            <div className="md:hidden text-[11px] text-muted-foreground text-center pb-1">
+              {selectedItems.length} item{selectedItems.length === 1 ? '' : 's'} added
+            </div>
+            <Button onClick={() => setStep(2)} className="w-full gap-2" disabled={selectedItems.length === 0}>
+              Review & Save <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -848,14 +894,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           </div>
 
           {/* Save — single action */}
-          <Button
-            onClick={handleSaveTemplate}
-            disabled={loading || selectedItems.length === 0}
-            className="w-full gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {loading ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Start Using'}
-          </Button>
+          <div className="md:static md:p-0 md:bg-transparent md:border-0 fixed inset-x-0 bottom-0 z-30 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-background/95 backdrop-blur border-t border-border/60">
+            <Button
+              onClick={handleSaveTemplate}
+              disabled={loading || selectedItems.length === 0}
+              className="w-full gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {loading ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Start Using'}
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -1131,3 +1131,20 @@ input, select, textarea {
   color: #64748b;
   opacity: 1;
 }
+
+/* ── Mobile Builder Mode ───────────────────────────────────────────
+   When TemplateBuilder is mounted on mobile, we set
+   data-builder-mode="mobile" on <html>. This hides the global app
+   shell (mobile bottom nav + asset tab strip + asset sticky header)
+   so the builder feels like a focused task screen, not a desktop
+   layout squeezed into a phone. Desktop/tablet (>= md) is untouched.
+   ───────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  html[data-builder-mode="mobile"] [data-builder-hide="mobile"] {
+    display: none !important;
+  }
+  /* Suppress space the missing bottom nav would have left */
+  html[data-builder-mode="mobile"] body {
+    padding-bottom: 0 !important;
+  }
+}
