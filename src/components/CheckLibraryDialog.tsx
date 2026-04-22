@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { CheckSquare, Plus, Search, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SourcePill } from "./checks/SourcePill";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
 type FilterTab = "all" | "general" | "specific";
@@ -243,13 +244,17 @@ export default function CheckLibraryDialog({
                     {r.hint && (
                       <div className="text-xs text-muted-foreground mt-1 break-any">{r.hint}</div>
                     )}
-                    {r.risk_level && (
-                      <div className="mt-2">
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                      <SourcePill
+                        source={r.ride_category_id ? "specific" : "general"}
+                        rideTypeName={categoryGroupLabel}
+                      />
+                      {r.risk_level && (
                         <Badge className={`text-xs ${getRiskBadgeColor(r.risk_level)}`}>
                           {r.risk_level.toUpperCase()} RISK
                         </Badge>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </label>
               ))

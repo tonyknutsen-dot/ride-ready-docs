@@ -15,6 +15,7 @@ import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog from './CheckLibraryDialog';
+import { SourcePill, type ItemSource } from './checks/SourcePill';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -115,7 +116,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             id: item.id,
             check_item_text: item.check_item_text,
             is_required: item.is_required ?? true,
-            category: item.category ?? 'general',
+            category: item.category ?? 'existing',
             sort_order: index,
           }))
       );
@@ -186,19 +187,19 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
 
   const handleAcceptSuggestions = () => {
-    const labels = suggestions.filter(s => selectedSuggestions[s.id]).map(s => s.label);
-    if (labels.length === 0) return;
-    const newItems: BuilderItem[] = labels.map((label, i) => ({
-      check_item_text: label,
+    const chosen = suggestions.filter(s => selectedSuggestions[s.id]);
+    if (chosen.length === 0) return;
+    const newItems: BuilderItem[] = chosen.map((s, i) => ({
+      check_item_text: s.label,
       is_required: true,
-      category: 'library',
+      category: s.ride_category_id === ride.category_id ? 'specific' : 'general',
       sort_order: selectedItems.length + i,
       isNew: true,
     }));
     setSelectedItems(prev => [...prev, ...newItems]);
     setSelectedSuggestions({});
     toast({
-      title: `${labels.length} item${labels.length > 1 ? 's' : ''} added`,
+      title: `${chosen.length} item${chosen.length > 1 ? 's' : ''} added`,
       description: 'Suggested items added to your checklist',
     });
   };
@@ -624,6 +625,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           checked={!!selectedSuggestions[item.id]}
                           onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
                           getRiskBadgeClass={getRiskBadgeClass}
+                          source="specific"
+                          rideTypeName={ride.ride_categories?.name}
                         />
                       ))}
                     </div>
@@ -646,6 +649,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           checked={!!selectedSuggestions[item.id]}
                           onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
                           getRiskBadgeClass={getRiskBadgeClass}
+                          source="general"
                         />
                       ))}
                     </div>
@@ -758,7 +762,13 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           </button>
                         </div>
                       ) : (
-                        <p className="text-sm leading-snug">{item.check_item_text}</p>
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <p className="text-sm leading-snug flex-1 min-w-0">{item.check_item_text}</p>
+                          <SourcePill
+                            source={(['specific','general','custom','library','existing'].includes(item.category) ? item.category : 'existing') as ItemSource}
+                            rideTypeName={ride.ride_categories?.name}
+                          />
+                        </div>
                       )}
                     </div>
 
@@ -840,9 +850,11 @@ interface SuggestionRowProps {
   checked: boolean;
   onToggle: (v: boolean) => void;
   getRiskBadgeClass: (level: string | null) => string;
+  source: ItemSource;
+  rideTypeName?: string;
 }
 
-const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass }: SuggestionRowProps) => (
+const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => (
   <label
     className={`flex items-start gap-3 rounded-lg p-2 cursor-pointer transition-colors border ${
       checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
@@ -857,14 +869,17 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass }: Suggestio
     <div className="min-w-0 flex-1">
       <div className="text-sm font-medium flex items-start gap-1.5">
         {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-        {item.label}
+        <span className="min-w-0 break-words">{item.label}</span>
       </div>
       {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
-      {item.risk_level && (
-        <Badge className={`text-[10px] mt-1 ${getRiskBadgeClass(item.risk_level)}`}>
-          {item.risk_level.toUpperCase()}
-        </Badge>
-      )}
+      <div className="flex items-center gap-1 mt-1 flex-wrap">
+        <SourcePill source={source} rideTypeName={rideTypeName} />
+        {item.risk_level && (
+          <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
+            {item.risk_level.toUpperCase()}
+          </Badge>
+        )}
+      </div>
     </div>
   </label>
 );
