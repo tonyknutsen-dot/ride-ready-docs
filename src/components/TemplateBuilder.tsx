@@ -174,6 +174,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     );
   }, [suggestions, suggestionSearch]);
 
+  const specificSuggestions = useMemo(
+    () => filteredSuggestions.filter(s => s.ride_category_id === ride.category_id),
+    [filteredSuggestions, ride.category_id]
+  );
+  const generalSuggestions = useMemo(
+    () => filteredSuggestions.filter(s => !s.ride_category_id),
+    [filteredSuggestions]
+  );
+
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
 
   const handleAcceptSuggestions = () => {
