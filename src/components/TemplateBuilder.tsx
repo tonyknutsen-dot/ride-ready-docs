@@ -399,9 +399,36 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-3 md:space-y-4 pb-24 md:pb-0">
+      {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
+          Desktop/tablet keeps the original header layout below. ── */}
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/60">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 shrink-0 -ml-1"
+            onClick={step > 0 ? () => setStep(step - 1) : onCancel}
+            aria-label={step > 0 ? 'Back a step' : 'Cancel'}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[13px] font-semibold leading-tight truncate">
+              {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
+            </h3>
+            <p className="text-[11px] text-muted-foreground truncate leading-tight">
+              {ride.ride_name} · {STEPS[step].label}
+            </p>
+          </div>
+          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-1 shrink-0">
+            {step + 1}/{STEPS.length}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Desktop/tablet header ── */}
+      <div className="hidden md:flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
@@ -414,8 +441,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </div>
       </div>
 
-      {/* Compact mobile stepper — dots + active label */}
-      <div className="flex items-center gap-2">
+      {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
+      <div className="hidden md:flex items-center gap-2">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
