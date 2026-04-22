@@ -160,7 +160,7 @@ export default function CheckLibraryDialog({
       if (!v) { 
         setSel({}); 
         setQ(""); 
-        setTab("all");
+        setTab("specific");
       } 
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
