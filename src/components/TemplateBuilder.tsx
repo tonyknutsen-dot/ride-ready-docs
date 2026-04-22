@@ -835,4 +835,38 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   );
 };
 
+interface SuggestionRowProps {
+  item: SuggestionItem;
+  checked: boolean;
+  onToggle: (v: boolean) => void;
+  getRiskBadgeClass: (level: string | null) => string;
+}
+
+const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass }: SuggestionRowProps) => (
+  <label
+    className={`flex items-start gap-3 rounded-lg p-2 cursor-pointer transition-colors border ${
+      checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
+    }`}
+  >
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => onToggle(e.target.checked)}
+      className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
+    />
+    <div className="min-w-0 flex-1">
+      <div className="text-sm font-medium flex items-start gap-1.5">
+        {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+        {item.label}
+      </div>
+      {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
+      {item.risk_level && (
+        <Badge className={`text-[10px] mt-1 ${getRiskBadgeClass(item.risk_level)}`}>
+          {item.risk_level.toUpperCase()}
+        </Badge>
+      )}
+    </div>
+  </label>
+);
+
 export default TemplateBuilder;
