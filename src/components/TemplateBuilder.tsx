@@ -15,6 +15,7 @@ import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog from './CheckLibraryDialog';
+import { SourcePill, type ItemSource } from './checks/SourcePill';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -115,7 +116,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             id: item.id,
             check_item_text: item.check_item_text,
             is_required: item.is_required ?? true,
-            category: item.category ?? 'general',
+            category: item.category ?? 'existing',
             sort_order: index,
           }))
       );
