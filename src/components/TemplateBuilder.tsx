@@ -420,106 +420,66 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </span>
       </div>
 
-      {/* Step 0: Smart Suggestions — flat layout */}
+      {/* ── Step 1 (index 0): Notices & Setup ── */}
       {step === 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Tick the items relevant to your {ride.ride_categories?.name || 'equipment'}.
+            Name your checklist and set any notices staff should see before starting or finishing this check.
           </p>
 
-          {suggestions.length > 8 && (
-            <div className="relative">
-              <Input
-                placeholder="Search suggestions…"
-                value={suggestionSearch}
-                onChange={(e) => setSuggestionSearch(e.target.value)}
-                className="pl-8 h-9"
-              />
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            </div>
-          )}
+          {/* Checklist name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-sm font-medium">Checklist Name</Label>
+            <Input
+              id="name"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="e.g., Morning Safety Checks"
+              className="h-9"
+            />
+          </div>
 
-          {suggestionsLoading ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">Loading suggestions…</div>
-          ) : filteredSuggestions.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              No suggestions available for this frequency. You can add your own in the next step.
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 pb-2 border-b">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => {
-                    const all: Record<string, boolean> = {};
-                    filteredSuggestions.forEach(s => { all[s.id] = true; });
-                    setSelectedSuggestions(prev => ({ ...prev, ...all }));
-                  }}
-                >
-                  Select all
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-7"
-                  onClick={() => setSelectedSuggestions({})}
-                >
-                  Clear
-                </Button>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {selectedSuggestionCount} selected
-                </span>
-              </div>
+          {/* Notices */}
+          <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+            <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-medium">Before you start</span>
+                  {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
+                  <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2 pb-1">
+                <p className="text-xs text-muted-foreground">Optional notice shown before this check starts (PPE, isolation, ground checks, etc.).</p>
+                <Textarea value={startNoticeText} onChange={(e) => { setStartNoticeText(e.target.value); if (!e.target.value.trim()) setStartNoticeRequired(false); else if (!startNoticeRequired) setStartNoticeRequired(true); }} placeholder="e.g., Ensure PPE is worn. Check ground stability." rows={2} className="text-sm" />
+                {startNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="startNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="startNoticeToggle" checked={startNoticeRequired} onCheckedChange={setStartNoticeRequired} /></div>}
+              </CollapsibleContent>
+            </Collapsible>
+            <Collapsible open={finishNoticeOpen} onOpenChange={setFinishNoticeOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
+                  <CheckSquare className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-medium">Before you finish</span>
+                  {finishNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
+                  <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${finishNoticeOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2 pb-1">
+                <p className="text-xs text-muted-foreground">Optional close-out notice shown before completion.</p>
+                <Textarea value={finishNoticeText} onChange={(e) => { setFinishNoticeText(e.target.value); if (!e.target.value.trim()) setFinishNoticeRequired(false); else if (!finishNoticeRequired) setFinishNoticeRequired(true); }} placeholder="e.g., All covers secure; tools removed; area left safe." rows={2} className="text-sm" />
+                {finishNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="finishNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="finishNoticeToggle" checked={finishNoticeRequired} onCheckedChange={setFinishNoticeRequired} /></div>}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
 
-              <div className="space-y-1">
-                {filteredSuggestions.map((item) => (
-                  <label
-                    key={item.id}
-                    className={`flex items-start gap-3 rounded-lg p-2.5 cursor-pointer transition-colors border ${
-                      selectedSuggestions[item.id]
-                        ? 'border-primary/40 bg-primary/5'
-                        : 'border-transparent hover:bg-muted/40'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={!!selectedSuggestions[item.id]}
-                      onChange={(e) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: e.target.checked }))}
-                      className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium flex items-start gap-1.5">
-                        {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-                        {item.label}
-                      </div>
-                      {item.hint && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
-                      )}
-                      {item.risk_level && (
-                        <Badge className={`text-[10px] mt-1 ${getRiskBadgeClass(item.risk_level)}`}>
-                          {item.risk_level.toUpperCase()}
-                        </Badge>
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </>
-          )}
-
-          <Button onClick={handleAcceptSuggestions} className="w-full gap-2 mt-2">
-            {selectedSuggestionCount > 0 ? (
-              <>Add {selectedSuggestionCount} & Continue <ArrowRight className="h-4 w-4" /></>
-            ) : (
-              <>Skip & Continue <ArrowRight className="h-4 w-4" /></>
-            )}
+          <Button onClick={() => setStep(1)} className="w-full gap-2" disabled={!templateName.trim()}>
+            Continue to Build Checklist <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       )}
 
-      {/* Step 1: Add Custom Items — flat layout */}
+      {/* ── Step 2 (index 1): Build Checklist — suggestions + library + custom ── */}
       {step === 1 && (
         <div className="space-y-4">
           {selectedItems.length > 0 && (
@@ -529,7 +489,29 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </div>
           )}
 
-          {/* Library button */}
+          {/* Add your own — primary input */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Add your own</p>
+            <div className="flex gap-2">
+              <Input
+                value={customItemText}
+                onChange={(e) => setCustomItemText(e.target.value)}
+                placeholder="e.g., Check hydraulic fluid levels"
+                className="bg-background"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomItem();
+                  }
+                }}
+              />
+              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Library — secondary picker */}
           {equipmentGroup && (
             <CheckLibraryDialog
               trigger={
@@ -556,26 +538,107 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             />
           )}
 
-          {/* Custom item input */}
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Add your own</p>
-            <div className="flex gap-2">
-              <Input
-                value={customItemText}
-                onChange={(e) => setCustomItemText(e.target.value)}
-                placeholder="e.g., Check hydraulic fluid levels"
-                className="bg-background"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddCustomItem();
-                  }
-                }}
-              />
-              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0">
-                <Plus className="h-4 w-4" />
-              </Button>
+          {/* Smart suggestions — collapsible inline within Step 2 */}
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="font-medium">Smart suggestions</span>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {suggestionsLoading ? 'Loading…' : `${suggestions.length} for ${ride.ride_categories?.name || 'this equipment'}`}
+              </span>
             </div>
+
+            {suggestions.length > 8 && (
+              <div className="relative">
+                <Input
+                  placeholder="Search suggestions…"
+                  value={suggestionSearch}
+                  onChange={(e) => setSuggestionSearch(e.target.value)}
+                  className="pl-8 h-9 bg-background"
+                />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
+
+            {suggestionsLoading ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">Loading suggestions…</div>
+            ) : filteredSuggestions.length === 0 ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">
+                No suggestions for this frequency. Add your own above.
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 pb-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => {
+                      const all: Record<string, boolean> = {};
+                      filteredSuggestions.forEach(s => { all[s.id] = true; });
+                      setSelectedSuggestions(prev => ({ ...prev, ...all }));
+                    }}
+                  >
+                    Select all
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setSelectedSuggestions({})}
+                  >
+                    Clear
+                  </Button>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {selectedSuggestionCount} selected
+                  </span>
+                </div>
+
+                <div className="space-y-1 max-h-72 overflow-y-auto">
+                  {filteredSuggestions.map((item) => (
+                    <label
+                      key={item.id}
+                      className={`flex items-start gap-3 rounded-lg p-2 cursor-pointer transition-colors border ${
+                        selectedSuggestions[item.id]
+                          ? 'border-primary/40 bg-primary/5'
+                          : 'border-transparent hover:bg-background'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!selectedSuggestions[item.id]}
+                        onChange={(e) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: e.target.checked }))}
+                        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium flex items-start gap-1.5">
+                          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+                          {item.label}
+                        </div>
+                        {item.hint && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
+                        )}
+                        {item.risk_level && (
+                          <Badge className={`text-[10px] mt-1 ${getRiskBadgeClass(item.risk_level)}`}>
+                            {item.risk_level.toUpperCase()}
+                          </Badge>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleAcceptSuggestions}
+                  disabled={selectedSuggestionCount === 0}
+                  className="w-full gap-2 mt-1"
+                >
+                  Add {selectedSuggestionCount > 0 ? selectedSuggestionCount : ''} suggestion{selectedSuggestionCount === 1 ? '' : 's'} to checklist
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Item list preview */}
@@ -602,56 +665,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </div>
       )}
 
-      {/* Step 2: Review & Save */}
+      {/* ── Step 3 (index 2): Review, reorder, save ── */}
       {step === 2 && (
         <div className="space-y-3">
-          {/* Checklist name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-sm font-medium">Checklist Name</Label>
-            <Input
-              id="name"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="e.g., Morning Safety Checks"
-              className="h-9"
-            />
-          </div>
-
-          {/* Notices — high in settings so they are not missed */}
-          <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
-            <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Before you start</span>
-                  {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
-                  <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-2 pb-1">
-                <p className="text-xs text-muted-foreground">Optional notice shown before this check starts.</p>
-                <Textarea value={startNoticeText} onChange={(e) => { setStartNoticeText(e.target.value); if (!e.target.value.trim()) setStartNoticeRequired(false); else if (!startNoticeRequired) setStartNoticeRequired(true); }} placeholder="e.g., Ensure PPE is worn. Check ground stability." rows={2} className="text-sm" />
-                {startNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="startNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="startNoticeToggle" checked={startNoticeRequired} onCheckedChange={setStartNoticeRequired} /></div>}
-              </CollapsibleContent>
-            </Collapsible>
-            <Collapsible open={finishNoticeOpen} onOpenChange={setFinishNoticeOpen}>
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-1 text-left">
-                  <CheckSquare className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-medium">Before you finish</span>
-                  {finishNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
-                  <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${finishNoticeOpen ? 'rotate-180' : ''}`} />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-2 pb-1">
-                <p className="text-xs text-muted-foreground">Optional close-out notice shown before completion.</p>
-                <Textarea value={finishNoticeText} onChange={(e) => { setFinishNoticeText(e.target.value); if (!e.target.value.trim()) setFinishNoticeRequired(false); else if (!finishNoticeRequired) setFinishNoticeRequired(true); }} placeholder="e.g., All covers secure; tools removed; area left safe." rows={2} className="text-sm" />
-                {finishNoticeText.trim() && <div className="flex items-center justify-between gap-2"><Label htmlFor="finishNoticeToggle" className="text-xs cursor-pointer">Require acknowledgement</Label><Switch id="finishNoticeToggle" checked={finishNoticeRequired} onCheckedChange={setFinishNoticeRequired} /></div>}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          {/* Final item list */}
+          {/* Final item list with reorder */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold">Check Items ({selectedItems.length})</span>
@@ -731,7 +748,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             )}
           </div>
 
-          {/* Add items — compact inline */}
+          {/* Quick add — keeps Step 3 useful for last-minute additions while editing */}
           <div className="flex gap-2 items-center">
             <Input
               value={customItemText}
@@ -771,44 +788,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               />
             )}
           </div>
-
-          {/* Start Notice moved to the settings area above */}
-          {false && <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
-            <CollapsibleTrigger asChild>
-              <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <span className="font-medium">Start Notice</span>
-                {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
-                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-1 pb-2">
-              <p className="text-xs text-muted-foreground">Optional notice shown to staff before this check starts.</p>
-              <Textarea
-                value={startNoticeText}
-                onChange={(e) => {
-                  setStartNoticeText(e.target.value);
-                  if (!e.target.value.trim()) setStartNoticeRequired(false);
-                  else if (!startNoticeRequired) setStartNoticeRequired(true);
-                }}
-                placeholder="e.g., Ensure PPE is worn. Check ground stability."
-                rows={2}
-                className="text-sm"
-              />
-              {startNoticeText.trim() && (
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="startNoticeToggle" className="text-xs cursor-pointer">
-                    Require acknowledgement
-                  </Label>
-                  <Switch
-                    id="startNoticeToggle"
-                    checked={startNoticeRequired}
-                    onCheckedChange={setStartNoticeRequired}
-                  />
-                </div>
-              )}
-            </CollapsibleContent>
-          </Collapsible>}
 
           {/* Save — single action */}
           <Button
