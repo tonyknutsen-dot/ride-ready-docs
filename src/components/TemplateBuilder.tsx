@@ -54,9 +54,9 @@ interface SuggestionItem {
 }
 
 const STEPS = [
-  { label: 'Suggestions', icon: Sparkles },
-  { label: 'Custom', icon: Plus },
-  { label: 'Review', icon: ListChecks },
+  { label: 'Notices & Setup', icon: AlertTriangle },
+  { label: 'Build Checklist', icon: Plus },
+  { label: 'Review & Save', icon: ListChecks },
 ];
 
 /** Map ride category_group to the check library equipment_group */
