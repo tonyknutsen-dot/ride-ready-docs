@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon } from 'lucide-react';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon, CheckSquare } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
@@ -207,16 +207,27 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
       )}
 
 
-      {/* Frequency selector — check-type cards with strong active state */}
-      <div className="flex items-center justify-between gap-2 px-1">
-        <div /> {/* spacer */}
+      {/* Hub header — restores the management-page treatment used across Equipment tabs */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
+            <CheckSquare className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight">Safety Checks</h2>
+            <p className="text-xs text-muted-foreground leading-tight truncate">
+              Daily, weekly, monthly, yearly checks plus annual & NDT scheduling
+            </p>
+          </div>
+        </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowGuide(true)}
-          className="text-muted-foreground hover:text-foreground h-7 px-2 flex-shrink-0"
+          className="text-muted-foreground hover:text-foreground h-8 px-2 shrink-0"
+          aria-label="Help"
         >
-          <HelpCircle className="h-3.5 w-3.5" />
+          <HelpCircle className="h-4 w-4" />
         </Button>
       </div>
 
@@ -239,7 +250,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                   className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all min-w-[64px] font-medium text-xs ${
                     isActive
                       ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                      : 'bg-card/60 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      : 'bg-muted border-border text-foreground hover:border-primary/40 hover:bg-muted/70'
                   }`}
                 >
                   <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.8} />
@@ -268,7 +279,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                       className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all min-w-[64px] font-medium text-xs ${
                         isActive
                           ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                          : 'bg-card/60 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                          : 'bg-muted border-border text-foreground hover:border-primary/40 hover:bg-muted/70'
                       }`}
                     >
                       <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.8} />
