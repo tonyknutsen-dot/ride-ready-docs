@@ -165,15 +165,16 @@ export default function CheckLibraryDialog({
       } 
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="pb-0">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <CheckSquare className="h-5 w-5 flex-shrink-0" />
-            {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Items
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto p-3 md:p-6">
+        <DialogHeader className="pb-1 md:pb-2">
+          <DialogTitle className="flex items-center gap-2 text-sm md:text-base">
+            <CheckSquare className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+            <span className="md:hidden">{frequency.charAt(0).toUpperCase() + frequency.slice(1)} checks</span>
+            <span className="hidden md:inline">{frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Items</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
           {/* Search */}
           <div className="relative">
             <Input
@@ -185,17 +186,17 @@ export default function CheckLibraryDialog({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           </div>
 
-          {/* Helper line */}
-          <p className="text-xs text-muted-foreground">Select items to add to your checklist</p>
+          {/* Helper line — desktop only (mobile uses tabs as primary signal) */}
+          <p className="hidden md:block text-xs text-muted-foreground">Select items to add to your checklist</p>
 
-          {/* Segmented tabs */}
+          {/* Segmented tabs — tighter on mobile */}
           {!loading && rows.length > 0 && (
             <div className="flex gap-1 p-0.5 rounded-lg bg-muted/50">
               {tabs.map(t => (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-colors ${
+                  className={`flex-1 text-[11px] md:text-xs font-medium py-1 md:py-1.5 px-1.5 md:px-2 rounded-md transition-colors ${
                     tab === t.key
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -207,8 +208,8 @@ export default function CheckLibraryDialog({
             </div>
           )}
 
-          {/* Item list */}
-          <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+          {/* Item list — tighter rows on mobile, inline source pill */}
+          <div className="space-y-1.5 md:space-y-2 max-h-[55vh] md:max-h-[50vh] overflow-y-auto pb-14 md:pb-0">
             {loading ? (
               <div className="text-sm text-muted-foreground py-8 text-center">Loading check items…</div>
             ) : filtered.length === 0 ? (
@@ -226,9 +227,9 @@ export default function CheckLibraryDialog({
               </div>
             ) : (
               filtered.map((r) => (
-                <label 
-                  key={r.id} 
-                  className="flex items-start gap-3 border rounded-xl p-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                <label
+                  key={r.id}
+                  className="flex items-start gap-2.5 md:gap-3 border rounded-lg md:rounded-xl p-2 md:p-3 hover:bg-muted/30 transition-colors cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -237,36 +238,44 @@ export default function CheckLibraryDialog({
                     className="mt-1 h-4 w-4 cursor-pointer"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium break-any flex items-start gap-2">
-                      {r.risk_level === 'high' && <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />}
-                      <span>{r.label}</span>
+                    <div className="font-medium text-sm break-any flex items-start gap-1.5">
+                      {r.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-red-600 flex-shrink-0 mt-0.5" />}
+                      <span className="min-w-0 flex-1">{r.label}</span>
+                      <span className="ml-auto shrink-0">
+                        <SourcePill
+                          source={r.ride_category_id ? "specific" : "general"}
+                          rideTypeName={categoryGroupLabel}
+                        />
+                      </span>
                     </div>
                     {r.hint && (
-                      <div className="text-xs text-muted-foreground mt-1 break-any">{r.hint}</div>
+                      <div className="text-[11px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 break-any">{r.hint}</div>
                     )}
-                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                      <SourcePill
-                        source={r.ride_category_id ? "specific" : "general"}
-                        rideTypeName={categoryGroupLabel}
-                      />
-                      {r.risk_level && (
+                    {/* Risk chip: full chip on desktop, HIGH only on mobile */}
+                    {r.risk_level && (
+                      <div className="mt-1.5 hidden md:flex items-center gap-1.5 flex-wrap">
                         <Badge className={`text-xs ${getRiskBadgeColor(r.risk_level)}`}>
                           {r.risk_level.toUpperCase()} RISK
                         </Badge>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                    {r.risk_level === 'high' && (
+                      <div className="mt-1 flex md:hidden">
+                        <Badge className={`text-[10px] ${getRiskBadgeColor(r.risk_level)}`}>HIGH</Badge>
+                      </div>
+                    )}
                   </div>
                 </label>
               ))
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
-            <div className="text-sm text-muted-foreground">
+          {/* Footer — sticky compact bar on mobile, inline on desktop */}
+          <div className="fixed md:static bottom-0 left-0 right-0 md:bottom-auto z-10 bg-background border-t md:border-t-0 px-3 py-2 md:px-0 md:py-0 md:pt-3 flex flex-wrap items-center justify-between gap-2 md:border-t md:border-border">
+            <div className="text-xs md:text-sm text-muted-foreground">
               {selectedLabels.length ? (
                 <span className="font-medium text-foreground">
-                  {selectedLabels.length} item{selectedLabels.length > 1 ? 's' : ''} selected
+                  {selectedLabels.length} selected
                 </span>
               ) : (
                 "Choose items to add"
@@ -275,9 +284,10 @@ export default function CheckLibraryDialog({
             <Button
               disabled={selectedLabels.length === 0}
               onClick={handleAddSelected}
-              className="gap-2"
+              size="sm"
+              className="gap-1.5 h-9"
             >
-              <Plus className="w-4 h-4" /> Add {selectedLabels.length > 0 && `(${selectedLabels.length})`}
+              <Plus className="w-4 h-4" /> Add{selectedLabels.length > 0 && ` (${selectedLabels.length})`}
             </Button>
           </div>
         </div>

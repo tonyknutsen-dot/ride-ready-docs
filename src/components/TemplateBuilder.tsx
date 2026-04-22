@@ -493,69 +493,22 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       )}
 
       {/* ── Step 2 (index 1): Build Checklist — suggestions + library + custom ── */}
+      {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
+      {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {selectedItems.length > 0 && (
-            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 md:p-2.5 rounded-lg bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium">{selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} added so far</span>
             </div>
           )}
 
-          {/* Add your own — primary input */}
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Add your own</p>
-            <div className="flex gap-2">
-              <Input
-                value={customItemText}
-                onChange={(e) => setCustomItemText(e.target.value)}
-                placeholder="e.g., Check hydraulic fluid levels"
-                className="bg-background"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddCustomItem();
-                  }
-                }}
-              />
-              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Library — secondary picker */}
-          {equipmentGroup && (
-            <CheckLibraryDialog
-              trigger={
-                <Button className="w-full font-medium" variant="outline">
-                  <Library className="w-4 h-4 mr-2" />
-                  Browse Check Library
-                </Button>
-              }
-              frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
-              rideCategoryId={ride.category_id}
-              equipmentGroup={equipmentGroup}
-              categoryGroupLabel={ride.ride_categories?.category_group}
-              onAdd={async (labels: string[]) => {
-                const newItems: BuilderItem[] = labels.map((label, i) => ({
-                  check_item_text: label,
-                  is_required: true,
-                  category: 'library',
-                  sort_order: selectedItems.length + i,
-                  isNew: true,
-                }));
-                setSelectedItems(prev => [...prev, ...newItems]);
-                toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
-              }}
-            />
-          )}
-
-          {/* Smart suggestions — collapsible inline within Step 2 */}
-          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+          {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
+          <div className="space-y-2 md:rounded-lg md:border md:border-border md:bg-muted/30 md:p-3">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="font-medium">Smart suggestions</span>
+              <span className="font-semibold md:font-medium">Smart suggestions</span>
               <span className="text-xs text-muted-foreground ml-auto">
                 {suggestionsLoading ? 'Loading…' : `${suggestions.length} for ${ride.ride_categories?.name || 'this equipment'}`}
               </span>
@@ -577,7 +530,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               <div className="py-4 text-center text-xs text-muted-foreground">Loading suggestions…</div>
             ) : filteredSuggestions.length === 0 ? (
               <div className="py-4 text-center text-xs text-muted-foreground">
-                No suggestions for this frequency. Add your own above.
+                No suggestions for this frequency. Use <span className="font-medium text-foreground">Browse Check Library</span> below or add your own.
               </div>
             ) : (
               <>
@@ -585,7 +538,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs h-7"
+                    className="text-xs h-7 px-2"
                     onClick={() => {
                       const all: Record<string, boolean> = {};
                       filteredSuggestions.forEach(s => { all[s.id] = true; });
@@ -597,7 +550,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs h-7"
+                    className="text-xs h-7 px-2"
                     onClick={() => setSelectedSuggestions({})}
                   >
                     Clear
@@ -607,7 +560,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   </span>
                 </div>
 
-                <div className="space-y-3 max-h-72 overflow-y-auto">
+                <div className="space-y-2.5 md:space-y-3 max-h-72 overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
                     <div className="rounded-md border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-foreground">
@@ -677,6 +630,68 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               </>
             )}
           </div>
+
+          {/* ── SECONDARY: Browse Check Library ── */}
+          {equipmentGroup && (
+            <CheckLibraryDialog
+              trigger={
+                <Button className="w-full font-medium h-9 md:h-10 text-sm" variant="outline">
+                  <Library className="w-4 h-4 mr-2" />
+                  Browse Check Library
+                </Button>
+              }
+              frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
+              rideCategoryId={ride.category_id}
+              equipmentGroup={equipmentGroup}
+              categoryGroupLabel={ride.ride_categories?.category_group}
+              onAdd={async (labels: string[]) => {
+                const newItems: BuilderItem[] = labels.map((label, i) => ({
+                  check_item_text: label,
+                  is_required: true,
+                  category: 'library',
+                  sort_order: selectedItems.length + i,
+                  isNew: true,
+                }));
+                setSelectedItems(prev => [...prev, ...newItems]);
+                toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
+              }}
+            />
+          )}
+
+          {/* ── TERTIARY: Add your own — collapsed by default on mobile, open on desktop ── */}
+          <Collapsible defaultOpen={typeof window !== 'undefined' && window.innerWidth >= 768}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wide py-1.5 hover:text-foreground transition-colors"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  Add your own
+                </span>
+                <ChevronDown className="h-3.5 w-3.5 transition-transform data-[state=open]:rotate-180" />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-1.5">
+              <div className="flex gap-2">
+                <Input
+                  value={customItemText}
+                  onChange={(e) => setCustomItemText(e.target.value)}
+                  placeholder="e.g., Check hydraulic fluid levels"
+                  className="bg-background h-9"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomItem();
+                    }
+                  }}
+                />
+                <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0 h-9 w-9">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Item list preview */}
           {selectedItems.length > 0 && (
@@ -856,34 +871,52 @@ interface SuggestionRowProps {
   rideTypeName?: string;
 }
 
-const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => (
-  <label
-    className={`flex items-start gap-3 rounded-lg p-2 cursor-pointer transition-colors border ${
-      checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
-    }`}
-  >
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(e) => onToggle(e.target.checked)}
-      className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-    />
-    <div className="min-w-0 flex-1">
-      <div className="text-sm font-medium flex items-start gap-1.5">
-        {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-        <span className="min-w-0 break-words">{item.label}</span>
-      </div>
-      {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
-      <div className="flex items-center gap-1 mt-1 flex-wrap">
-        <SourcePill source={source} rideTypeName={rideTypeName} />
+const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => {
+  const riskDotClass =
+    item.risk_level === 'high' ? 'bg-destructive'
+    : item.risk_level === 'med' ? 'bg-yellow-500'
+    : item.risk_level === 'low' ? 'bg-green-500'
+    : '';
+  return (
+    <label
+      className={`flex items-start gap-2.5 md:gap-3 rounded-lg p-1.5 md:p-2 cursor-pointer transition-colors border ${
+        checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onToggle(e.target.checked)}
+        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium flex items-start gap-1.5">
+          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+          {item.risk_level && item.risk_level !== 'high' && (
+            <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
+          )}
+          <span className="min-w-0 break-words">{item.label}</span>
+          <span className="ml-auto shrink-0">
+            <SourcePill source={source} rideTypeName={rideTypeName} />
+          </span>
+        </div>
+        {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
+        {/* Risk badge: full chip on desktop, only HIGH chip on mobile */}
         {item.risk_level && (
-          <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
-            {item.risk_level.toUpperCase()}
-          </Badge>
+          <div className="mt-1 hidden md:flex items-center gap-1 flex-wrap">
+            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
+              {item.risk_level.toUpperCase()}
+            </Badge>
+          </div>
+        )}
+        {item.risk_level === 'high' && (
+          <div className="mt-1 flex md:hidden">
+            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>HIGH</Badge>
+          </div>
         )}
       </div>
-    </div>
-  </label>
-);
+    </label>
+  );
+};
 
 export default TemplateBuilder;
