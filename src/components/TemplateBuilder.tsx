@@ -122,9 +122,9 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     }
   }, [template]);
 
-  // Load suggestions when on step 0
+  // Load suggestions when entering the Build step
   useEffect(() => {
-    if (step !== 0) return;
+    if (step !== 1) return;
     loadSuggestions();
   }, [step, frequency, ride.category_id]);
 
@@ -178,25 +178,20 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
   const handleAcceptSuggestions = () => {
     const labels = suggestions.filter(s => selectedSuggestions[s.id]).map(s => s.label);
-    if (labels.length > 0) {
-      const newItems: BuilderItem[] = labels.map((label, i) => ({
-        check_item_text: label,
-        is_required: true,
-        category: 'library',
-        sort_order: selectedItems.length + i,
-        isNew: true,
-      }));
-      setSelectedItems(prev => [...prev, ...newItems]);
-      toast({
-        title: `${labels.length} item${labels.length > 1 ? 's' : ''} added`,
-        description: 'Suggested items added to your checklist',
-      });
-    }
-    setStep(1);
-  };
-
-  const handleSkipSuggestions = () => {
-    setStep(1);
+    if (labels.length === 0) return;
+    const newItems: BuilderItem[] = labels.map((label, i) => ({
+      check_item_text: label,
+      is_required: true,
+      category: 'library',
+      sort_order: selectedItems.length + i,
+      isNew: true,
+    }));
+    setSelectedItems(prev => [...prev, ...newItems]);
+    setSelectedSuggestions({});
+    toast({
+      title: `${labels.length} item${labels.length > 1 ? 's' : ''} added`,
+      description: 'Suggested items added to your checklist',
+    });
   };
 
   // Custom item handlers
