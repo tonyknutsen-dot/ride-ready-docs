@@ -75,6 +75,9 @@ export default function CheckLibraryDialog({
         const specific = (data || []).filter((r: CheckLibraryItem) => r.ride_category_id === cat);
         const generic = (data || []).filter((r: CheckLibraryItem) => !r.ride_category_id);
         setRows([...specific, ...generic]);
+
+        // Default to ride-specific tab when items exist; otherwise show General
+        setTab(specific.length > 0 ? "specific" : "general");
       } catch (error: any) {
         console.error("Error loading library items:", error);
         toast({
