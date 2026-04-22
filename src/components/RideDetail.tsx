@@ -314,7 +314,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       <ChecksOnboardingModal forceOpen={showChecksGuide} onClose={() => setShowChecksGuide(false)} />
 
       {/* Sticky Header — compact */}
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      <div data-builder-hide="mobile" className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 shrink-0 active:scale-95">
             <ArrowLeft className="h-5 w-5" />
@@ -354,7 +354,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           const isMoreActive = moreTabs.some(t => t.value === activeTab);
           const activeMoreLabel = moreTabs.find(t => t.value === activeTab)?.label;
           return (
-            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            <div data-builder-hide="mobile" className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
               <TabsList className={`w-full h-auto p-0.5 bg-transparent rounded-none grid ${primaryTabs.length + 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 {primaryTabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
