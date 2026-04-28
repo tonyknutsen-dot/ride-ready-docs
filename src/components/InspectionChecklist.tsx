@@ -888,33 +888,18 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         throw new Error('Failed to submit check');
       }
 
-      // ✅ Primary save succeeded — release the UI immediately so the spinner can never hang on side-effects
-      setSubmitting(false);
-
-      // Reset form (safe to do now)
-      setItemResults({});
-      setNotes({});
-      setInspectorName('');
-      setInspectorNotes('');
-      setLocation('');
-      setCheckStarted(false);
-      setCheckStartedAt(null);
-      setShowMaintenanceForItem(null);
-      setDeclarationChecked(false);
-      setStartNoticeAcknowledged(false);
-      setStartNoticeAcknowledgedAt(null);
-      setFinishNoticeAcknowledged(false);
-      setFinishNoticeAcknowledgedAt(null);
-      setItemDefects({});
-      setItemDefectRaised({});
-
-      // Make the primary check row visible immediately; generated record surfaces follow below.
+      // Keep the user on this screen until the immutable check record exists.
       await invalidateCheckRecordQueries(queryClient);
-      await loadRecentChecks().catch(() => {});
 
-      // ── SIDE-EFFECTS (non-blocking) ──────────────────────────────────
-      // Each side-effect runs in its own try/catch. A failure here will surface
-      // as a non-blocking toast but will NEVER prevent the save from completing.
+      if (isOffline || !checkId) {
+        toast({
+          title: 'Saved offline',
+          description: 'This check is waiting to sync. The check record will appear once the device is online.',
+        });
+        setSubmitting(false);
+        return;
+      }
+
       if (!isOffline && checkId) {
         const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
         const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
@@ -930,76 +915,68 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           is_required: item.is_required ?? false,
         }));
 
-        // Fire-and-forget: defect fetch + inspection record + cache invalidation
-        (async () => {
-          try {
-            const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
-            if (linkedDefectIds.length > 0) {
-              await supabase
-                .from('defects')
-                .update({ check_id: checkId } as any)
-                .in('id', linkedDefectIds)
-                .is('check_id', null);
-            }
+        const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
+        if (linkedDefectIds.length > 0) {
+          await supabase
+            .from('defects')
+            .update({ check_id: checkId } as any)
+            .in('id', linkedDefectIds)
+            .is('check_id', null);
+        }
 
-            const { data: linkedDefects } = await supabase
-              .from('defects')
-              .select('id, severity')
-              .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
-            const defectIds = (linkedDefects || []).map(d => d.id);
+        const { data: linkedDefects } = await supabase
+          .from('defects')
+          .select('id, severity')
+          .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
+        const defectIds = (linkedDefects || []).map(d => d.id);
 
-            await createInspectionRecord({
-              checkId,
-              rideId: ride.id,
-              userId: effectiveUserId!,
-              inspectorName: inspectorName.trim() || 'Inspector',
-              checkDate: new Date().toISOString().split('T')[0],
-              checkFrequency: frequency,
-              templateId: activeTemplate.id,
-              templateName: activeTemplate.template_name,
-              overallResult,
-              itemResults: itemResultSnapshots,
-              notes: inspectorNotes.trim() || null,
-              weatherConditions: null,
-              location: location.trim() || null,
-              environmentNotes: null,
-              complianceOfficer: null,
-              signatureData: null,
-              defectIds,
-            });
+        const inspectionRecordId = await createInspectionRecord({
+          checkId,
+          rideId: ride.id,
+          userId: effectiveUserId!,
+          inspectorName: inspectorName.trim() || 'Inspector',
+          checkDate: new Date().toISOString().split('T')[0],
+          checkFrequency: frequency,
+          templateId: activeTemplate.id,
+          templateName: activeTemplate.template_name,
+          overallResult,
+          itemResults: itemResultSnapshots,
+          notes: inspectorNotes.trim() || null,
+          weatherConditions: null,
+          location: location.trim() || null,
+          environmentNotes: null,
+          complianceOfficer: null,
+          signatureData: null,
+          defectIds,
+        });
 
-            invalidateCheckRecordQueries(queryClient);
-            loadRecentChecks().catch(() => {});
+        if (!inspectionRecordId) {
+          throw new Error('The check saved, but the check record could not be created yet.');
+        }
 
-            const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
-            const totalDefectCount = (linkedDefects || []).length;
-            if (failedCount > 0) {
-              const defectSummary = totalDefectCount > 0
-                ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
-                : '';
-              toast({
-                title: '⚠️ Check completed with failures',
-                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
-                variant: criticalDefectCount > 0 ? 'destructive' : 'default',
-              });
-            } else {
-              toast({
-                title: 'Check completed ✓',
-                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`,
-              });
-            }
-          } catch (sideEffectError) {
-            console.error('Post-save side-effect failed (check is still saved):', sideEffectError);
-            toast({
-              title: 'Check saved — some follow-up steps failed',
-              description: 'The check was saved successfully but the inspection record or summary could not be generated. You can regenerate from the Checks Log.',
-              variant: 'default',
-            });
-          }
-        })();
+        invalidateCheckRecordQueries(queryClient);
+        await loadRecentChecks().catch(() => {});
+
+        const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
+        const totalDefectCount = (linkedDefects || []).length;
+        if (failedCount > 0) {
+          const defectSummary = totalDefectCount > 0
+            ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
+            : '';
+          toast({
+            title: '⚠️ Check completed with failures',
+            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
+            variant: criticalDefectCount > 0 ? 'destructive' : 'default',
+          });
+        } else {
+          toast({
+            title: 'Check completed ✓',
+            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check record is ready`,
+          });
+        }
       }
 
-      // Notify parent after the primary record cache has been invalidated.
+      setSubmitting(false);
       onChecklistSaved?.();
     } catch (error) {
       // Rollback optimistic update
