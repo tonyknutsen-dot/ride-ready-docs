@@ -418,15 +418,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-2 md:space-y-3 pb-24 md:pb-0">
+    <div className="space-y-1.5 md:space-y-2 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 -ml-1"
+            className="h-7 w-7 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
@@ -440,7 +440,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               {ride.ride_name} · {STEPS[step].label}
             </p>
           </div>
-          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-1 shrink-0">
+          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-1.5 py-0.5 shrink-0">
             {step + 1}/{STEPS.length}
           </span>
         </div>
@@ -448,12 +448,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       {/* ── Desktop/tablet header ── */}
       <div className="hidden md:flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold truncate">
+            <h3 className="text-sm font-semibold leading-tight truncate">
             {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
           </h3>
           <p className="text-xs text-muted-foreground truncate">{ride.ride_name}</p>
@@ -470,11 +470,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           const canNavigate = isEditing ? i !== step : isDone;
           return (
             <div key={i} className="flex items-center gap-2">
-              {i > 0 && <div className={`h-px w-3 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />}
+              {i > 0 && <div className={`h-px w-2.5 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />}
               <button
                 onClick={() => { if (canNavigate) setStep(i); }}
                 disabled={!canNavigate}
-                className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
                   isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 } ${canNavigate ? 'cursor-pointer' : ''}`}
               >
@@ -483,10 +483,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </div>
           );
         })}
-        <span className="text-xs font-medium text-foreground ml-1">
+        <span className="text-[11px] font-medium text-foreground ml-1">
           {STEPS[step].label}
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[11px] text-muted-foreground">
           — Step {step + 1} of {STEPS.length}
         </span>
       </div>
@@ -556,16 +556,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
       {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-2 md:space-y-3">
+        <div className="space-y-1.5 md:space-y-2">
           {selectedItems.length > 0 && (
-            <div className="flex items-center gap-2 px-2.5 py-1.5 md:p-2.5 rounded-lg bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium">{selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} added so far</span>
             </div>
           )}
 
           {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
-          <div className="space-y-2 md:rounded-lg md:border md:border-border md:bg-muted/30 md:p-2.5">
+           <div className="space-y-1.5 md:rounded-lg md:border md:border-border md:bg-card md:p-2">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-semibold md:font-medium">Smart suggestions</span>
@@ -630,7 +630,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   onChange={(next) => setSuggestionTab(next as SuggestionTab)}
                 />
 
-                <div className="space-y-2 max-h-72 overflow-y-auto">
+                <div className="space-y-1.5 max-h-[19rem] overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
                     <div className="rounded-md border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-foreground">
@@ -648,8 +648,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                     return (
                       <div key={section.key} className="space-y-1">
                         <div className="flex items-center gap-1.5 px-1">
-                          <SectionIcon className={cn('h-3 w-3', section.key === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
-                          <span className={cn('text-[10px] font-semibold uppercase tracking-wide', section.key === 'specific' ? 'text-primary' : 'text-muted-foreground')}>
+                          <SectionIcon className={cn('h-3 w-3', section.key === 'specific' ? 'text-primary' : 'text-info')} />
+                          <span className={cn('text-[10px] font-semibold uppercase tracking-wide', section.key === 'specific' ? 'text-primary' : 'text-info')}>
                             {section.label}
                           </span>
                           <Badge variant={section.key === 'specific' ? 'secondary' : 'outline'} className="text-[10px] h-4 px-1.5">{section.count}</Badge>
@@ -676,7 +676,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   variant="secondary"
                   onClick={handleAcceptSuggestions}
                   disabled={selectedSuggestionCount === 0}
-                  className="w-full gap-2 mt-1"
+                  className="w-full gap-2 mt-0.5 h-9"
                 >
                   Add {selectedSuggestionCount > 0 ? selectedSuggestionCount : ''} suggestion{selectedSuggestionCount === 1 ? '' : 's'} to checklist
                 </Button>

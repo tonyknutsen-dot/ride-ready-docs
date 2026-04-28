@@ -17,7 +17,7 @@ const META: Record<ItemSource, { label: string; icon: React.ComponentType<{ clas
   general: {
     label: "General",
     icon: Library,
-    cls: "bg-secondary text-foreground border-border",
+    cls: "bg-info/10 text-info border-info/40",
   },
   custom: {
     label: "Custom",

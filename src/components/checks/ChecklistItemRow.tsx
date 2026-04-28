@@ -52,6 +52,24 @@ const getResultMeta = (result?: ChecklistRowResult) => {
   }
 };
 
+const getSourceRowClass = (source?: ItemSource) => {
+  switch (source) {
+    case 'specific': return 'border-primary/35 bg-primary/5';
+    case 'general':
+    case 'library': return 'border-info/30 bg-info/5';
+    case 'custom': return 'border-warning/35 bg-warning/5';
+    default: return 'border-border bg-card';
+  }
+};
+
+const getSourceIconClass = (source?: ItemSource, riskLevel?: string | null) => {
+  if (riskLevel === 'high') return 'text-destructive';
+  if (source === 'specific') return 'text-primary';
+  if (source === 'general' || source === 'library') return 'text-info';
+  if (source === 'custom') return 'text-warning';
+  return 'text-muted-foreground';
+};
+
 const getRiskBadgeClass = (level?: string | null) => {
   switch (level) {
     case 'high': return 'bg-destructive/10 text-destructive border-destructive/30';
@@ -128,7 +146,7 @@ export function ChecklistItemRow({
   const SourceIcon = getSourceIcon(source, riskLevel);
   const StatusIcon = status.icon;
   const selectable = !!onSelectedChange;
-  const highlighted = selected || source === 'specific';
+  const sourceRowClass = getSourceRowClass(source);
   const Root = selectable ? 'label' : 'div';
 
   return (
@@ -136,7 +154,7 @@ export function ChecklistItemRow({
       data-item-id={dataItemId}
       className={cn(
         'block rounded-lg border shadow-sm transition-colors',
-        result ? status.row : highlighted ? 'border-primary/35 bg-primary/5' : 'border-border bg-card',
+        result ? status.row : sourceRowClass,
         selectable && !disabled ? 'cursor-pointer hover:border-primary/45 hover:bg-primary/5' : 'hover:bg-card-hover',
         disabled && 'opacity-60',
         compact ? 'p-2' : 'p-2.5 md:p-3',
@@ -160,7 +178,7 @@ export function ChecklistItemRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', riskLevel === 'high' ? 'text-destructive' : source === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
+            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', getSourceIconClass(source, riskLevel))} />
             <p className="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-foreground">
               {text}{required && <span className="ml-1 text-destructive">*</span>}
             </p>
