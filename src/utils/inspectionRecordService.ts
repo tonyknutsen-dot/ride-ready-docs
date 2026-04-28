@@ -281,7 +281,8 @@ export async function fetchInspectionRecordsPaginated(
     .from('inspection_records')
     .select('*', { count: 'exact' })
     .eq('ride_id', rideId)
-    .order('completed_at', { ascending: false });
+    .order('completed_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
   if (options.frequency) {
     if (options.frequency === 'daily') {
@@ -325,7 +326,7 @@ export async function fetchInspectionRecordsPaginated(
 
   let checksQuery = supabase
     .from('checks')
-    .select('*')
+    .select('*, inspection_records!left(id)')
     .eq('ride_id', rideId)
     .order('created_at', { ascending: false });
 
@@ -339,8 +340,7 @@ export async function fetchInspectionRecordsPaginated(
 
   const { data: checksData, error: checksError } = await checksQuery.limit(limit);
   if (!checksError && checksData?.length) {
-    const recordedCheckIds = new Set(records.map(r => r.check_id));
-    const missingRecordChecks = checksData.filter((check: any) => !recordedCheckIds.has(check.id));
+    const missingRecordChecks = checksData.filter((check: any) => !check.inspection_records?.length);
     const fallbackRecords = missingRecordChecks.map((check: any) => ({
         id: `check-${check.id}`,
         check_id: check.id,
@@ -374,7 +374,7 @@ export async function fetchInspectionRecordsPaginated(
         source_check_only: true,
       } as InspectionRecord));
 
-    totalCount += fallbackRecords.length;
+    totalCount += Math.max(0, fallbackRecords.length - records.filter(r => fallbackRecords.some(f => f.check_id === r.check_id)).length);
     records = [
       ...fallbackRecords,
       ...records,
