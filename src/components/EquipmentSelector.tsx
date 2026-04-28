@@ -10,6 +10,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
 import { format, isBefore, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -179,6 +180,8 @@ const EquipmentSelector = ({
 
   const loadAll = async () => {
     try {
+      markCheckDebug('equipment query started');
+      setCheckDebugValue('equipment query status', 'started');
       let query = supabase
         .from('rides')
         .select('*, ride_categories(name, description, category_group)')
@@ -195,6 +198,8 @@ const EquipmentSelector = ({
         return r.ride_categories?.category_group === categoryGroupFilter;
       });
       setRides(typedRides);
+      setCheckDebugValue('equipment query status', `finished: ${typedRides.length} equipment`);
+      markCheckDebug('equipment query finished');
 
       if (typedRides.length) {
         const loaders: Promise<void>[] = [
@@ -214,6 +219,8 @@ const EquipmentSelector = ({
       }
     } catch (e) {
       console.error('Error loading rides:', e);
+      setCheckDebugValue('equipment query status', 'error');
+      setCheckDebugValue('any blocking error text', e instanceof Error ? e.message : 'equipment query failed');
     } finally {
       setLoading(false);
     }
@@ -563,6 +570,10 @@ const EquipmentSelector = ({
         </div>
       </div>
     );
+  }
+
+  if (checksMode && rides.length > 0) {
+    markCheckDebug('equipment list rendered');
   }
 
   return (
