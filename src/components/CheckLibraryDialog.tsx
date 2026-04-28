@@ -251,18 +251,24 @@ export default function CheckLibraryDialog({
                 )}
               </div>
             ) : (
-              filtered.map((r) => (
-                <ChecklistItemRow
-                  key={r.id}
-                  text={r.label}
-                  hint={r.hint}
-                  source={r.ride_category_id ? "specific" : "general"}
-                  rideTypeName={categoryGroupLabel}
-                  riskLevel={r.risk_level}
-                  selected={!!sel[r.id]}
-                  onSelectedChange={(checked) => setSel(prev => ({ ...prev, [r.id]: checked }))}
-                />
-              ))
+              filtered.map((r) => {
+                const row = shapeLibraryRow(r);
+                return (
+                  <ChecklistItemRow
+                    key={row.id}
+                    text={row.text}
+                    hint={row.hint}
+                    source={row.source}
+                    rideTypeName={row.rideTypeName}
+                    riskLevel={row.riskLevel}
+                    iconKey={row.iconKey}
+                    categoryLabel={row.categoryLabel}
+                    selected={row.selected}
+                    compact={row.compact}
+                    onSelectedChange={(checked) => setSel(prev => ({ ...prev, [row.id]: checked }))}
+                  />
+                );
+              })
             )}
           </div>
 
