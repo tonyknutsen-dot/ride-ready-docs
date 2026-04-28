@@ -930,59 +930,20 @@ interface SuggestionRowProps {
   item: SuggestionItem;
   checked: boolean;
   onToggle: (v: boolean) => void;
-  getRiskBadgeClass: (level: string | null) => string;
   source: ItemSource;
   rideTypeName?: string;
 }
 
-const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => {
-  const Icon = item.risk_level === 'high' ? AlertTriangle : source === 'specific' ? Sparkles : CheckSquare;
-  const riskDotClass =
-    item.risk_level === 'high' ? 'bg-destructive'
-    : item.risk_level === 'med' ? 'bg-yellow-500'
-    : item.risk_level === 'low' ? 'bg-green-500'
-    : '';
-  return (
-    <label
-      className={cn(
-        'flex items-start gap-2.5 rounded-lg border p-2 cursor-pointer transition-colors',
-        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/25 bg-primary/5 hover:bg-primary/10' : 'border-border bg-background/70 hover:bg-muted/30'
-      )}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onToggle(e.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium flex items-start gap-1.5">
-          <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', item.risk_level === 'high' ? 'text-destructive' : source === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
-          {item.risk_level && item.risk_level !== 'high' && (
-            <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
-          )}
-          <span className="min-w-0 break-words">{item.label}</span>
-          <span className="ml-auto shrink-0">
-            <SourcePill source={source} rideTypeName={rideTypeName} />
-          </span>
-        </div>
-        {item.hint && <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.hint}</p>}
-        {/* Risk badge: full chip on desktop, only HIGH chip on mobile */}
-        {item.risk_level && (
-          <div className="mt-1 hidden md:flex items-center gap-1 flex-wrap">
-            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
-              {item.risk_level.toUpperCase()}
-            </Badge>
-          </div>
-        )}
-        {item.risk_level === 'high' && (
-          <div className="mt-1 flex md:hidden">
-            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>HIGH</Badge>
-          </div>
-        )}
-      </div>
-    </label>
-  );
-};
+const SuggestionRow = ({ item, checked, onToggle, source, rideTypeName }: SuggestionRowProps) => (
+  <ChecklistItemRow
+    text={item.label}
+    hint={item.hint}
+    source={source}
+    rideTypeName={rideTypeName}
+    riskLevel={item.risk_level}
+    selected={checked}
+    onSelectedChange={onToggle}
+  />
+);
 
 export default TemplateBuilder;
