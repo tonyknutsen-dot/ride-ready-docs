@@ -198,7 +198,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const getTabForPrompt = (frequency: string) => frequency;
 
   return (
-    <div className="space-y-1.5 md:space-y-2">
+    <div className="space-y-2 md:space-y-2.5">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
 
       {/* Critical defect banner — top priority, above everything */}
@@ -210,11 +210,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
       {/* Hub header — restores the management-page treatment used across Equipment tabs */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
             <CheckSquare className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-[13px] font-bold text-foreground leading-tight">Safety Checks</h2>
+            <h2 className="text-sm font-bold text-foreground leading-tight">Safety Checks</h2>
             <p className="hidden sm:block text-[11px] md:text-xs text-muted-foreground leading-tight truncate">
               Daily, weekly, monthly, yearly checks plus annual & NDT scheduling
             </p>
@@ -224,17 +224,17 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           variant="ghost"
           size="sm"
           onClick={() => setShowGuide(true)}
-          className="text-muted-foreground hover:text-foreground h-6 px-1.5 shrink-0"
+          className="text-muted-foreground hover:text-foreground h-7 px-2 shrink-0"
           aria-label="Help"
         >
           <HelpCircle className="h-4 w-4" />
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-1 md:space-y-1.5 relative">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-2 md:space-y-2.5 relative">
         {/* Frequency selector — check-type cards with strong active state */}
         <div className="overflow-x-auto -mx-4 px-4">
-          <div className="inline-flex gap-1 min-w-max">
+          <div className="inline-flex gap-1.5 min-w-max">
             {[
               { value: 'daily',      label: 'Daily / Pre-Opening', Icon: Clock },
               { value: 'weekly',     label: 'Weekly',      Icon: CalendarRange },
@@ -247,7 +247,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 <button
                   key={value}
                   onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
-                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border transition-all min-w-[52px] font-medium text-[11px] ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all min-w-[52px] font-medium text-[11px] ${
                     isActive
                       ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                       : 'bg-card border-border text-foreground hover:border-primary/40 hover:bg-secondary'
