@@ -39,7 +39,11 @@ const META: Record<ItemSource, { label: string; icon: React.ComponentType<{ clas
 export const SourcePill = ({ source, rideTypeName, className = "" }: SourcePillProps) => {
   const m = META[source];
   const Icon = m.icon;
-  const label = source === "specific" && rideTypeName ? `Specific • ${rideTypeName}` : m.label;
+  const label = source === "specific"
+    ? `Specific • ${rideTypeName || "Equipment"}`
+    : source === "general"
+      ? "General • Operational"
+      : m.label;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none ${m.cls} ${className}`}
