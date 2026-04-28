@@ -174,6 +174,7 @@ export function ChecklistItemRow({
   const StatusIcon = status.icon;
   const selectable = !!onSelectedChange;
   const sourceRowClass = getSourceRowClass(source);
+  const displayCategoryLabel = categoryLabel ?? (['specific', 'general', 'library'].includes(source) ? 'Operational' : null);
   const Root = selectable ? 'label' : 'div';
 
   return (
@@ -224,9 +225,9 @@ export function ChecklistItemRow({
             <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(normalizedRisk))}>
               {getRiskBadgeLabel(normalizedRisk)}
             </Badge>
-            {categoryLabel && (
+            {displayCategoryLabel && (
               <Badge variant="outline" className="h-5 border-border bg-card px-1.5 text-[10px] font-medium text-muted-foreground">
-                {categoryLabel}
+                {displayCategoryLabel}
               </Badge>
             )}
           </div>

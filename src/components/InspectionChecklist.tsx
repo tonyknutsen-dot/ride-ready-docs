@@ -1150,16 +1150,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     const itemCount = activeTemplate.daily_check_template_items.length;
 
     return (
-      <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
+        <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
 
         {/* ── Check header + CTA ── */}
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h2 className="text-[15px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.2px' }}>
+              <h2 className="text-[15px] font-semibold text-foreground leading-tight truncate">
                 {activeTemplate.template_name}
               </h2>
-              <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
+              <p className="text-[11px] font-normal text-muted-foreground mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
             </div>
             {!isStaff && (
               <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="h-8 gap-1.5 text-[12px] shrink-0">
@@ -1202,7 +1202,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             Start Check
           </button>
 
-          <p className="text-[10px] text-center text-[#9CA3AF]">
+          <p className="text-[10px] text-center text-muted-foreground">
             {itemCount} items{lastDoneLabel ? ` • Last completed ${lastDoneLabel}` : ''}
           </p>
         </div>
@@ -1253,7 +1253,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
   return (
     <>
-    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#F3F4F6' }}>
+    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32 bg-muted/30">
 
       {/* ── Offline / sync banner ── */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
@@ -1393,17 +1393,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         <>
           {/* Header card */}
           <div className="sticky top-0 z-30 mx-4 mt-2">
-            <div className="rounded-xl px-4 py-3 shadow-sm border border-slate-200" style={{ background: '#EEF2F7' }}>
+            <div className="rounded-lg px-4 py-3 shadow-sm border border-border bg-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                   <h2 className="text-[14.5px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.3px' }}>
+                   <h2 className="text-[14.5px] font-semibold text-foreground leading-tight truncate">
                      {frequency === 'preopening' ? 'Pre-Opening Check' : frequency === 'daily' ? 'Daily Check' : frequency === 'weekly' ? 'Weekly Check' : frequency === 'monthly' ? 'Monthly Check' : frequency === 'yearly' ? 'Yearly Check' : `${frequency} Check`}
                    </h2>
-                   <p className="text-[12px] font-normal text-slate-600 truncate mt-0.5">
+                    <p className="text-[12px] font-normal text-muted-foreground truncate mt-0.5">
                      {ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}
                    </p>
-                   <p className="text-[9.5px] font-normal text-[#9CA3AF] mt-0.5">
-                     Checked by <span className="font-medium text-[#9CA3AF]">{inspectorName}</span>
+                    <p className="text-[9.5px] font-normal text-muted-foreground mt-0.5">
+                      Checked by <span className="font-medium text-muted-foreground">{inspectorName}</span>
                      {location ? ` · ${location}` : ''}
                    </p>
                 </div>
@@ -1418,15 +1418,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               {/* Progress bar */}
               <div className="mt-2.5">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[10px] font-normal text-[#9CA3AF]">
+                    <p className="text-[10px] font-normal text-muted-foreground">
                     {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return r === 'pass' || r === 'na' || (r === 'fail' && itemDefectRaised[item.id]); }).length} of {activeTemplate.daily_check_template_items.length} items completed
                   </p>
                   {getProgress() === 100 && (
-                    <span className="text-[10px] font-bold text-green-700">✓ Done</span>
+                    <span className="text-[10px] font-bold text-success">✓ Done</span>
                   )}
                 </div>
-                <div className="h-2 rounded-full bg-[#E5E7EB] overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-[#2563EB]'}`} style={{ width: `${Math.round(getProgress())}%` }} />
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-success' : 'bg-primary'}`} style={{ width: `${Math.round(getProgress())}%` }} />
                 </div>
               </div>
             </div>
@@ -1514,7 +1514,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                          placeholder="Describe the failure…"
                          value={notes[item.id] || ''}
                          onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                         className="min-h-[56px] text-sm resize-none rounded-md bg-white border-slate-300"
+                          className="min-h-[56px] text-sm resize-none rounded-md bg-background border-border"
                          rows={2}
                        />
 
@@ -1534,7 +1534,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                                 }
                               }}
                               trigger={
-                                <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                                 <button type="button" className="h-9 rounded-md border border-destructive/40 text-xs font-bold flex items-center justify-center gap-1.5 text-destructive hover:bg-destructive/5 flex-1 transition-colors">
                                   <AlertTriangle className="h-3 w-3 shrink-0" />
                                   Raise Defect
                                 </button>
@@ -1544,12 +1544,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                             <button
                               type="button"
                               onClick={() => setEditingDefectForItem(item.id)}
-                              className="h-9 rounded-md border border-green-300 bg-green-50 text-xs font-bold flex items-center justify-center gap-1.5 text-green-800 hover:bg-green-100 flex-1 transition-colors"
+                              className="h-9 rounded-md border border-success/40 bg-success/10 text-xs font-bold flex items-center justify-center gap-1.5 text-success hover:bg-success/15 flex-1 transition-colors"
                             >
                               <CheckCircle className="h-3 w-3 shrink-0" />
                               View / Edit defect
                               {itemDefects[item.id].photoCount > 0 && (
-                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-white border border-green-300 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-card border border-success/30 px-1.5 py-0.5 text-[10px] font-semibold text-success">
                                   📷 {itemDefects[item.id].photoCount}
                                 </span>
                               )}
@@ -1579,13 +1579,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
                        {/* Defect status */}
                        {!itemDefectRaised[item.id] && (
-                         <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                          <p className="text-[11px] font-semibold text-destructive flex items-center gap-1">
                            <AlertTriangle className="h-3 w-3 shrink-0" />
                            Raise a defect to record evidence and complete this item
                          </p>
                        )}
                        {itemDefectRaised[item.id] && (
-                         <p className="text-[11px] font-semibold text-green-700 flex items-center gap-1">
+                          <p className="text-[11px] font-semibold text-success flex items-center gap-1">
                            <CheckCircle className="h-3 w-3 shrink-0" />
                            Defect linked{itemDefects[item.id]?.photoCount ? ` · ${itemDefects[item.id].photoCount} photo${itemDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}
                          </p>
@@ -1685,9 +1685,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       {/* ── Defects (slim section) ── */}
        <div className="mx-4 mt-1.5">
-         <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
+          <div className="bg-card border border-border rounded-md p-3 shadow-sm">
            <div className="flex items-center justify-between mb-1.5">
-             <p className="text-[11px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Defects</p>
+              <p className="text-[11px] font-semibold text-foreground uppercase">Defects</p>
              <DefectReportDialog
                rideId={ride.id}
                rideName={ride.ride_name}
@@ -1713,8 +1713,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       {/* ── Confirmation Card ── */}
         <div className="mx-4 mt-3">
-          <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] space-y-3">
-           <h3 className="text-[13px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Confirmation</h3>
+          <div className="bg-card border border-border rounded-lg p-4 shadow-sm space-y-3">
+           <h3 className="text-[13px] font-semibold text-foreground uppercase">Confirmation</h3>
 
           {/* Warning: unanswered items */}
            {getProgress() < 100 && (
@@ -1740,14 +1740,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                  }
                }}
              >
-                <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
+                 <p className="text-[11px] text-destructive font-semibold leading-snug hover:underline">
                   ⚠ {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return !r || (r === 'fail' && !itemDefectRaised[item.id]); }).length} items remaining — answer all items and raise defects for failures. Tap to view.
                </p>
              </button>
            )}
 
            {getProgress() === 100 && (
-              <p className="text-[11px] text-green-700 font-semibold leading-snug">
+               <p className="text-[11px] text-success font-semibold leading-snug">
                 ✓ All items completed. Ready to confirm.
               </p>
            )}
@@ -1755,8 +1755,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             {(activeTemplate as any).finish_notice_required && (activeTemplate as any).finish_notice_text?.trim() && (
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 space-y-2">
                 <p className="text-[11px] font-bold text-warning uppercase">Before you finish</p>
-                <p className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
-                <label className="flex items-start gap-2 text-[12px] font-medium text-slate-700 cursor-pointer">
+                <p className="text-[12px] text-foreground whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
+                <label className="flex items-start gap-2 text-[12px] font-medium text-foreground cursor-pointer">
                   <Checkbox
                     checked={finishNoticeAcknowledged}
                     onCheckedChange={(checked) => {

@@ -456,22 +456,22 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-1 md:space-y-1.5 pb-24 md:pb-0">
+    <div className="space-y-2 md:space-y-2.5 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-0.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 shrink-0 -ml-1"
+            className="h-7 w-7 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-semibold leading-tight truncate">
+              <h3 className="text-sm font-semibold leading-tight truncate">
               {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
             </h3>
             <p className="text-[11px] text-muted-foreground truncate leading-tight">
@@ -486,12 +486,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       {/* ── Desktop/tablet header ── */}
       <div className="hidden md:flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-6 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
         <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold leading-tight truncate">
+            <h3 className="text-base font-semibold leading-tight truncate">
             {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
           </h3>
           <p className="text-xs text-muted-foreground truncate">{ride.ride_name}</p>
@@ -499,7 +499,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-1">
+      <div className="hidden md:flex items-center gap-1.5">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
@@ -594,16 +594,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
       {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-1 md:space-y-1.5">
+        <div className="space-y-2 md:space-y-2.5">
           {selectedItems.length > 0 && (
-            <div className="flex items-center gap-2 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium">{selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} added so far</span>
             </div>
           )}
 
           {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
-           <div className="space-y-1 md:rounded-md md:border md:border-border md:bg-card md:p-1.5">
+           <div className="space-y-2 md:rounded-md md:border md:border-border md:bg-card md:p-2.5">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-semibold md:font-medium">Smart suggestions</span>
@@ -668,7 +668,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   onChange={(next) => setSuggestionTab(next as SuggestionTab)}
                 />
 
-                <div className="space-y-1 max-h-[20rem] overflow-y-auto">
+                <div className="space-y-1.5">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
                     <div className="rounded-md border border-dashed border-border bg-muted/30 p-2 text-[11px] text-foreground">
@@ -841,11 +841,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             {selectedItems.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No items yet — go back to add some.</p>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {selectedItems.map((item, index) => (
-                  <div key={index} className="group flex items-center gap-1.5 rounded-lg border border-border bg-card p-1.5 transition-colors hover:bg-card-hover">
+                  <div key={index} className="group flex items-center gap-1.5">
                     {/* Reorder controls */}
-                    <div className="flex flex-col shrink-0 -my-1">
+                    <div className="flex flex-col shrink-0 self-stretch rounded-lg border border-border bg-card">
                       <button
                         onClick={() => handleMoveItem(index, 'up')}
                         disabled={index === 0 || editingIndex !== null}
@@ -892,22 +892,19 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           rideTypeName={ride.ride_categories?.name}
                           compact
                           draggable
-                          className="border-0 bg-transparent p-0 shadow-none hover:bg-transparent"
+                          actions={(
+                            <div className="flex items-center shrink-0">
+                              <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-1" aria-label="Edit">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-1" aria-label="Remove">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
                         />
                       )}
                     </div>
-
-                    {/* Actions */}
-                    {editingIndex !== index && (
-                      <div className="flex items-center shrink-0">
-                        <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-2" aria-label="Edit">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-2" aria-label="Remove">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
