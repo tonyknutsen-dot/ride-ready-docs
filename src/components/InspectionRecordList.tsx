@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,7 +143,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     staleTime: 0,
   });
 
-  useMemo(() => {
+  useEffect(() => {
     if (!effectiveUserId) return;
     invalidateCheckRecordQueries(queryClient);
     refetch();
