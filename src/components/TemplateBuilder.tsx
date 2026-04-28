@@ -55,6 +55,12 @@ interface SuggestionItem {
   ride_category_id: string | null;
 }
 
+const getLibraryFrequencies = (value: string): ("daily" | "weekly" | "monthly" | "yearly" | "preopening")[] => {
+  return value === 'daily' || value === 'preopening'
+    ? ['daily', 'preopening']
+    : [value as "weekly" | "monthly" | "yearly"];
+};
+
 const STEPS = [
   { label: 'Notices & Setup', icon: AlertTriangle },
   { label: 'Build Checklist', icon: Plus },
@@ -150,7 +156,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       let query = supabase
         .from('check_library_items')
         .select('id,label,hint,risk_level,ride_category_id')
-        .eq('frequency', frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening")
+        .in('frequency', getLibraryFrequencies(frequency))
         .eq('is_active', true)
         .eq('equipment_group', resolvedGroup)
         .eq('item_kind', 'operational') // operational checklist items only — compliance/admin items live in Compliance/Documents
