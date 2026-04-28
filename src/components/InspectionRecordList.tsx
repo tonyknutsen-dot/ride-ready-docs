@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   Eye,
   Download,
@@ -30,7 +31,7 @@ import {
   Camera,
   StickyNote,
 } from 'lucide-react';
-import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear } from 'date-fns';
+import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -63,7 +64,7 @@ function normaliseCheckName(name: string): string {
     .replace(/\byearly\s+check\b/gi, 'Yearly Check');
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 interface InspectionRecordListProps {
   rideId: string;
@@ -78,8 +79,17 @@ const DATE_PRESETS = [
   { label: '7 days', value: '7' },
   { label: '30 days', value: '30' },
   { label: '90 days', value: '90' },
-  { label: 'This month', value: 'month' },
-  { label: 'This year', value: 'year' },
+  { label: '12 months', value: '12m' },
+  { label: 'Custom', value: 'custom' },
+] as const;
+
+const ROUTINE_OPTIONS = [
+  { label: 'Daily-Pre-Opening', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Yearly', value: 'yearly' },
+  { label: 'Annual', value: 'annual' },
+  { label: 'NDT', value: 'ndt' },
 ] as const;
 
 const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCategory, rideManufacturer, rideSerialNumber }: InspectionRecordListProps) => {
