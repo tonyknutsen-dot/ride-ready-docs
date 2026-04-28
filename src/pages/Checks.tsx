@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckSquare, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/PageHeader';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 import EquipmentSelector from '@/components/EquipmentSelector';
+import { markCheckDebug } from '@/utils/checkDebug';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -20,7 +21,12 @@ const Checks = () => {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
 
+  useEffect(() => {
+    markCheckDebug('checks page mounted');
+  }, []);
+
   const handleRideSelect = (ride: Ride) => {
+    markCheckDebug('equipment selected');
     // Route into the canonical Equipment → Asset → Checks hub.
     // `from=checks` makes Back return to /checks instead of /rides.
     navigate(`/rides/${ride.id}?tab=checks&from=checks`);
