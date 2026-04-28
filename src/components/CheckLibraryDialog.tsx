@@ -3,11 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { CheckSquare, Plus, Search, AlertTriangle } from "lucide-react";
+import { CheckSquare, Plus, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { SourcePill } from "./checks/SourcePill";
-import { cn } from "@/lib/utils";
+import { ChecklistItemRow, ChecklistSegmentedTabs } from "./checks/ChecklistItemRow";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
 type FilterTab = "all" | "general" | "specific";
@@ -150,15 +148,6 @@ export default function CheckLibraryDialog({
     }
   };
 
-  const getRiskBadgeColor = (level: string | null) => {
-    switch (level) {
-      case 'high': return 'bg-red-600 text-white hover:bg-red-700';
-      case 'med': return 'bg-yellow-600 text-white hover:bg-yellow-700';
-      case 'low': return 'bg-green-600 text-white hover:bg-green-700';
-      default: return '';
-    }
-  };
-
   const tabs: { key: FilterTab; label: string; count: number }[] = [
     ...(hasSpecific ? [{ key: "specific" as FilterTab, label: specificLabel, count: specificCount }] : []),
     { key: "general", label: "General", count: generalCount },
@@ -201,21 +190,7 @@ export default function CheckLibraryDialog({
 
           {/* Segmented tabs — tighter on mobile */}
           {!loading && rows.length > 0 && (
-            <div className="flex gap-1 p-0.5 rounded-lg bg-muted/50">
-              {tabs.map(t => (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`flex-1 text-[11px] md:text-xs font-medium py-1 md:py-1.5 px-1.5 md:px-2 rounded-md transition-colors ${
-                    tab === t.key
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t.label} ({t.count})
-                </button>
-              ))}
-            </div>
+            <ChecklistSegmentedTabs options={tabs} value={tab} onChange={setTab} />
           )}
 
           {/* Item list — tighter rows on mobile, inline source pill */}
@@ -237,49 +212,16 @@ export default function CheckLibraryDialog({
               </div>
             ) : (
               filtered.map((r) => (
-                <label
+                <ChecklistItemRow
                   key={r.id}
-                  className={cn(
-                    "flex items-start gap-2.5 md:gap-3 border rounded-lg md:rounded-xl p-2 md:p-3 hover:bg-muted/30 transition-colors cursor-pointer",
-                    r.ride_category_id ? "border-primary/30 bg-primary/5" : "border-border"
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!sel[r.id]}
-                    onChange={(e) => setSel(prev => ({ ...prev, [r.id]: e.target.checked }))}
-                    className="mt-1 h-4 w-4 cursor-pointer"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm break-any flex items-start gap-1.5">
-                      {r.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-red-600 flex-shrink-0 mt-0.5" />}
-                      {r.ride_category_id && r.risk_level !== 'high' && <CheckSquare className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />}
-                      <span className="min-w-0 flex-1">{r.label}</span>
-                      <span className="ml-auto shrink-0">
-                        <SourcePill
-                          source={r.ride_category_id ? "specific" : "general"}
-                          rideTypeName={categoryGroupLabel}
-                        />
-                      </span>
-                    </div>
-                    {r.hint && (
-                      <div className="text-[11px] md:text-xs text-muted-foreground mt-0.5 md:mt-1 break-any">{r.hint}</div>
-                    )}
-                    {/* Risk chip: full chip on desktop, HIGH only on mobile */}
-                    {r.risk_level && (
-                      <div className="mt-1.5 hidden md:flex items-center gap-1.5 flex-wrap">
-                        <Badge className={`text-xs ${getRiskBadgeColor(r.risk_level)}`}>
-                          {r.risk_level.toUpperCase()} RISK
-                        </Badge>
-                      </div>
-                    )}
-                    {r.risk_level === 'high' && (
-                      <div className="mt-1 flex md:hidden">
-                        <Badge className={`text-[10px] ${getRiskBadgeColor(r.risk_level)}`}>HIGH</Badge>
-                      </div>
-                    )}
-                  </div>
-                </label>
+                  text={r.label}
+                  hint={r.hint}
+                  source={r.ride_category_id ? "specific" : "general"}
+                  rideTypeName={categoryGroupLabel}
+                  riskLevel={r.risk_level}
+                  selected={!!sel[r.id]}
+                  onSelectedChange={(checked) => setSel(prev => ({ ...prev, [r.id]: checked }))}
+                />
               ))
             )}
           </div>
