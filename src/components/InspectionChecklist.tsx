@@ -52,6 +52,7 @@ import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
+import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from './checks/ChecklistItemRow';
 
 import InspectionRecordList from './InspectionRecordList';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
@@ -1442,46 +1443,21 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             const isNA = v === 'na';
             const hasResult = isPass || isFail || isNA;
 
-            const cardBorder = isFail
-              ? '4px solid #DC2626'
-              : isPass
-              ? '4px solid #16A34A'
-              : isNA
-              ? '4px solid #D97706'
-              : 'none';
+            const rowResult: ChecklistRowResult = isPass ? 'pass' : isFail ? 'fail' : isNA ? 'na' : 'pending';
 
             return (
-              <div
+              <ChecklistItemRow
                 key={item.id}
                 data-item-id={item.id}
-                className={`border rounded-2xl overflow-hidden transition-all shadow-[0_1px_4px_rgba(0,0,0,0.08)] ${isFail ? 'bg-[#FFF7F7]' : 'bg-white'} ${highlightItemId === item.id ? 'border-blue-500 ring-2 ring-blue-400/50' : 'border-slate-200/80'}`}
-                style={{ borderLeft: cardBorder }}
+                text={item.check_item_text}
+                source={normalizeChecklistSource(item.category)}
+                rideTypeName={ride.ride_categories?.name}
+                result={rowResult}
+                index={index}
+                className={highlightItemId === item.id ? 'ring-2 ring-primary/50' : undefined}
               >
-                {/* Row 1: Number circle + Title + Status icon */}
-                 <div className="px-3 pt-2 pb-0.5 flex items-start gap-2.5">
-                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
-                     isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-amber-500 text-white' : 'bg-[#E5E7EB] text-slate-700 border border-slate-400 shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)]'
-                   }`}>
-                     {isPass ? '✓' : isFail ? '✗' : isNA ? '—' : index + 1}
-                   </div>
-                   <div className="flex-1 min-w-0">
-                     <div className="flex items-start justify-between gap-2">
-                       <h3 className="font-medium text-slate-900 leading-relaxed break-words text-[12.5px]">
-                         {item.check_item_text}
-                       </h3>
-                       <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                         {item.category && item.category !== 'general' && (
-                           <span className="text-[8.5px] font-normal text-[#9CA3AF] uppercase tracking-wider bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">{item.category}</span>
-                         )}
-                         {isPass && <CheckCircle className="h-4 w-4 text-green-600" />}
-                         {isFail && <AlertTriangle className="h-4 w-4 text-red-600" />}
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-
                 {/* Row 2: Segmented control (joined buttons) */}
-                <div className="px-3 pb-2 pt-0">
+                <div>
                   <div className="flex rounded-lg overflow-hidden border border-slate-300">
                     <button
                       type="button"
@@ -1701,8 +1677,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        </button>
                      )
                    )}
-                </div>
-              </div>
+                 </div>
+              </ChecklistItemRow>
             );
           })}
       </div>
