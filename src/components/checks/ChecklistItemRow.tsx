@@ -15,7 +15,6 @@ export interface ChecklistItemRowProps {
   rideTypeName?: string;
   riskLevel?: ChecklistRiskLevel | string | null;
   categoryLabel?: string | null;
-  iconKey?: ChecklistIconKey;
   result?: ChecklistRowResult;
   index?: number;
   selected?: boolean;
