@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import { useToast } from "@/hooks/use-toast";
 import type { CheckItemResult } from '@/lib/offlineDb';
+import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 
 // Types for optimistic document
 interface OptimisticDocument {
@@ -191,32 +192,9 @@ export function useOptimisticCheckComplete() {
       // Use effectiveUserId (operator's ID) so staff data syncs with operator
       const storageUserId = effectiveUserId;
 
-      // Create check record
-      const { data: check, error: checkError } = await supabase
-        .from('checks')
-        .insert({
-          user_id: storageUserId,
-          ride_id: params.rideId,
-          template_id: params.templateId,
-          inspector_name: params.inspectorName.trim(),
-          notes: params.inspectorNotes?.trim() || null,
-          check_frequency: params.frequency,
-          status: 'completed',
-          weather_conditions: params.weatherConditions?.trim() || null,
-          environment_notes: params.environmentNotes?.trim() || null,
-          compliance_officer: params.complianceOfficer?.trim() || null,
-          signature_data: params.signatureData?.trim() || null
-        })
-        .select()
-        .single();
-
-      if (checkError) throw checkError;
-
-      // Create check results
       const results = params.templateItems.map(item => {
         const result = params.itemResults[item.id] || 'na';
         return {
-          check_id: check.id,
           template_item_id: item.id,
           is_checked: result === 'pass',
           result: result,
@@ -224,13 +202,26 @@ export function useOptimisticCheckComplete() {
         };
       });
 
-      const { error: resultsError } = await supabase
-        .from('check_results')
-        .insert(results);
+      const { data: checkId, error: saveError } = await supabase.rpc('submit_check_atomic' as any, {
+        p_user_id: storageUserId,
+        p_ride_id: params.rideId,
+        p_template_id: params.templateId,
+        p_inspector_name: params.inspectorName.trim(),
+        p_check_date: new Date().toISOString().split('T')[0],
+        p_check_frequency: params.frequency,
+        p_status: 'completed',
+        p_notes: params.inspectorNotes?.trim() || null,
+        p_weather_conditions: params.weatherConditions?.trim() || null,
+        p_location: null,
+        p_signature_data: params.signatureData?.trim() || null,
+        p_compliance_officer: params.complianceOfficer?.trim() || null,
+        p_environment_notes: params.environmentNotes?.trim() || null,
+        p_results: results,
+      });
 
-      if (resultsError) throw resultsError;
+      if (saveError) throw saveError;
 
-      return check;
+      return { id: checkId };
     },
     onMutate: async (params) => {
       // Cancel outgoing refetches
@@ -283,8 +274,7 @@ export function useOptimisticCheckComplete() {
     },
     onSettled: () => {
       // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['overview'] });
-      queryClient.invalidateQueries({ queryKey: ['checks'] });
+      invalidateCheckRecordQueries(queryClient);
     },
   });
 }
