@@ -216,16 +216,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
     onChecklistSaved,
   });
 
+  useEffect(() => {
+    if (activeTemplate && isExecutionMode) {
+      setCheckDebugValue('template query status', `finished: ${activeTemplate.daily_check_template_items.length} items`);
+      markCheckDebug('execution UI ready');
+    }
+  }, [activeTemplate, isExecutionMode]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
-  }
-
-  if (activeTemplate && isExecutionMode) {
-    setCheckDebugValue('template query status', `finished: ${activeTemplate.daily_check_template_items.length} items`);
   }
 
   if (showTemplateBuilder) {
