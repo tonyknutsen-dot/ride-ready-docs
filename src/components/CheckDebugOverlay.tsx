@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { CHECK_DEBUG_EVENT, getCheckDebugSnapshot, isCheckDebugEnabled, markCheckDebug } from '@/utils/checkDebug';
-import { setCheckDebugValue } from '@/utils/checkDebug';
+import { CHECK_DEBUG_EVENT, getCheckDebugSnapshot, isCheckDebugEnabled, markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 const MARKERS = [
   'app mounted',
