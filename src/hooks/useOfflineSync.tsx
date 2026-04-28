@@ -96,56 +96,39 @@ export function useOfflineSync() {
         }
       }
 
-      // Insert the check
-      const { data: checkData, error: checkError } = await supabase
-        .from('checks')
-        .insert({
-          ride_id: check.rideId,
-          template_id: check.templateId,
-          inspector_name: check.inspectorName,
-          check_date: check.checkDate,
-          check_frequency: check.checkFrequency,
-          status: check.status,
-          notes: check.notes,
-          weather_conditions: check.weatherConditions,
-          location: resolvedLocation,
-          signature_data: check.signatureData,
-          compliance_officer: check.complianceOfficer,
-          environment_notes: check.environmentNotes,
-          user_id: effectiveUserId || user.id,
-          performed_by_user_id: user.id,
-          start_notice_acknowledged: check.startNoticeAcknowledged || false,
-          start_notice_acknowledged_at: check.startNoticeAcknowledgedAt,
-          start_notice_acknowledged_by: check.startNoticeAcknowledgedBy,
-          start_notice_snapshot: check.startNoticeSnapshot,
-          finish_notice_acknowledged: check.finishNoticeAcknowledged || false,
-          finish_notice_acknowledged_at: check.finishNoticeAcknowledgedAt,
-          finish_notice_acknowledged_by: check.finishNoticeAcknowledgedBy,
-          finish_notice_snapshot: check.finishNoticeSnapshot,
-        })
-        .select()
-        .single();
-
-      if (checkError) throw checkError;
-
-      // Insert check results
-      if (check.results.length > 0 && checkData) {
-        const results = check.results.map(r => ({
-          check_id: checkData.id,
+      const { data: checkId, error: saveError } = await supabase.rpc('submit_check_atomic' as any, {
+        p_user_id: effectiveUserId || user.id,
+        p_ride_id: check.rideId,
+        p_template_id: check.templateId,
+        p_inspector_name: check.inspectorName,
+        p_check_date: check.checkDate,
+        p_check_frequency: check.checkFrequency,
+        p_status: check.status,
+        p_notes: check.notes ?? null,
+        p_weather_conditions: check.weatherConditions ?? null,
+        p_location: resolvedLocation ?? null,
+        p_signature_data: check.signatureData ?? null,
+        p_compliance_officer: check.complianceOfficer ?? null,
+        p_environment_notes: check.environmentNotes ?? null,
+        p_start_notice_acknowledged: check.startNoticeAcknowledged || false,
+        p_start_notice_acknowledged_at: check.startNoticeAcknowledgedAt ?? null,
+        p_start_notice_acknowledged_by: check.startNoticeAcknowledgedBy ?? null,
+        p_start_notice_snapshot: check.startNoticeSnapshot ?? null,
+        p_finish_notice_acknowledged: check.finishNoticeAcknowledged || false,
+        p_finish_notice_acknowledged_at: check.finishNoticeAcknowledgedAt ?? null,
+        p_finish_notice_acknowledged_by: check.finishNoticeAcknowledgedBy ?? null,
+        p_finish_notice_snapshot: check.finishNoticeSnapshot ?? null,
+        p_results: check.results.map(r => ({
           template_item_id: r.templateItemId,
           is_checked: r.isChecked,
-          result: r.result || (r.isChecked ? 'pass' : 'na'), // Support old data without result field
-          notes: r.notes,
-        }));
+          result: r.result || (r.isChecked ? 'pass' : 'na'),
+          notes: r.notes ?? null,
+        })),
+      });
 
-        const { error: resultsError } = await supabase
-          .from('check_results')
-          .insert(results);
+      if (saveError) throw saveError;
 
-        if (resultsError) throw resultsError;
-      }
-
-      await markCheckSynced(check.localId, checkData?.id);
+      await markCheckSynced(check.localId, checkId as string);
       return true;
     } catch (error: any) {
       console.error('Failed to sync check:', error);
