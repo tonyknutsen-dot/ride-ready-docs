@@ -442,9 +442,32 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         </div>
       </div>
 
-      {/* ── Filter panel ── */}
-      {filtersOpen && (
-        <div className="space-y-1.5 pb-1">
+      {/* ── Quick chips ── */}
+      <div className="flex gap-1 overflow-x-auto pb-0.5">
+        {[
+          { label: 'Recent', value: 'recent' as const },
+          { label: 'This month', value: 'month' as const },
+          { label: 'Failed / defects', value: 'issues' as const },
+          { label: 'All', value: 'all' as const },
+        ].map((chip) => (
+          <button
+            key={chip.value}
+            type="button"
+            onClick={() => applyQuickFilter(chip.value)}
+            className="h-7 shrink-0 rounded-md border border-border bg-background px-2.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Compact filter sheet ── */}
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4">
+          <SheetHeader className="pb-3 text-left">
+            <SheetTitle className="text-sm">Check Record Filters</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 pb-2">
           {/* Quick range pills */}
           <div className="flex flex-wrap gap-1">
             {DATE_PRESETS.map(p => (
@@ -495,7 +518,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 <SelectItem value="all" className="text-xs">All results</SelectItem>
                 <SelectItem value="passed" className="text-xs">Passed</SelectItem>
                 <SelectItem value="failed" className="text-xs">Failed</SelectItem>
-                <SelectItem value="partial" className="text-xs">Partial</SelectItem>
+                <SelectItem value="na" className="text-xs">N-A</SelectItem>
               </SelectContent>
             </Select>
 
@@ -507,20 +530,41 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 <SelectItem value="no" className="text-xs">No defects</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={routineFilter} onValueChange={setRoutineFilter}>
+              <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Routine" /></SelectTrigger>
+              <SelectContent>
+                {ROUTINE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="text-xs">{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Input
+              placeholder="Checked by"
+              value={inspectorFilter}
+              onChange={(e) => setInspectorFilter(e.target.value)}
+              className="h-7 text-[11px]"
+            />
           </div>
 
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
-              placeholder="Search by name, notes…"
+              placeholder="Search location or text…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-7 text-[11px] pl-7"
             />
           </div>
-        </div>
-      )}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={clearFilters}>Clear all</Button>
+              <Button size="sm" className="h-8 text-[11px]" onClick={() => setFiltersOpen(false)}>Apply filters</Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ── Summary + export toolbar ── */}
       {records.length > 0 && (
