@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon, CheckSquare } from 'lucide-react';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, CheckSquare } from 'lucide-react';
 import { Ride } from '@/types/ride';
-import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
-import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import CriticalDefectBanner from './CriticalDefectBanner';
@@ -40,6 +38,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { effectiveUserId, isStaff } = useEffectiveUserId();
   const [searchParams] = useSearchParams();
   const checksSubTab = searchParams.get('checksSubTab');
@@ -186,11 +185,25 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </div>
       )}
 
-      <InspectionChecklist
-        ride={ride}
-        frequency={frequency}
-        onChecklistSaved={() => handleChecklistSaved(frequency)}
-      />
+      <div className="rounded-md border border-border bg-card p-3 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">{label} Checks</h3>
+            <p className="text-xs text-muted-foreground">
+              {templateStatus[frequency] ? `${checkCounts[frequency as keyof Omit<CheckCounts, 'total'>] || 0} saved records` : 'Build a checklist before operators can run this check.'}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="h-9 gap-1.5 shrink-0"
+            onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
+            disabled={!templateStatus[frequency]}
+          >
+            <PlayCircle className="h-4 w-4" />
+            Run Check
+          </Button>
+        </div>
+      </div>
     </div>
   );
 
