@@ -4006,6 +4006,33 @@ export type Database = {
         Returns: boolean
       }
       start_tester_session: { Args: { p_user_id: string }; Returns: string }
+      submit_check_atomic: {
+        Args: {
+          p_check_date: string
+          p_check_frequency: string
+          p_compliance_officer?: string
+          p_environment_notes?: string
+          p_finish_notice_acknowledged?: boolean
+          p_finish_notice_acknowledged_at?: string
+          p_finish_notice_acknowledged_by?: string
+          p_finish_notice_snapshot?: string
+          p_inspector_name: string
+          p_location?: string
+          p_notes?: string
+          p_results?: Json
+          p_ride_id: string
+          p_signature_data?: string
+          p_start_notice_acknowledged?: boolean
+          p_start_notice_acknowledged_at?: string
+          p_start_notice_acknowledged_by?: string
+          p_start_notice_snapshot?: string
+          p_status: string
+          p_template_id: string
+          p_user_id: string
+          p_weather_conditions?: string
+        }
+        Returns: string
+      }
       subscription_allows_writes: {
         Args: { _user_id: string }
         Returns: boolean
