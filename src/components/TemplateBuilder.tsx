@@ -748,15 +748,20 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           {selectedItems.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Your items ({selectedItems.length})</p>
-              <div className="space-y-1">
+                <div className="space-y-1.5">
                 {selectedItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
-                    <CheckSquare className="h-3.5 w-3.5 text-success shrink-0" />
-                    <span className="truncate flex-1">{item.check_item_text}</span>
-                    <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-2 -mr-1" aria-label="Remove">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                    <ChecklistItemRow
+                      key={index}
+                      text={item.check_item_text}
+                      source={normalizeChecklistSource(item.category)}
+                      rideTypeName={ride.ride_categories?.name}
+                      compact
+                      actions={(
+                        <button type="button" onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-1" aria-label="Remove">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    />
                 ))}
               </div>
             </div>
@@ -792,7 +797,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             ) : (
               <div className="space-y-1">
                 {selectedItems.map((item, index) => (
-                  <div key={index} className="group flex items-center gap-1.5 py-1.5 px-2 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                  <div key={index} className="group flex items-center gap-1.5 rounded-lg border border-border bg-card p-1.5 transition-colors hover:bg-card-hover">
                     {/* Reorder controls */}
                     <div className="flex flex-col shrink-0 -my-1">
                       <button
@@ -835,13 +840,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-start gap-2 flex-wrap">
-                          <p className="text-sm leading-snug flex-1 min-w-0">{item.check_item_text}</p>
-                          <SourcePill
-                            source={(['specific','general','custom','library','existing'].includes(item.category) ? item.category : 'existing') as ItemSource}
-                            rideTypeName={ride.ride_categories?.name}
-                          />
-                        </div>
+                        <ChecklistItemRow
+                          text={item.check_item_text}
+                          source={normalizeChecklistSource(item.category)}
+                          rideTypeName={ride.ride_categories?.name}
+                          compact
+                          draggable
+                          className="border-0 bg-transparent p-0 shadow-none hover:bg-transparent"
+                        />
                       )}
                     </div>
 
