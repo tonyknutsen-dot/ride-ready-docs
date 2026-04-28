@@ -15,6 +15,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { StaffRoute } from "@/components/StaffRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import { LastRouteTracker } from "@/components/LastRouteTracker";
+import CheckDebugOverlay from "@/components/CheckDebugOverlay";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
@@ -128,6 +129,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <CheckDebugOverlay />
         <AuthProvider>
           <LastRouteTracker />
           <AdminProvider>
