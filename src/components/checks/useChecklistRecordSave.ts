@@ -34,7 +34,7 @@ interface UseChecklistRecordSaveParams {
   setSubmitting: (value: boolean) => void;
   setSubmitPhase: (phase: 'idle' | 'saving' | 'record') => void;
   loadRecentChecks: () => Promise<void>;
-  onChecklistSaved?: () => void;
+  onChecklistSaved?: (inspectionRecordId?: string) => void;
 }
 
 type ToastPayload = { title: string; description?: string; variant?: 'default' | 'destructive' };
@@ -200,6 +200,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       if (!inspectionRecordId) throw new Error('The check saved, but the check record could not be created yet.');
 
+      setCheckDebugValue('created inspection record id', inspectionRecordId);
       markCheckDebug('inspection record created');
 
       invalidateCheckRecordQueries(queryClient);
@@ -222,7 +223,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       setSubmitting(false);
       setSubmitPhase('idle');
-      onChecklistSaved?.();
+      onChecklistSaved?.(inspectionRecordId);
     } catch (error) {
       if (previousOverview) queryClient.setQueryData(['overview', userId], previousOverview);
       console.error('Error submitting checks:', error);

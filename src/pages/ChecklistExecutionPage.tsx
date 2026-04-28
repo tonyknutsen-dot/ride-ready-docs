@@ -44,6 +44,23 @@ const ChecklistExecutionPage = () => {
     ? `/rides/${rideId}?tab=checks&from=checks`
     : `/rides/${rideId}?tab=checks`;
 
+  const handleChecklistSaved = (inspectionRecordId?: string) => {
+    if (!inspectionRecordId) {
+      setCheckDebugValue('any redirect target', backTo);
+      navigate(backTo);
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (rideId) params.set('rideId', rideId);
+    if (isFromChecks) params.set('from', 'checks');
+    if (searchParams.get('checkDebug') === '1') params.set('checkDebug', '1');
+
+    const target = `/inspection-record/${inspectionRecordId}${params.toString() ? `?${params.toString()}` : ''}`;
+    setCheckDebugValue('any redirect target', target);
+    navigate(target);
+  };
+
   useEffect(() => {
     markCheckDebug('execution route mounted');
     setCheckDebugValue('any redirect target', backTo);
@@ -131,7 +148,7 @@ const ChecklistExecutionPage = () => {
       <InspectionChecklist
         ride={ride}
         frequency={frequency ?? 'daily'}
-        onChecklistSaved={() => navigate(backTo)}
+        onChecklistSaved={handleChecklistSaved}
         executionMode="execute"
       />
     </div>

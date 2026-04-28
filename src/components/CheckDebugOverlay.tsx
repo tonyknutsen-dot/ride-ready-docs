@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { CHECK_DEBUG_EVENT, getCheckDebugSnapshot, isCheckDebugEnabled, markCheckDebug } from '@/utils/checkDebug';
+import { useLocation } from 'react-router-dom';
+import { CHECK_DEBUG_EVENT, getCheckDebugSnapshot, isCheckDebugEnabled, markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 const MARKERS = [
   'app mounted',
@@ -38,6 +39,7 @@ const VALUE_KEYS = [
   'template id found',
   'saved checklist id found',
   'active checklist id found',
+  'created inspection record id',
   'existing checklist lookup returned empty',
   'branch chosen',
   'any blocking error text',
@@ -45,6 +47,7 @@ const VALUE_KEYS = [
 ];
 
 export function CheckDebugOverlay() {
+  const location = useLocation();
   const [enabled, setEnabled] = useState(false);
   const [snapshot, setSnapshot] = useState(getCheckDebugSnapshot());
 
@@ -63,6 +66,11 @@ export function CheckDebugOverlay() {
     window.addEventListener(CHECK_DEBUG_EVENT, update);
     return () => window.removeEventListener(CHECK_DEBUG_EVENT, update);
   }, []);
+
+  useEffect(() => {
+    if (!enabled) return;
+    setCheckDebugValue('current route', location.pathname + location.search);
+  }, [enabled, location.pathname, location.search]);
 
   if (!enabled) return null;
 
