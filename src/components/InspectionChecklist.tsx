@@ -1685,9 +1685,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       {/* ── Defects (slim section) ── */}
        <div className="mx-4 mt-1.5">
-         <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
+          <div className="bg-card border border-border rounded-md p-3 shadow-sm">
            <div className="flex items-center justify-between mb-1.5">
-             <p className="text-[11px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Defects</p>
+              <p className="text-[11px] font-semibold text-foreground uppercase">Defects</p>
              <DefectReportDialog
                rideId={ride.id}
                rideName={ride.ride_name}
@@ -1713,8 +1713,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       {/* ── Confirmation Card ── */}
         <div className="mx-4 mt-3">
-          <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] space-y-3">
-           <h3 className="text-[13px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Confirmation</h3>
+          <div className="bg-card border border-border rounded-lg p-4 shadow-sm space-y-3">
+           <h3 className="text-[13px] font-semibold text-foreground uppercase">Confirmation</h3>
 
           {/* Warning: unanswered items */}
            {getProgress() < 100 && (
@@ -1740,14 +1740,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                  }
                }}
              >
-                <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
+                 <p className="text-[11px] text-destructive font-semibold leading-snug hover:underline">
                   ⚠ {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return !r || (r === 'fail' && !itemDefectRaised[item.id]); }).length} items remaining — answer all items and raise defects for failures. Tap to view.
                </p>
              </button>
            )}
 
            {getProgress() === 100 && (
-              <p className="text-[11px] text-green-700 font-semibold leading-snug">
+               <p className="text-[11px] text-success font-semibold leading-snug">
                 ✓ All items completed. Ready to confirm.
               </p>
            )}
@@ -1755,8 +1755,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             {(activeTemplate as any).finish_notice_required && (activeTemplate as any).finish_notice_text?.trim() && (
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 space-y-2">
                 <p className="text-[11px] font-bold text-warning uppercase">Before you finish</p>
-                <p className="text-[12px] text-slate-700 whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
-                <label className="flex items-start gap-2 text-[12px] font-medium text-slate-700 cursor-pointer">
+                <p className="text-[12px] text-foreground whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
+                <label className="flex items-start gap-2 text-[12px] font-medium text-foreground cursor-pointer">
                   <Checkbox
                     checked={finishNoticeAcknowledged}
                     onCheckedChange={(checked) => {
