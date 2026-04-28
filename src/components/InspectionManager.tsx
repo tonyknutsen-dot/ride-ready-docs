@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, CheckSquare } from 'lucide-react';
 import { Ride } from '@/types/ride';
+import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
@@ -204,6 +205,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </Button>
         </div>
       </div>
+      <InspectionChecklist
+        ride={ride}
+        frequency={frequency}
+        onChecklistSaved={() => handleChecklistSaved(frequency)}
+      />
     </div>
   );
 
