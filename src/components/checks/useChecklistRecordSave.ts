@@ -70,6 +70,18 @@ type OverviewCache = {
 
 type LinkedDefect = { id: string; severity: string };
 
+const withSaveStageTimeout = async <T,>(promise: PromiseLike<T>, stage: string, timeoutMs = 12000): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`${stage} timed out`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([Promise.resolve(promise), timeout]);
+  } finally {
+    clearTimeout(timeoutId!);
+  }
+};
+
 export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
   return useCallback(async () => {
     const {
@@ -148,6 +160,8 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       if (!success) throw new Error('Failed to submit check');
 
       setSubmitPhase('record');
+      setCheckDebugValue('created check id', checkId ?? 'none');
+      setCheckDebugValue('save stage', 'check row created');
       await invalidateCheckRecordQueries(queryClient);
 
       if (isOffline || !checkId) {
@@ -169,16 +183,25 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
       if (linkedDefectIds.length > 0) {
-        await supabase.from('defects').update({ check_id: checkId }).in('id', linkedDefectIds).is('check_id', null);
+        setCheckDebugValue('save stage', 'linking defects');
+        await withSaveStageTimeout(
+          supabase.from('defects').update({ check_id: checkId }).in('id', linkedDefectIds).is('check_id', null),
+          'defect link'
+        );
       }
 
-      const { data: linkedDefects } = await supabase
-        .from('defects')
-        .select('id, severity')
-        .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
+      setCheckDebugValue('save stage', 'loading linked defects');
+      const { data: linkedDefects } = await withSaveStageTimeout(
+        supabase
+          .from('defects')
+          .select('id, severity')
+          .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`),
+        'linked defects fetch'
+      );
       const defectIds = (linkedDefects || []).map(d => d.id);
 
-      const inspectionRecordId = await createInspectionRecord({
+      setCheckDebugValue('save stage', 'creating inspection record');
+      const inspectionRecordId = await withSaveStageTimeout(createInspectionRecord({
         checkId,
         rideId: ride.id,
         userId: effectiveUserId!,
@@ -196,7 +219,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         complianceOfficer: null,
         signatureData: null,
         defectIds,
-      });
+      }), 'inspection record create');
 
       if (!inspectionRecordId) throw new Error('The check saved, but the check record could not be created yet.');
 
@@ -204,7 +227,14 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       markCheckDebug('inspection record created');
 
       invalidateCheckRecordQueries(queryClient);
-      await loadRecentChecks().catch(() => {});
+      setCheckDebugValue('save stage', 'navigating to record detail');
+      setSubmitting(false);
+      setSubmitPhase('idle');
+      onChecklistSaved?.(inspectionRecordId);
+      void withSaveStageTimeout(loadRecentChecks(), 'recent checks refresh', 5000).catch((refreshError) => {
+        console.warn('Recent checks refresh skipped after save:', refreshError);
+        setCheckDebugValue('any blocking error text', refreshError instanceof Error ? refreshError.message : 'recent checks refresh failed');
+      });
 
       const criticalDefectCount = (linkedDefects || []).filter((d: LinkedDefect) => d.severity === 'stop_operation').length;
       const totalDefectCount = (linkedDefects || []).length;
@@ -220,10 +250,6 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       } else {
         toast({ title: 'Check completed ✓', description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check record is ready` });
       }
-
-      setSubmitting(false);
-      setSubmitPhase('idle');
-      onChecklistSaved?.(inspectionRecordId);
     } catch (error) {
       if (previousOverview) queryClient.setQueryData(['overview', userId], previousOverview);
       console.error('Error submitting checks:', error);
