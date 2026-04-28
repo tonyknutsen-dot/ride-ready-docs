@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { SourcePill, type ItemSource } from './checks/SourcePill';
+import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -54,6 +55,8 @@ interface SuggestionItem {
   risk_level: string | null;
   ride_category_id: string | null;
 }
+
+type SuggestionTab = 'all' | 'specific' | 'general';
 
 const getLibraryFrequencies = (value: string): ("daily" | "weekly" | "monthly" | "yearly" | "preopening")[] => {
   return value === 'daily' || value === 'preopening'
@@ -123,6 +126,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Record<string, boolean>>({});
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  const [suggestionTab, setSuggestionTab] = useState<SuggestionTab>('all');
 
   // Load existing template items
   useEffect(() => {
@@ -201,6 +205,23 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     () => filteredSuggestions.filter(s => !s.ride_category_id),
     [filteredSuggestions]
   );
+
+  const visibleSuggestions = useMemo(() => {
+    if (suggestionTab === 'specific') return specificSuggestions;
+    if (suggestionTab === 'general') return generalSuggestions;
+    return filteredSuggestions;
+  }, [filteredSuggestions, generalSuggestions, specificSuggestions, suggestionTab]);
+
+  const suggestionSections = useMemo(() => {
+    const sections: Array<{ key: ItemSource; label: string; count: number; items: SuggestionItem[]; icon: typeof Sparkles }> = [];
+    if ((suggestionTab === 'all' || suggestionTab === 'specific') && specificSuggestions.length > 0) {
+      sections.push({ key: 'specific', label: `Specific to ${ride.ride_categories?.name || 'this type'}`, count: specificSuggestions.length, items: specificSuggestions, icon: Sparkles });
+    }
+    if ((suggestionTab === 'all' || suggestionTab === 'general') && generalSuggestions.length > 0) {
+      sections.push({ key: 'general', label: 'General', count: generalSuggestions.length, items: generalSuggestions, icon: Library });
+    }
+    return sections;
+  }, [generalSuggestions, ride.ride_categories?.name, specificSuggestions, suggestionTab]);
 
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
 
