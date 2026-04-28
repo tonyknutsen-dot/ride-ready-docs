@@ -15,7 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
-import CheckLibraryDialog from './CheckLibraryDialog';
+import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { SourcePill, type ItemSource } from './checks/SourcePill';
 
 type Ride = Tables<'rides'> & {
@@ -685,16 +685,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               rideCategoryId={ride.category_id}
               equipmentGroup={equipmentGroup}
               categoryGroupLabel={ride.ride_categories?.category_group}
-              onAdd={async (labels: string[]) => {
-                const newItems: BuilderItem[] = labels.map((label, i) => ({
-                  check_item_text: label,
+              onAdd={async (items: AddedLibraryItem[]) => {
+                const newItems: BuilderItem[] = items.map((item, i) => ({
+                  check_item_text: item.label,
                   is_required: true,
-                  category: 'library',
+                  category: item.source,
                   sort_order: selectedItems.length + i,
                   isNew: true,
                 }));
                 setSelectedItems(prev => [...prev, ...newItems]);
-                toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
+                toast({ title: `${items.length} item${items.length > 1 ? 's' : ''} added` });
               }}
             />
           )}
@@ -878,16 +878,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 rideCategoryId={ride.category_id}
                 equipmentGroup={equipmentGroup}
                 categoryGroupLabel={ride.ride_categories?.category_group}
-                onAdd={async (labels: string[]) => {
-                  const newItems: BuilderItem[] = labels.map((label, i) => ({
-                    check_item_text: label,
+                onAdd={async (items: AddedLibraryItem[]) => {
+                  const newItems: BuilderItem[] = items.map((item, i) => ({
+                    check_item_text: item.label,
                     is_required: true,
-                    category: 'library',
+                    category: item.source,
                     sort_order: selectedItems.length + i,
                     isNew: true,
                   }));
                   setSelectedItems(prev => [...prev, ...newItems]);
-                  toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
+                  toast({ title: `${items.length} item${items.length > 1 ? 's' : ''} added` });
                 }}
               />
             )}
