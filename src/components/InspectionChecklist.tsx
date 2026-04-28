@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, MoreVertical, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -102,8 +102,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [defectRefreshKey, setDefectRefreshKey] = useState(0);
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
-  const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
-  const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [itemAttachments, setItemAttachments] = useState<Record<string, File[]>>({});
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [checkStarted, setCheckStarted] = useState(startImmediately);
