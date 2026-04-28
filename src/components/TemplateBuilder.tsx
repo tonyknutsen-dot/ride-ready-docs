@@ -418,15 +418,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-2 md:space-y-3 pb-24 md:pb-0">
+    <div className="space-y-1.5 md:space-y-2 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 -ml-1"
+            className="h-7 w-7 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
@@ -440,7 +440,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               {ride.ride_name} · {STEPS[step].label}
             </p>
           </div>
-          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2 py-1 shrink-0">
+          <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-1.5 py-0.5 shrink-0">
             {step + 1}/{STEPS.length}
           </span>
         </div>
@@ -448,12 +448,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       {/* ── Desktop/tablet header ── */}
       <div className="hidden md:flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold truncate">
+            <h3 className="text-sm font-semibold leading-tight truncate">
             {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
           </h3>
           <p className="text-xs text-muted-foreground truncate">{ride.ride_name}</p>
@@ -470,11 +470,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           const canNavigate = isEditing ? i !== step : isDone;
           return (
             <div key={i} className="flex items-center gap-2">
-              {i > 0 && <div className={`h-px w-3 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />}
+              {i > 0 && <div className={`h-px w-2.5 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />}
               <button
                 onClick={() => { if (canNavigate) setStep(i); }}
                 disabled={!canNavigate}
-                className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
                   isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 } ${canNavigate ? 'cursor-pointer' : ''}`}
               >
@@ -483,10 +483,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             </div>
           );
         })}
-        <span className="text-xs font-medium text-foreground ml-1">
+        <span className="text-[11px] font-medium text-foreground ml-1">
           {STEPS[step].label}
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[11px] text-muted-foreground">
           — Step {step + 1} of {STEPS.length}
         </span>
       </div>
