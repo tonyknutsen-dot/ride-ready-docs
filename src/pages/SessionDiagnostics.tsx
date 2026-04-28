@@ -4,10 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  inspectAuthPersistence,
+  readAuthPersistenceSnapshot,
+  SUPABASE_AUTH_STORAGE_KEY,
+  type AuthPersistenceSnapshot,
+} from '@/utils/authPersistenceDiagnostics';
 
-const SUPABASE_PROJECT_REF = 'sbtldudgiskqfqqkrmaa';
-const SUPABASE_AUTH_STORAGE_KEY = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
-const DIAGNOSTICS_BUILD_ID = 'canonical-auth-probe-2026-04-28-2';
+const DIAGNOSTICS_BUILD_ID = 'canonical-auth-probe-2026-04-28-3';
 
 type DirectSessionState = {
   checked: boolean;
@@ -41,6 +45,7 @@ type RuntimeStorageState = {
   serviceWorkerController: string;
   serviceWorkerRegistrations: string;
   cacheNames: string;
+  lastSignInSnapshot: AuthPersistenceSnapshot | null;
 };
 
 const initialRuntimeStorageState: RuntimeStorageState = {
@@ -57,6 +62,7 @@ const initialRuntimeStorageState: RuntimeStorageState = {
   serviceWorkerController: 'Checking',
   serviceWorkerRegistrations: 'Checking',
   cacheNames: 'Checking',
+  lastSignInSnapshot: null,
 };
 
 export default function SessionDiagnostics() {
@@ -70,17 +76,16 @@ export default function SessionDiagnostics() {
 
     const checkSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const snapshot = await inspectAuthPersistence();
         if (!mounted) return;
 
-        const activeSession = data.session;
         setDirectSession({
           checked: true,
-          exists: !!activeSession,
-          userIdPresent: !!activeSession?.user?.id,
-          emailPresent: !!activeSession?.user?.email,
-          expiresAt: activeSession?.expires_at ? new Date(activeSession.expires_at * 1000).toISOString() : null,
-          error: error?.message ?? null,
+          exists: snapshot.directSessionExists,
+          userIdPresent: snapshot.directSessionUserPresent,
+          emailPresent: snapshot.directSessionEmailPresent,
+          expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+          error: snapshot.directSessionError,
         });
       } catch (error) {
         if (!mounted) return;
@@ -97,7 +102,7 @@ export default function SessionDiagnostics() {
     return () => {
       mounted = false;
     };
-  }, [session?.access_token]);
+  }, [session?.access_token, session?.expires_at]);
 
   useEffect(() => {
     let mounted = true;
@@ -105,6 +110,7 @@ export default function SessionDiagnostics() {
     const inspectRuntimeStorage = async () => {
       const nextState: RuntimeStorageState = { ...initialRuntimeStorageState };
       nextState.loadedAt = new Date().toISOString();
+      nextState.lastSignInSnapshot = readAuthPersistenceSnapshot();
       nextState.scriptAssets = Array.from(document.scripts)
         .map((script) => script.src)
         .filter(Boolean)
@@ -113,22 +119,13 @@ export default function SessionDiagnostics() {
 
       try {
         const keys = Object.keys(localStorage).filter((key) => key.startsWith('sb-') || key.includes('supabase'));
-        const rawAuthToken = localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
-        nextState.authStorageKeyPresent = !!rawAuthToken;
+        const snapshot = await inspectAuthPersistence();
+        nextState.authStorageKeyPresent = snapshot.storageKeyPresent;
         nextState.supabaseStorageKeys = keys.length ? keys.sort().join(', ') : 'None on this origin';
-
-        if (rawAuthToken) {
-          try {
-            const parsed = JSON.parse(rawAuthToken);
-            const currentSession = parsed?.currentSession ?? parsed;
-            nextState.authStorageJsonValid = true;
-            nextState.authStorageHasAccessToken = !!currentSession?.access_token;
-            nextState.authStorageHasRefreshToken = !!currentSession?.refresh_token;
-            nextState.authStorageUserPresent = !!currentSession?.user?.id;
-          } catch {
-            nextState.authStorageJsonValid = false;
-          }
-        }
+        nextState.authStorageJsonValid = snapshot.storageJsonValid;
+        nextState.authStorageHasAccessToken = snapshot.storageHasAccessToken;
+        nextState.authStorageHasRefreshToken = snapshot.storageHasRefreshToken;
+        nextState.authStorageUserPresent = snapshot.storageUserPresent;
       } catch {
         nextState.localStorageAvailable = false;
         nextState.supabaseStorageKeys = 'localStorage unavailable';
@@ -195,6 +192,12 @@ export default function SessionDiagnostics() {
     ['Auth storage user present', runtimeStorage.authStorageUserPresent ? 'Yes' : 'No'],
     ['Supabase/local auth storage keys', runtimeStorage.supabaseStorageKeys],
     ['localStorage available', runtimeStorage.localStorageAvailable ? 'Yes' : 'No'],
+    ['Last sign-in check exists', runtimeStorage.lastSignInSnapshot ? 'Yes' : 'No'],
+    ['Last sign-in origin', runtimeStorage.lastSignInSnapshot?.origin || 'Not available'],
+    ['Last sign-in route', runtimeStorage.lastSignInSnapshot?.route || 'Not available'],
+    ['Last sign-in storage key present', runtimeStorage.lastSignInSnapshot ? (runtimeStorage.lastSignInSnapshot.storageKeyPresent ? 'Yes' : 'No') : 'Not available'],
+    ['Last sign-in direct session exists', runtimeStorage.lastSignInSnapshot ? (runtimeStorage.lastSignInSnapshot.directSessionExists ? 'Yes' : 'No') : 'Not available'],
+    ['Last sign-in session error', runtimeStorage.lastSignInSnapshot?.directSessionError || 'None'],
     ['Service worker controlled page', runtimeStorage.serviceWorkerControlled ? 'Yes' : 'No'],
     ['Service worker controller', runtimeStorage.serviceWorkerController],
     ['Service worker registrations', runtimeStorage.serviceWorkerRegistrations],

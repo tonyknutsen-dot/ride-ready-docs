@@ -18,6 +18,7 @@ import { COUNTRIES } from '@/constants/profile';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 import { getEmailSuggestion, validatePasswordStrength, type EmailSuggestion } from '@/utils/emailSuggestion';
+import { inspectAuthPersistence, saveAuthPersistenceSnapshot } from '@/utils/authPersistenceDiagnostics';
 
 const MFAVerifyScreen = lazy(() => import('@/components/MFAVerifyScreen'));
 
@@ -283,6 +284,17 @@ const Auth = () => {
             description: "Please check your email for a confirmation link.",
           });
         } else {
+          const persistenceSnapshot = await inspectAuthPersistence();
+          saveAuthPersistenceSnapshot(persistenceSnapshot);
+          if (!persistenceSnapshot.storageKeyPresent || !persistenceSnapshot.directSessionExists) {
+            setFormNotice({
+              type: 'error',
+              title: 'Session was not saved on this host',
+              message: `Signed in response completed on ${persistenceSnapshot.origin}, but the Supabase session was not found in browser storage. Please send the diagnostics from /session-diagnostics.`
+            });
+            return;
+          }
+
           toast({
             title: "Welcome back!",
             description: "You have successfully signed in.",
