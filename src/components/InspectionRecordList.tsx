@@ -52,6 +52,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format as formatDateFns } from 'date-fns';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 /** Normalise template/check names for consistent display */
 function normaliseCheckName(name: string): string {
@@ -64,7 +65,8 @@ function normaliseCheckName(name: string): string {
     .replace(/\byearly\s+check\b/gi, 'Yearly Check');
 }
 
-const PAGE_SIZE = 10;
+const MOBILE_PAGE_SIZE = 5;
+const DESKTOP_PAGE_SIZE = 10;
 
 interface InspectionRecordListProps {
   rideId: string;
@@ -99,6 +101,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const pageSize = isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE;
 
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [savingDocId, setSavingDocId] = useState<string | null>(null);
@@ -121,7 +125,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
   const filters: FetchRecordsFilters = useMemo(() => ({
     frequency: routineFilter,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     dateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
     dateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
     result: resultFilter !== 'all' && resultFilter !== 'with_defects' ? resultFilter : undefined,
@@ -129,7 +133,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     issueOnly,
     inspectorName: inspectorFilter || undefined,
     searchQuery: searchQuery || undefined,
-  }), [routineFilter, dateFrom, dateTo, resultFilter, issueOnly, inspectorFilter, searchQuery]);
+  }), [routineFilter, pageSize, dateFrom, dateTo, resultFilter, issueOnly, inspectorFilter, searchQuery]);
 
   const {
     data,
