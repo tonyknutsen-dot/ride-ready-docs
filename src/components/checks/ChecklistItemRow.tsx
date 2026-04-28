@@ -129,9 +129,10 @@ export function ChecklistItemRow({
   const StatusIcon = status.icon;
   const selectable = !!onSelectedChange;
   const highlighted = selected || source === 'specific';
+  const Root = selectable ? 'label' : 'div';
 
   return (
-    <label
+    <Root
       data-item-id={dataItemId}
       className={cn(
         'block rounded-lg border shadow-sm transition-colors',
@@ -185,7 +186,7 @@ export function ChecklistItemRow({
           {children && <div className="mt-2">{children}</div>}
         </div>
       </div>
-    </label>
+    </Root>
   );
 }
 
