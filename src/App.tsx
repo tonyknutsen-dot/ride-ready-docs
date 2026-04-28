@@ -18,7 +18,6 @@ import { LastRouteTracker } from "@/components/LastRouteTracker";
 
 import { AppLayout } from "@/components/AppLayout";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
-import { PWAUpdateModal } from "@/components/PWAUpdateModal";
 import { LockScreenProvider } from "@/components/LockScreenProvider";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
 import { MaintenanceGuard } from "@/components/MaintenanceGuard";
@@ -126,7 +125,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <PWAUpdateModal />
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
