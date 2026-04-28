@@ -8,6 +8,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import InspectionChecklist from '@/components/InspectionChecklist';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 import { Button } from '@/components/ui/button';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -44,6 +45,12 @@ const ChecklistExecutionPage = () => {
     : `/rides/${rideId}?tab=checks`;
 
   useEffect(() => {
+    markCheckDebug('execution route mounted');
+    setCheckDebugValue('any redirect target', backTo);
+    markCheckDebug('back target ready');
+  }, [backTo]);
+
+  useEffect(() => {
     if (effectiveUserId && rideId) {
       loadRide();
     }
@@ -65,6 +72,8 @@ const ChecklistExecutionPage = () => {
       setRide(data as Ride);
     } catch (err) {
       console.error('Error loading ride:', err);
+      setCheckDebugValue('any blocking error text', err instanceof Error ? err.message : 'execution ride query failed');
+      setCheckDebugValue('any redirect target', backTo);
       navigate(backTo);
     } finally {
       setLoading(false);
