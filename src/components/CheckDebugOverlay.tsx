@@ -38,6 +38,7 @@ const VALUE_KEYS = [
   'template id found',
   'saved checklist id found',
   'active checklist id found',
+  'created inspection record id',
   'existing checklist lookup returned empty',
   'branch chosen',
   'any blocking error text',
