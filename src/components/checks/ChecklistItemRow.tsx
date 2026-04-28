@@ -155,6 +155,8 @@ export function ChecklistItemRow({
   source = 'general',
   rideTypeName,
   riskLevel,
+  categoryLabel,
+  iconKey,
   result,
   index,
   selected,
@@ -169,7 +171,8 @@ export function ChecklistItemRow({
   className,
 }: ChecklistItemRowProps) {
   const status = getResultMeta(result);
-  const SourceIcon = getSourceIcon(source, riskLevel);
+  const normalizedRisk = normalizeChecklistRiskLevel(riskLevel);
+  const SourceIcon = getSourceIcon(source, normalizedRisk, iconKey);
   const StatusIcon = status.icon;
   const selectable = !!onSelectedChange;
   const sourceRowClass = getSourceRowClass(source);
@@ -204,7 +207,7 @@ export function ChecklistItemRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', getSourceIconClass(source, riskLevel))} />
+            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', getSourceIconClass(source, normalizedRisk))} />
             <p className="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-foreground">
               {text}{required && <span className="ml-1 text-destructive">*</span>}
             </p>
@@ -219,13 +222,18 @@ export function ChecklistItemRow({
 
           {hint && <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground md:text-xs">{hint}</p>}
 
-          {riskLevel && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <div className="mt-1.5 flex items-center gap-1.5">
-              <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(riskLevel))}>
-                {riskLevel.toUpperCase()} RISK
+              <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(normalizedRisk))}>
+                {getRiskBadgeLabel(normalizedRisk)}
               </Badge>
+              {categoryLabel && (
+                <Badge variant="outline" className="h-5 border-border bg-card px-1.5 text-[10px] font-medium text-muted-foreground">
+                  {categoryLabel}
+                </Badge>
+              )}
             </div>
-          )}
+          </div>
 
           {children && <div className="mt-2">{children}</div>}
         </div>
