@@ -54,7 +54,6 @@ import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecor
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from './checks/ChecklistItemRow';
 
-import InspectionRecordList from './InspectionRecordList';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 // CriticalDefectModal removed in showmen simplification
 import { useQueryClient as useQueryClientImport } from '@tanstack/react-query';
@@ -136,6 +135,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
+
+  useEffect(() => {
+    if (!startImmediately) return;
+    document.documentElement.setAttribute('data-builder-mode', 'mobile');
+    return () => document.documentElement.removeAttribute('data-builder-mode');
+  }, [startImmediately]);
 
   // Prefill inspector name from the actual user's profile (not org owner for staff)
   useEffect(() => {
@@ -1230,15 +1235,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
         />
 
-        {/* ── Inspection Records ── */}
-        <InspectionRecordList
-          rideId={ride.id}
-          rideName={ride.ride_name}
-          frequency={frequency}
-          rideCategory={ride.ride_categories?.name}
-          rideManufacturer={ride.manufacturer || undefined}
-          rideSerialNumber={ride.serial_number || undefined}
-        />
+        <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+          Saved check records are reviewed from the Check Records area after completion.
+        </div>
 
         <CheckDetailDialog
           check={selectedCheck}
