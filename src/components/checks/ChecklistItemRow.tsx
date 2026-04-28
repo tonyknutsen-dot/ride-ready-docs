@@ -74,7 +74,7 @@ export const normalizeChecklistRiskLevel = (value?: string | null): ChecklistRis
   return 'standard';
 };
 
-export const getChecklistIconKey = (source?: ItemSource, riskLevel?: string | null): ChecklistIconKey => {
+export const getChecklistIconKey = (_source?: ItemSource, _riskLevel?: string | null): ChecklistIconKey => {
   return 'check';
 };
 
@@ -121,7 +121,6 @@ export function ChecklistItemRow({
   rideTypeName,
   riskLevel,
   categoryLabel,
-  iconKey,
   result,
   index,
   selected,
