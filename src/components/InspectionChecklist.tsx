@@ -223,6 +223,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
     }
   }, [activeTemplate, isExecutionMode]);
 
+  useEffect(() => {
+    if (loading || isExecutionMode) return;
+    const branchChosen = activeTemplate
+      ? (recentChecks[0] ? 'saved checklist review' : 'existing checklist execution')
+      : 'build checklist / no checklist state';
+    setCheckDebugValue('branch chosen', branchChosen);
+    if (!activeTemplate) markCheckDebug('no checklist state mounted');
+  }, [activeTemplate, isExecutionMode, loading, recentChecks]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -252,14 +261,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
     const lastDoneLabel = recentChecks[0]
       ? new Date(recentChecks[0].check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       : null;
-
-    const branchChosen = activeTemplate
-      ? (recentChecks[0] ? 'saved checklist review' : 'existing checklist execution')
-      : 'build checklist / no checklist state';
-    setCheckDebugValue('branch chosen', branchChosen);
-    if (!activeTemplate) {
-      markCheckDebug('no checklist state mounted');
-    }
 
     return (
       <ChecklistLauncher
