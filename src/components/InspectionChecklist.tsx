@@ -51,6 +51,7 @@ import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, typ
 import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
+import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 
 import InspectionRecordList from './InspectionRecordList';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
@@ -901,8 +902,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setItemDefects({});
       setItemDefectRaised({});
 
-      // Notify parent first — navigation should not wait on side-effects
-      onChecklistSaved?.();
+      // Make the primary check row visible immediately; generated record surfaces follow below.
+      await invalidateCheckRecordQueries(queryClient);
+      await loadRecentChecks().catch(() => {});
 
       // ── SIDE-EFFECTS (non-blocking) ──────────────────────────────────
       // Each side-effect runs in its own try/catch. A failure here will surface
@@ -960,9 +962,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               defectIds,
             });
 
-            queryClient.invalidateQueries({ queryKey: ['overview'] });
-            queryClient.invalidateQueries({ queryKey: ['checks'] });
-            queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+            invalidateCheckRecordQueries(queryClient);
             loadRecentChecks().catch(() => {});
 
             const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
@@ -992,6 +992,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           }
         })();
       }
+
+      // Notify parent after the primary record cache has been invalidated.
+      onChecklistSaved?.();
     } catch (error) {
       // Rollback optimistic update
       if (previousOverview) {

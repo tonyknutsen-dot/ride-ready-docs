@@ -251,6 +251,10 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   };
 
   const handleViewRecord = (record: InspectionRecord) => {
+    if (record.source_check_only) {
+      toast({ title: 'Check saved', description: 'The full check record is still being generated. Try again shortly.' });
+      return;
+    }
     // Preserve `from=checks` so Back chain returns to /checks when applicable.
     const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
     const fromSuffix = fromChecks ? '&from=checks' : '';
@@ -535,8 +539,11 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {getResultBadge(record.overall_result, record)}
-                    {record.template_name && (
-                      <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{normaliseCheckName(record.template_name)}</span>
+                    <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">
+                      {record.template_name ? normaliseCheckName(record.template_name) : normaliseCheckName(`${record.check_frequency} check`)}
+                    </span>
+                    {record.source_check_only && (
+                      <span className="text-[9px] font-semibold text-warning bg-warning/10 px-1 py-0.5 rounded">Generating record</span>
                     )}
                     <span className="text-[9px] text-muted-foreground truncate max-w-[160px]">
                       {record.location ? record.location : 'Location not recorded'}
@@ -563,7 +570,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownloadPdf(record)} disabled={!record.pdf_file_path} title="Download PDF">
                     <Download className="h-3 w-3" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveToDocuments(record)} disabled={savingDocId === record.id} title="Save to documents">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveToDocuments(record)} disabled={savingDocId === record.id || !!record.source_check_only} title="Save to documents">
                     {savingDocId === record.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
                   </Button>
                   {canAmend && (

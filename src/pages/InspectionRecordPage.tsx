@@ -32,6 +32,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SourcePill, type ItemSource } from '@/components/checks/SourcePill';
 
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
@@ -392,6 +393,14 @@ function ItemGroup({
     muted: 'text-muted-foreground',
   };
 
+  const getItemSource = (category?: string | null): ItemSource => {
+    const normalized = (category || '').toLowerCase();
+    if (['specific', 'general', 'custom', 'library', 'existing'].includes(normalized)) {
+      return normalized as ItemSource;
+    }
+    return normalized ? 'existing' : 'general';
+  };
+
   return (
     <div className="space-y-2">
       <div className={cn('flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide', headerColors[variant])}>
@@ -402,11 +411,7 @@ function ItemGroup({
         {items.map((item, idx) => (
           <div key={idx} className={cn('rounded-lg border p-3 space-y-1.5', colors[variant])}>
             <p className="text-sm font-semibold text-foreground">{item.check_item_text}</p>
-            {item.category && (
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
-                {item.category}
-              </span>
-            )}
+            <SourcePill source={getItemSource(item.category)} />
             {item.notes && (
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="font-semibold">Note:</span> {item.notes}

@@ -34,6 +34,7 @@ export interface InspectionRecord {
   document_id: string | null;
   is_locked: boolean;
   created_at: string;
+  source_check_only?: boolean;
 }
 
 /** Check if a record is still within its 24-hour amendment window */
@@ -321,6 +322,61 @@ export async function fetchInspectionRecordsPaginated(
 
   let records = (data || []) as unknown as InspectionRecord[];
   const totalCount = count || 0;
+
+  let checksQuery = supabase
+    .from('checks')
+    .select('*')
+    .eq('ride_id', rideId)
+    .order('created_at', { ascending: false });
+
+  if (options.frequency) {
+    checksQuery = options.frequency === 'daily'
+      ? checksQuery.in('check_frequency', ['daily', 'preopening'])
+      : checksQuery.eq('check_frequency', options.frequency);
+  }
+  if (options.dateFrom) checksQuery = checksQuery.gte('check_date', options.dateFrom);
+  if (options.dateTo) checksQuery = checksQuery.lte('check_date', options.dateTo);
+
+  const { data: checksData, error: checksError } = await checksQuery.limit(limit);
+  if (!checksError && checksData?.length) {
+    const recordedCheckIds = new Set(records.map(r => r.check_id));
+    const missingRecordChecks = checksData.filter((check: any) => !recordedCheckIds.has(check.id));
+    records = [
+      ...missingRecordChecks.map((check: any) => ({
+        id: `check-${check.id}`,
+        check_id: check.id,
+        ride_id: check.ride_id,
+        user_id: check.user_id,
+        version: 1,
+        amended_from_id: null,
+        amendment_reason: null,
+        amended_by: null,
+        superseded_by_id: null,
+        inspector_name: check.inspector_name,
+        completed_at: check.created_at,
+        check_date: check.check_date,
+        check_frequency: check.check_frequency,
+        template_id: check.template_id,
+        template_name: null,
+        overall_result: check.status,
+        item_results: [],
+        notes: check.notes,
+        weather_conditions: check.weather_conditions,
+        location: check.location,
+        environment_notes: check.environment_notes,
+        compliance_officer: check.compliance_officer,
+        signature_data: check.signature_data,
+        defect_ids: [],
+        photo_paths: [],
+        pdf_file_path: null,
+        document_id: null,
+        is_locked: true,
+        created_at: check.created_at,
+        source_check_only: true,
+      } as InspectionRecord)),
+      ...records,
+    ].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+  }
 
   // Filter by defects client-side (can't do array length check in PostgREST easily)
   if (options.hasDefects === true) {

@@ -41,6 +41,12 @@ const COMPLIANCE_KEYS = [
   'compliance-completed',
 ] as const;
 
+/** Keys read by check completion, history, and record surfaces */
+const CHECK_RECORD_KEYS = [
+  'checks',
+  'inspection-records',
+] as const;
+
 /** Keys read by defect surfaces */
 const DEFECT_KEYS = [
   'defect-register',
@@ -84,6 +90,14 @@ export function invalidateComplianceQueries(qc: QueryClient) {
 }
 
 /**
+ * Invalidate after completing a routine check or generating its immutable record.
+ */
+export function invalidateCheckRecordQueries(qc: QueryClient) {
+  invalidateKeys(qc, CHECK_RECORD_KEYS);
+  invalidateKeys(qc, DASHBOARD_KEYS);
+}
+
+/**
  * Invalidate after raising, updating, or closing a defect.
  */
 export function invalidateDefectQueries(qc: QueryClient) {
@@ -121,6 +135,7 @@ export function invalidatePressureQueries(qc: QueryClient) {
  */
 export function invalidateAllOperationalQueries(qc: QueryClient) {
   invalidateKeys(qc, DASHBOARD_KEYS);
+  invalidateKeys(qc, CHECK_RECORD_KEYS);
   invalidateKeys(qc, COMPLIANCE_KEYS);
   invalidateKeys(qc, DEFECT_KEYS);
   invalidateKeys(qc, DOCUMENT_KEYS);
