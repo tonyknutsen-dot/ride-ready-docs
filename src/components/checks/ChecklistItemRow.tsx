@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { SourcePill, type ItemSource } from './SourcePill';
 
 export type ChecklistRowResult = 'pass' | 'fail' | 'na' | 'pending';
-export type ChecklistIconKey = 'alert' | 'specific' | 'general' | 'custom' | 'library' | 'check';
 export type ChecklistRiskLevel = 'high' | 'med' | 'low' | 'standard';
 
 export interface ChecklistItemRowProps {
@@ -71,10 +70,6 @@ export const normalizeChecklistRiskLevel = (value?: string | null): ChecklistRis
   const normalized = (value || '').toLowerCase();
   if (normalized === 'high' || normalized === 'med' || normalized === 'low') return normalized;
   return 'standard';
-};
-
-export const getChecklistIconKey = (_source?: ItemSource, _riskLevel?: string | null): ChecklistIconKey => {
-  return 'check';
 };
 
 export function ChecklistSegmentedTabs<T extends string>({
