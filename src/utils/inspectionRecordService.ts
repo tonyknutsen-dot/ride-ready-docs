@@ -247,6 +247,7 @@ export interface FetchRecordsFilters {
   result?: string;
   inspectorName?: string;
   hasDefects?: boolean;
+  issueOnly?: boolean;
   searchQuery?: string;
 }
 
@@ -284,7 +285,7 @@ export async function fetchInspectionRecordsPaginated(
     .order('completed_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (options.frequency) {
+  if (options.frequency && options.frequency !== 'all') {
     if (options.frequency === 'daily') {
       query = query.in('check_frequency', ['daily', 'preopening']);
     } else {
@@ -302,6 +303,8 @@ export async function fetchInspectionRecordsPaginated(
   if (options.result && options.result !== 'all') {
     if (options.result === 'passed') {
       query = query.in('overall_result', ['passed', 'completed']);
+    } else if (options.result === 'na') {
+      query = query.in('overall_result', ['na', 'n/a', 'not_applicable']);
     } else {
       query = query.eq('overall_result', options.result);
     }
@@ -330,7 +333,7 @@ export async function fetchInspectionRecordsPaginated(
     .eq('ride_id', rideId)
     .order('created_at', { ascending: false });
 
-  if (options.frequency) {
+  if (options.frequency && options.frequency !== 'all') {
     checksQuery = options.frequency === 'daily'
       ? checksQuery.in('check_frequency', ['daily', 'preopening'])
       : checksQuery.eq('check_frequency', options.frequency);
@@ -389,7 +392,9 @@ export async function fetchInspectionRecordsPaginated(
   }
 
   // Filter by defects client-side (can't do array length check in PostgREST easily)
-  if (options.hasDefects === true) {
+  if (options.issueOnly) {
+    records = records.filter(r => r.overall_result === 'failed' || (r.defect_ids?.length || 0) > 0);
+  } else if (options.hasDefects === true) {
     records = records.filter(r => (r.defect_ids?.length || 0) > 0);
   } else if (options.hasDefects === false) {
     records = records.filter(r => (r.defect_ids?.length || 0) === 0);
@@ -400,7 +405,9 @@ export async function fetchInspectionRecordsPaginated(
     const q = options.searchQuery.toLowerCase();
     records = records.filter(r =>
       r.inspector_name.toLowerCase().includes(q) ||
+      (r.location?.toLowerCase().includes(q)) ||
       (r.notes?.toLowerCase().includes(q)) ||
+      (r.environment_notes?.toLowerCase().includes(q)) ||
       (r.template_name?.toLowerCase().includes(q))
     );
   }
