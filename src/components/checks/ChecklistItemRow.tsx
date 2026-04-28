@@ -38,7 +38,7 @@ export interface ChecklistTabOption<T extends string> {
 
 const getSourceIcon = (source?: ItemSource, riskLevel?: string | null, iconKey?: ChecklistIconKey) => {
   const key = iconKey || getChecklistIconKey(source, riskLevel);
-  if (key === 'alert') return AlertTriangle;
+  if (source === 'custom' && key === 'custom') return CheckSquare;
   return CheckSquare;
 };
 
@@ -66,7 +66,6 @@ const getSourceRowClass = (source?: ItemSource) => {
 };
 
 const getSourceIconClass = (source?: ItemSource, riskLevel?: string | null) => {
-  if (riskLevel === 'high') return 'text-destructive';
   if (source === 'custom') return 'text-warning';
   if (source === 'specific' || source === 'general' || source === 'library') return 'text-primary';
   return 'text-muted-foreground';
