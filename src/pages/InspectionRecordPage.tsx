@@ -374,6 +374,7 @@ function ItemGroup({
   variant,
   defectIds,
   photoPaths,
+  rideTypeName,
 }: {
   label: string;
   icon: React.ElementType;
@@ -381,6 +382,7 @@ function ItemGroup({
   variant: string;
   defectIds?: string[];
   photoPaths?: string[];
+  rideTypeName?: string;
 }) {
   const colors: Record<string, string> = {
     success: 'text-success border-success/20 bg-success/5',
@@ -407,6 +409,7 @@ function ItemGroup({
             key={idx}
             text={item.check_item_text}
             source={normalizeChecklistSource(item.category)}
+            rideTypeName={rideTypeName}
             result={rowResult}
             compact
             className={colors[variant]}
