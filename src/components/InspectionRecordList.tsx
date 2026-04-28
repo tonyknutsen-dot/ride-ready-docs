@@ -376,6 +376,15 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             Failed
           </span>
         );
+      case 'na':
+      case 'n/a':
+      case 'not_applicable':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold border bg-muted border-border text-muted-foreground">
+            <MinusCircle className="h-2.5 w-2.5" />
+            N-A
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold border bg-warning/10 border-warning/30 text-warning">
