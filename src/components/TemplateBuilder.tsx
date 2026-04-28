@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { type ItemSource } from './checks/SourcePill';
-import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, normalizeChecklistSource, type ChecklistIconKey, type ChecklistRiskLevel } from './checks/ChecklistItemRow';
+import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistRiskLevel, normalizeChecklistSource, type ChecklistRiskLevel } from './checks/ChecklistItemRow';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -66,7 +66,6 @@ interface ShapedSuggestionRow {
   sourceLabel: string;
   rideTypeName: string | undefined;
   riskLevel: ChecklistRiskLevel;
-  iconKey: ChecklistIconKey;
   categoryLabel: string;
   rowType: 'suggestion';
   groupKey: SuggestionTab;
@@ -254,7 +253,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       sourceLabel: source === 'specific' ? `Specific • ${ride.ride_categories?.name || 'this type'}` : 'General',
       rideTypeName: source === 'specific' ? ride.ride_categories?.name : undefined,
       riskLevel,
-      iconKey: getChecklistIconKey(source, riskLevel),
       categoryLabel: item.category || 'Operational',
       rowType: 'suggestion',
       groupKey,
@@ -459,12 +457,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     <div className="space-y-2.5 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-2.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
-        <div className="flex min-h-10 items-center gap-2.5">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/60">
+        <div className="flex min-h-11 items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 -ml-2"
+            className="h-11 w-11 shrink-0 -ml-2"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
@@ -485,8 +483,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet header ── */}
-      <div className="hidden md:flex min-h-10 items-center gap-3">
-        <Button variant="ghost" size="sm" className="h-9 px-3" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+      <div className="hidden md:flex min-h-11 items-center gap-3">
+        <Button variant="ghost" size="sm" className="h-10 px-3.5" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
@@ -702,7 +700,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                               source={row.source}
                               rideTypeName={row.rideTypeName}
                               riskLevel={row.riskLevel}
-                              iconKey={row.iconKey}
                               categoryLabel={row.categoryLabel}
                               selected={row.selected}
                               compact={row.compact}

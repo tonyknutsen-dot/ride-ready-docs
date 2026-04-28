@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CheckSquare, Plus, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, type ChecklistIconKey, type ChecklistRiskLevel } from "./checks/ChecklistItemRow";
+import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistRiskLevel, type ChecklistRiskLevel } from "./checks/ChecklistItemRow";
 import { type ItemSource } from "./checks/SourcePill";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
@@ -31,7 +31,6 @@ interface ShapedLibraryRow {
   sourceLabel: string;
   rideTypeName: string | undefined;
   riskLevel: ChecklistRiskLevel;
-  iconKey: ChecklistIconKey;
   categoryLabel: string;
   rowType: 'library';
   groupKey: FilterTab;
@@ -184,7 +183,6 @@ export default function CheckLibraryDialog({
       sourceLabel: source === "specific" ? `Specific • ${categoryGroupLabel || specificLabel}` : "General",
       rideTypeName: source === "specific" ? categoryGroupLabel : undefined,
       riskLevel,
-      iconKey: getChecklistIconKey(source, riskLevel),
       categoryLabel: item.category || "Operational",
       rowType: "library",
       groupKey: item.ride_category_id ? "specific" : "general",
@@ -261,7 +259,6 @@ export default function CheckLibraryDialog({
                     source={row.source}
                     rideTypeName={row.rideTypeName}
                     riskLevel={row.riskLevel}
-                    iconKey={row.iconKey}
                     categoryLabel={row.categoryLabel}
                     selected={row.selected}
                     compact={row.compact}

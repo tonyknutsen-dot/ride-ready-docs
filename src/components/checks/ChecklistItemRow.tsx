@@ -1,11 +1,10 @@
 import { ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, CheckSquare, GripVertical, MinusCircle, XCircle } from 'lucide-react';
+import { CheckCircle2, CheckSquare, GripVertical, MinusCircle, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SourcePill, type ItemSource } from './SourcePill';
 
 export type ChecklistRowResult = 'pass' | 'fail' | 'na' | 'pending';
-export type ChecklistIconKey = 'alert' | 'specific' | 'general' | 'custom' | 'library' | 'check';
 export type ChecklistRiskLevel = 'high' | 'med' | 'low' | 'standard';
 
 export interface ChecklistItemRowProps {
@@ -15,7 +14,6 @@ export interface ChecklistItemRowProps {
   rideTypeName?: string;
   riskLevel?: ChecklistRiskLevel | string | null;
   categoryLabel?: string | null;
-  iconKey?: ChecklistIconKey;
   result?: ChecklistRowResult;
   index?: number;
   selected?: boolean;
@@ -36,11 +34,7 @@ export interface ChecklistTabOption<T extends string> {
   count?: number;
 }
 
-const getSourceIcon = (source?: ItemSource, riskLevel?: string | null, iconKey?: ChecklistIconKey) => {
-  const key = iconKey || getChecklistIconKey(source, riskLevel);
-  if (source === 'custom' && key === 'custom') return CheckSquare;
-  return CheckSquare;
-};
+const SourceIcon = CheckSquare;
 
 const getResultMeta = (result?: ChecklistRowResult) => {
   switch (result) {
@@ -55,31 +49,9 @@ const getResultMeta = (result?: ChecklistRowResult) => {
   }
 };
 
-const getSourceRowClass = (source?: ItemSource) => {
-  switch (source) {
-    case 'specific':
-    case 'general':
-    case 'library': return 'border-primary/35 bg-primary/5';
-    case 'custom': return 'border-warning/35 bg-warning/5';
-    default: return 'border-border bg-card';
-  }
-};
-
-const getSourceIconClass = (source?: ItemSource, riskLevel?: string | null) => {
-  if (source === 'custom') return 'text-warning';
-  if (source === 'specific' || source === 'general' || source === 'library') return 'text-primary';
-  return 'text-muted-foreground';
-};
-
-const getRiskBadgeClass = (level?: string | null) => {
-  switch (level) {
-    case 'high': return 'bg-destructive/10 text-destructive border-destructive/30';
-    case 'med': return 'bg-warning/10 text-warning border-warning/30';
-    case 'low': return 'bg-success/10 text-success border-success/30';
-    case 'standard': return 'bg-primary/10 text-primary border-primary/30';
-    default: return 'bg-primary/10 text-primary border-primary/30';
-  }
-};
+const sourceRowClass = 'border-primary/35 bg-primary/5';
+const sourceIconClass = 'text-primary';
+const riskBadgeClass = 'bg-primary/10 text-primary border-primary/30';
 
 const getRiskBadgeLabel = (level?: string | null) => {
   if (!level || level === 'standard') return 'STANDARD CHECK';
@@ -98,15 +70,6 @@ export const normalizeChecklistRiskLevel = (value?: string | null): ChecklistRis
   const normalized = (value || '').toLowerCase();
   if (normalized === 'high' || normalized === 'med' || normalized === 'low') return normalized;
   return 'standard';
-};
-
-export const getChecklistIconKey = (source?: ItemSource, riskLevel?: string | null): ChecklistIconKey => {
-  if (riskLevel === 'high') return 'alert';
-  if (source === 'specific') return 'check';
-  if (source === 'general') return 'check';
-  if (source === 'library') return 'check';
-  if (source === 'custom') return 'custom';
-  return 'check';
 };
 
 export function ChecklistSegmentedTabs<T extends string>({
@@ -152,7 +115,6 @@ export function ChecklistItemRow({
   rideTypeName,
   riskLevel,
   categoryLabel,
-  iconKey,
   result,
   index,
   selected,
@@ -168,10 +130,8 @@ export function ChecklistItemRow({
 }: ChecklistItemRowProps) {
   const status = getResultMeta(result);
   const normalizedRisk = normalizeChecklistRiskLevel(riskLevel);
-  const SourceIcon = getSourceIcon(source, normalizedRisk, iconKey);
   const StatusIcon = status.icon;
   const selectable = !!onSelectedChange;
-  const sourceRowClass = getSourceRowClass(source);
   const displayCategoryLabel = categoryLabel ?? (['specific', 'general', 'library'].includes(source) ? 'Operational' : null);
   const Root = selectable ? 'label' : 'div';
 
@@ -206,7 +166,7 @@ export function ChecklistItemRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', getSourceIconClass(source, normalizedRisk))} aria-hidden="true" />
+            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', sourceIconClass)} aria-hidden="true" />
             <p className="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-foreground">
               {text}{required && <span className="ml-1 text-destructive">*</span>}
             </p>
@@ -222,7 +182,7 @@ export function ChecklistItemRow({
           {hint && <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground md:text-xs">{hint}</p>}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(normalizedRisk))}>
+            <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', riskBadgeClass)}>
               {getRiskBadgeLabel(normalizedRisk)}
             </Badge>
             {displayCategoryLabel && (
