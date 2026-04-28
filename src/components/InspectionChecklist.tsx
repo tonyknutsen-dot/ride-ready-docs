@@ -1393,17 +1393,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         <>
           {/* Header card */}
           <div className="sticky top-0 z-30 mx-4 mt-2">
-            <div className="rounded-xl px-4 py-3 shadow-sm border border-slate-200" style={{ background: '#EEF2F7' }}>
+            <div className="rounded-lg px-4 py-3 shadow-sm border border-border bg-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                   <h2 className="text-[14.5px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.3px' }}>
+                   <h2 className="text-[14.5px] font-semibold text-foreground leading-tight truncate">
                      {frequency === 'preopening' ? 'Pre-Opening Check' : frequency === 'daily' ? 'Daily Check' : frequency === 'weekly' ? 'Weekly Check' : frequency === 'monthly' ? 'Monthly Check' : frequency === 'yearly' ? 'Yearly Check' : `${frequency} Check`}
                    </h2>
-                   <p className="text-[12px] font-normal text-slate-600 truncate mt-0.5">
+                    <p className="text-[12px] font-normal text-muted-foreground truncate mt-0.5">
                      {ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}
                    </p>
-                   <p className="text-[9.5px] font-normal text-[#9CA3AF] mt-0.5">
-                     Checked by <span className="font-medium text-[#9CA3AF]">{inspectorName}</span>
+                    <p className="text-[9.5px] font-normal text-muted-foreground mt-0.5">
+                      Checked by <span className="font-medium text-muted-foreground">{inspectorName}</span>
                      {location ? ` · ${location}` : ''}
                    </p>
                 </div>
@@ -1418,15 +1418,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               {/* Progress bar */}
               <div className="mt-2.5">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[10px] font-normal text-[#9CA3AF]">
+                    <p className="text-[10px] font-normal text-muted-foreground">
                     {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return r === 'pass' || r === 'na' || (r === 'fail' && itemDefectRaised[item.id]); }).length} of {activeTemplate.daily_check_template_items.length} items completed
                   </p>
                   {getProgress() === 100 && (
-                    <span className="text-[10px] font-bold text-green-700">✓ Done</span>
+                    <span className="text-[10px] font-bold text-success">✓ Done</span>
                   )}
                 </div>
-                <div className="h-2 rounded-full bg-[#E5E7EB] overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-[#2563EB]'}`} style={{ width: `${Math.round(getProgress())}%` }} />
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-success' : 'bg-primary'}`} style={{ width: `${Math.round(getProgress())}%` }} />
                 </div>
               </div>
             </div>
