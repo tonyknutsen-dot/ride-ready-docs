@@ -459,12 +459,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     <div className="space-y-2.5 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/60">
-        <div className="flex items-center gap-2">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-4 py-2.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
+        <div className="flex min-h-10 items-center gap-2.5">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 -ml-1"
+            className="h-9 w-9 shrink-0 -ml-2"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
@@ -485,8 +485,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet header ── */}
-      <div className="hidden md:flex items-center gap-2.5">
-        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+      <div className="hidden md:flex min-h-10 items-center gap-3">
+        <Button variant="ghost" size="sm" className="h-9 px-3" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
@@ -499,7 +499,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5">
+      <div className="hidden md:flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
@@ -512,7 +512,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               <button
                 onClick={() => { if (canNavigate) setStep(i); }}
                 disabled={!canNavigate}
-                className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors ${
                   isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 } ${canNavigate ? 'cursor-pointer' : ''}`}
               >
