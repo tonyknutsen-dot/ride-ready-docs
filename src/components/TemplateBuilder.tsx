@@ -686,24 +686,30 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                     return (
                       <div key={section.key} className="space-y-1">
                         <div className="flex items-center gap-1.5 px-1">
-                          <SectionIcon className={cn('h-3 w-3', section.key === 'specific' ? 'text-primary' : 'text-info')} />
-                          <span className={cn('text-[10px] font-semibold uppercase tracking-wide', section.key === 'specific' ? 'text-primary' : 'text-info')}>
+                          <SectionIcon className="h-3 w-3 text-primary" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
                             {section.label}
                           </span>
-                          <Badge variant={section.key === 'specific' ? 'secondary' : 'outline'} className="text-[10px] h-4 px-1.5">{section.count}</Badge>
+                          <Badge variant="outline" className="h-4 border-primary/30 bg-primary/10 px-1.5 text-[10px] text-primary">{section.count}</Badge>
                         </div>
-                        {section.items.map((item) => (
-                          <ChecklistItemRow
-                            key={item.id}
-                            text={item.label}
-                            hint={item.hint}
-                            source={section.key}
-                            rideTypeName={ride.ride_categories?.name}
-                            riskLevel={item.risk_level}
-                            selected={!!selectedSuggestions[item.id]}
-                            onSelectedChange={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
-                          />
-                        ))}
+                        {section.items.map((item) => {
+                          const row = shapeSuggestionRow(item, section.key, section.key as SuggestionTab);
+                          return (
+                            <ChecklistItemRow
+                              key={row.id}
+                              text={row.text}
+                              hint={row.hint}
+                              source={row.source}
+                              rideTypeName={row.rideTypeName}
+                              riskLevel={row.riskLevel}
+                              iconKey={row.iconKey}
+                              categoryLabel={row.categoryLabel}
+                              selected={row.selected}
+                              compact={row.compact}
+                              onSelectedChange={(v) => setSelectedSuggestions(prev => ({ ...prev, [row.id]: v }))}
+                            />
+                          );
+                        })}
                       </div>
                     );
                   })}
