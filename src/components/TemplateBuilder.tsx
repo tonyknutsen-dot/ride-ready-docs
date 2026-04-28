@@ -655,13 +655,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           <Badge variant={section.key === 'specific' ? 'secondary' : 'outline'} className="text-[10px] h-4 px-1.5">{section.count}</Badge>
                         </div>
                         {section.items.map((item) => (
-                          <SuggestionRow
+                          <ChecklistItemRow
                             key={item.id}
-                            item={item}
-                            checked={!!selectedSuggestions[item.id]}
-                            onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
+                            text={item.label}
+                            hint={item.hint}
                             source={section.key}
                             rideTypeName={ride.ride_categories?.name}
+                            riskLevel={item.risk_level}
+                            selected={!!selectedSuggestions[item.id]}
+                            onSelectedChange={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
                           />
                         ))}
                       </div>
