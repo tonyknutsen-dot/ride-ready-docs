@@ -684,7 +684,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
               rideCategoryId={ride.category_id}
               equipmentGroup={equipmentGroup}
-              categoryGroupLabel={ride.ride_categories?.category_group}
+              categoryGroupLabel={ride.ride_categories?.name}
               onAdd={async (items: AddedLibraryItem[]) => {
                 const newItems: BuilderItem[] = items.map((item, i) => ({
                   check_item_text: item.label,
@@ -877,7 +877,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
                 rideCategoryId={ride.category_id}
                 equipmentGroup={equipmentGroup}
-                categoryGroupLabel={ride.ride_categories?.category_group}
+                categoryGroupLabel={ride.ride_categories?.name}
                 onAdd={async (items: AddedLibraryItem[]) => {
                   const newItems: BuilderItem[] = items.map((item, i) => ({
                     check_item_text: item.label,
