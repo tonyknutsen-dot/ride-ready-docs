@@ -426,15 +426,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-3 md:space-y-4 pb-24 md:pb-0">
+    <div className="space-y-2 md:space-y-3 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 -ml-1"
+            className="h-8 w-8 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
@@ -455,8 +455,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet header ── */}
-      <div className="hidden md:flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+      <div className="hidden md:flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
@@ -469,7 +469,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-1.5">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
