@@ -841,11 +841,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             {selectedItems.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No items yet — go back to add some.</p>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {selectedItems.map((item, index) => (
-                  <div key={index} className="group flex items-center gap-1.5 rounded-lg border border-border bg-card p-1.5 transition-colors hover:bg-card-hover">
+                  <div key={index} className="group flex items-center gap-1.5">
                     {/* Reorder controls */}
-                    <div className="flex flex-col shrink-0 -my-1">
+                    <div className="flex flex-col shrink-0 self-stretch rounded-lg border border-border bg-card">
                       <button
                         onClick={() => handleMoveItem(index, 'up')}
                         disabled={index === 0 || editingIndex !== null}
@@ -892,22 +892,19 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           rideTypeName={ride.ride_categories?.name}
                           compact
                           draggable
-                          className="border-0 bg-transparent p-0 shadow-none hover:bg-transparent"
+                          actions={(
+                            <div className="flex items-center shrink-0">
+                              <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-1" aria-label="Edit">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-1" aria-label="Remove">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
                         />
                       )}
                     </div>
-
-                    {/* Actions */}
-                    {editingIndex !== index && (
-                      <div className="flex items-center shrink-0">
-                        <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-2" aria-label="Edit">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-2" aria-label="Remove">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
