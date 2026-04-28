@@ -12,10 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, MoreVertical, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
+import { Download, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, ChevronUp, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +41,6 @@ import {
 } from '@/utils/pdfTemplate';
 import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import TemplateBuilder from './TemplateBuilder';
-import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
 import PriorDefectReviewDialog from './PriorDefectReviewDialog';
 import DefectsList from './DefectsList';
@@ -52,6 +51,7 @@ import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from './checks/ChecklistItemRow';
+import ChecklistLauncher from './checks/ChecklistLauncher';
 
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 // CriticalDefectModal removed in showmen simplification
@@ -74,7 +74,7 @@ interface InspectionChecklistProps {
   ride: Ride;
   frequency: string;
   onChecklistSaved?: () => void;
-  startImmediately?: boolean;
+  executionMode?: 'launcher' | 'execute';
 }
 
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -85,9 +85,10 @@ const FREQUENCY_LABELS: Record<string, string> = {
   yearly: 'Yearly',
 };
 
-const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
+const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode = 'launcher' }: InspectionChecklistProps) => {
   const navigate = useNavigate();
   const { guardWrite } = useBillingWriteGuard();
+  const isExecutionMode = executionMode === 'execute';
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
@@ -104,8 +105,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
   const [itemAttachments, setItemAttachments] = useState<Record<string, File[]>>({});
   const [detailsExpanded, setDetailsExpanded] = useState(true);
-  const [checkStarted, setCheckStarted] = useState(startImmediately);
-  const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(startImmediately ? new Date() : null);
   const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
@@ -135,10 +134,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
 
   useEffect(() => {
-    if (!startImmediately) return;
+    if (!isExecutionMode) return;
     document.documentElement.setAttribute('data-builder-mode', 'mobile');
     return () => document.documentElement.removeAttribute('data-builder-mode');
-  }, [startImmediately]);
+  }, [isExecutionMode]);
 
   // Prefill inspector name from the actual user's profile (not org owner for staff)
   useEffect(() => {
@@ -1105,121 +1104,31 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     );
   }
 
-  if (!activeTemplate) {
-    // Staff cannot create templates — show a different message
-    if (isStaff) {
-      return (
-        <EmptyState
-          icon={FileText}
-          title="No Checklist Available"
-          description={`No ${frequency === 'preopening' ? 'pre-opening' : frequency} checklist has been set up for this equipment yet. Please contact your controller.`}
-        />
-      );
-    }
-    return (
-      <EmptyState
-        icon={FileText}
-        title="No Checklist Found"
-        description={`Build your ${frequency === 'preopening' ? 'pre-opening' : frequency} checklist to start recording checks.`}
-        actionLabel="Build Checklist"
-        onAction={() => setShowTemplateBuilder(true)}
-      />
-    );
-  }
-
-  // Start Check gate — show a start button before revealing the full checklist
-  if (!checkStarted && activeTemplate) {
+  if (!activeTemplate || !isExecutionMode) {
     const lastDoneLabel = recentChecks[0]
       ? new Date(recentChecks[0].check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
       : null;
-    const itemCount = activeTemplate.daily_check_template_items.length;
 
     return (
-        <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
-
-        {/* ── Check header + CTA ── */}
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h2 className="text-[15px] font-semibold text-foreground leading-tight truncate">
-                {activeTemplate.template_name}
-              </h2>
-              <p className="text-[11px] font-normal text-muted-foreground mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
-            </div>
-            {!isStaff && (
-              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="h-8 gap-1.5 text-[12px] shrink-0">
-                <Settings className="h-3.5 w-3.5" />
-                Edit Checklist
-              </Button>
-            )}
-            {/* Overflow menu — hide secondary admin actions from staff */}
-            {!isStaff && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Edit Checklist
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={generatePDF}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-
-          <button
-            className="t-btn-primary w-full py-3.5 text-sm"
-            type="button"
-            onClick={() => {
-              // Preserve `from=checks` so Back returns to /checks rather than /rides.
-              const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
-              navigate(`/checks/${ride.id}/${frequency}/execute${fromChecks ? '?from=checks' : ''}`);
-            }}
-          >
-            <PlayCircle className="h-4 w-4 shrink-0" />
-            Start Check
-          </button>
-
-          <p className="text-[10px] text-center text-muted-foreground">
-            {itemCount} items{lastDoneLabel ? ` • Last completed ${lastDoneLabel}` : ''}
-          </p>
-        </div>
-
-        {/* ── Open Defects (compact) ── */}
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] font-medium text-muted-foreground">Open defects</p>
-          <DefectReportDialog
-            rideId={ride.id}
-            rideName={ride.ride_name}
-            checkFrequency={frequency}
-            onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-            trigger={
-              <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
-                + Raise
-              </button>
-            }
-          />
-        </div>
-        <DefectsList
-          key={defectRefreshKey}
-          rideId={ride.id}
-          rideName={ride.ride_name}
-          showResolved={false}
-          onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
-        />
-
-        <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
-          Saved check records are reviewed from the Check Records area after completion.
-        </div>
-
-      </div>
+      <ChecklistLauncher
+        rideId={ride.id}
+        rideName={ride.ride_name}
+        frequency={frequency}
+        frequencyLabel={FREQUENCY_LABELS[frequency] || frequency}
+        templateName={activeTemplate?.template_name ?? null}
+        itemCount={activeTemplate?.daily_check_template_items.length ?? 0}
+        lastCompletedDate={lastDoneLabel}
+        isStaff={isStaff}
+        defectRefreshKey={defectRefreshKey}
+        onBuildTemplate={() => setShowTemplateBuilder(true)}
+        onEditTemplate={() => setShowTemplateBuilder(true)}
+        onExportTemplate={generatePDF}
+        onStartCheck={() => {
+          const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
+          navigate(`/checks/${ride.id}/${frequency}/execute${fromChecks ? '?from=checks' : ''}`);
+        }}
+        onDefectRefresh={() => setDefectRefreshKey(prev => prev + 1)}
+      />
     );
   }
 
@@ -1303,8 +1212,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     setWizardStep('start-notice');
                   } else {
                     setWizardStep('checklist');
-                    setCheckStarted(true);
-                    setCheckStartedAt(new Date());
                   }
                 }}
               >
@@ -1351,8 +1258,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 onClick={() => {
                   setStartNoticeAcknowledgedAt(new Date().toISOString());
                   setWizardStep('checklist');
-                  setCheckStarted(true);
-                  setCheckStartedAt(new Date());
                 }}
               >
                 Start Check

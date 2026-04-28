@@ -123,7 +123,7 @@ const ChecklistExecutionPage = () => {
         ride={ride}
         frequency={frequency ?? 'daily'}
         onChecklistSaved={() => navigate(backTo)}
-        startImmediately
+        executionMode="execute"
       />
     </div>
   );
