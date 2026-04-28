@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { type ItemSource } from './checks/SourcePill';
-import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistSource } from './checks/ChecklistItemRow';
+import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, normalizeChecklistSource, type ChecklistIconKey, type ChecklistRiskLevel } from './checks/ChecklistItemRow';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -54,7 +54,25 @@ interface SuggestionItem {
   label: string;
   hint: string | null;
   risk_level: string | null;
+  category: string | null;
   ride_category_id: string | null;
+}
+
+interface ShapedSuggestionRow {
+  id: string;
+  text: string;
+  hint: string | null;
+  source: ItemSource;
+  sourceLabel: string;
+  rideTypeName: string | undefined;
+  riskLevel: ChecklistRiskLevel;
+  iconKey: ChecklistIconKey;
+  categoryLabel: string;
+  rowType: 'suggestion';
+  groupKey: SuggestionTab;
+  tabState: SuggestionTab;
+  selected: boolean;
+  compact: boolean;
 }
 
 type SuggestionTab = 'all' | 'specific' | 'general';
@@ -160,7 +178,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       if (!resolvedGroup) { setSuggestionsLoading(false); return; }
       let query = supabase
         .from('check_library_items')
-        .select('id,label,hint,risk_level,ride_category_id')
+        .select('id,label,hint,risk_level,category,ride_category_id')
         .in('frequency', getLibraryFrequencies(frequency))
         .eq('is_active', true)
         .eq('equipment_group', resolvedGroup)
