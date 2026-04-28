@@ -310,26 +310,26 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2 md:space-y-3">
       <ChecksOnboardingModal forceOpen={showChecksGuide} onClose={() => setShowChecksGuide(false)} />
 
       {/* Sticky Header — compact */}
-      <div data-builder-hide="mobile" className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      <div data-builder-hide="mobile" className="sticky top-0 z-10 -mx-4 px-4 py-1.5 md:py-2 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 shrink-0 active:scale-95">
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 md:h-9 md:w-9 shrink-0 active:scale-95">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0 text-center">
-            <h1 className="text-base font-bold truncate">{ride.ride_name}</h1>
-            <p className="text-xs text-muted-foreground">{ride.ride_categories.name}</p>
+            <h1 className="text-sm md:text-base font-bold truncate">{ride.ride_name}</h1>
+            <p className="text-[11px] md:text-xs text-muted-foreground leading-tight">{ride.ride_categories.name}</p>
           </div>
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} className="h-10 w-10 shrink-0 active:scale-95">
+            <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} className="h-8 w-8 md:h-9 md:w-9 shrink-0 active:scale-95">
               <Pencil className="h-4 w-4" />
             </Button>
             {!isStaff && (
               <DeleteRideDialog ride={ride} onDeleted={onBack} trigger={
-                <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 active:scale-95 text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Button variant="ghost" size="icon" className="h-8 w-8 md:h-9 md:w-9 shrink-0 active:scale-95 text-destructive hover:text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               } />
@@ -338,7 +338,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         </div>
       </div>
       {/* Tab Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2 md:space-y-3">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
           const primaryTabs = [
