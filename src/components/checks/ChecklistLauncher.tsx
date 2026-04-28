@@ -4,6 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from '@/components/DefectReportDialog';
 import DefectsList from '@/components/DefectsList';
+import InspectionRecordList from '@/components/InspectionRecordList';
 
 interface ChecklistLauncherProps {
   rideId: string;
@@ -129,9 +130,11 @@ export function ChecklistLauncher({
         onDefectUpdated={onDefectRefresh}
       />
 
-      <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
-        Saved check records are reviewed from the Check Records area after completion.
-      </div>
+      <InspectionRecordList
+        rideId={rideId}
+        rideName={rideName}
+        frequency={frequency}
+      />
     </div>
   );
 }
