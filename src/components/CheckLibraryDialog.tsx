@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CheckSquare, Plus, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ChecklistItemRow, ChecklistSegmentedTabs } from "./checks/ChecklistItemRow";
+import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, type ChecklistIconKey, type ChecklistRiskLevel } from "./checks/ChecklistItemRow";
+import { type ItemSource } from "./checks/SourcePill";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
 type FilterTab = "all" | "general" | "specific";
@@ -17,8 +18,26 @@ interface CheckLibraryItem {
   ride_category_id: string | null;
   hint: string | null;
   risk_level: string | null;
+  category: string | null;
   is_active: boolean;
   sort_index: number;
+}
+
+interface ShapedLibraryRow {
+  id: string;
+  text: string;
+  hint: string | null;
+  source: ItemSource;
+  sourceLabel: string;
+  rideTypeName: string | undefined;
+  riskLevel: ChecklistRiskLevel;
+  iconKey: ChecklistIconKey;
+  categoryLabel: string;
+  rowType: 'library';
+  groupKey: FilterTab;
+  tabState: FilterTab;
+  selected: boolean;
+  compact: boolean;
 }
 
 export interface AddedLibraryItem {
@@ -65,7 +84,7 @@ export default function CheckLibraryDialog({
         
         let query = supabase
           .from("check_library_items")
-          .select("id,label,frequency,ride_category_id,hint,risk_level,sort_index,is_active")
+          .select("id,label,frequency,ride_category_id,hint,risk_level,category,sort_index,is_active")
           .in("frequency", getLibraryFrequencies(frequency))
           .eq("is_active", true)
           .eq("equipment_group", resolvedGroup)
