@@ -5,6 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+const SUPABASE_PROJECT_REF = 'sbtldudgiskqfqqkrmaa';
+const SUPABASE_AUTH_STORAGE_KEY = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
+
 type DirectSessionState = {
   checked: boolean;
   exists: boolean;
@@ -23,10 +26,37 @@ const initialDirectSessionState: DirectSessionState = {
   error: null,
 };
 
+type RuntimeStorageState = {
+  authStorageKeyPresent: boolean;
+  authStorageJsonValid: boolean | null;
+  authStorageHasAccessToken: boolean;
+  authStorageHasRefreshToken: boolean;
+  authStorageUserPresent: boolean;
+  supabaseStorageKeys: string;
+  localStorageAvailable: boolean;
+  serviceWorkerControlled: boolean;
+  serviceWorkerRegistrations: string;
+  cacheNames: string;
+};
+
+const initialRuntimeStorageState: RuntimeStorageState = {
+  authStorageKeyPresent: false,
+  authStorageJsonValid: null,
+  authStorageHasAccessToken: false,
+  authStorageHasRefreshToken: false,
+  authStorageUserPresent: false,
+  supabaseStorageKeys: 'Checking',
+  localStorageAvailable: true,
+  serviceWorkerControlled: false,
+  serviceWorkerRegistrations: 'Checking',
+  cacheNames: 'Checking',
+};
+
 export default function SessionDiagnostics() {
   const location = useLocation();
   const { user, session, loading, isOfflineMode } = useAuth();
   const [directSession, setDirectSession] = useState<DirectSessionState>(initialDirectSessionState);
+  const [runtimeStorage, setRuntimeStorage] = useState<RuntimeStorageState>(initialRuntimeStorageState);
 
   useEffect(() => {
     let mounted = true;
@@ -62,6 +92,72 @@ export default function SessionDiagnostics() {
     };
   }, [session?.access_token]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const inspectRuntimeStorage = async () => {
+      const nextState: RuntimeStorageState = { ...initialRuntimeStorageState };
+
+      try {
+        const keys = Object.keys(localStorage).filter((key) => key.startsWith('sb-') || key.includes('supabase'));
+        const rawAuthToken = localStorage.getItem(SUPABASE_AUTH_STORAGE_KEY);
+        nextState.authStorageKeyPresent = !!rawAuthToken;
+        nextState.supabaseStorageKeys = keys.length ? keys.sort().join(', ') : 'None on this origin';
+
+        if (rawAuthToken) {
+          try {
+            const parsed = JSON.parse(rawAuthToken);
+            const currentSession = parsed?.currentSession ?? parsed;
+            nextState.authStorageJsonValid = true;
+            nextState.authStorageHasAccessToken = !!currentSession?.access_token;
+            nextState.authStorageHasRefreshToken = !!currentSession?.refresh_token;
+            nextState.authStorageUserPresent = !!currentSession?.user?.id;
+          } catch {
+            nextState.authStorageJsonValid = false;
+          }
+        }
+      } catch {
+        nextState.localStorageAvailable = false;
+        nextState.supabaseStorageKeys = 'localStorage unavailable';
+      }
+
+      if ('serviceWorker' in navigator) {
+        nextState.serviceWorkerControlled = !!navigator.serviceWorker.controller;
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          nextState.serviceWorkerRegistrations = registrations.length
+            ? registrations.map((registration) => registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || 'registration without active script').join(', ')
+            : 'None';
+        } catch {
+          nextState.serviceWorkerRegistrations = 'Unable to inspect';
+        }
+      } else {
+        nextState.serviceWorkerRegistrations = 'Not supported';
+      }
+
+      if ('caches' in window) {
+        try {
+          const names = await caches.keys();
+          nextState.cacheNames = names.length ? names.join(', ') : 'None';
+        } catch {
+          nextState.cacheNames = 'Unable to inspect';
+        }
+      } else {
+        nextState.cacheNames = 'Not supported';
+      }
+
+      if (mounted) {
+        setRuntimeStorage(nextState);
+      }
+    };
+
+    void inspectRuntimeStorage();
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.access_token]);
+
   const rows = useMemo(() => [
     ['Origin', window.location.origin],
     ['Current route', `${location.pathname}${location.search}${location.hash}` || '/'],
@@ -74,7 +170,18 @@ export default function SessionDiagnostics() {
     ['Offline mode', isOfflineMode ? 'Yes' : 'No'],
     ['Session expires at', directSession.expiresAt || 'Not available'],
     ['Session check error', directSession.error || 'None'],
-  ], [directSession, isOfflineMode, loading, location.hash, location.pathname, location.search, session, user]);
+    ['Supabase auth storage key', SUPABASE_AUTH_STORAGE_KEY],
+    ['Auth storage key present on this origin', runtimeStorage.authStorageKeyPresent ? 'Yes' : 'No'],
+    ['Auth storage JSON valid', runtimeStorage.authStorageJsonValid === null ? 'Not available' : runtimeStorage.authStorageJsonValid ? 'Yes' : 'No'],
+    ['Auth storage access token present', runtimeStorage.authStorageHasAccessToken ? 'Yes' : 'No'],
+    ['Auth storage refresh token present', runtimeStorage.authStorageHasRefreshToken ? 'Yes' : 'No'],
+    ['Auth storage user present', runtimeStorage.authStorageUserPresent ? 'Yes' : 'No'],
+    ['Supabase/local auth storage keys', runtimeStorage.supabaseStorageKeys],
+    ['localStorage available', runtimeStorage.localStorageAvailable ? 'Yes' : 'No'],
+    ['Service worker controlled page', runtimeStorage.serviceWorkerControlled ? 'Yes' : 'No'],
+    ['Service worker registrations', runtimeStorage.serviceWorkerRegistrations],
+    ['Cache storage names', runtimeStorage.cacheNames],
+  ], [directSession, isOfflineMode, loading, location.hash, location.pathname, location.search, runtimeStorage, session, user]);
 
   return (
     <main className="min-h-screen bg-background p-4 md:p-6">
