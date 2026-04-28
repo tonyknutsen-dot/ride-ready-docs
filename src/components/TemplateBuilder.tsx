@@ -609,7 +609,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                       className="text-xs h-6 px-2"
                     onClick={() => {
                       const all: Record<string, boolean> = {};
-                      filteredSuggestions.forEach(s => { all[s.id] = true; });
+                      visibleSuggestions.forEach(s => { all[s.id] = true; });
                       setSelectedSuggestions(prev => ({ ...prev, ...all }));
                     }}
                   >
