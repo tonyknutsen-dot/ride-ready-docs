@@ -951,6 +951,7 @@ interface SuggestionRowProps {
 }
 
 const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => {
+  const Icon = item.risk_level === 'high' ? AlertTriangle : source === 'specific' ? Sparkles : CheckSquare;
   const riskDotClass =
     item.risk_level === 'high' ? 'bg-destructive'
     : item.risk_level === 'med' ? 'bg-yellow-500'
@@ -958,9 +959,10 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
     : '';
   return (
     <label
-      className={`flex items-start gap-2.5 md:gap-3 rounded-lg p-1.5 md:p-2 cursor-pointer transition-colors border ${
-        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-transparent hover:bg-background'
-      }`}
+      className={cn(
+        'flex items-start gap-2.5 rounded-lg border p-2 cursor-pointer transition-colors',
+        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/25 bg-primary/5 hover:bg-primary/10' : 'border-border bg-background/70 hover:bg-muted/30'
+      )}
     >
       <input
         type="checkbox"
@@ -970,8 +972,7 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
       />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium flex items-start gap-1.5">
-          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-          {source === 'specific' && item.risk_level !== 'high' && <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />}
+          <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', item.risk_level === 'high' ? 'text-destructive' : source === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
           {item.risk_level && item.risk_level !== 'high' && (
             <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
           )}
@@ -980,7 +981,7 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
             <SourcePill source={source} rideTypeName={rideTypeName} />
           </span>
         </div>
-        {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
+        {item.hint && <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.hint}</p>}
         {/* Risk badge: full chip on desktop, only HIGH chip on mobile */}
         {item.risk_level && (
           <div className="mt-1 hidden md:flex items-center gap-1 flex-wrap">
