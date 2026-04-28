@@ -12,27 +12,27 @@ const META: Record<ItemSource, { label: string; icon: React.ComponentType<{ clas
   specific: {
     label: "Ride-specific",
     icon: Sparkles,
-    cls: "bg-primary/10 text-primary border-primary/30",
+    cls: "bg-primary/10 text-primary border-primary/40",
   },
   general: {
     label: "General",
     icon: Library,
-    cls: "bg-muted text-muted-foreground border-border",
+    cls: "bg-secondary text-foreground border-border",
   },
   custom: {
     label: "Custom",
     icon: User,
-    cls: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
+    cls: "bg-warning/10 text-warning border-warning/40",
   },
   library: {
     label: "Library",
     icon: Library,
-    cls: "bg-secondary text-secondary-foreground border-border",
+    cls: "bg-info/10 text-info border-info/40",
   },
   existing: {
     label: "Existing template",
     icon: FileText,
-    cls: "bg-muted text-foreground border-border",
+    cls: "bg-card text-foreground border-border",
   },
 };
 
