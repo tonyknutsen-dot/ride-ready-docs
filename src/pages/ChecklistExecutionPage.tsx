@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, CheckSquare } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
 import InspectionChecklist from '@/components/InspectionChecklist';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
-import PageHeader from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -106,17 +106,18 @@ const ChecklistExecutionPage = () => {
   }
 
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+    <div className="space-y-2 px-4 md:px-0 pb-8">
       <StaffAccountBanner />
 
-      <PageHeader
-        icon={<CheckSquare className="h-5 w-5 text-primary" />}
-        iconBgClass="from-primary/20 to-primary/10"
-        title={ride.ride_name}
-        subtitle={freqLabel}
-        showBackButton
-        backTo={backTo}
-      />
+      <div className="flex items-center gap-2 min-h-10">
+        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 -ml-2" onClick={() => navigate(backTo)} aria-label="Back">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0">
+          <h1 className="truncate text-sm font-semibold text-foreground">{ride.ride_name}</h1>
+          <p className="truncate text-xs text-muted-foreground">{freqLabel}</p>
+        </div>
+      </div>
 
       <InspectionChecklist
         ride={ride}

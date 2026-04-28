@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, MoreVertical, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -48,13 +48,11 @@ import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
-import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from './checks/ChecklistItemRow';
 
-import InspectionRecordList from './InspectionRecordList';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 // CriticalDefectModal removed in showmen simplification
 import { useQueryClient as useQueryClientImport } from '@tanstack/react-query';
@@ -104,8 +102,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [defectRefreshKey, setDefectRefreshKey] = useState(0);
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
-  const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
-  const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [itemAttachments, setItemAttachments] = useState<Record<string, File[]>>({});
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [checkStarted, setCheckStarted] = useState(startImmediately);
@@ -125,6 +121,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   // Which item is currently reopening a prior defect (explicit user action — opens edit dialog)
   const [reopeningPriorForItem, setReopeningPriorForItem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'saving' | 'record'>('idle');
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
   const [finishNoticeAcknowledged, setFinishNoticeAcknowledged] = useState(false);
@@ -136,6 +133,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
+
+  useEffect(() => {
+    if (!startImmediately) return;
+    document.documentElement.setAttribute('data-builder-mode', 'mobile');
+    return () => document.documentElement.removeAttribute('data-builder-mode');
+  }, [startImmediately]);
 
   // Prefill inspector name from the actual user's profile (not org owner for staff)
   useEffect(() => {
@@ -812,6 +815,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     }
 
     setSubmitting(true);
+    setSubmitPhase('saving');
 
     // Optimistically update the overview cache immediately
     const previousOverview = queryClient.getQueryData(['overview', user?.id]);
@@ -883,33 +887,20 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         throw new Error('Failed to submit check');
       }
 
-      // ✅ Primary save succeeded — release the UI immediately so the spinner can never hang on side-effects
-      setSubmitting(false);
-
-      // Reset form (safe to do now)
-      setItemResults({});
-      setNotes({});
-      setInspectorName('');
-      setInspectorNotes('');
-      setLocation('');
-      setCheckStarted(false);
-      setCheckStartedAt(null);
-      setShowMaintenanceForItem(null);
-      setDeclarationChecked(false);
-      setStartNoticeAcknowledged(false);
-      setStartNoticeAcknowledgedAt(null);
-      setFinishNoticeAcknowledged(false);
-      setFinishNoticeAcknowledgedAt(null);
-      setItemDefects({});
-      setItemDefectRaised({});
-
-      // Make the primary check row visible immediately; generated record surfaces follow below.
+      // Keep the user on this screen until the immutable check record exists.
+      setSubmitPhase('record');
       await invalidateCheckRecordQueries(queryClient);
-      await loadRecentChecks().catch(() => {});
 
-      // ── SIDE-EFFECTS (non-blocking) ──────────────────────────────────
-      // Each side-effect runs in its own try/catch. A failure here will surface
-      // as a non-blocking toast but will NEVER prevent the save from completing.
+      if (isOffline || !checkId) {
+        toast({
+          title: 'Saved offline',
+          description: 'This check is waiting to sync. The check record will appear once the device is online.',
+        });
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        return;
+      }
+
       if (!isOffline && checkId) {
         const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
         const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
@@ -925,76 +916,69 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           is_required: item.is_required ?? false,
         }));
 
-        // Fire-and-forget: defect fetch + inspection record + cache invalidation
-        (async () => {
-          try {
-            const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
-            if (linkedDefectIds.length > 0) {
-              await supabase
-                .from('defects')
-                .update({ check_id: checkId } as any)
-                .in('id', linkedDefectIds)
-                .is('check_id', null);
-            }
+        const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
+        if (linkedDefectIds.length > 0) {
+          await supabase
+            .from('defects')
+            .update({ check_id: checkId } as any)
+            .in('id', linkedDefectIds)
+            .is('check_id', null);
+        }
 
-            const { data: linkedDefects } = await supabase
-              .from('defects')
-              .select('id, severity')
-              .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
-            const defectIds = (linkedDefects || []).map(d => d.id);
+        const { data: linkedDefects } = await supabase
+          .from('defects')
+          .select('id, severity')
+          .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
+        const defectIds = (linkedDefects || []).map(d => d.id);
 
-            await createInspectionRecord({
-              checkId,
-              rideId: ride.id,
-              userId: effectiveUserId!,
-              inspectorName: inspectorName.trim() || 'Inspector',
-              checkDate: new Date().toISOString().split('T')[0],
-              checkFrequency: frequency,
-              templateId: activeTemplate.id,
-              templateName: activeTemplate.template_name,
-              overallResult,
-              itemResults: itemResultSnapshots,
-              notes: inspectorNotes.trim() || null,
-              weatherConditions: null,
-              location: location.trim() || null,
-              environmentNotes: null,
-              complianceOfficer: null,
-              signatureData: null,
-              defectIds,
-            });
+        const inspectionRecordId = await createInspectionRecord({
+          checkId,
+          rideId: ride.id,
+          userId: effectiveUserId!,
+          inspectorName: inspectorName.trim() || 'Inspector',
+          checkDate: new Date().toISOString().split('T')[0],
+          checkFrequency: frequency,
+          templateId: activeTemplate.id,
+          templateName: activeTemplate.template_name,
+          overallResult,
+          itemResults: itemResultSnapshots,
+          notes: inspectorNotes.trim() || null,
+          weatherConditions: null,
+          location: location.trim() || null,
+          environmentNotes: null,
+          complianceOfficer: null,
+          signatureData: null,
+          defectIds,
+        });
 
-            invalidateCheckRecordQueries(queryClient);
-            loadRecentChecks().catch(() => {});
+        if (!inspectionRecordId) {
+          throw new Error('The check saved, but the check record could not be created yet.');
+        }
 
-            const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
-            const totalDefectCount = (linkedDefects || []).length;
-            if (failedCount > 0) {
-              const defectSummary = totalDefectCount > 0
-                ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
-                : '';
-              toast({
-                title: '⚠️ Check completed with failures',
-                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
-                variant: criticalDefectCount > 0 ? 'destructive' : 'default',
-              });
-            } else {
-              toast({
-                title: 'Check completed ✓',
-                description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`,
-              });
-            }
-          } catch (sideEffectError) {
-            console.error('Post-save side-effect failed (check is still saved):', sideEffectError);
-            toast({
-              title: 'Check saved — some follow-up steps failed',
-              description: 'The check was saved successfully but the inspection record or summary could not be generated. You can regenerate from the Checks Log.',
-              variant: 'default',
-            });
-          }
-        })();
+        invalidateCheckRecordQueries(queryClient);
+        await loadRecentChecks().catch(() => {});
+
+        const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
+        const totalDefectCount = (linkedDefects || []).length;
+        if (failedCount > 0) {
+          const defectSummary = totalDefectCount > 0
+            ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
+            : '';
+          toast({
+            title: '⚠️ Check completed with failures',
+            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
+            variant: criticalDefectCount > 0 ? 'destructive' : 'default',
+          });
+        } else {
+          toast({
+            title: 'Check completed ✓',
+            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check record is ready`,
+          });
+        }
       }
 
-      // Notify parent after the primary record cache has been invalidated.
+      setSubmitting(false);
+      setSubmitPhase('idle');
       onChecklistSaved?.();
     } catch (error) {
       // Rollback optimistic update
@@ -1004,10 +988,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       console.error('Error submitting checks:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save check',
+        description: error instanceof Error ? error.message : 'Failed to save check',
         variant: 'destructive',
       });
       setSubmitting(false);
+      setSubmitPhase('idle');
     }
   };
 
@@ -1230,21 +1215,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
         />
 
-        {/* ── Inspection Records ── */}
-        <InspectionRecordList
-          rideId={ride.id}
-          rideName={ride.ride_name}
-          frequency={frequency}
-          rideCategory={ride.ride_categories?.name}
-          rideManufacturer={ride.manufacturer || undefined}
-          rideSerialNumber={ride.serial_number || undefined}
-        />
+        <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+          Saved check records are reviewed from the Check Records area after completion.
+        </div>
 
-        <CheckDetailDialog
-          check={selectedCheck}
-          open={showCheckDetail}
-          onOpenChange={setShowCheckDetail}
-        />
       </div>
     );
   }
@@ -1803,35 +1777,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       </div>
 
-      {/* ── Recent Checks (collapsed) ── */}
-      {recentChecks.length > 0 && (
-        <div className="mx-4 mt-2 mb-2">
-          <details className="group">
-            <summary className="text-[10px] font-bold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-700 list-none flex items-center gap-1.5">
-              <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform shrink-0" />
-              Recent checks ({recentChecks.length})
-            </summary>
-            <div className="mt-1.5 space-y-1">
-              {recentChecks.map((check) => (
-                <div
-                  key={check.id}
-                  className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
-                  onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-[12px] truncate text-slate-900">{check.inspector_name}</p>
-                    <p className="text-[11px] text-slate-500">
-                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    </p>
-                  </div>
-                  <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                </div>
-              ))}
-            </div>
-          </details>
-        </div>
-      )}
-
       {/* ── Sticky footer ── */}
       <div className="fixed left-0 right-0 bottom-0 z-30 border-t border-slate-300 bg-white/95 backdrop-blur-sm shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
         <div className="max-w-xl mx-auto px-4 py-2 flex gap-2">
@@ -1855,15 +1800,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             className="flex-1 t-btn-primary rounded-md py-2.5 text-[13px]"
           >
             {submitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin shrink-0" />Saving…</>
+              <><Loader2 className="h-4 w-4 animate-spin shrink-0" />{submitPhase === 'record' ? 'Creating record…' : 'Saving…'}</>
             ) : (
               <>Complete Check</>
             )}
           </button>
         </div>
       </div>
-
-      <CheckDetailDialog check={selectedCheck} open={showCheckDetail} onOpenChange={setShowCheckDetail} />
         </>
       )}
     </div>
