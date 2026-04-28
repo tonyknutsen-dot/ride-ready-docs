@@ -276,7 +276,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                     <button
                       key={value}
                       onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
-                      className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border transition-all min-w-[52px] font-medium text-[11px] ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all min-w-[52px] font-medium text-[11px] ${
                         isActive
                           ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                           : 'bg-card border-border text-foreground hover:border-primary/40 hover:bg-secondary'
