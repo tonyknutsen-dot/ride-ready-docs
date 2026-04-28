@@ -247,6 +247,7 @@ export interface FetchRecordsFilters {
   result?: string;
   inspectorName?: string;
   hasDefects?: boolean;
+  issueOnly?: boolean;
   searchQuery?: string;
 }
 
@@ -255,6 +256,8 @@ export interface PaginatedRecords {
   totalCount: number;
   hasMore: boolean;
 }
+
+const CHECKS_TABLE_FREQUENCIES = new Set(['daily', 'preopening', 'weekly', 'monthly', 'yearly']);
 
 /**
  * Fetch inspection records for a ride with server-side pagination and filtering.
@@ -284,7 +287,7 @@ export async function fetchInspectionRecordsPaginated(
     .order('completed_at', { ascending: false })
     .order('created_at', { ascending: false });
 
-  if (options.frequency) {
+  if (options.frequency && options.frequency !== 'all') {
     if (options.frequency === 'daily') {
       query = query.in('check_frequency', ['daily', 'preopening']);
     } else {
@@ -302,6 +305,8 @@ export async function fetchInspectionRecordsPaginated(
   if (options.result && options.result !== 'all') {
     if (options.result === 'passed') {
       query = query.in('overall_result', ['passed', 'completed']);
+    } else if (options.result === 'na') {
+      query = query.in('overall_result', ['na', 'n/a', 'not_applicable']);
     } else {
       query = query.eq('overall_result', options.result);
     }
@@ -309,6 +314,19 @@ export async function fetchInspectionRecordsPaginated(
 
   if (options.inspectorName) {
     query = query.ilike('inspector_name', `%${options.inspectorName}%`);
+  }
+
+  if (options.issueOnly) {
+    query = query.or('overall_result.eq.failed,defect_ids.neq.{}');
+  } else if (options.hasDefects === true) {
+    query = query.not('defect_ids', 'eq', '{}');
+  } else if (options.hasDefects === false) {
+    query = query.or('defect_ids.eq.{},defect_ids.is.null');
+  }
+
+  if (options.searchQuery) {
+    const escaped = options.searchQuery.replace(/[%_]/g, '\\$&');
+    query = query.or(`inspector_name.ilike.%${escaped}%,location.ilike.%${escaped}%,notes.ilike.%${escaped}%,environment_notes.ilike.%${escaped}%,template_name.ilike.%${escaped}%`);
   }
 
   // Apply range for pagination
@@ -324,21 +342,26 @@ export async function fetchInspectionRecordsPaginated(
   let records = (data || []) as unknown as InspectionRecord[];
   let totalCount = count || 0;
 
+  const includeSourceChecks = !options.frequency || options.frequency === 'all' || CHECKS_TABLE_FREQUENCIES.has(options.frequency);
+
   let checksQuery = supabase
     .from('checks')
     .select('*')
     .eq('ride_id', rideId)
     .order('created_at', { ascending: false });
 
-  if (options.frequency) {
+  if (options.frequency && options.frequency !== 'all') {
     checksQuery = options.frequency === 'daily'
       ? checksQuery.in('check_frequency', ['daily', 'preopening'])
       : checksQuery.eq('check_frequency', options.frequency);
   }
   if (options.dateFrom) checksQuery = checksQuery.gte('check_date', options.dateFrom);
   if (options.dateTo) checksQuery = checksQuery.lte('check_date', options.dateTo);
+  if (options.inspectorName) checksQuery = checksQuery.ilike('inspector_name', `%${options.inspectorName}%`);
 
-  const { data: checksData, error: checksError } = await checksQuery.limit(limit);
+  const { data: checksData, error: checksError } = includeSourceChecks
+    ? await checksQuery.limit(limit)
+    : { data: null, error: null };
   if (!checksError && checksData?.length) {
     const sourceChecks = checksData as Array<Record<string, unknown>>;
     const checkIds = sourceChecks.map((check) => String(check.id));
@@ -389,18 +412,22 @@ export async function fetchInspectionRecordsPaginated(
   }
 
   // Filter by defects client-side (can't do array length check in PostgREST easily)
-  if (options.hasDefects === true) {
+  if (includeSourceChecks && options.issueOnly) {
+    records = records.filter(r => r.overall_result === 'failed' || (r.defect_ids?.length || 0) > 0);
+  } else if (includeSourceChecks && options.hasDefects === true) {
     records = records.filter(r => (r.defect_ids?.length || 0) > 0);
-  } else if (options.hasDefects === false) {
+  } else if (includeSourceChecks && options.hasDefects === false) {
     records = records.filter(r => (r.defect_ids?.length || 0) === 0);
   }
 
-  // Search query - client side for notes/inspector
+  // Search fallback for generated source-check rows.
   if (options.searchQuery) {
     const q = options.searchQuery.toLowerCase();
     records = records.filter(r =>
       r.inspector_name.toLowerCase().includes(q) ||
+      (r.location?.toLowerCase().includes(q)) ||
       (r.notes?.toLowerCase().includes(q)) ||
+      (r.environment_notes?.toLowerCase().includes(q)) ||
       (r.template_name?.toLowerCase().includes(q))
     );
   }

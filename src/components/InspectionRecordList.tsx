@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   Eye,
   Download,
@@ -30,7 +31,7 @@ import {
   Camera,
   StickyNote,
 } from 'lucide-react';
-import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear } from 'date-fns';
+import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear, subMonths } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -63,7 +64,7 @@ function normaliseCheckName(name: string): string {
     .replace(/\byearly\s+check\b/gi, 'Yearly Check');
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 interface InspectionRecordListProps {
   rideId: string;
@@ -78,8 +79,17 @@ const DATE_PRESETS = [
   { label: '7 days', value: '7' },
   { label: '30 days', value: '30' },
   { label: '90 days', value: '90' },
-  { label: 'This month', value: 'month' },
-  { label: 'This year', value: 'year' },
+  { label: '12 months', value: '12m' },
+  { label: 'Custom', value: 'custom' },
+] as const;
+
+const ROUTINE_OPTIONS = [
+  { label: 'Daily-Pre-Opening', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+  { label: 'Yearly', value: 'yearly' },
+  { label: 'Annual', value: 'annual' },
+  { label: 'NDT', value: 'ndt' },
 ] as const;
 
 const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCategory, rideManufacturer, rideSerialNumber }: InspectionRecordListProps) => {
@@ -100,7 +110,9 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [resultFilter, setResultFilter] = useState<string>('all');
-  const [defectsFilter, setDefectsFilter] = useState<string>('all');
+  const [routineFilter, setRoutineFilter] = useState<string>(frequency);
+  const [inspectorFilter, setInspectorFilter] = useState('');
+  const [issueOnly, setIssueOnly] = useState(false);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [fromCalOpen, setFromCalOpen] = useState(false);
@@ -108,14 +120,16 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   const [activePreset, setActivePreset] = useState<string | null>(null);
 
   const filters: FetchRecordsFilters = useMemo(() => ({
-    frequency,
+    frequency: routineFilter,
     limit: PAGE_SIZE,
     dateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
     dateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
-    result: resultFilter !== 'all' ? resultFilter : undefined,
-    hasDefects: defectsFilter === 'yes' ? true : defectsFilter === 'no' ? false : undefined,
+    result: resultFilter !== 'all' && resultFilter !== 'with_defects' ? resultFilter : undefined,
+    hasDefects: resultFilter === 'with_defects' ? true : undefined,
+    issueOnly,
+    inspectorName: inspectorFilter || undefined,
     searchQuery: searchQuery || undefined,
-  }), [frequency, dateFrom, dateTo, resultFilter, defectsFilter, searchQuery]);
+  }), [routineFilter, dateFrom, dateTo, resultFilter, issueOnly, inspectorFilter, searchQuery]);
 
   const {
     data,
@@ -155,16 +169,18 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   );
   const totalCount = data?.pages[0]?.totalCount || 0;
 
-  const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || defectsFilter !== 'all' || searchQuery);
+  const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || routineFilter !== frequency || inspectorFilter || issueOnly || searchQuery);
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
     setResultFilter('all');
-    setDefectsFilter('all');
+    setRoutineFilter(frequency);
+    setInspectorFilter('');
+    setIssueOnly(false);
     setDateFrom(undefined);
     setDateTo(undefined);
     setActivePreset(null);
-  }, []);
+  }, [frequency]);
 
   // ── Export handlers ──
   const handleExportPdf = async () => {
@@ -236,10 +252,34 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       case '7': setDateFrom(subDays(now, 7)); setDateTo(now); break;
       case '30': setDateFrom(subDays(now, 30)); setDateTo(now); break;
       case '90': setDateFrom(subDays(now, 90)); setDateTo(now); break;
+      case '12m': setDateFrom(subMonths(now, 12)); setDateTo(now); break;
       case 'month': setDateFrom(startOfMonth(now)); setDateTo(endOfMonth(now)); break;
       case 'year': setDateFrom(startOfYear(now)); setDateTo(now); break;
+      case 'custom': setDateFrom(undefined); setDateTo(undefined); break;
     }
   }, []);
+
+  const applyQuickFilter = useCallback((filter: 'recent' | 'month' | 'issues' | 'all') => {
+    if (filter === 'recent') {
+      clearFilters();
+      setActivePreset('recent');
+      return;
+    }
+    if (filter === 'month') {
+      clearFilters();
+      setActivePreset('month');
+      const now = new Date();
+      setDateFrom(startOfMonth(now));
+      setDateTo(endOfMonth(now));
+      return;
+    }
+    if (filter === 'issues') {
+      clearFilters();
+      setIssueOnly(true);
+      return;
+    }
+    clearFilters();
+  }, [clearFilters]);
 
   const handleDownloadPdf = async (record: InspectionRecord) => {
     if (!record.pdf_file_path) {
@@ -334,6 +374,15 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             Failed
           </span>
         );
+      case 'na':
+      case 'n/a':
+      case 'not_applicable':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold border bg-muted border-border text-muted-foreground">
+            <MinusCircle className="h-2.5 w-2.5" />
+            N-A
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold border bg-warning/10 border-warning/30 text-warning">
@@ -400,9 +449,37 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         </div>
       </div>
 
-      {/* ── Filter panel ── */}
-      {filtersOpen && (
-        <div className="space-y-1.5 pb-1">
+      {/* ── Quick chips ── */}
+      <div className="flex gap-1 overflow-x-auto pb-0.5">
+        {[
+          { label: 'Recent', value: 'recent' as const },
+          { label: 'This month', value: 'month' as const },
+          { label: 'Failed / defects', value: 'issues' as const },
+          { label: 'All', value: 'all' as const },
+        ].map((chip) => (
+          <button
+            key={chip.value}
+            type="button"
+            onClick={() => applyQuickFilter(chip.value)}
+            className={cn(
+              "h-7 shrink-0 rounded-md border px-2.5 text-[11px] font-semibold transition-colors hover:bg-muted/60 hover:text-foreground",
+              (chip.value === 'issues' && issueOnly) || (chip.value === 'month' && activePreset === 'month') || (chip.value === 'recent' && !hasActiveFilters)
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background text-muted-foreground"
+            )}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Compact filter sheet ── */}
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4">
+          <SheetHeader className="pb-3 text-left">
+            <SheetTitle className="text-sm">Check Record Filters</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-3 pb-2">
           {/* Quick range pills */}
           <div className="flex flex-wrap gap-1">
             {DATE_PRESETS.map(p => (
@@ -453,39 +530,52 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 <SelectItem value="all" className="text-xs">All results</SelectItem>
                 <SelectItem value="passed" className="text-xs">Passed</SelectItem>
                 <SelectItem value="failed" className="text-xs">Failed</SelectItem>
-                <SelectItem value="partial" className="text-xs">Partial</SelectItem>
+                <SelectItem value="na" className="text-xs">N-A</SelectItem>
+                <SelectItem value="with_defects" className="text-xs">With defects</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select value={defectsFilter} onValueChange={setDefectsFilter}>
-              <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Defects" /></SelectTrigger>
+            <Select value={routineFilter} onValueChange={setRoutineFilter}>
+              <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Routine" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-xs">Any</SelectItem>
-                <SelectItem value="yes" className="text-xs">With defects</SelectItem>
-                <SelectItem value="no" className="text-xs">No defects</SelectItem>
+                {ROUTINE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="text-xs">{option.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
+
+            <Input
+              placeholder="Checked by"
+              value={inspectorFilter}
+              onChange={(e) => setInspectorFilter(e.target.value)}
+              className="h-7 text-[11px]"
+            />
           </div>
 
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
-              placeholder="Search by name, notes…"
+              placeholder="Search location or text…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-7 text-[11px] pl-7"
             />
           </div>
-        </div>
-      )}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <Button variant="outline" size="sm" className="h-8 text-[11px]" onClick={clearFilters}>Clear all</Button>
+              <Button size="sm" className="h-8 text-[11px]" onClick={() => setFiltersOpen(false)}>Apply filters</Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ── Summary + export toolbar ── */}
       {records.length > 0 && (
         <div className="flex flex-col gap-1 py-1.5">
           <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Showing <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
               {scopeLabel && <span className="font-medium text-foreground"> for {scopeLabel}</span>}
               {hasActiveFilters && <span> · filters applied</span>}
             </p>
