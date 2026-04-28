@@ -11,6 +11,7 @@ import {
   type InspectionRecord,
   type ItemResultSnapshot,
 } from '@/utils/inspectionRecordService';
+import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from '@/components/checks/ChecklistItemRow';
 import { InspectionAmendDialog } from '@/components/InspectionAmendDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +33,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SourcePill, type ItemSource } from '@/components/checks/SourcePill';
 
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
@@ -393,14 +393,6 @@ function ItemGroup({
     muted: 'text-muted-foreground',
   };
 
-  const getItemSource = (category?: string | null): ItemSource => {
-    const normalized = (category || '').toLowerCase();
-    if (['specific', 'general', 'custom', 'library', 'existing'].includes(normalized)) {
-      return normalized as ItemSource;
-    }
-    return normalized ? 'existing' : 'general';
-  };
-
   return (
     <div className="space-y-2">
       <div className={cn('flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide', headerColors[variant])}>
@@ -408,10 +400,17 @@ function ItemGroup({
         {label} ({items.length})
       </div>
       <div className="space-y-1.5">
-        {items.map((item, idx) => (
-          <div key={idx} className={cn('rounded-lg border p-3 space-y-1.5', colors[variant])}>
-            <p className="text-sm font-semibold text-foreground">{item.check_item_text}</p>
-            <SourcePill source={getItemSource(item.category)} />
+        {items.map((item, idx) => {
+          const rowResult: ChecklistRowResult = item.result === 'fail' ? 'fail' : item.result === 'na' ? 'na' : 'pass';
+          return (
+          <ChecklistItemRow
+            key={idx}
+            text={item.check_item_text}
+            source={normalizeChecklistSource(item.category)}
+            result={rowResult}
+            compact
+            className={colors[variant]}
+          >
             {item.notes && (
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="font-semibold">Note:</span> {item.notes}
@@ -430,8 +429,9 @@ function ItemGroup({
                 {photoPaths.length} photo(s) attached
               </p>
             )}
-          </div>
-        ))}
+          </ChecklistItemRow>
+          );
+        })}
       </div>
     </div>
   );
