@@ -223,6 +223,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
     }
   }, [activeTemplate, isExecutionMode]);
 
+  useEffect(() => {
+    if (loading || isExecutionMode) return;
+    const branchChosen = activeTemplate
+      ? (recentChecks[0] ? 'saved checklist review' : 'existing checklist execution')
+      : 'build checklist / no checklist state';
+    setCheckDebugValue('branch chosen', branchChosen);
+    if (!activeTemplate) markCheckDebug('no checklist state mounted');
+  }, [activeTemplate, isExecutionMode, loading, recentChecks]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -268,6 +277,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
         onEditTemplate={() => setShowTemplateBuilder(true)}
         onExportTemplate={generatePDF}
         onStartCheck={() => {
+          setCheckDebugValue('branch chosen', 'existing checklist execution');
           const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
           const debugParam = new URLSearchParams(window.location.search).get('checkDebug') === '1';
           const params = [fromChecks ? 'from=checks' : '', debugParam ? 'checkDebug=1' : ''].filter(Boolean).join('&');

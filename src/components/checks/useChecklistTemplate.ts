@@ -80,6 +80,10 @@ export function useChecklistTemplate({ ride, frequency, userId, effectiveUserId,
       const { data, error } = await query.maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
       setActiveTemplate(data as ChecklistTemplate | null);
+      setCheckDebugValue('equipment id', ride.id);
+      setCheckDebugValue('frequency requested', frequency);
+      setCheckDebugValue('template id found', data?.id ?? 'none');
+      setCheckDebugValue('active checklist id found', data?.id ?? 'none');
       setCheckDebugValue('template query status', data ? `finished: ${data.daily_check_template_items?.length ?? 0} items` : 'finished: no active template');
       markCheckDebug('template query finished');
     } catch (error) {
@@ -121,6 +125,8 @@ export function useChecklistTemplate({ ride, frequency, userId, effectiveUserId,
       const { data, error } = await query;
       if (error) throw error;
       setRecentChecks((data || []) as ChecklistCheck[]);
+      setCheckDebugValue('saved checklist id found', data?.[0]?.id ?? 'none');
+      setCheckDebugValue('existing checklist lookup returned empty', !data?.length);
     } catch (error) {
       console.error('Error loading recent checks:', error);
     }
