@@ -983,7 +983,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       console.error('Error submitting checks:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save check',
+        description: error instanceof Error ? error.message : 'Failed to save check',
         variant: 'destructive',
       });
       setSubmitting(false);
