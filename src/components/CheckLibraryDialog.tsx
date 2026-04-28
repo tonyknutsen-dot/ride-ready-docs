@@ -278,21 +278,21 @@ export default function CheckLibraryDialog({
           {/* Footer — sticky compact bar on mobile, inline on desktop */}
           <div className="fixed md:static bottom-0 left-0 right-0 md:bottom-auto z-10 bg-background border-t md:border-t-0 px-3 py-2 md:px-0 md:py-0 md:pt-3 flex flex-wrap items-center justify-between gap-2 md:border-t md:border-border">
             <div className="text-xs md:text-sm text-muted-foreground">
-              {selectedLabels.length ? (
+              {selectedItems.length ? (
                 <span className="font-medium text-foreground">
-                  {selectedLabels.length} selected
+                  {selectedItems.length} selected
                 </span>
               ) : (
                 "Choose items to add"
               )}
             </div>
             <Button
-              disabled={selectedLabels.length === 0}
+              disabled={selectedItems.length === 0}
               onClick={handleAddSelected}
               size="sm"
               className="gap-1.5 h-9"
             >
-              <Plus className="w-4 h-4" /> Add{selectedLabels.length > 0 && ` (${selectedLabels.length})`}
+              <Plus className="w-4 h-4" /> Add{selectedItems.length > 0 && ` (${selectedItems.length})`}
             </Button>
           </div>
         </div>
