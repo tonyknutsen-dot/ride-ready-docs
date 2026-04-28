@@ -16,7 +16,8 @@ import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
-import { SourcePill, type ItemSource } from './checks/SourcePill';
+import { type ItemSource } from './checks/SourcePill';
+import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistSource } from './checks/ChecklistItemRow';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -411,15 +412,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       toast({ title: 'Error saving', description: error.message, variant: 'destructive' });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getRiskBadgeClass = (level: string | null) => {
-    switch (level) {
-      case 'high': return 'bg-red-600 text-white hover:bg-red-700';
-      case 'med': return 'bg-yellow-600 text-white hover:bg-yellow-700';
-      case 'low': return 'bg-green-600 text-white hover:bg-green-700';
-      default: return '';
     }
   };
 
