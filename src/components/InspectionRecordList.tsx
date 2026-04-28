@@ -50,6 +50,7 @@ import { generateCheckRecordsPdf, generateCheckRecordsCsv } from '@/utils/checkR
 import { useAuth } from '@/contexts/AuthContext';
 import { format as formatDateFns } from 'date-fns';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
+import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 
 /** Normalise template/check names for consistent display */
 function normaliseCheckName(name: string): string {
@@ -119,6 +120,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   const {
     data,
     isLoading,
+    refetch,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -136,7 +138,16 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     },
     initialPageParam: 0,
     enabled: !!effectiveUserId,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
+
+  useMemo(() => {
+    if (!effectiveUserId) return;
+    invalidateCheckRecordQueries(queryClient);
+    refetch();
+  }, [effectiveUserId, rideId, frequency, queryClient, refetch]);
 
   const records = useMemo(
     () => data?.pages.flatMap(p => p.records) || [],
