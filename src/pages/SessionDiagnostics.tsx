@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 
 const SUPABASE_PROJECT_REF = 'sbtldudgiskqfqqkrmaa';
 const SUPABASE_AUTH_STORAGE_KEY = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
+const DIAGNOSTICS_BUILD_ID = 'canonical-auth-probe-2026-04-28-2';
 
 type DirectSessionState = {
   checked: boolean;
@@ -27,6 +28,8 @@ const initialDirectSessionState: DirectSessionState = {
 };
 
 type RuntimeStorageState = {
+  loadedAt: string;
+  scriptAssets: string;
   authStorageKeyPresent: boolean;
   authStorageJsonValid: boolean | null;
   authStorageHasAccessToken: boolean;
@@ -35,11 +38,14 @@ type RuntimeStorageState = {
   supabaseStorageKeys: string;
   localStorageAvailable: boolean;
   serviceWorkerControlled: boolean;
+  serviceWorkerController: string;
   serviceWorkerRegistrations: string;
   cacheNames: string;
 };
 
 const initialRuntimeStorageState: RuntimeStorageState = {
+  loadedAt: 'Checking',
+  scriptAssets: 'Checking',
   authStorageKeyPresent: false,
   authStorageJsonValid: null,
   authStorageHasAccessToken: false,
@@ -48,6 +54,7 @@ const initialRuntimeStorageState: RuntimeStorageState = {
   supabaseStorageKeys: 'Checking',
   localStorageAvailable: true,
   serviceWorkerControlled: false,
+  serviceWorkerController: 'Checking',
   serviceWorkerRegistrations: 'Checking',
   cacheNames: 'Checking',
 };
@@ -97,6 +104,12 @@ export default function SessionDiagnostics() {
 
     const inspectRuntimeStorage = async () => {
       const nextState: RuntimeStorageState = { ...initialRuntimeStorageState };
+      nextState.loadedAt = new Date().toISOString();
+      nextState.scriptAssets = Array.from(document.scripts)
+        .map((script) => script.src)
+        .filter(Boolean)
+        .map((src) => src.replace(window.location.origin, ''))
+        .join(', ') || 'None detected';
 
       try {
         const keys = Object.keys(localStorage).filter((key) => key.startsWith('sb-') || key.includes('supabase'));
@@ -123,6 +136,7 @@ export default function SessionDiagnostics() {
 
       if ('serviceWorker' in navigator) {
         nextState.serviceWorkerControlled = !!navigator.serviceWorker.controller;
+        nextState.serviceWorkerController = navigator.serviceWorker.controller?.scriptURL || 'None';
         try {
           const registrations = await navigator.serviceWorker.getRegistrations();
           nextState.serviceWorkerRegistrations = registrations.length
@@ -159,8 +173,11 @@ export default function SessionDiagnostics() {
   }, [session?.access_token]);
 
   const rows = useMemo(() => [
+    ['Diagnostics build', DIAGNOSTICS_BUILD_ID],
+    ['Page loaded at', runtimeStorage.loadedAt],
     ['Origin', window.location.origin],
     ['Current route', `${location.pathname}${location.search}${location.hash}` || '/'],
+    ['Loaded script assets', runtimeStorage.scriptAssets],
     ['Auth restore pending', loading ? 'Yes' : 'No'],
     ['Auth restore failed', !loading && !session ? 'Yes' : 'No'],
     ['Supabase session exists', session ? 'Yes' : 'No'],
@@ -179,6 +196,7 @@ export default function SessionDiagnostics() {
     ['Supabase/local auth storage keys', runtimeStorage.supabaseStorageKeys],
     ['localStorage available', runtimeStorage.localStorageAvailable ? 'Yes' : 'No'],
     ['Service worker controlled page', runtimeStorage.serviceWorkerControlled ? 'Yes' : 'No'],
+    ['Service worker controller', runtimeStorage.serviceWorkerController],
     ['Service worker registrations', runtimeStorage.serviceWorkerRegistrations],
     ['Cache storage names', runtimeStorage.cacheNames],
   ], [directSession, isOfflineMode, loading, location.hash, location.pathname, location.search, runtimeStorage, session, user]);
