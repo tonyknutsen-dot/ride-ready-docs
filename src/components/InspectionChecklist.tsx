@@ -1800,7 +1800,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             className="flex-1 t-btn-primary rounded-md py-2.5 text-[13px]"
           >
             {submitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin shrink-0" />Saving…</>
+              <><Loader2 className="h-4 w-4 animate-spin shrink-0" />{submitPhase === 'record' ? 'Creating record…' : 'Saving…'}</>
             ) : (
               <>Complete Check</>
             )}
