@@ -182,7 +182,7 @@ export default function CheckLibraryDialog({
       hint: item.hint,
       source,
       sourceLabel: source === "specific" ? `Specific • ${categoryGroupLabel || specificLabel}` : "General",
-      rideTypeName: categoryGroupLabel,
+      rideTypeName: source === "specific" ? categoryGroupLabel : undefined,
       riskLevel,
       iconKey: getChecklistIconKey(source, riskLevel),
       categoryLabel: item.category || "Operational",
@@ -204,7 +204,7 @@ export default function CheckLibraryDialog({
       } 
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto p-3 md:p-4">
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto p-2.5 md:p-3">
         <DialogHeader className="pb-0 md:pb-1">
           <DialogTitle className="flex items-center gap-2 text-sm md:text-base">
             <CheckSquare className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
@@ -213,16 +213,16 @@ export default function CheckLibraryDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {/* Search */}
           <div className="relative">
             <Input
               placeholder="Search items…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="pl-8 h-9"
+              className="pl-8 h-8"
             />
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
           </div>
 
           {/* Helper line — desktop only (mobile uses tabs as primary signal) */}
@@ -234,7 +234,7 @@ export default function CheckLibraryDialog({
           )}
 
           {/* Item list — tighter rows on mobile, inline source pill */}
-          <div className="space-y-1.5 md:space-y-2 max-h-[58vh] md:max-h-[54vh] overflow-y-auto pb-14 md:pb-0">
+          <div className="space-y-1 md:space-y-1.5 max-h-[60vh] md:max-h-[56vh] overflow-y-auto pb-14 md:pb-0">
             {loading ? (
               <div className="text-sm text-muted-foreground py-8 text-center">Loading check items…</div>
             ) : filtered.length === 0 ? (

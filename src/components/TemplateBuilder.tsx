@@ -232,12 +232,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   }, [filteredSuggestions, generalSuggestions, specificSuggestions, suggestionTab]);
 
   const suggestionSections = useMemo(() => {
-    const sections: Array<{ key: ItemSource; label: string; count: number; items: SuggestionItem[]; icon: typeof Sparkles }> = [];
+    const sections: Array<{ key: ItemSource; label: string; count: number; items: SuggestionItem[]; icon: typeof CheckSquare }> = [];
     if ((suggestionTab === 'all' || suggestionTab === 'specific') && specificSuggestions.length > 0) {
-      sections.push({ key: 'specific', label: `Specific to ${ride.ride_categories?.name || 'this type'}`, count: specificSuggestions.length, items: specificSuggestions, icon: Sparkles });
+      sections.push({ key: 'specific', label: `Specific to ${ride.ride_categories?.name || 'this type'}`, count: specificSuggestions.length, items: specificSuggestions, icon: CheckSquare });
     }
     if ((suggestionTab === 'all' || suggestionTab === 'general') && generalSuggestions.length > 0) {
-      sections.push({ key: 'general', label: 'General', count: generalSuggestions.length, items: generalSuggestions, icon: Library });
+      sections.push({ key: 'general', label: 'General', count: generalSuggestions.length, items: generalSuggestions, icon: CheckSquare });
     }
     return sections;
   }, [generalSuggestions, ride.ride_categories?.name, specificSuggestions, suggestionTab]);
@@ -252,7 +252,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       hint: item.hint,
       source,
       sourceLabel: source === 'specific' ? `Specific • ${ride.ride_categories?.name || 'this type'}` : 'General',
-      rideTypeName: ride.ride_categories?.name,
+      rideTypeName: source === 'specific' ? ride.ride_categories?.name : undefined,
       riskLevel,
       iconKey: getChecklistIconKey(source, riskLevel),
       categoryLabel: item.category || 'Operational',
@@ -456,22 +456,22 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-1.5 md:space-y-2 pb-24 md:pb-0">
+    <div className="space-y-1 md:space-y-1.5 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-0.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 -ml-1"
+            className="h-6 w-6 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h3 className="text-[13px] font-semibold leading-tight truncate">
+              <h3 className="text-xs font-semibold leading-tight truncate">
               {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
             </h3>
             <p className="text-[11px] text-muted-foreground truncate leading-tight">
@@ -486,7 +486,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       {/* ── Desktop/tablet header ── */}
       <div className="hidden md:flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+        <Button variant="ghost" size="sm" className="h-6 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
@@ -499,7 +499,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-1.5">
+      <div className="hidden md:flex items-center gap-1">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
@@ -594,16 +594,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
       {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-1.5 md:space-y-2">
+        <div className="space-y-1 md:space-y-1.5">
           {selectedItems.length > 0 && (
-            <div className="flex items-center gap-2 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium">{selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} added so far</span>
             </div>
           )}
 
           {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
-           <div className="space-y-1.5 md:rounded-lg md:border md:border-border md:bg-card md:p-2">
+           <div className="space-y-1 md:rounded-md md:border md:border-border md:bg-card md:p-1.5">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-semibold md:font-medium">Smart suggestions</span>
@@ -632,7 +632,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2 pb-0.5">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -668,10 +668,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   onChange={(next) => setSuggestionTab(next as SuggestionTab)}
                 />
 
-                <div className="space-y-1.5 max-h-[19rem] overflow-y-auto">
+                <div className="space-y-1 max-h-[20rem] overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
-                    <div className="rounded-md border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-foreground">
+                    <div className="rounded-md border border-dashed border-border bg-muted/30 p-2 text-[11px] text-foreground">
                       No ride-specific items have been created for{' '}
                       <span className="font-semibold">{ride.ride_categories?.name || 'this ride type'}</span>{' '}
                       yet — showing general items only.
@@ -720,7 +720,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   variant="secondary"
                   onClick={handleAcceptSuggestions}
                   disabled={selectedSuggestionCount === 0}
-                  className="w-full gap-2 mt-0.5 h-9"
+                  className="w-full gap-2 h-8"
                 >
                   Add {selectedSuggestionCount > 0 ? selectedSuggestionCount : ''} suggestion{selectedSuggestionCount === 1 ? '' : 's'} to checklist
                 </Button>
@@ -732,7 +732,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           {equipmentGroup && (
             <CheckLibraryDialog
               trigger={
-                <Button className="w-full font-medium h-9 md:h-10 text-sm" variant="outline">
+                <Button className="w-full font-medium h-8 md:h-9 text-sm" variant="outline">
                   <Library className="w-4 h-4 mr-2" />
                   Browse Check Library
                 </Button>
@@ -760,7 +760,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             <CollapsibleTrigger asChild>
               <button
                 type="button"
-                className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wide py-1.5 hover:text-foreground transition-colors"
+                className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wide py-1 hover:text-foreground transition-colors"
               >
                 <span className="flex items-center gap-1.5">
                   <Plus className="h-3.5 w-3.5" />
