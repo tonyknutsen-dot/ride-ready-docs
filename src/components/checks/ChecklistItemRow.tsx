@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { AlertTriangle, CheckCircle2, CheckSquare, GripVertical, Library, MinusCircle, Sparkles, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CheckSquare, GripVertical, MinusCircle, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { SourcePill, type ItemSource } from './SourcePill';
@@ -39,8 +39,6 @@ export interface ChecklistTabOption<T extends string> {
 const getSourceIcon = (source?: ItemSource, riskLevel?: string | null, iconKey?: ChecklistIconKey) => {
   const key = iconKey || getChecklistIconKey(source, riskLevel);
   if (key === 'alert') return AlertTriangle;
-  if (key === 'specific') return Sparkles;
-  if (key === 'general' || key === 'library') return Library;
   return CheckSquare;
 };
 
@@ -59,9 +57,9 @@ const getResultMeta = (result?: ChecklistRowResult) => {
 
 const getSourceRowClass = (source?: ItemSource) => {
   switch (source) {
-    case 'specific': return 'border-primary/35 bg-primary/5';
+    case 'specific':
     case 'general':
-    case 'library': return 'border-primary/30 bg-primary/5';
+    case 'library': return 'border-primary/35 bg-primary/5';
     case 'custom': return 'border-warning/35 bg-warning/5';
     default: return 'border-border bg-card';
   }
@@ -106,9 +104,9 @@ export const normalizeChecklistRiskLevel = (value?: string | null): ChecklistRis
 
 export const getChecklistIconKey = (source?: ItemSource, riskLevel?: string | null): ChecklistIconKey => {
   if (riskLevel === 'high') return 'alert';
-  if (source === 'specific') return 'specific';
-  if (source === 'general') return 'general';
-  if (source === 'library') return 'library';
+  if (source === 'specific') return 'check';
+  if (source === 'general') return 'check';
+  if (source === 'library') return 'check';
   if (source === 'custom') return 'custom';
   return 'check';
 };
@@ -125,7 +123,7 @@ export function ChecklistSegmentedTabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={cn('flex gap-1 rounded-lg border border-border bg-card p-1 shadow-sm', className)}>
+    <div className={cn('flex gap-1 rounded-md border border-border bg-card p-0.5 shadow-sm', className)}>
       {options.map((option) => {
         const active = value === option.key;
         return (
@@ -134,7 +132,7 @@ export function ChecklistSegmentedTabs<T extends string>({
             type="button"
             onClick={() => onChange(option.key)}
             className={cn(
-              'flex-1 rounded-md px-2 py-1.5 text-[11px] font-semibold leading-none transition-colors',
+              'flex-1 rounded-[5px] px-2 py-1 text-[11px] font-semibold leading-none transition-colors',
               active
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'bg-transparent text-foreground hover:bg-secondary'
