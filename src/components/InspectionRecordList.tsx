@@ -534,15 +534,6 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
               </SelectContent>
             </Select>
 
-            <Select value={defectsFilter} onValueChange={setDefectsFilter}>
-              <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Defects" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">Any</SelectItem>
-                <SelectItem value="yes" className="text-xs">With defects</SelectItem>
-                <SelectItem value="no" className="text-xs">No defects</SelectItem>
-              </SelectContent>
-            </Select>
-
             <Select value={routineFilter} onValueChange={setRoutineFilter}>
               <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Routine" /></SelectTrigger>
               <SelectContent>
