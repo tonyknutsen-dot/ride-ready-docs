@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CheckSquare, Plus, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ChecklistItemRow, ChecklistSegmentedTabs } from "./checks/ChecklistItemRow";
+import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, type ChecklistIconKey, type ChecklistRiskLevel } from "./checks/ChecklistItemRow";
+import { type ItemSource } from "./checks/SourcePill";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
 type FilterTab = "all" | "general" | "specific";
@@ -17,8 +18,26 @@ interface CheckLibraryItem {
   ride_category_id: string | null;
   hint: string | null;
   risk_level: string | null;
+  category: string | null;
   is_active: boolean;
   sort_index: number;
+}
+
+interface ShapedLibraryRow {
+  id: string;
+  text: string;
+  hint: string | null;
+  source: ItemSource;
+  sourceLabel: string;
+  rideTypeName: string | undefined;
+  riskLevel: ChecklistRiskLevel;
+  iconKey: ChecklistIconKey;
+  categoryLabel: string;
+  rowType: 'library';
+  groupKey: FilterTab;
+  tabState: FilterTab;
+  selected: boolean;
+  compact: boolean;
 }
 
 export interface AddedLibraryItem {
@@ -65,7 +84,7 @@ export default function CheckLibraryDialog({
         
         let query = supabase
           .from("check_library_items")
-          .select("id,label,frequency,ride_category_id,hint,risk_level,sort_index,is_active")
+          .select("id,label,frequency,ride_category_id,hint,risk_level,category,sort_index,is_active")
           .in("frequency", getLibraryFrequencies(frequency))
           .eq("is_active", true)
           .eq("equipment_group", resolvedGroup)
@@ -154,6 +173,27 @@ export default function CheckLibraryDialog({
     { key: "all", label: "All", count: rows.length },
   ];
 
+  const shapeLibraryRow = (item: CheckLibraryItem): ShapedLibraryRow => {
+    const source: ItemSource = item.ride_category_id ? "specific" : "general";
+    const riskLevel = normalizeChecklistRiskLevel(item.risk_level);
+    return {
+      id: item.id,
+      text: item.label,
+      hint: item.hint,
+      source,
+      sourceLabel: source === "specific" ? `Specific • ${categoryGroupLabel || specificLabel}` : "General",
+      rideTypeName: categoryGroupLabel,
+      riskLevel,
+      iconKey: getChecklistIconKey(source, riskLevel),
+      categoryLabel: item.category || "Operational",
+      rowType: "library",
+      groupKey: item.ride_category_id ? "specific" : "general",
+      tabState: tab,
+      selected: !!sel[item.id],
+      compact: false,
+    };
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => { 
       setOpen(v); 
@@ -211,18 +251,24 @@ export default function CheckLibraryDialog({
                 )}
               </div>
             ) : (
-              filtered.map((r) => (
-                <ChecklistItemRow
-                  key={r.id}
-                  text={r.label}
-                  hint={r.hint}
-                  source={r.ride_category_id ? "specific" : "general"}
-                  rideTypeName={categoryGroupLabel}
-                  riskLevel={r.risk_level}
-                  selected={!!sel[r.id]}
-                  onSelectedChange={(checked) => setSel(prev => ({ ...prev, [r.id]: checked }))}
-                />
-              ))
+              filtered.map((r) => {
+                const row = shapeLibraryRow(r);
+                return (
+                  <ChecklistItemRow
+                    key={row.id}
+                    text={row.text}
+                    hint={row.hint}
+                    source={row.source}
+                    rideTypeName={row.rideTypeName}
+                    riskLevel={row.riskLevel}
+                    iconKey={row.iconKey}
+                    categoryLabel={row.categoryLabel}
+                    selected={row.selected}
+                    compact={row.compact}
+                    onSelectedChange={(checked) => setSel(prev => ({ ...prev, [row.id]: checked }))}
+                  />
+                );
+              })
             )}
           </div>
 

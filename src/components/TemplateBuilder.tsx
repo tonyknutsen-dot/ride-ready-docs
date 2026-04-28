@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { type ItemSource } from './checks/SourcePill';
-import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistSource } from './checks/ChecklistItemRow';
+import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, normalizeChecklistSource, type ChecklistIconKey, type ChecklistRiskLevel } from './checks/ChecklistItemRow';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -54,7 +54,25 @@ interface SuggestionItem {
   label: string;
   hint: string | null;
   risk_level: string | null;
+  category: string | null;
   ride_category_id: string | null;
+}
+
+interface ShapedSuggestionRow {
+  id: string;
+  text: string;
+  hint: string | null;
+  source: ItemSource;
+  sourceLabel: string;
+  rideTypeName: string | undefined;
+  riskLevel: ChecklistRiskLevel;
+  iconKey: ChecklistIconKey;
+  categoryLabel: string;
+  rowType: 'suggestion';
+  groupKey: SuggestionTab;
+  tabState: SuggestionTab;
+  selected: boolean;
+  compact: boolean;
 }
 
 type SuggestionTab = 'all' | 'specific' | 'general';
@@ -160,7 +178,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       if (!resolvedGroup) { setSuggestionsLoading(false); return; }
       let query = supabase
         .from('check_library_items')
-        .select('id,label,hint,risk_level,ride_category_id')
+        .select('id,label,hint,risk_level,category,ride_category_id')
         .in('frequency', getLibraryFrequencies(frequency))
         .eq('is_active', true)
         .eq('equipment_group', resolvedGroup)
@@ -225,6 +243,26 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   }, [generalSuggestions, ride.ride_categories?.name, specificSuggestions, suggestionTab]);
 
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
+
+  const shapeSuggestionRow = (item: SuggestionItem, source: ItemSource, groupKey: SuggestionTab): ShapedSuggestionRow => {
+    const riskLevel = normalizeChecklistRiskLevel(item.risk_level);
+    return {
+      id: item.id,
+      text: item.label,
+      hint: item.hint,
+      source,
+      sourceLabel: source === 'specific' ? `Specific • ${ride.ride_categories?.name || 'this type'}` : 'General',
+      rideTypeName: ride.ride_categories?.name,
+      riskLevel,
+      iconKey: getChecklistIconKey(source, riskLevel),
+      categoryLabel: item.category || 'Operational',
+      rowType: 'suggestion',
+      groupKey,
+      tabState: suggestionTab,
+      selected: !!selectedSuggestions[item.id],
+      compact: false,
+    };
+  };
 
   const handleAcceptSuggestions = () => {
     const chosen = suggestions.filter(s => selectedSuggestions[s.id]);
@@ -648,24 +686,30 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                     return (
                       <div key={section.key} className="space-y-1">
                         <div className="flex items-center gap-1.5 px-1">
-                          <SectionIcon className={cn('h-3 w-3', section.key === 'specific' ? 'text-primary' : 'text-info')} />
-                          <span className={cn('text-[10px] font-semibold uppercase tracking-wide', section.key === 'specific' ? 'text-primary' : 'text-info')}>
+                          <SectionIcon className="h-3 w-3 text-primary" />
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
                             {section.label}
                           </span>
-                          <Badge variant={section.key === 'specific' ? 'secondary' : 'outline'} className="text-[10px] h-4 px-1.5">{section.count}</Badge>
+                          <Badge variant="outline" className="h-4 border-primary/30 bg-primary/10 px-1.5 text-[10px] text-primary">{section.count}</Badge>
                         </div>
-                        {section.items.map((item) => (
-                          <ChecklistItemRow
-                            key={item.id}
-                            text={item.label}
-                            hint={item.hint}
-                            source={section.key}
-                            rideTypeName={ride.ride_categories?.name}
-                            riskLevel={item.risk_level}
-                            selected={!!selectedSuggestions[item.id]}
-                            onSelectedChange={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
-                          />
-                        ))}
+                        {section.items.map((item) => {
+                          const row = shapeSuggestionRow(item, section.key, section.key as SuggestionTab);
+                          return (
+                            <ChecklistItemRow
+                              key={row.id}
+                              text={row.text}
+                              hint={row.hint}
+                              source={row.source}
+                              rideTypeName={row.rideTypeName}
+                              riskLevel={row.riskLevel}
+                              iconKey={row.iconKey}
+                              categoryLabel={row.categoryLabel}
+                              selected={row.selected}
+                              compact={row.compact}
+                              onSelectedChange={(v) => setSelectedSuggestions(prev => ({ ...prev, [row.id]: v }))}
+                            />
+                          );
+                        })}
                       </div>
                     );
                   })}
