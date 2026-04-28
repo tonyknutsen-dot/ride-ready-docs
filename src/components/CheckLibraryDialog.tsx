@@ -173,6 +173,27 @@ export default function CheckLibraryDialog({
     { key: "all", label: "All", count: rows.length },
   ];
 
+  const shapeLibraryRow = (item: CheckLibraryItem): ShapedLibraryRow => {
+    const source: ItemSource = item.ride_category_id ? "specific" : "general";
+    const riskLevel = normalizeChecklistRiskLevel(item.risk_level);
+    return {
+      id: item.id,
+      text: item.label,
+      hint: item.hint,
+      source,
+      sourceLabel: source === "specific" ? `Specific • ${categoryGroupLabel || specificLabel}` : "General",
+      rideTypeName: categoryGroupLabel,
+      riskLevel,
+      iconKey: getChecklistIconKey(source, riskLevel),
+      categoryLabel: item.category || "Operational",
+      rowType: "library",
+      groupKey: item.ride_category_id ? "specific" : "general",
+      tabState: tab,
+      selected: !!sel[item.id],
+      compact: false,
+    };
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => { 
       setOpen(v); 
