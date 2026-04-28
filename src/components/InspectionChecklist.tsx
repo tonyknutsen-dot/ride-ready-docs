@@ -1514,7 +1514,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                          placeholder="Describe the failure…"
                          value={notes[item.id] || ''}
                          onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                         className="min-h-[56px] text-sm resize-none rounded-md bg-white border-slate-300"
+                          className="min-h-[56px] text-sm resize-none rounded-md bg-background border-border"
                          rows={2}
                        />
 
@@ -1534,7 +1534,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                                 }
                               }}
                               trigger={
-                                <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                                 <button type="button" className="h-9 rounded-md border border-destructive/40 text-xs font-bold flex items-center justify-center gap-1.5 text-destructive hover:bg-destructive/5 flex-1 transition-colors">
                                   <AlertTriangle className="h-3 w-3 shrink-0" />
                                   Raise Defect
                                 </button>
@@ -1544,12 +1544,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                             <button
                               type="button"
                               onClick={() => setEditingDefectForItem(item.id)}
-                              className="h-9 rounded-md border border-green-300 bg-green-50 text-xs font-bold flex items-center justify-center gap-1.5 text-green-800 hover:bg-green-100 flex-1 transition-colors"
+                              className="h-9 rounded-md border border-success/40 bg-success/10 text-xs font-bold flex items-center justify-center gap-1.5 text-success hover:bg-success/15 flex-1 transition-colors"
                             >
                               <CheckCircle className="h-3 w-3 shrink-0" />
                               View / Edit defect
                               {itemDefects[item.id].photoCount > 0 && (
-                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-white border border-green-300 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+                                <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-card border border-success/30 px-1.5 py-0.5 text-[10px] font-semibold text-success">
                                   📷 {itemDefects[item.id].photoCount}
                                 </span>
                               )}
@@ -1579,13 +1579,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
                        {/* Defect status */}
                        {!itemDefectRaised[item.id] && (
-                         <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                          <p className="text-[11px] font-semibold text-destructive flex items-center gap-1">
                            <AlertTriangle className="h-3 w-3 shrink-0" />
                            Raise a defect to record evidence and complete this item
                          </p>
                        )}
                        {itemDefectRaised[item.id] && (
-                         <p className="text-[11px] font-semibold text-green-700 flex items-center gap-1">
+                          <p className="text-[11px] font-semibold text-success flex items-center gap-1">
                            <CheckCircle className="h-3 w-3 shrink-0" />
                            Defect linked{itemDefects[item.id]?.photoCount ? ` · ${itemDefects[item.id].photoCount} photo${itemDefects[item.id].photoCount === 1 ? '' : 's'}` : ''}
                          </p>
