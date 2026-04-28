@@ -463,7 +463,12 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             key={chip.value}
             type="button"
             onClick={() => applyQuickFilter(chip.value)}
-            className="h-7 shrink-0 rounded-md border border-border bg-background px-2.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className={cn(
+              "h-7 shrink-0 rounded-md border px-2.5 text-[11px] font-semibold transition-colors hover:bg-muted/60 hover:text-foreground",
+              (chip.value === 'issues' && issueOnly) || (chip.value === 'month' && activePreset === 'month') || (chip.value === 'recent' && !hasActiveFilters)
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-background text-muted-foreground"
+            )}
           >
             {chip.label}
           </button>
