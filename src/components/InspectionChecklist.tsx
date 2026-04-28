@@ -48,7 +48,6 @@ import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
-import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
@@ -1216,11 +1215,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           Saved check records are reviewed from the Check Records area after completion.
         </div>
 
-        <CheckDetailDialog
-          check={selectedCheck}
-          open={showCheckDetail}
-          onOpenChange={setShowCheckDetail}
-        />
       </div>
     );
   }
@@ -1779,35 +1773,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       </div>
 
-      {/* ── Recent Checks (collapsed) ── */}
-      {recentChecks.length > 0 && (
-        <div className="mx-4 mt-2 mb-2">
-          <details className="group">
-            <summary className="text-[10px] font-bold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-700 list-none flex items-center gap-1.5">
-              <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform shrink-0" />
-              Recent checks ({recentChecks.length})
-            </summary>
-            <div className="mt-1.5 space-y-1">
-              {recentChecks.map((check) => (
-                <div
-                  key={check.id}
-                  className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
-                  onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-[12px] truncate text-slate-900">{check.inspector_name}</p>
-                    <p className="text-[11px] text-slate-500">
-                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    </p>
-                  </div>
-                  <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                </div>
-              ))}
-            </div>
-          </details>
-        </div>
-      )}
-
       {/* ── Sticky footer ── */}
       <div className="fixed left-0 right-0 bottom-0 z-30 border-t border-slate-300 bg-white/95 backdrop-blur-sm shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
         <div className="max-w-xl mx-auto px-4 py-2 flex gap-2">
@@ -1838,8 +1803,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           </button>
         </div>
       </div>
-
-      <CheckDetailDialog check={selectedCheck} open={showCheckDetail} onOpenChange={setShowCheckDetail} />
         </>
       )}
     </div>
