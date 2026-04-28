@@ -14,9 +14,6 @@ import {
   User, 
   MapPin, 
   Cloud, 
-  CheckCircle2, 
-  XCircle, 
-  MinusCircle,
   FileText,
   Clock,
   ShieldCheck,
@@ -81,22 +78,6 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
     } finally {
       setLoading(false);
     }
-  };
-
-  const getResultIcon = (result: 'pass' | 'fail' | 'na' | null, isChecked: boolean) => {
-    if (result === 'pass' || (result === null && isChecked)) {
-      return <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />;
-    }
-    if (result === 'fail') {
-      return <XCircle className="h-4 w-4 text-destructive shrink-0" />;
-    }
-    return <MinusCircle className="h-4 w-4 text-muted-foreground shrink-0" />;
-  };
-
-  const getResultLabel = (result: 'pass' | 'fail' | 'na' | null, isChecked: boolean) => {
-    if (result === 'pass' || (result === null && isChecked)) return 'Pass';
-    if (result === 'fail') return 'Fail';
-    return 'N/A';
   };
 
   const getStatusBadge = (status: string) => {
