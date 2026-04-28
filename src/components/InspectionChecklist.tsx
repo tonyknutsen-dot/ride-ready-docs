@@ -1150,16 +1150,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     const itemCount = activeTemplate.daily_check_template_items.length;
 
     return (
-      <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
+        <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
 
         {/* ── Check header + CTA ── */}
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h2 className="text-[15px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.2px' }}>
+              <h2 className="text-[15px] font-semibold text-foreground leading-tight truncate">
                 {activeTemplate.template_name}
               </h2>
-              <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
+              <p className="text-[11px] font-normal text-muted-foreground mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
             </div>
             {!isStaff && (
               <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="h-8 gap-1.5 text-[12px] shrink-0">
@@ -1202,7 +1202,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             Start Check
           </button>
 
-          <p className="text-[10px] text-center text-[#9CA3AF]">
+          <p className="text-[10px] text-center text-muted-foreground">
             {itemCount} items{lastDoneLabel ? ` • Last completed ${lastDoneLabel}` : ''}
           </p>
         </div>
@@ -1253,7 +1253,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
   return (
     <>
-    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#F3F4F6' }}>
+    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32 bg-muted/30">
 
       {/* ── Offline / sync banner ── */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
