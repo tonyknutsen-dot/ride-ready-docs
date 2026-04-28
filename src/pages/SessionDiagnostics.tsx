@@ -4,10 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  inspectAuthPersistence,
+  readAuthPersistenceSnapshot,
+  SUPABASE_AUTH_STORAGE_KEY,
+  type AuthPersistenceSnapshot,
+} from '@/utils/authPersistenceDiagnostics';
 
-const SUPABASE_PROJECT_REF = 'sbtldudgiskqfqqkrmaa';
-const SUPABASE_AUTH_STORAGE_KEY = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
-const DIAGNOSTICS_BUILD_ID = 'canonical-auth-probe-2026-04-28-2';
+const DIAGNOSTICS_BUILD_ID = 'canonical-auth-probe-2026-04-28-3';
 
 type DirectSessionState = {
   checked: boolean;
@@ -41,6 +45,7 @@ type RuntimeStorageState = {
   serviceWorkerController: string;
   serviceWorkerRegistrations: string;
   cacheNames: string;
+  lastSignInSnapshot: AuthPersistenceSnapshot | null;
 };
 
 const initialRuntimeStorageState: RuntimeStorageState = {
@@ -57,6 +62,7 @@ const initialRuntimeStorageState: RuntimeStorageState = {
   serviceWorkerController: 'Checking',
   serviceWorkerRegistrations: 'Checking',
   cacheNames: 'Checking',
+  lastSignInSnapshot: null,
 };
 
 export default function SessionDiagnostics() {
