@@ -1448,7 +1448,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             return (
               <ChecklistItemRow
                 key={item.id}
-                data-item-id={item.id}
+                dataItemId={item.id}
                 text={item.check_item_text}
                 source={normalizeChecklistSource(item.category)}
                 rideTypeName={ride.ride_categories?.name}
