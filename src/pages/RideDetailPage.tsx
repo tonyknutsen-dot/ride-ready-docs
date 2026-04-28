@@ -157,7 +157,7 @@ const RideDetailPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-5 pb-28 md:pb-8">
+    <div className="container mx-auto px-4 py-2 md:py-4 pb-28 md:pb-6">
       <StaffAccountBanner />
       {!isOnline && (
         <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-warning/10 border border-warning/20 text-warning text-xs">
@@ -169,7 +169,7 @@ const RideDetailPage = () => {
           </span>
         </div>
       )}
-      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60" />
+      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="hidden md:flex text-[11px] opacity-60" />
       <RideDetail 
         ride={ride}
         onBack={() => navigate(backTarget)}
