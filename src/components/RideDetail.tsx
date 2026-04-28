@@ -310,18 +310,18 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   }
 
   return (
-    <div className="space-y-2 md:space-y-3">
+    <div className="space-y-1.5 md:space-y-2">
       <ChecksOnboardingModal forceOpen={showChecksGuide} onClose={() => setShowChecksGuide(false)} />
 
       {/* Sticky Header — compact */}
-      <div data-builder-hide="mobile" className="sticky top-0 z-10 -mx-4 px-4 py-1.5 md:py-2 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      <div data-builder-hide="mobile" className="sticky top-0 z-10 -mx-4 px-4 py-1 md:py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 md:h-9 md:w-9 shrink-0 active:scale-95">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0 text-center">
             <h1 className="text-sm md:text-base font-bold truncate">{ride.ride_name}</h1>
-            <p className="text-[11px] md:text-xs text-muted-foreground leading-tight">{ride.ride_categories.name}</p>
+            <p className="text-[10px] md:text-[11px] text-muted-foreground leading-tight">{ride.ride_categories.name}</p>
           </div>
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} className="h-8 w-8 md:h-9 md:w-9 shrink-0 active:scale-95">
@@ -338,7 +338,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         </div>
       </div>
       {/* Tab Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2 md:space-y-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-1.5 md:space-y-2">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
           const primaryTabs = [
@@ -354,13 +354,13 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           const isMoreActive = moreTabs.some(t => t.value === activeTab);
           const activeMoreLabel = moreTabs.find(t => t.value === activeTab)?.label;
           return (
-            <div data-builder-hide="mobile" className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            <div data-builder-hide="mobile" className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
               <TabsList className={`w-full h-auto p-0.5 bg-transparent rounded-none grid ${primaryTabs.length + 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
                 {primaryTabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
                     value={value}
-                    className="flex flex-col items-center gap-1 py-2 text-[11px] font-semibold rounded-lg border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[44px]"
+                    className="flex flex-col items-center gap-0.5 py-1.5 text-[11px] font-semibold rounded-lg border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[38px]"
                   >
                     <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                     {label}
@@ -370,7 +370,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={`relative flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-semibold rounded-lg transition-all min-h-[44px] ${
+                      className={`relative flex flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-semibold rounded-lg transition-all min-h-[38px] ${
                         isMoreActive
                           ? 'bg-primary/10 text-primary'
                           : 'text-muted-foreground hover:text-foreground'

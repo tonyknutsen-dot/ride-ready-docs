@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { SourcePill, type ItemSource } from './checks/SourcePill';
+import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -54,6 +55,8 @@ interface SuggestionItem {
   risk_level: string | null;
   ride_category_id: string | null;
 }
+
+type SuggestionTab = 'all' | 'specific' | 'general';
 
 const getLibraryFrequencies = (value: string): ("daily" | "weekly" | "monthly" | "yearly" | "preopening")[] => {
   return value === 'daily' || value === 'preopening'
@@ -123,6 +126,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Record<string, boolean>>({});
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  const [suggestionTab, setSuggestionTab] = useState<SuggestionTab>('all');
 
   // Load existing template items
   useEffect(() => {
@@ -201,6 +205,23 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     () => filteredSuggestions.filter(s => !s.ride_category_id),
     [filteredSuggestions]
   );
+
+  const visibleSuggestions = useMemo(() => {
+    if (suggestionTab === 'specific') return specificSuggestions;
+    if (suggestionTab === 'general') return generalSuggestions;
+    return filteredSuggestions;
+  }, [filteredSuggestions, generalSuggestions, specificSuggestions, suggestionTab]);
+
+  const suggestionSections = useMemo(() => {
+    const sections: Array<{ key: ItemSource; label: string; count: number; items: SuggestionItem[]; icon: typeof Sparkles }> = [];
+    if ((suggestionTab === 'all' || suggestionTab === 'specific') && specificSuggestions.length > 0) {
+      sections.push({ key: 'specific', label: `Specific to ${ride.ride_categories?.name || 'this type'}`, count: specificSuggestions.length, items: specificSuggestions, icon: Sparkles });
+    }
+    if ((suggestionTab === 'all' || suggestionTab === 'general') && generalSuggestions.length > 0) {
+      sections.push({ key: 'general', label: 'General', count: generalSuggestions.length, items: generalSuggestions, icon: Library });
+    }
+    return sections;
+  }, [generalSuggestions, ride.ride_categories?.name, specificSuggestions, suggestionTab]);
 
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
 
@@ -405,15 +426,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-3 md:space-y-4 pb-24 md:pb-0">
+    <div className="space-y-2 md:space-y-3 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 shrink-0 -ml-1"
+            className="h-8 w-8 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
@@ -434,8 +455,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet header ── */}
-      <div className="hidden md:flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+      <div className="hidden md:flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
@@ -448,7 +469,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-1.5">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
@@ -543,7 +564,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
       {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-3 md:space-y-4">
+        <div className="space-y-2 md:space-y-3">
           {selectedItems.length > 0 && (
             <div className="flex items-center gap-2 px-2.5 py-1.5 md:p-2.5 rounded-lg bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
@@ -552,7 +573,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           )}
 
           {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
-          <div className="space-y-2 md:rounded-lg md:border md:border-border md:bg-muted/30 md:p-3">
+          <div className="space-y-2 md:rounded-lg md:border md:border-border md:bg-muted/30 md:p-2.5">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-semibold md:font-medium">Smart suggestions</span>
@@ -581,14 +602,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2 pb-1">
+                <div className="flex items-center gap-2 pb-0.5">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs h-7 px-2"
+                      className="text-xs h-6 px-2"
                     onClick={() => {
                       const all: Record<string, boolean> = {};
-                      filteredSuggestions.forEach(s => { all[s.id] = true; });
+                      visibleSuggestions.forEach(s => { all[s.id] = true; });
                       setSelectedSuggestions(prev => ({ ...prev, ...all }));
                     }}
                   >
@@ -597,7 +618,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs h-7 px-2"
+                      className="text-xs h-6 px-2"
                     onClick={() => setSelectedSuggestions({})}
                   >
                     Clear
@@ -607,7 +628,29 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   </span>
                 </div>
 
-                <div className="space-y-2.5 md:space-y-3 max-h-72 overflow-y-auto">
+                <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
+                  {([
+                    { key: 'all' as SuggestionTab, label: 'All', count: filteredSuggestions.length },
+                    { key: 'specific' as SuggestionTab, label: 'Specific', count: specificSuggestions.length },
+                    { key: 'general' as SuggestionTab, label: 'General', count: generalSuggestions.length },
+                  ]).map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setSuggestionTab(tab.key)}
+                      className={cn(
+                        'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
+                        suggestionTab === tab.key
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {tab.label} ({tab.count})
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-2 max-h-72 overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
                     <div className="rounded-md border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-foreground">
@@ -618,51 +661,33 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   )}
 
                   {/* Specific to this ride type */}
-                  {specificSuggestions.length > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 px-1">
-                        <Sparkles className="h-3 w-3 text-primary" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
-                          Specific to {ride.ride_categories?.name || 'this type'}
-                        </span>
-                        <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{specificSuggestions.length}</Badge>
+                  {suggestionSections.length === 0 ? (
+                    <div className="py-4 text-center text-xs text-muted-foreground">No items match this view.</div>
+                  ) : suggestionSections.map((section) => {
+                    const SectionIcon = section.icon;
+                    return (
+                      <div key={section.key} className="space-y-1">
+                        <div className="flex items-center gap-1.5 px-1">
+                          <SectionIcon className={cn('h-3 w-3', section.key === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
+                          <span className={cn('text-[10px] font-semibold uppercase tracking-wide', section.key === 'specific' ? 'text-primary' : 'text-muted-foreground')}>
+                            {section.label}
+                          </span>
+                          <Badge variant={section.key === 'specific' ? 'secondary' : 'outline'} className="text-[10px] h-4 px-1.5">{section.count}</Badge>
+                        </div>
+                        {section.items.map((item) => (
+                          <SuggestionRow
+                            key={item.id}
+                            item={item}
+                            checked={!!selectedSuggestions[item.id]}
+                            onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
+                            getRiskBadgeClass={getRiskBadgeClass}
+                            source={section.key}
+                            rideTypeName={ride.ride_categories?.name}
+                          />
+                        ))}
                       </div>
-                      {specificSuggestions.map((item) => (
-                        <SuggestionRow
-                          key={item.id}
-                          item={item}
-                          checked={!!selectedSuggestions[item.id]}
-                          onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
-                          getRiskBadgeClass={getRiskBadgeClass}
-                          source="specific"
-                          rideTypeName={ride.ride_categories?.name}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* General items */}
-                  {generalSuggestions.length > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 px-1">
-                        <Library className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          General
-                        </span>
-                        <Badge variant="outline" className="text-[10px] h-4 px-1.5">{generalSuggestions.length}</Badge>
-                      </div>
-                      {generalSuggestions.map((item) => (
-                        <SuggestionRow
-                          key={item.id}
-                          item={item}
-                          checked={!!selectedSuggestions[item.id]}
-                          onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
-                          getRiskBadgeClass={getRiskBadgeClass}
-                          source="general"
-                        />
-                      ))}
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
 
                 <Button
@@ -926,6 +951,7 @@ interface SuggestionRowProps {
 }
 
 const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => {
+  const Icon = item.risk_level === 'high' ? AlertTriangle : source === 'specific' ? Sparkles : CheckSquare;
   const riskDotClass =
     item.risk_level === 'high' ? 'bg-destructive'
     : item.risk_level === 'med' ? 'bg-yellow-500'
@@ -933,9 +959,10 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
     : '';
   return (
     <label
-      className={`flex items-start gap-2.5 md:gap-3 rounded-lg p-1.5 md:p-2 cursor-pointer transition-colors border ${
-        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-transparent hover:bg-background'
-      }`}
+      className={cn(
+        'flex items-start gap-2.5 rounded-lg border p-2 cursor-pointer transition-colors',
+        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/25 bg-primary/5 hover:bg-primary/10' : 'border-border bg-background/70 hover:bg-muted/30'
+      )}
     >
       <input
         type="checkbox"
@@ -945,8 +972,7 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
       />
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium flex items-start gap-1.5">
-          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-          {source === 'specific' && item.risk_level !== 'high' && <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />}
+          <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', item.risk_level === 'high' ? 'text-destructive' : source === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
           {item.risk_level && item.risk_level !== 'high' && (
             <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
           )}
@@ -955,7 +981,7 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
             <SourcePill source={source} rideTypeName={rideTypeName} />
           </span>
         </div>
-        {item.hint && <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>}
+        {item.hint && <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.hint}</p>}
         {/* Risk badge: full chip on desktop, only HIGH chip on mobile */}
         {item.risk_level && (
           <div className="mt-1 hidden md:flex items-center gap-1 flex-wrap">
