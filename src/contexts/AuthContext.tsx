@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo, useCall
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getIdentityCache, clearIdentityCache, type IdentityCacheEntry } from '@/lib/offlineDb';
+import { CANONICAL_APP_ORIGIN } from '@/config/canonicalOrigin';
 
 interface AuthContextType {
   user: User | null;
@@ -290,7 +291,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, country?: string) => {
-    const redirectUrl = `${window.location.origin}/profile-setup`;
+    const redirectUrl = `${CANONICAL_APP_ORIGIN}/profile-setup`;
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -339,7 +340,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const redirectUrl = `${window.location.origin}/auth`;
+    const redirectUrl = `${CANONICAL_APP_ORIGIN}/auth`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl
