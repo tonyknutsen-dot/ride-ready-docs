@@ -190,7 +190,7 @@ export default function CheckLibraryDialog({
 
           {/* Segmented tabs — tighter on mobile */}
           {!loading && rows.length > 0 && (
-            <ChecklistSegmentedTabs options={tabs} value={tab} onChange={setTab} />
+            <ChecklistSegmentedTabs options={tabs} value={tab} onChange={(next) => setTab(next as FilterTab)} />
           )}
 
           {/* Item list — tighter rows on mobile, inline source pill */}
