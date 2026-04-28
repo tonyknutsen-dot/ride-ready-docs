@@ -244,6 +244,26 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
   const selectedSuggestionCount = Object.values(selectedSuggestions).filter(Boolean).length;
 
+  const shapeSuggestionRow = (item: SuggestionItem, source: ItemSource, groupKey: SuggestionTab): ShapedSuggestionRow => {
+    const riskLevel = normalizeChecklistRiskLevel(item.risk_level);
+    return {
+      id: item.id,
+      text: item.label,
+      hint: item.hint,
+      source,
+      sourceLabel: source === 'specific' ? `Specific • ${ride.ride_categories?.name || 'this type'}` : 'General',
+      rideTypeName: ride.ride_categories?.name,
+      riskLevel,
+      iconKey: getChecklistIconKey(source, riskLevel),
+      categoryLabel: item.category || 'Operational',
+      rowType: 'suggestion',
+      groupKey,
+      tabState: suggestionTab,
+      selected: !!selectedSuggestions[item.id],
+      compact: false,
+    };
+  };
+
   const handleAcceptSuggestions = () => {
     const chosen = suggestions.filter(s => selectedSuggestions[s.id]);
     if (chosen.length === 0) return;
