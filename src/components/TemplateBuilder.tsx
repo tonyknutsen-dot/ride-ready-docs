@@ -232,12 +232,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   }, [filteredSuggestions, generalSuggestions, specificSuggestions, suggestionTab]);
 
   const suggestionSections = useMemo(() => {
-    const sections: Array<{ key: ItemSource; label: string; count: number; items: SuggestionItem[]; icon: typeof Sparkles }> = [];
+    const sections: Array<{ key: ItemSource; label: string; count: number; items: SuggestionItem[]; icon: typeof CheckSquare }> = [];
     if ((suggestionTab === 'all' || suggestionTab === 'specific') && specificSuggestions.length > 0) {
-      sections.push({ key: 'specific', label: `Specific to ${ride.ride_categories?.name || 'this type'}`, count: specificSuggestions.length, items: specificSuggestions, icon: Sparkles });
+      sections.push({ key: 'specific', label: `Specific to ${ride.ride_categories?.name || 'this type'}`, count: specificSuggestions.length, items: specificSuggestions, icon: CheckSquare });
     }
     if ((suggestionTab === 'all' || suggestionTab === 'general') && generalSuggestions.length > 0) {
-      sections.push({ key: 'general', label: 'General', count: generalSuggestions.length, items: generalSuggestions, icon: Library });
+      sections.push({ key: 'general', label: 'General', count: generalSuggestions.length, items: generalSuggestions, icon: CheckSquare });
     }
     return sections;
   }, [generalSuggestions, ride.ride_categories?.name, specificSuggestions, suggestionTab]);
