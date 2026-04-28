@@ -314,6 +314,11 @@ export async function fetchInspectionRecordsPaginated(
     query = query.ilike('inspector_name', `%${options.inspectorName}%`);
   }
 
+  if (options.searchQuery) {
+    const escaped = options.searchQuery.replace(/[%_]/g, '\\$&');
+    query = query.or(`inspector_name.ilike.%${escaped}%,location.ilike.%${escaped}%,notes.ilike.%${escaped}%,environment_notes.ilike.%${escaped}%,template_name.ilike.%${escaped}%`);
+  }
+
   // Apply range for pagination
   query = query.range(offset, offset + limit - 1);
 
@@ -340,6 +345,7 @@ export async function fetchInspectionRecordsPaginated(
   }
   if (options.dateFrom) checksQuery = checksQuery.gte('check_date', options.dateFrom);
   if (options.dateTo) checksQuery = checksQuery.lte('check_date', options.dateTo);
+  if (options.inspectorName) checksQuery = checksQuery.ilike('inspector_name', `%${options.inspectorName}%`);
 
   const { data: checksData, error: checksError } = await checksQuery.limit(limit);
   if (!checksError && checksData?.length) {
@@ -400,7 +406,7 @@ export async function fetchInspectionRecordsPaginated(
     records = records.filter(r => (r.defect_ids?.length || 0) === 0);
   }
 
-  // Search query - client side for notes/inspector
+  // Search fallback for generated source-check rows.
   if (options.searchQuery) {
     const q = options.searchQuery.toLowerCase();
     records = records.filter(r =>
