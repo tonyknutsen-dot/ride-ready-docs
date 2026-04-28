@@ -468,7 +468,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             className={cn(
               "h-7 shrink-0 rounded-md border px-2.5 text-[11px] font-semibold transition-colors hover:bg-muted/60 hover:text-foreground",
               (chip.value === 'issues' && issueOnly) || (chip.value === 'month' && activePreset === 'month') || (chip.value === 'recent' && !hasActiveFilters)
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/25"
                 : "border-border bg-background text-muted-foreground"
             )}
           >
@@ -710,7 +710,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       )}
 
       {/* Record count footer */}
-      {records.length > 0 && !hasNextPage && totalCount > PAGE_SIZE && (
+      {records.length > 0 && !hasNextPage && totalCount > pageSize && (
         <p className="text-center text-[10px] text-muted-foreground pt-0.5">
           All {records.length} records loaded
         </p>
