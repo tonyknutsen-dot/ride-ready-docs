@@ -7,7 +7,17 @@ import "./index.css";
 // or cached bundles cannot interfere with check-save testing.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
-    registrations.forEach((r) => r.unregister());
+    registrations.forEach((r) => {
+      r.active?.postMessage({ type: 'SKIP_WAITING' });
+      r.waiting?.postMessage({ type: 'SKIP_WAITING' });
+      r.unregister();
+    });
+  });
+}
+
+if ('caches' in window) {
+  caches.keys().then((keys) => {
+    keys.forEach((key) => caches.delete(key));
   });
 }
 
