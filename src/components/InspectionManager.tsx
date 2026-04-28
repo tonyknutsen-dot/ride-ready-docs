@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, HelpCircle, CalendarRange, ArrowRight, Sparkles, CheckSquare } from 'lucide-react';
@@ -39,7 +39,6 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { effectiveUserId, isStaff } = useEffectiveUserId();
   const [searchParams] = useSearchParams();
   const checksSubTab = searchParams.get('checksSubTab');
