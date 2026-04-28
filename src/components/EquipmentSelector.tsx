@@ -226,6 +226,12 @@ const EquipmentSelector = ({
     }
   };
 
+  useEffect(() => {
+    if (checksMode && !loading && rides.length > 0) {
+      markCheckDebug('equipment list rendered');
+    }
+  }, [checksMode, loading, rides.length]);
+
   const loadDefectSummaries = async (ridesList: Ride[]) => {
     try {
       const rideIds = ridesList.map(r => r.id);
@@ -570,10 +576,6 @@ const EquipmentSelector = ({
         </div>
       </div>
     );
-  }
-
-  if (checksMode && rides.length > 0) {
-    markCheckDebug('equipment list rendered');
   }
 
   return (
