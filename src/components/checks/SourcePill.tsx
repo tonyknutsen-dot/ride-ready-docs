@@ -1,4 +1,4 @@
-import { Sparkles, Library, User, FileText } from "lucide-react";
+import { CheckSquare, User, FileText } from "lucide-react";
 
 export type ItemSource = "specific" | "general" | "custom" | "library" | "existing";
 
@@ -11,12 +11,12 @@ interface SourcePillProps {
 const META: Record<ItemSource, { label: string; icon: React.ComponentType<{ className?: string }>; cls: string }> = {
   specific: {
     label: "Ride-specific",
-    icon: Sparkles,
+    icon: CheckSquare,
     cls: "bg-primary/10 text-primary border-primary/40",
   },
   general: {
     label: "General",
-    icon: Library,
+    icon: CheckSquare,
     cls: "bg-primary/10 text-primary border-primary/40",
   },
   custom: {
@@ -26,7 +26,7 @@ const META: Record<ItemSource, { label: string; icon: React.ComponentType<{ clas
   },
   library: {
     label: "Library",
-    icon: Library,
+    icon: CheckSquare,
     cls: "bg-primary/10 text-primary border-primary/40",
   },
   existing: {
