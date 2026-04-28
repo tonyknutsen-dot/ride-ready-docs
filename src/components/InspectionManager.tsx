@@ -198,7 +198,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const getTabForPrompt = (frequency: string) => frequency;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 md:space-y-4">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
 
       {/* Critical defect banner — top priority, above everything */}
@@ -208,14 +208,14 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
 
       {/* Hub header — restores the management-page treatment used across Equipment tabs */}
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
-            <CheckSquare className="h-5 w-5 text-primary" />
+          <div className="h-8 w-8 md:h-9 md:w-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
+            <CheckSquare className="h-4 w-4 md:h-5 md:w-5 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-foreground leading-tight">Safety Checks</h2>
-            <p className="text-xs text-muted-foreground leading-tight truncate">
+            <h2 className="text-sm md:text-base font-bold text-foreground leading-tight">Safety Checks</h2>
+            <p className="text-[11px] md:text-xs text-muted-foreground leading-tight truncate">
               Daily, weekly, monthly, yearly checks plus annual & NDT scheduling
             </p>
           </div>
@@ -231,7 +231,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-5 relative">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-3 md:space-y-4 relative">
         {/* Frequency selector — check-type cards with strong active state */}
         <div className="overflow-x-auto -mx-4 px-4 pb-1">
           <div className="inline-flex gap-2 min-w-max">
