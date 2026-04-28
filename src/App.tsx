@@ -87,6 +87,7 @@ const TesterInvite = lazy(() => import("./pages/TesterInvite"));
 const StaffInvite = lazy(() => import("./pages/StaffInvite"));
 const Staff = lazy(() => import("./pages/Staff"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
+const SessionDiagnostics = lazy(() => import("./pages/SessionDiagnostics"));
 const SourceOfTruthAudit = lazy(() => import("./pages/SourceOfTruthAudit"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 const Install = lazy(() => import("./pages/Install"));
@@ -141,6 +142,7 @@ const App = () => (
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
+              <Route path="/session-diagnostics" element={<SessionDiagnostics />} />
               <Route path="/source-of-truth" element={<ProtectedRoute><ProfileGuard><AppLayout><SourceOfTruthAudit /></AppLayout></ProfileGuard></ProtectedRoute>} />
               <Route path="/staff-invite/:token" element={<StaffInvite />} />
               <Route path="/tester-invite/:token" element={<TesterInvite />} />
