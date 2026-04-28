@@ -130,11 +130,11 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         startNoticeAcknowledged: startNoticeAcknowledged || undefined,
         startNoticeAcknowledgedAt: startNoticeAcknowledgedAt || undefined,
         startNoticeAcknowledgedBy: startNoticeAcknowledged ? userId : undefined,
-        startNoticeSnapshot: startNoticeAcknowledged ? (activeTemplate as any).start_notice_text : undefined,
+        startNoticeSnapshot: startNoticeAcknowledged ? activeTemplate.start_notice_text : undefined,
         finishNoticeAcknowledged: finishNoticeAcknowledged || undefined,
         finishNoticeAcknowledgedAt: finishNoticeAcknowledgedAt || undefined,
         finishNoticeAcknowledgedBy: finishNoticeAcknowledged ? inspectorName.trim() : undefined,
-        finishNoticeSnapshot: finishNoticeAcknowledged ? (activeTemplate as any).finish_notice_text : undefined,
+        finishNoticeSnapshot: finishNoticeAcknowledged ? activeTemplate.finish_notice_text : undefined,
         results: activeTemplate.daily_check_template_items.map(item => ({
           templateItemId: item.id,
           isChecked: (itemResults[item.id] || 'na') === 'pass',
