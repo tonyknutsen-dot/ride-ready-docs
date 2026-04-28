@@ -70,7 +70,7 @@ const getSourceRowClass = (source?: ItemSource) => {
 const getSourceIconClass = (source?: ItemSource, riskLevel?: string | null) => {
   if (riskLevel === 'high') return 'text-destructive';
   if (source === 'specific') return 'text-primary';
-  if (source === 'general' || source === 'library') return 'text-info';
+  if (source === 'general' || source === 'library') return 'text-primary';
   if (source === 'custom') return 'text-warning';
   return 'text-muted-foreground';
 };
@@ -223,7 +223,6 @@ export function ChecklistItemRow({
           {hint && <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground md:text-xs">{hint}</p>}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <div className="mt-1.5 flex items-center gap-1.5">
               <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(normalizedRisk))}>
                 {getRiskBadgeLabel(normalizedRisk)}
               </Badge>
