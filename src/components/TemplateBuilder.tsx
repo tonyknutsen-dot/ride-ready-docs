@@ -456,22 +456,22 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-1 md:space-y-1.5 pb-24 md:pb-0">
+    <div className="space-y-2 md:space-y-2.5 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-0.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 shrink-0 -ml-1"
+            className="h-7 w-7 shrink-0 -ml-1"
             onClick={step > 0 ? () => setStep(step - 1) : onCancel}
             aria-label={step > 0 ? 'Back a step' : 'Cancel'}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-semibold leading-tight truncate">
+              <h3 className="text-sm font-semibold leading-tight truncate">
               {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
             </h3>
             <p className="text-[11px] text-muted-foreground truncate leading-tight">
@@ -486,12 +486,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       {/* ── Desktop/tablet header ── */}
       <div className="hidden md:flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-6 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
         </Button>
         <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold leading-tight truncate">
+            <h3 className="text-base font-semibold leading-tight truncate">
             {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
           </h3>
           <p className="text-xs text-muted-foreground truncate">{ride.ride_name}</p>
@@ -499,7 +499,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-1">
+      <div className="hidden md:flex items-center gap-1.5">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
