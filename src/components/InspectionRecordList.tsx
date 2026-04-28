@@ -531,6 +531,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 <SelectItem value="passed" className="text-xs">Passed</SelectItem>
                 <SelectItem value="failed" className="text-xs">Failed</SelectItem>
                 <SelectItem value="na" className="text-xs">N-A</SelectItem>
+                <SelectItem value="with_defects" className="text-xs">With defects</SelectItem>
               </SelectContent>
             </Select>
 
