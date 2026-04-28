@@ -254,10 +254,34 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       case '7': setDateFrom(subDays(now, 7)); setDateTo(now); break;
       case '30': setDateFrom(subDays(now, 30)); setDateTo(now); break;
       case '90': setDateFrom(subDays(now, 90)); setDateTo(now); break;
+      case '12m': setDateFrom(subMonths(now, 12)); setDateTo(now); break;
       case 'month': setDateFrom(startOfMonth(now)); setDateTo(endOfMonth(now)); break;
       case 'year': setDateFrom(startOfYear(now)); setDateTo(now); break;
+      case 'custom': setDateFrom(undefined); setDateTo(undefined); break;
     }
   }, []);
+
+  const applyQuickFilter = useCallback((filter: 'recent' | 'month' | 'issues' | 'all') => {
+    if (filter === 'recent') {
+      clearFilters();
+      setActivePreset('recent');
+      return;
+    }
+    if (filter === 'month') {
+      clearFilters();
+      setActivePreset('month');
+      const now = new Date();
+      setDateFrom(startOfMonth(now));
+      setDateTo(endOfMonth(now));
+      return;
+    }
+    if (filter === 'issues') {
+      clearFilters();
+      setIssueOnly(true);
+      return;
+    }
+    clearFilters();
+  }, [clearFilters]);
 
   const handleDownloadPdf = async (record: InspectionRecord) => {
     if (!record.pdf_file_path) {
