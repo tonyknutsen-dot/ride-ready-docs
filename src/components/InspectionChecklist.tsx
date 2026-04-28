@@ -43,6 +43,7 @@ import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import TemplateBuilder from './TemplateBuilder';
 import DefectReportDialog from './DefectReportDialog';
 import PriorDefectReviewDialog from './PriorDefectReviewDialog';
+import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
@@ -73,7 +74,7 @@ interface InspectionChecklistProps {
   ride: Ride;
   frequency: string;
   onChecklistSaved?: () => void;
-  startImmediately?: boolean;
+  executionMode?: 'launcher' | 'execute';
 }
 
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -84,9 +85,10 @@ const FREQUENCY_LABELS: Record<string, string> = {
   yearly: 'Yearly',
 };
 
-const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
+const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode = 'launcher' }: InspectionChecklistProps) => {
   const navigate = useNavigate();
   const { guardWrite } = useBillingWriteGuard();
+  const isExecutionMode = executionMode === 'execute';
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
@@ -103,8 +105,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
   const [itemAttachments, setItemAttachments] = useState<Record<string, File[]>>({});
   const [detailsExpanded, setDetailsExpanded] = useState(true);
-  const [checkStarted, setCheckStarted] = useState(startImmediately);
-  const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(startImmediately ? new Date() : null);
   const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
@@ -134,10 +134,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
 
   useEffect(() => {
-    if (!startImmediately) return;
+    if (!isExecutionMode) return;
     document.documentElement.setAttribute('data-builder-mode', 'mobile');
     return () => document.documentElement.removeAttribute('data-builder-mode');
-  }, [startImmediately]);
+  }, [isExecutionMode]);
 
   // Prefill inspector name from the actual user's profile (not org owner for staff)
   useEffect(() => {
