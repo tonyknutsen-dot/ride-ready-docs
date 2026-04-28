@@ -25,9 +25,9 @@ interface UseChecklistRecordSaveParams {
   userId?: string | null;
   effectiveUserId?: string | null;
   queryClient: QueryClient;
-  submitCheck: (payload: any) => Promise<{ success: boolean; isOffline?: boolean; checkId?: string }>;
+  submitCheck: (payload: CheckSubmissionPayload) => Promise<{ success: boolean; isOffline?: boolean; checkId?: string }>;
   guardWrite: () => boolean;
-  toast: (args: any) => void;
+  toast: (args: ToastPayload) => void;
   setWizardStep: (step: 'details' | 'start-notice' | 'checklist') => void;
   setLocationError: (value: boolean) => void;
   setSubmitting: (value: boolean) => void;
@@ -35,6 +35,39 @@ interface UseChecklistRecordSaveParams {
   loadRecentChecks: () => Promise<void>;
   onChecklistSaved?: () => void;
 }
+
+type ToastPayload = { title: string; description?: string; variant?: 'default' | 'destructive' };
+
+type CheckSubmissionPayload = {
+  rideId: string;
+  templateId: string;
+  inspectorName: string;
+  checkDate: string;
+  checkFrequency: string;
+  status: string;
+  notes?: string;
+  location?: string;
+  rawLatitude?: number;
+  rawLongitude?: number;
+  needsAddressResolution?: boolean;
+  startNoticeAcknowledged?: boolean;
+  startNoticeAcknowledgedAt?: string;
+  startNoticeAcknowledgedBy?: string;
+  startNoticeSnapshot?: string;
+  finishNoticeAcknowledged?: boolean;
+  finishNoticeAcknowledgedAt?: string;
+  finishNoticeAcknowledgedBy?: string;
+  finishNoticeSnapshot?: string;
+  results: { templateItemId: string; isChecked: boolean; result: CheckItemResult; notes?: string }[];
+};
+
+type OverviewCache = {
+  stats: { recentChecks: number; [key: string]: unknown };
+  recentActivity: Array<Record<string, unknown>>;
+  [key: string]: unknown;
+};
+
+type LinkedDefect = { id: string; severity: string };
 
 export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
   return useCallback(async () => {
@@ -64,7 +97,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitting(true);
     setSubmitPhase('saving');
     const previousOverview = queryClient.getQueryData(['overview', userId]);
-    queryClient.setQueryData(['overview', userId], (old: any) => {
+    queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
       if (!old) return old;
       return {
         ...old,
@@ -134,7 +167,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
       if (linkedDefectIds.length > 0) {
-        await supabase.from('defects').update({ check_id: checkId } as any).in('id', linkedDefectIds).is('check_id', null);
+        await supabase.from('defects').update({ check_id: checkId }).in('id', linkedDefectIds).is('check_id', null);
       }
 
       const { data: linkedDefects } = await supabase
@@ -168,7 +201,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       invalidateCheckRecordQueries(queryClient);
       await loadRecentChecks().catch(() => {});
 
-      const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
+      const criticalDefectCount = (linkedDefects || []).filter((d: LinkedDefect) => d.severity === 'stop_operation').length;
       const totalDefectCount = (linkedDefects || []).length;
       if (failedItems > 0) {
         const defectSummary = totalDefectCount > 0

@@ -121,7 +121,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
       if (cancelled || error || !data?.length) return;
       setPriorOpenDefects(prev => {
         const next = { ...prev };
-        data.forEach((defect: any) => {
+        data.forEach((defect) => {
           if (!defect.template_item_id || next[defect.template_item_id]) return;
           next[defect.template_item_id] = {
             id: defect.id,

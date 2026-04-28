@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react';
 import { AlertTriangle, CheckCircle, CloudOff, Loader2, RefreshCw, WifiOff, XCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -53,17 +54,17 @@ interface ActiveChecklistRuntimeProps {
   setWizardStep: (step: WizardStep) => void;
   setStartNoticeAcknowledged: (value: boolean) => void;
   setStartNoticeAcknowledgedAt: (value: string | null) => void;
-  setDefectRefreshKey: React.Dispatch<React.SetStateAction<number>>;
-  setItemDefectRaised: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  setItemDefects: React.Dispatch<React.SetStateAction<Record<string, { id: string; photoCount: number; severity: string }>>>;
+  setDefectRefreshKey: Dispatch<SetStateAction<number>>;
+  setItemDefectRaised: Dispatch<SetStateAction<Record<string, boolean>>>;
+  setItemDefects: Dispatch<SetStateAction<Record<string, { id: string; photoCount: number; severity: string }>>>;
   setEditingDefectForItem: (value: string | null) => void;
   setReviewingPriorForItem: (value: string | null) => void;
   setReopeningPriorForItem: (value: string | null) => void;
-  setPriorOpenDefects: React.Dispatch<React.SetStateAction<Record<string, { id: string; photoCount: number; severity: string }>>>;
+  setPriorOpenDefects: Dispatch<SetStateAction<Record<string, { id: string; photoCount: number; severity: string }>>>;
   setHighlightItemId: (value: string | null) => void;
   setFinishNoticeAcknowledged: (value: boolean) => void;
   setFinishNoticeAcknowledgedAt: (value: string | null) => void;
-  setDeclarationChecked: React.Dispatch<React.SetStateAction<boolean>>;
+  setDeclarationChecked: Dispatch<SetStateAction<boolean>>;
 }
 
 export function ActiveChecklistRuntime({
@@ -77,6 +78,9 @@ export function ActiveChecklistRuntime({
   setReopeningPriorForItem, setPriorOpenDefects, setHighlightItemId, setFinishNoticeAcknowledged,
   setFinishNoticeAcknowledgedAt, setDeclarationChecked,
 }: ActiveChecklistRuntimeProps) {
+  const startNoticeRequired = !!activeTemplate.start_notice_required && !!activeTemplate.start_notice_text?.trim();
+  const finishNoticeRequired = !!activeTemplate.finish_notice_required && !!activeTemplate.finish_notice_text?.trim();
+
   return (
     <>
     <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32 bg-muted/30">
@@ -149,9 +153,7 @@ export function ActiveChecklistRuntime({
                     return;
                   }
 
-                  // If template has a start notice, show it before proceeding
-                  const tmpl = activeTemplate as any;
-                  if (tmpl?.start_notice_required && tmpl?.start_notice_text?.trim()) {
+                  if (startNoticeRequired) {
                     setWizardStep('start-notice');
                   } else {
                     setWizardStep('checklist');
@@ -159,8 +161,7 @@ export function ActiveChecklistRuntime({
                 }}
               >
                 {(() => {
-                  const tmpl = activeTemplate as any;
-                  return tmpl?.start_notice_required && tmpl?.start_notice_text?.trim() ? 'Continue' : 'Start Check';
+                  return startNoticeRequired ? 'Continue' : 'Start Check';
                 })()}
               </button>
             </div>
@@ -180,7 +181,7 @@ export function ActiveChecklistRuntime({
             <div className="px-4 pb-4 pt-3 space-y-4">
               <div className="rounded-lg bg-warning/5 border border-warning/20 p-4">
                 <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                  {(activeTemplate as any).start_notice_text}
+                  {activeTemplate.start_notice_text}
                 </p>
               </div>
               <div className="flex items-start gap-3">
@@ -574,10 +575,10 @@ export function ActiveChecklistRuntime({
               </p>
            )}
 
-            {(activeTemplate as any).finish_notice_required && (activeTemplate as any).finish_notice_text?.trim() && (
+            {finishNoticeRequired && (
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 space-y-2">
                 <p className="text-[11px] font-bold text-warning uppercase">Before you finish</p>
-                <p className="text-[12px] text-foreground whitespace-pre-wrap leading-relaxed">{(activeTemplate as any).finish_notice_text}</p>
+                <p className="text-[12px] text-foreground whitespace-pre-wrap leading-relaxed">{activeTemplate.finish_notice_text}</p>
                 <label className="flex items-start gap-2 text-[12px] font-medium text-foreground cursor-pointer">
                   <Checkbox
                     checked={finishNoticeAcknowledged}
@@ -643,7 +644,7 @@ export function ActiveChecklistRuntime({
           </button>
           <button
             type="button"
-            disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100 || (!!(activeTemplate as any).finish_notice_required && !!(activeTemplate as any).finish_notice_text?.trim() && !finishNoticeAcknowledged)}
+            disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100 || (finishNoticeRequired && !finishNoticeAcknowledged)}
             onClick={handleSubmitChecks}
             className="flex-1 t-btn-primary rounded-md py-2.5 text-[13px]"
           >
