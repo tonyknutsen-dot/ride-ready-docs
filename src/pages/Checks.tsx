@@ -29,7 +29,8 @@ const Checks = () => {
     markCheckDebug('equipment selected');
     // Route into the canonical Equipment → Asset → Checks hub.
     // `from=checks` makes Back return to /checks instead of /rides.
-    navigate(`/rides/${ride.id}?tab=checks&from=checks`);
+    const debugParam = new URLSearchParams(window.location.search).get('checkDebug') === '1' ? '&checkDebug=1' : '';
+    navigate(`/rides/${ride.id}?tab=checks&from=checks${debugParam}`);
   };
 
   return (
