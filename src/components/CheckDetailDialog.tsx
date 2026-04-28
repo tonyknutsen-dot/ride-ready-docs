@@ -25,6 +25,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { SourcePill, type ItemSource } from './checks/SourcePill';
 
 type Check = Tables<'checks'>;
 
@@ -113,6 +114,14 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
       case 'yearly': return 'Yearly';
       default: return freq.charAt(0).toUpperCase() + freq.slice(1);
     }
+  };
+
+  const getItemSource = (category?: string | null): ItemSource => {
+    const normalized = (category || '').toLowerCase();
+    if (['specific', 'general', 'custom', 'library', 'existing'].includes(normalized)) {
+      return normalized as ItemSource;
+    }
+    return normalized ? 'existing' : 'general';
   };
 
   // Group results by category
@@ -277,9 +286,12 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
                         >
                           {getResultIcon(result.result, result.is_checked)}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm">
-                              {result.daily_check_template_items?.check_item_text || 'Unknown item'}
-                            </p>
+                            <div className="flex items-start gap-2 flex-wrap">
+                              <p className="text-sm flex-1 min-w-[160px]">
+                                {result.daily_check_template_items?.check_item_text || 'Unknown item'}
+                              </p>
+                              <SourcePill source={getItemSource(result.daily_check_template_items?.category)} />
+                            </div>
                             {result.notes && (
                               <p className="text-xs text-muted-foreground mt-1 italic">
                                 Note: {result.notes}
