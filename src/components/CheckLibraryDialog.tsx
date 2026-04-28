@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckSquare, Plus, Search, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SourcePill } from "./checks/SourcePill";
+import { cn } from "@/lib/utils";
 
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
 type FilterTab = "all" | "general" | "specific";
@@ -234,7 +235,10 @@ export default function CheckLibraryDialog({
               filtered.map((r) => (
                 <label
                   key={r.id}
-                  className="flex items-start gap-2.5 md:gap-3 border rounded-lg md:rounded-xl p-2 md:p-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                  className={cn(
+                    "flex items-start gap-2.5 md:gap-3 border rounded-lg md:rounded-xl p-2 md:p-3 hover:bg-muted/30 transition-colors cursor-pointer",
+                    r.ride_category_id ? "border-primary/30 bg-primary/5" : "border-border"
+                  )}
                 >
                   <input
                     type="checkbox"
@@ -245,6 +249,7 @@ export default function CheckLibraryDialog({
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm break-any flex items-start gap-1.5">
                       {r.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-red-600 flex-shrink-0 mt-0.5" />}
+                      {r.ride_category_id && r.risk_level !== 'high' && <CheckSquare className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />}
                       <span className="min-w-0 flex-1">{r.label}</span>
                       <span className="ml-auto shrink-0">
                         <SourcePill
