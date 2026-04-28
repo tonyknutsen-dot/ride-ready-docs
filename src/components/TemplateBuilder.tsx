@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
 import { type ItemSource } from './checks/SourcePill';
-import { ChecklistItemRow, ChecklistSegmentedTabs, getChecklistIconKey, normalizeChecklistRiskLevel, normalizeChecklistSource, type ChecklistIconKey, type ChecklistRiskLevel } from './checks/ChecklistItemRow';
+import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistRiskLevel, normalizeChecklistSource, type ChecklistRiskLevel } from './checks/ChecklistItemRow';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -66,7 +66,6 @@ interface ShapedSuggestionRow {
   sourceLabel: string;
   rideTypeName: string | undefined;
   riskLevel: ChecklistRiskLevel;
-  iconKey: ChecklistIconKey;
   categoryLabel: string;
   rowType: 'suggestion';
   groupKey: SuggestionTab;
@@ -254,7 +253,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       sourceLabel: source === 'specific' ? `Specific • ${ride.ride_categories?.name || 'this type'}` : 'General',
       rideTypeName: source === 'specific' ? ride.ride_categories?.name : undefined,
       riskLevel,
-      iconKey: getChecklistIconKey(source, riskLevel),
       categoryLabel: item.category || 'Operational',
       rowType: 'suggestion',
       groupKey,
@@ -702,7 +700,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                               source={row.source}
                               rideTypeName={row.rideTypeName}
                               riskLevel={row.riskLevel}
-                              iconKey={row.iconKey}
                               categoryLabel={row.categoryLabel}
                               selected={row.selected}
                               compact={row.compact}
