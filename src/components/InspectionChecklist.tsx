@@ -1458,16 +1458,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               >
                 {/* Row 2: Segmented control (joined buttons) */}
                 <div>
-                  <div className="flex rounded-lg overflow-hidden border border-slate-300">
+                  <div className="flex overflow-hidden rounded-lg border border-border bg-card">
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'pass')}
                       className={`flex-1 h-11 text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none ${
                         isPass
-                          ? 'bg-green-600 text-white'
+                          ? 'bg-success text-success-foreground'
                           : hasResult
-                          ? 'bg-slate-50 text-slate-400 border-r border-slate-300'
-                          : 'bg-white text-slate-700 hover:bg-slate-50 border-r border-slate-300'
+                          ? 'bg-secondary text-muted-foreground border-r border-border'
+                          : 'bg-card text-foreground hover:bg-secondary border-r border-border'
                       }`}
                     >
                       <CheckCircle className="h-4 w-4 shrink-0" />
@@ -1478,10 +1478,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                       onClick={() => handleResultChange(item.id, 'fail')}
                       className={`flex-1 h-11 text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none ${
                         isFail
-                          ? 'bg-red-600 text-white'
+                          ? 'bg-destructive text-destructive-foreground'
                           : hasResult
-                          ? 'bg-slate-50 text-slate-400 border-r border-slate-300'
-                          : 'bg-white text-slate-700 hover:bg-slate-50 border-r border-slate-300'
+                          ? 'bg-secondary text-muted-foreground border-r border-border'
+                          : 'bg-card text-foreground hover:bg-secondary border-r border-border'
                       }`}
                     >
                       <XCircle className="h-4 w-4 shrink-0" />
@@ -1492,10 +1492,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                       onClick={() => handleResultChange(item.id, 'na')}
                       className={`flex-1 h-11 text-[13px] font-bold flex items-center justify-center transition-all active:scale-[0.98] focus:outline-none ${
                         isNA
-                          ? 'bg-amber-500 text-white'
+                          ? 'bg-warning text-warning-foreground'
                           : hasResult
-                          ? 'bg-slate-50 text-slate-400'
-                          : 'bg-white text-slate-700 hover:bg-slate-50'
+                          ? 'bg-secondary text-muted-foreground'
+                          : 'bg-card text-foreground hover:bg-secondary'
                       }`}
                     >
                       N/A
