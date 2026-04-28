@@ -594,16 +594,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
       {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-1 md:space-y-1.5">
+        <div className="space-y-2 md:space-y-2.5">
           {selectedItems.length > 0 && (
-            <div className="flex items-center gap-2 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium">{selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} added so far</span>
             </div>
           )}
 
           {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
-           <div className="space-y-1 md:rounded-md md:border md:border-border md:bg-card md:p-1.5">
+           <div className="space-y-2 md:rounded-md md:border md:border-border md:bg-card md:p-2.5">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-semibold md:font-medium">Smart suggestions</span>
@@ -668,7 +668,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   onChange={(next) => setSuggestionTab(next as SuggestionTab)}
                 />
 
-                <div className="space-y-1 max-h-[20rem] overflow-y-auto">
+                <div className="space-y-1.5">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
                     <div className="rounded-md border border-dashed border-border bg-muted/30 p-2 text-[11px] text-foreground">
