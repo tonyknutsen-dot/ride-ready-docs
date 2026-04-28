@@ -14,9 +14,6 @@ import {
   User, 
   MapPin, 
   Cloud, 
-  CheckCircle2, 
-  XCircle, 
-  MinusCircle,
   FileText,
   Clock,
   ShieldCheck,
@@ -25,7 +22,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
-import { SourcePill, type ItemSource } from './checks/SourcePill';
+import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from './checks/ChecklistItemRow';
 
 type Check = Tables<'checks'>;
 
@@ -83,22 +80,6 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
     }
   };
 
-  const getResultIcon = (result: 'pass' | 'fail' | 'na' | null, isChecked: boolean) => {
-    if (result === 'pass' || (result === null && isChecked)) {
-      return <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />;
-    }
-    if (result === 'fail') {
-      return <XCircle className="h-4 w-4 text-destructive shrink-0" />;
-    }
-    return <MinusCircle className="h-4 w-4 text-muted-foreground shrink-0" />;
-  };
-
-  const getResultLabel = (result: 'pass' | 'fail' | 'na' | null, isChecked: boolean) => {
-    if (result === 'pass' || (result === null && isChecked)) return 'Pass';
-    if (result === 'fail') return 'Fail';
-    return 'N/A';
-  };
-
   const getStatusBadge = (status: string) => {
     const variant = status === 'passed' ? 'default' : status === 'failed' ? 'destructive' : 'secondary';
     const label = status.charAt(0).toUpperCase() + status.slice(1);
@@ -114,14 +95,6 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
       case 'yearly': return 'Yearly';
       default: return freq.charAt(0).toUpperCase() + freq.slice(1);
     }
-  };
-
-  const getItemSource = (category?: string | null): ItemSource => {
-    const normalized = (category || '').toLowerCase();
-    if (['specific', 'general', 'custom', 'library', 'existing'].includes(normalized)) {
-      return normalized as ItemSource;
-    }
-    return normalized ? 'existing' : 'general';
   };
 
   // Group results by category
@@ -279,33 +252,24 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
                   <div key={category} className="space-y-2">
                     <h5 className="text-sm font-medium text-muted-foreground capitalize">{category}</h5>
                     <div className="space-y-1">
-                      {items.map((result) => (
-                        <div 
-                          key={result.id} 
-                          className="flex items-start gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition-colors"
-                        >
-                          {getResultIcon(result.result, result.is_checked)}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-2 flex-wrap">
-                              <p className="text-sm flex-1 min-w-[160px]">
-                                {result.daily_check_template_items?.check_item_text || 'Unknown item'}
-                              </p>
-                              <SourcePill source={getItemSource(result.daily_check_template_items?.category)} />
-                            </div>
+                      {items.map((result) => {
+                        const rowResult: ChecklistRowResult = result.result === 'fail' ? 'fail' : result.result === 'pass' || (result.result === null && result.is_checked) ? 'pass' : 'na';
+                        return (
+                          <ChecklistItemRow
+                            key={result.id}
+                            text={result.daily_check_template_items?.check_item_text || 'Unknown item'}
+                            source={normalizeChecklistSource(result.daily_check_template_items?.category)}
+                            result={rowResult}
+                            compact
+                          >
                             {result.notes && (
-                              <p className="text-xs text-muted-foreground mt-1 italic">
+                              <p className="text-xs text-muted-foreground italic">
                                 Note: {result.notes}
                               </p>
                             )}
-                          </div>
-                          <Badge 
-                            variant={result.result === 'pass' || (result.result === null && result.is_checked) ? 'default' : result.result === 'fail' ? 'destructive' : 'secondary'}
-                            className="shrink-0 text-xs"
-                          >
-                            {getResultLabel(result.result, result.is_checked)}
-                          </Badge>
-                        </div>
-                      ))}
+                          </ChecklistItemRow>
+                        );
+                      })}
                     </div>
                   </div>
                 ))

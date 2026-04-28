@@ -16,7 +16,8 @@ import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog, { type AddedLibraryItem } from './CheckLibraryDialog';
-import { SourcePill, type ItemSource } from './checks/SourcePill';
+import { type ItemSource } from './checks/SourcePill';
+import { ChecklistItemRow, ChecklistSegmentedTabs, normalizeChecklistSource } from './checks/ChecklistItemRow';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -414,15 +415,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     }
   };
 
-  const getRiskBadgeClass = (level: string | null) => {
-    switch (level) {
-      case 'high': return 'bg-red-600 text-white hover:bg-red-700';
-      case 'med': return 'bg-yellow-600 text-white hover:bg-yellow-700';
-      case 'low': return 'bg-green-600 text-white hover:bg-green-700';
-      default: return '';
-    }
-  };
-
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
@@ -628,27 +620,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   </span>
                 </div>
 
-                <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
-                  {([
+                <ChecklistSegmentedTabs
+                  options={[
                     { key: 'all' as SuggestionTab, label: 'All', count: filteredSuggestions.length },
                     { key: 'specific' as SuggestionTab, label: 'Specific', count: specificSuggestions.length },
                     { key: 'general' as SuggestionTab, label: 'General', count: generalSuggestions.length },
-                  ]).map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setSuggestionTab(tab.key)}
-                      className={cn(
-                        'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
-                        suggestionTab === tab.key
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {tab.label} ({tab.count})
-                    </button>
-                  ))}
-                </div>
+                  ]}
+                  value={suggestionTab}
+                  onChange={(next) => setSuggestionTab(next as SuggestionTab)}
+                />
 
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
@@ -675,14 +655,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           <Badge variant={section.key === 'specific' ? 'secondary' : 'outline'} className="text-[10px] h-4 px-1.5">{section.count}</Badge>
                         </div>
                         {section.items.map((item) => (
-                          <SuggestionRow
+                          <ChecklistItemRow
                             key={item.id}
-                            item={item}
-                            checked={!!selectedSuggestions[item.id]}
-                            onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
-                            getRiskBadgeClass={getRiskBadgeClass}
+                            text={item.label}
+                            hint={item.hint}
                             source={section.key}
                             rideTypeName={ride.ride_categories?.name}
+                            riskLevel={item.risk_level}
+                            selected={!!selectedSuggestions[item.id]}
+                            onSelectedChange={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
                           />
                         ))}
                       </div>
@@ -769,15 +750,20 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           {selectedItems.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Your items ({selectedItems.length})</p>
-              <div className="space-y-1">
+                <div className="space-y-1.5">
                 {selectedItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
-                    <CheckSquare className="h-3.5 w-3.5 text-success shrink-0" />
-                    <span className="truncate flex-1">{item.check_item_text}</span>
-                    <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-2 -mr-1" aria-label="Remove">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                    <ChecklistItemRow
+                      key={index}
+                      text={item.check_item_text}
+                      source={normalizeChecklistSource(item.category)}
+                      rideTypeName={ride.ride_categories?.name}
+                      compact
+                      actions={(
+                        <button type="button" onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-1" aria-label="Remove">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    />
                 ))}
               </div>
             </div>
@@ -813,7 +799,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             ) : (
               <div className="space-y-1">
                 {selectedItems.map((item, index) => (
-                  <div key={index} className="group flex items-center gap-1.5 py-1.5 px-2 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                  <div key={index} className="group flex items-center gap-1.5 rounded-lg border border-border bg-card p-1.5 transition-colors hover:bg-card-hover">
                     {/* Reorder controls */}
                     <div className="flex flex-col shrink-0 -my-1">
                       <button
@@ -856,13 +842,14 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-start gap-2 flex-wrap">
-                          <p className="text-sm leading-snug flex-1 min-w-0">{item.check_item_text}</p>
-                          <SourcePill
-                            source={(['specific','general','custom','library','existing'].includes(item.category) ? item.category : 'existing') as ItemSource}
-                            rideTypeName={ride.ride_categories?.name}
-                          />
-                        </div>
+                        <ChecklistItemRow
+                          text={item.check_item_text}
+                          source={normalizeChecklistSource(item.category)}
+                          rideTypeName={ride.ride_categories?.name}
+                          compact
+                          draggable
+                          className="border-0 bg-transparent p-0 shadow-none hover:bg-transparent"
+                        />
                       )}
                     </div>
 
@@ -938,65 +925,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </div>
       )}
     </div>
-  );
-};
-
-interface SuggestionRowProps {
-  item: SuggestionItem;
-  checked: boolean;
-  onToggle: (v: boolean) => void;
-  getRiskBadgeClass: (level: string | null) => string;
-  source: ItemSource;
-  rideTypeName?: string;
-}
-
-const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rideTypeName }: SuggestionRowProps) => {
-  const Icon = item.risk_level === 'high' ? AlertTriangle : source === 'specific' ? Sparkles : CheckSquare;
-  const riskDotClass =
-    item.risk_level === 'high' ? 'bg-destructive'
-    : item.risk_level === 'med' ? 'bg-yellow-500'
-    : item.risk_level === 'low' ? 'bg-green-500'
-    : '';
-  return (
-    <label
-      className={cn(
-        'flex items-start gap-2.5 rounded-lg border p-2 cursor-pointer transition-colors',
-        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/25 bg-primary/5 hover:bg-primary/10' : 'border-border bg-background/70 hover:bg-muted/30'
-      )}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onToggle(e.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium flex items-start gap-1.5">
-          <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', item.risk_level === 'high' ? 'text-destructive' : source === 'specific' ? 'text-primary' : 'text-muted-foreground')} />
-          {item.risk_level && item.risk_level !== 'high' && (
-            <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
-          )}
-          <span className="min-w-0 break-words">{item.label}</span>
-          <span className="ml-auto shrink-0">
-            <SourcePill source={source} rideTypeName={rideTypeName} />
-          </span>
-        </div>
-        {item.hint && <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5 line-clamp-2">{item.hint}</p>}
-        {/* Risk badge: full chip on desktop, only HIGH chip on mobile */}
-        {item.risk_level && (
-          <div className="mt-1 hidden md:flex items-center gap-1 flex-wrap">
-            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
-              {item.risk_level.toUpperCase()}
-            </Badge>
-          </div>
-        )}
-        {item.risk_level === 'high' && (
-          <div className="mt-1 flex md:hidden">
-            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>HIGH</Badge>
-          </div>
-        )}
-      </div>
-    </label>
   );
 };
 

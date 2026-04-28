@@ -11,6 +11,7 @@ import {
   type InspectionRecord,
   type ItemResultSnapshot,
 } from '@/utils/inspectionRecordService';
+import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from '@/components/checks/ChecklistItemRow';
 import { InspectionAmendDialog } from '@/components/InspectionAmendDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +33,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SourcePill, type ItemSource } from '@/components/checks/SourcePill';
 
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
@@ -77,7 +77,7 @@ const InspectionRecordPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name')
+        .select('ride_name, ride_categories(name)')
         .eq('id', record!.ride_id)
         .single();
       return data;
@@ -248,13 +248,13 @@ const InspectionRecordPage = () => {
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Check Items</h2>
 
           {failedItems.length > 0 && (
-            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} />
+            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} rideTypeName={(ride as any)?.ride_categories?.name} />
           )}
           {passedItems.length > 0 && (
-            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" />
+            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" rideTypeName={(ride as any)?.ride_categories?.name} />
           )}
           {naItems.length > 0 && (
-            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" />
+            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" rideTypeName={(ride as any)?.ride_categories?.name} />
           )}
         </div>
 
@@ -374,6 +374,7 @@ function ItemGroup({
   variant,
   defectIds,
   photoPaths,
+  rideTypeName,
 }: {
   label: string;
   icon: React.ElementType;
@@ -381,6 +382,7 @@ function ItemGroup({
   variant: string;
   defectIds?: string[];
   photoPaths?: string[];
+  rideTypeName?: string;
 }) {
   const colors: Record<string, string> = {
     success: 'text-success border-success/20 bg-success/5',
@@ -393,14 +395,6 @@ function ItemGroup({
     muted: 'text-muted-foreground',
   };
 
-  const getItemSource = (category?: string | null): ItemSource => {
-    const normalized = (category || '').toLowerCase();
-    if (['specific', 'general', 'custom', 'library', 'existing'].includes(normalized)) {
-      return normalized as ItemSource;
-    }
-    return normalized ? 'existing' : 'general';
-  };
-
   return (
     <div className="space-y-2">
       <div className={cn('flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide', headerColors[variant])}>
@@ -408,10 +402,18 @@ function ItemGroup({
         {label} ({items.length})
       </div>
       <div className="space-y-1.5">
-        {items.map((item, idx) => (
-          <div key={idx} className={cn('rounded-lg border p-3 space-y-1.5', colors[variant])}>
-            <p className="text-sm font-semibold text-foreground">{item.check_item_text}</p>
-            <SourcePill source={getItemSource(item.category)} />
+        {items.map((item, idx) => {
+          const rowResult: ChecklistRowResult = item.result === 'fail' ? 'fail' : item.result === 'na' ? 'na' : 'pass';
+          return (
+          <ChecklistItemRow
+            key={idx}
+            text={item.check_item_text}
+            source={normalizeChecklistSource(item.category)}
+            rideTypeName={rideTypeName}
+            result={rowResult}
+            compact
+            className={colors[variant]}
+          >
             {item.notes && (
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="font-semibold">Note:</span> {item.notes}
@@ -430,8 +432,9 @@ function ItemGroup({
                 {photoPaths.length} photo(s) attached
               </p>
             )}
-          </div>
-        ))}
+          </ChecklistItemRow>
+          );
+        })}
       </div>
     </div>
   );

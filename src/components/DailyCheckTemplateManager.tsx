@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import TemplateBuilder from './TemplateBuilder';
+import { ChecklistItemRow, normalizeChecklistSource } from './checks/ChecklistItemRow';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -565,11 +566,13 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                       .sort((a, b) => a.sort_order - b.sort_order)
                       .slice(0, 4)
                       .map((item) => (
-                        <div key={item.id} className="text-xs p-2 bg-muted rounded flex items-center space-x-2">
-                          <CheckSquare className="h-3 w-3 text-muted-foreground" />
-                          <span className="truncate">{item.check_item_text}</span>
-                          {item.is_required && <span className="text-red-500">*</span>}
-                        </div>
+                        <ChecklistItemRow
+                          key={item.id}
+                          text={item.check_item_text}
+                          source={normalizeChecklistSource(item.category)}
+                          required={!!item.is_required}
+                          compact
+                        />
                       ))}
                   </div>
                   {template.daily_check_template_items.length > 4 && (
