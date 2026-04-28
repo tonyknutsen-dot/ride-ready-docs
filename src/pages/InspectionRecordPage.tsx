@@ -77,7 +77,7 @@ const InspectionRecordPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name')
+        .select('ride_name, ride_categories(name)')
         .eq('id', record!.ride_id)
         .single();
       return data;
@@ -248,13 +248,13 @@ const InspectionRecordPage = () => {
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Check Items</h2>
 
           {failedItems.length > 0 && (
-            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} />
+            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} rideTypeName={(ride as any)?.ride_categories?.name} />
           )}
           {passedItems.length > 0 && (
-            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" />
+            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" rideTypeName={(ride as any)?.ride_categories?.name} />
           )}
           {naItems.length > 0 && (
-            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" />
+            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" rideTypeName={(ride as any)?.ride_categories?.name} />
           )}
         </div>
 
