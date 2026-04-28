@@ -223,15 +223,14 @@ export function ChecklistItemRow({
           {hint && <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground md:text-xs">{hint}</p>}
 
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(normalizedRisk))}>
-                {getRiskBadgeLabel(normalizedRisk)}
+            <Badge variant="outline" className={cn('h-5 border px-1.5 text-[10px] font-bold', getRiskBadgeClass(normalizedRisk))}>
+              {getRiskBadgeLabel(normalizedRisk)}
+            </Badge>
+            {categoryLabel && (
+              <Badge variant="outline" className="h-5 border-border bg-card px-1.5 text-[10px] font-medium text-muted-foreground">
+                {categoryLabel}
               </Badge>
-              {categoryLabel && (
-                <Badge variant="outline" className="h-5 border-border bg-card px-1.5 text-[10px] font-medium text-muted-foreground">
-                  {categoryLabel}
-                </Badge>
-              )}
-            </div>
+            )}
           </div>
 
           {children && <div className="mt-2">{children}</div>}
