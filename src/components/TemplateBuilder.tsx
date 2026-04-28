@@ -928,24 +928,4 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   );
 };
 
-interface SuggestionRowProps {
-  item: SuggestionItem;
-  checked: boolean;
-  onToggle: (v: boolean) => void;
-  source: ItemSource;
-  rideTypeName?: string;
-}
-
-const SuggestionRow = ({ item, checked, onToggle, source, rideTypeName }: SuggestionRowProps) => (
-  <ChecklistItemRow
-    text={item.label}
-    hint={item.hint}
-    source={source}
-    rideTypeName={rideTypeName}
-    riskLevel={item.risk_level}
-    selected={checked}
-    onSelectedChange={onToggle}
-  />
-);
-
 export default TemplateBuilder;
