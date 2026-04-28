@@ -321,7 +321,7 @@ export async function fetchInspectionRecordsPaginated(
   }
 
   let records = (data || []) as unknown as InspectionRecord[];
-  const totalCount = count || 0;
+  let totalCount = count || 0;
 
   let checksQuery = supabase
     .from('checks')
@@ -341,8 +341,7 @@ export async function fetchInspectionRecordsPaginated(
   if (!checksError && checksData?.length) {
     const recordedCheckIds = new Set(records.map(r => r.check_id));
     const missingRecordChecks = checksData.filter((check: any) => !recordedCheckIds.has(check.id));
-    records = [
-      ...missingRecordChecks.map((check: any) => ({
+    const fallbackRecords = missingRecordChecks.map((check: any) => ({
         id: `check-${check.id}`,
         check_id: check.id,
         ride_id: check.ride_id,
@@ -373,7 +372,11 @@ export async function fetchInspectionRecordsPaginated(
         is_locked: true,
         created_at: check.created_at,
         source_check_only: true,
-      } as InspectionRecord)),
+      } as InspectionRecord));
+
+    totalCount += fallbackRecords.length;
+    records = [
+      ...fallbackRecords,
       ...records,
     ].sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
   }
