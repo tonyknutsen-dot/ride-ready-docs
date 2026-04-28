@@ -20,7 +20,7 @@ import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 interface InspectionChecklistProps {
   ride: ChecklistRide;
   frequency: string;
-  onChecklistSaved?: () => void;
+  onChecklistSaved?: (inspectionRecordId?: string) => void;
   executionMode?: 'launcher' | 'execute';
 }
 
