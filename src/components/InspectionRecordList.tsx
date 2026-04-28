@@ -110,7 +110,6 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [resultFilter, setResultFilter] = useState<string>('all');
-  const [defectsFilter, setDefectsFilter] = useState<string>('all');
   const [routineFilter, setRoutineFilter] = useState<string>(frequency);
   const [inspectorFilter, setInspectorFilter] = useState('');
   const [issueOnly, setIssueOnly] = useState(false);
@@ -125,12 +124,12 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     limit: PAGE_SIZE,
     dateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
     dateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
-    result: resultFilter !== 'all' ? resultFilter : undefined,
-    hasDefects: defectsFilter === 'yes' ? true : defectsFilter === 'no' ? false : undefined,
+    result: resultFilter !== 'all' && resultFilter !== 'with_defects' ? resultFilter : undefined,
+    hasDefects: resultFilter === 'with_defects' ? true : undefined,
     issueOnly,
     inspectorName: inspectorFilter || undefined,
     searchQuery: searchQuery || undefined,
-  }), [routineFilter, dateFrom, dateTo, resultFilter, defectsFilter, issueOnly, inspectorFilter, searchQuery]);
+  }), [routineFilter, dateFrom, dateTo, resultFilter, issueOnly, inspectorFilter, searchQuery]);
 
   const {
     data,
@@ -170,12 +169,11 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   );
   const totalCount = data?.pages[0]?.totalCount || 0;
 
-  const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || defectsFilter !== 'all' || routineFilter !== frequency || inspectorFilter || issueOnly || searchQuery);
+  const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || routineFilter !== frequency || inspectorFilter || issueOnly || searchQuery);
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
     setResultFilter('all');
-    setDefectsFilter('all');
     setRoutineFilter(frequency);
     setInspectorFilter('');
     setIssueOnly(false);
