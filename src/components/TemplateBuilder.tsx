@@ -620,27 +620,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   </span>
                 </div>
 
-                <div className="flex gap-1 rounded-lg bg-muted/50 p-0.5">
-                  {([
+                <ChecklistSegmentedTabs
+                  options={[
                     { key: 'all' as SuggestionTab, label: 'All', count: filteredSuggestions.length },
                     { key: 'specific' as SuggestionTab, label: 'Specific', count: specificSuggestions.length },
                     { key: 'general' as SuggestionTab, label: 'General', count: generalSuggestions.length },
-                  ]).map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setSuggestionTab(tab.key)}
-                      className={cn(
-                        'flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
-                        suggestionTab === tab.key
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      {tab.label} ({tab.count})
-                    </button>
-                  ))}
-                </div>
+                  ]}
+                  value={suggestionTab}
+                  onChange={(next) => setSuggestionTab(next as SuggestionTab)}
+                />
 
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {/* Honest empty-state: no specific items exist for this ride type */}
@@ -672,7 +660,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                             item={item}
                             checked={!!selectedSuggestions[item.id]}
                             onToggle={(v) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: v }))}
-                            getRiskBadgeClass={getRiskBadgeClass}
                             source={section.key}
                             rideTypeName={ride.ride_categories?.name}
                           />
