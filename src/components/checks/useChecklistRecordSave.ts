@@ -160,6 +160,8 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       if (!success) throw new Error('Failed to submit check');
 
       setSubmitPhase('record');
+      setCheckDebugValue('created check id', checkId ?? 'none');
+      setCheckDebugValue('save stage', 'check row created');
       await invalidateCheckRecordQueries(queryClient);
 
       if (isOffline || !checkId) {
@@ -181,13 +183,21 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       const linkedDefectIds = Object.values(itemDefects).map(defect => defect.id);
       if (linkedDefectIds.length > 0) {
-        await supabase.from('defects').update({ check_id: checkId }).in('id', linkedDefectIds).is('check_id', null);
+        setCheckDebugValue('save stage', 'linking defects');
+        await withSaveStageTimeout(
+          supabase.from('defects').update({ check_id: checkId }).in('id', linkedDefectIds).is('check_id', null),
+          'defect link'
+        );
       }
 
-      const { data: linkedDefects } = await supabase
-        .from('defects')
-        .select('id, severity')
-        .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`);
+      setCheckDebugValue('save stage', 'loading linked defects');
+      const { data: linkedDefects } = await withSaveStageTimeout(
+        supabase
+          .from('defects')
+          .select('id, severity')
+          .or(`check_id.eq.${checkId},id.in.(${linkedDefectIds.join(',') || '00000000-0000-0000-0000-000000000000'})`),
+        'linked defects fetch'
+      );
       const defectIds = (linkedDefects || []).map(d => d.id);
 
       setCheckDebugValue('save stage', 'creating inspection record');
