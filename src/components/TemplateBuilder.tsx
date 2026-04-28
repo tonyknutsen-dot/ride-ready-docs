@@ -928,7 +928,7 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
   return (
     <label
       className={`flex items-start gap-2.5 md:gap-3 rounded-lg p-1.5 md:p-2 cursor-pointer transition-colors border ${
-        checked ? 'border-primary/40 bg-primary/5' : 'border-transparent hover:bg-background'
+        checked ? 'border-primary/40 bg-primary/5' : source === 'specific' ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-transparent hover:bg-background'
       }`}
     >
       <input
@@ -940,6 +940,7 @@ const SuggestionRow = ({ item, checked, onToggle, getRiskBadgeClass, source, rid
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium flex items-start gap-1.5">
           {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+          {source === 'specific' && item.risk_level !== 'high' && <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />}
           {item.risk_level && item.risk_level !== 'high' && (
             <span className={`md:hidden h-2 w-2 rounded-full ${riskDotClass} shrink-0 mt-1.5`} aria-label={`${item.risk_level} risk`} />
           )}
