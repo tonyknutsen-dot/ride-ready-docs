@@ -198,7 +198,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const getTabForPrompt = (frequency: string) => frequency;
 
   return (
-    <div className="space-y-2 md:space-y-2.5">
+    <div className="space-y-2.5">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
 
       {/* Critical defect banner — top priority, above everything */}
@@ -208,9 +208,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
 
       {/* Hub header — restores the management-page treatment used across Equipment tabs */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
             <CheckSquare className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
           </div>
           <div className="min-w-0">
@@ -231,7 +231,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-2 md:space-y-2.5 relative">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-2.5 relative">
         {/* Frequency selector — check-type cards with strong active state */}
         <div className="overflow-x-auto -mx-4 px-4">
           <div className="inline-flex gap-1.5 min-w-max">
@@ -247,7 +247,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 <button
                   key={value}
                   onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all min-w-[52px] font-medium text-[11px] ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border transition-all min-w-[52px] font-medium text-[11px] ${
                     isActive
                       ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                       : 'bg-card border-border text-foreground hover:border-primary/40 hover:bg-secondary'

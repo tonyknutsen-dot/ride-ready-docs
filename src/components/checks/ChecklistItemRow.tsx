@@ -67,9 +67,8 @@ const getSourceRowClass = (source?: ItemSource) => {
 
 const getSourceIconClass = (source?: ItemSource, riskLevel?: string | null) => {
   if (riskLevel === 'high') return 'text-destructive';
-  if (source === 'specific') return 'text-primary';
-  if (source === 'general' || source === 'library') return 'text-primary';
   if (source === 'custom') return 'text-warning';
+  if (source === 'specific' || source === 'general' || source === 'library') return 'text-primary';
   return 'text-muted-foreground';
 };
 
@@ -180,6 +179,8 @@ export function ChecklistItemRow({
   return (
     <Root
       data-item-id={dataItemId}
+      data-source={source}
+      data-risk-level={normalizedRisk}
       className={cn(
         'block rounded-lg border shadow-sm transition-colors',
         result ? status.row : sourceRowClass,
@@ -206,7 +207,7 @@ export function ChecklistItemRow({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
-            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', getSourceIconClass(source, normalizedRisk))} />
+            <SourceIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', getSourceIconClass(source, normalizedRisk))} aria-hidden="true" />
             <p className="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-foreground">
               {text}{required && <span className="ml-1 text-destructive">*</span>}
             </p>

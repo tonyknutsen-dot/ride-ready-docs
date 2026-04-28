@@ -456,10 +456,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const progressValue = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="space-y-2 md:space-y-2.5 pb-24 md:pb-0">
+    <div className="space-y-2.5 pb-24 md:pb-0">
       {/* ── Mobile-only compact sticky top: Back · Title · Step pill ─
           Desktop/tablet keeps the original header layout below. ── */}
-      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-1.5 bg-background/95 backdrop-blur-sm border-b border-border/60">
+      <div className="md:hidden sticky top-0 z-20 -mx-4 px-3 py-2 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -485,7 +485,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet header ── */}
-      <div className="hidden md:flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-2.5">
         <Button variant="ghost" size="sm" className="h-7 px-2" onClick={step > 0 ? () => setStep(step - 1) : onCancel}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {step > 0 ? 'Back' : 'Cancel'}
@@ -499,7 +499,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </div>
 
       {/* ── Desktop/tablet stepper (mobile uses the slim pill above) ── */}
-      <div className="hidden md:flex items-center gap-1.5">
+      <div className="hidden md:flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
@@ -594,7 +594,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       {/* Mobile hierarchy: Smart suggestions (primary) → Browse Library (secondary) → Add your own (collapsible, tertiary) */}
       {/* Desktop/tablet keeps richer density via md: prefixes */}
       {step === 1 && (
-        <div className="space-y-2 md:space-y-2.5">
+        <div className="space-y-2.5">
           {selectedItems.length > 0 && (
             <div className="flex items-center gap-2 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
@@ -603,7 +603,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           )}
 
           {/* ── PRIMARY on mobile: Smart suggestions (borderless on mobile, bordered card on desktop) ── */}
-           <div className="space-y-2 md:rounded-md md:border md:border-border md:bg-card md:p-2.5">
+           <div className="space-y-2.5 md:rounded-md md:border md:border-border md:bg-card md:p-3">
             <div className="flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="font-semibold md:font-medium">Smart suggestions</span>
@@ -668,7 +668,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   onChange={(next) => setSuggestionTab(next as SuggestionTab)}
                 />
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {/* Honest empty-state: no specific items exist for this ride type */}
                   {specificSuggestions.length === 0 && generalSuggestions.length > 0 && !suggestionSearch.trim() && (
                     <div className="rounded-md border border-dashed border-border bg-muted/30 p-2 text-[11px] text-foreground">
@@ -684,7 +684,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   ) : suggestionSections.map((section) => {
                     const SectionIcon = section.icon;
                     return (
-                      <div key={section.key} className="space-y-1">
+                      <div key={section.key} className="space-y-1.5">
                         <div className="flex items-center gap-1.5 px-1">
                           <SectionIcon className="h-3 w-3 text-primary" />
                           <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
@@ -794,7 +794,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           {selectedItems.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Your items ({selectedItems.length})</p>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                 {selectedItems.map((item, index) => (
                     <ChecklistItemRow
                       key={index}
@@ -841,7 +841,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             {selectedItems.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">No items yet — go back to add some.</p>
             ) : (
-              <div className="space-y-1.5">
+               <div className="space-y-2">
                 {selectedItems.map((item, index) => (
                   <div key={index} className="group flex items-center gap-1.5">
                     {/* Reorder controls */}
