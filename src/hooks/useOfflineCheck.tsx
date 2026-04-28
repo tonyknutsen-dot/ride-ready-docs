@@ -104,32 +104,39 @@ export function useOfflineCheck() {
           insertPayload.finish_notice_snapshot = check.finishNoticeSnapshot;
         }
 
-        const { data: checkData, error: checkError } = await withTimeout(supabase
-          .from('checks')
-          .insert(insertPayload)
-          .select()
-          .single());
-
-        if (checkError) throw checkError;
-
-        // Insert check results
-        if (check.results.length > 0 && checkData) {
-          const results = check.results.map(r => ({
-            check_id: checkData.id,
+        const { data: checkId, error: saveError } = await withTimeout(supabase.rpc('submit_check_atomic' as any, {
+          p_user_id: insertPayload.user_id,
+          p_ride_id: insertPayload.ride_id,
+          p_template_id: insertPayload.template_id,
+          p_inspector_name: insertPayload.inspector_name,
+          p_check_date: insertPayload.check_date,
+          p_check_frequency: insertPayload.check_frequency,
+          p_status: insertPayload.status,
+          p_notes: insertPayload.notes ?? null,
+          p_weather_conditions: insertPayload.weather_conditions ?? null,
+          p_location: insertPayload.location ?? null,
+          p_signature_data: insertPayload.signature_data ?? null,
+          p_compliance_officer: insertPayload.compliance_officer ?? null,
+          p_environment_notes: insertPayload.environment_notes ?? null,
+          p_start_notice_acknowledged: insertPayload.start_notice_acknowledged ?? false,
+          p_start_notice_acknowledged_at: insertPayload.start_notice_acknowledged_at ?? null,
+          p_start_notice_acknowledged_by: insertPayload.start_notice_acknowledged_by ?? null,
+          p_start_notice_snapshot: insertPayload.start_notice_snapshot ?? null,
+          p_finish_notice_acknowledged: insertPayload.finish_notice_acknowledged ?? false,
+          p_finish_notice_acknowledged_at: insertPayload.finish_notice_acknowledged_at ?? null,
+          p_finish_notice_acknowledged_by: insertPayload.finish_notice_acknowledged_by ?? null,
+          p_finish_notice_snapshot: insertPayload.finish_notice_snapshot ?? null,
+          p_results: check.results.map(r => ({
             template_item_id: r.templateItemId,
             is_checked: r.isChecked,
             result: r.result,
-            notes: r.notes,
-          }));
+            notes: r.notes ?? null,
+          })),
+        }));
 
-          const { error: resultsError } = await withTimeout(supabase
-            .from('check_results')
-            .insert(results));
+        if (saveError) throw saveError;
 
-          if (resultsError) throw resultsError;
-        }
-
-        return { success: true, isOffline: false, checkId: checkData?.id };
+        return { success: true, isOffline: false, checkId: checkId as string };
       } catch (error: any) {
         console.error('Failed to submit check online:', error);
         // Fall through to offline storage
