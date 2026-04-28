@@ -121,6 +121,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   // Which item is currently reopening a prior defect (explicit user action — opens edit dialog)
   const [reopeningPriorForItem, setReopeningPriorForItem] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'saving' | 'record'>('idle');
   const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
   const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
   const [finishNoticeAcknowledged, setFinishNoticeAcknowledged] = useState(false);
@@ -814,6 +815,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     }
 
     setSubmitting(true);
+    setSubmitPhase('saving');
 
     // Optimistically update the overview cache immediately
     const previousOverview = queryClient.getQueryData(['overview', user?.id]);
@@ -886,6 +888,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       }
 
       // Keep the user on this screen until the immutable check record exists.
+      setSubmitPhase('record');
       await invalidateCheckRecordQueries(queryClient);
 
       if (isOffline || !checkId) {
@@ -894,6 +897,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           description: 'This check is waiting to sync. The check record will appear once the device is online.',
         });
         setSubmitting(false);
+        setSubmitPhase('idle');
         return;
       }
 
@@ -974,6 +978,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       }
 
       setSubmitting(false);
+      setSubmitPhase('idle');
       onChecklistSaved?.();
     } catch (error) {
       // Rollback optimistic update
@@ -987,6 +992,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         variant: 'destructive',
       });
       setSubmitting(false);
+      setSubmitPhase('idle');
     }
   };
 
