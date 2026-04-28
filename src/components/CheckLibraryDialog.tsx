@@ -22,6 +22,11 @@ interface CheckLibraryItem {
   sort_index: number;
 }
 
+export interface AddedLibraryItem {
+  label: string;
+  source: "specific" | "general";
+}
+
 export default function CheckLibraryDialog({
   trigger,
   frequency,
@@ -35,7 +40,7 @@ export default function CheckLibraryDialog({
   rideCategoryId?: string | null;
   equipmentGroup?: string | null;
   categoryGroupLabel?: string;
-  onAdd: (labels: string[]) => Promise<void> | void;
+  onAdd: (items: AddedLibraryItem[]) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -113,18 +118,18 @@ export default function CheckLibraryDialog({
     );
   }, [q, tabFiltered]);
 
-  const selectedLabels = useMemo(
-    () => rows.filter(r => sel[r.id]).map(r => r.label),
+  const selectedItems = useMemo<AddedLibraryItem[]>(
+    () => rows.filter(r => sel[r.id]).map(r => ({ label: r.label, source: r.ride_category_id ? "specific" : "general" })),
     [sel, rows]
   );
 
   const handleAddSelected = async () => {
-    if (selectedLabels.length === 0) return;
+    if (selectedItems.length === 0) return;
     try {
-      await onAdd(selectedLabels);
+      await onAdd(selectedItems);
       toast({
         title: "Items added",
-        description: `${selectedLabels.length} check item${selectedLabels.length > 1 ? 's' : ''} added to template`
+        description: `${selectedItems.length} check item${selectedItems.length > 1 ? 's' : ''} added to template`
       });
       setOpen(false);
       setSel({});
