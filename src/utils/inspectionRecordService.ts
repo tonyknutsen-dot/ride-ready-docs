@@ -340,14 +340,15 @@ export async function fetchInspectionRecordsPaginated(
 
   const { data: checksData, error: checksError } = await checksQuery.limit(limit);
   if (!checksError && checksData?.length) {
-    const checkIds = checksData.map((check: any) => check.id);
+    const sourceChecks = checksData as Array<Record<string, string | null>>;
+    const checkIds = sourceChecks.map((check) => check.id as string);
     const { data: existingRecords } = await supabase
       .from('inspection_records')
       .select('check_id')
       .in('check_id', checkIds);
-    const recordedCheckIds = new Set((existingRecords || []).map((r: any) => r.check_id));
-    const missingRecordChecks = checksData.filter((check: any) => !recordedCheckIds.has(check.id));
-    const fallbackRecords = missingRecordChecks.map((check: any) => ({
+    const recordedCheckIds = new Set((existingRecords || []).map((r) => r.check_id));
+    const missingRecordChecks = sourceChecks.filter((check) => !recordedCheckIds.has(check.id as string));
+    const fallbackRecords = missingRecordChecks.map((check) => ({
         id: `check-${check.id}`,
         check_id: check.id,
         ride_id: check.ride_id,
