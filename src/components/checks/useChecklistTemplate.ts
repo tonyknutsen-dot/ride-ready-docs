@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCachedTemplatesForRide, type CachedTemplate } from '@/lib/offlineDb';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 export type ChecklistRide = Tables<'rides'> & {
   ride_categories: {
@@ -64,6 +65,8 @@ export function useChecklistTemplate({ ride, frequency, userId, effectiveUserId,
   const loadActiveTemplate = useCallback(async () => {
     setUsingCachedTemplate(false);
     try {
+      markCheckDebug('template query started');
+      setCheckDebugValue('template query status', 'started');
       let query = supabase
         .from('daily_check_templates')
         .select(`*, daily_check_template_items (*)`)
@@ -77,8 +80,12 @@ export function useChecklistTemplate({ ride, frequency, userId, effectiveUserId,
       const { data, error } = await query.maybeSingle();
       if (error && error.code !== 'PGRST116') throw error;
       setActiveTemplate(data as ChecklistTemplate | null);
+      setCheckDebugValue('template query status', data ? `finished: ${data.daily_check_template_items?.length ?? 0} items` : 'finished: no active template');
+      markCheckDebug('template query finished');
     } catch (error) {
       console.error('Error loading active template:', error);
+      setCheckDebugValue('template query status', 'error');
+      setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'template query failed');
       try {
         const cachedTemplates = await getCachedTemplatesForRide(ride.id);
         const matchingTemplate = cachedTemplates.find(t => t.checkFrequency === frequency && t.isActive);

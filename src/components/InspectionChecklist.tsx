@@ -15,6 +15,7 @@ import ChecklistLauncher from './checks/ChecklistLauncher';
 import ActiveChecklistRuntime from './checks/ActiveChecklistRuntime';
 import { useChecklistRecordSave } from './checks/useChecklistRecordSave';
 import { useChecklistTemplate, type ChecklistRide } from './checks/useChecklistTemplate';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 interface InspectionChecklistProps {
   ride: ChecklistRide;
@@ -215,6 +216,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
     onChecklistSaved,
   });
 
+  useEffect(() => {
+    if (activeTemplate && isExecutionMode) {
+      setCheckDebugValue('template query status', `finished: ${activeTemplate.daily_check_template_items.length} items`);
+      markCheckDebug('execution UI ready');
+    }
+  }, [activeTemplate, isExecutionMode]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -261,7 +269,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
         onExportTemplate={generatePDF}
         onStartCheck={() => {
           const fromChecks = new URLSearchParams(window.location.search).get('from') === 'checks';
-          navigate(`/checks/${ride.id}/${frequency}/execute${fromChecks ? '?from=checks' : ''}`);
+          const debugParam = new URLSearchParams(window.location.search).get('checkDebug') === '1';
+          const params = [fromChecks ? 'from=checks' : '', debugParam ? 'checkDebug=1' : ''].filter(Boolean).join('&');
+          navigate(`/checks/${ride.id}/${frequency}/execute${params ? `?${params}` : ''}`);
         }}
         onDefectRefresh={() => setDefectRefreshKey(prev => prev + 1)}
       />

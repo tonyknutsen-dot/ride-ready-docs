@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { useTester } from '@/contexts/TesterContext';
 import { supabase } from '@/integrations/supabase/client';
 import appLogo from '@/assets/app-logo.jpg';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -94,6 +95,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     (!user && refreshAttempted && !canRedirectToAuth);
 
   useEffect(() => {
+    setCheckDebugValue('auth loading state', loading);
+    setCheckDebugValue('user id present yes/no', !!user?.id);
+    setCheckDebugValue('protected-route decision', isWaitingForAuth ? 'waiting' : user ? 'allowed' : 'redirect auth');
+    setCheckDebugValue('any redirect target', !user && !isWaitingForAuth ? '/auth' : '—');
+    if (user && !isWaitingForAuth) markCheckDebug('protected route allowed');
+  }, [loading, user, isWaitingForAuth]);
+
+  useEffect(() => {
     if (!isWaitingForAuth) {
       setLoaderTimedOut(false);
       return;
@@ -103,6 +112,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const timer = setTimeout(() => {
       setLoaderTimedOut(true);
       console.warn('[ProtectedRoute] Auth loading timed out on route:', location.pathname);
+      setCheckDebugValue('any blocking error text', `ProtectedRoute auth loading timed out on ${location.pathname}`);
     }, LOADER_FAILSAFE_MS);
 
     return () => clearTimeout(timer);

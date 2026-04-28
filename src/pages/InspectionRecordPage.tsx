@@ -33,6 +33,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
@@ -51,8 +52,12 @@ const InspectionRecordPage = () => {
   const goBack = () => {
     if (fromRideId) {
       const suffix = fromParam === 'checks' ? '&from=checks' : '';
+      setCheckDebugValue('any redirect target', `/rides/${fromRideId}?tab=checks${suffix}`);
+      markCheckDebug('back target ready');
       navigate(`/rides/${fromRideId}?tab=checks${suffix}`);
     } else {
+      setCheckDebugValue('any redirect target', 'history back');
+      markCheckDebug('back target ready');
       navigate(-1);
     }
   };
@@ -66,6 +71,7 @@ const InspectionRecordPage = () => {
         .eq('id', recordId!)
         .single();
       if (error) throw error;
+      markCheckDebug('record detail fetched');
       return data as unknown as InspectionRecord;
     },
     enabled: !!recordId,

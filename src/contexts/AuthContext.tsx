@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getIdentityCache, clearIdentityCache, type IdentityCacheEntry } from '@/lib/offlineDb';
 import { CANONICAL_APP_ORIGIN } from '@/config/canonicalOrigin';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 interface AuthContextType {
   user: User | null;
@@ -70,6 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [cachedIdentity, setCachedIdentity] = useState<IdentityCacheEntry | null>(null);
+
+  useEffect(() => {
+    markCheckDebug('auth provider mounted');
+  }, []);
+
+  useEffect(() => {
+    setCheckDebugValue('auth loading state', loading);
+    setCheckDebugValue('user id present yes/no', !!user?.id);
+    setCheckDebugValue('session present yes/no', !!session);
+    if (user?.id) markCheckDebug('current user resolved');
+  }, [loading, user?.id, session]);
 
   const checkSuspensionStatus = async (userId: string) => {
     try {
@@ -191,6 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
+        markCheckDebug('auth restore started');
         const { data } = await withTimeout(supabase.auth.getSession(), 10000, 'get_session');
         if (!isMounted) return;
 
@@ -227,11 +240,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       } catch (error) {
         console.warn('[AUTH] initializeAuth failed or timed out:', error);
+        setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'auth restore failed');
         if (isMounted) {
           setSession(null);
           setUser(null);
         }
       } finally {
+        markCheckDebug('auth restore finished');
         finalizeInitialLoad();
       }
     };

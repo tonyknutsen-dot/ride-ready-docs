@@ -5,6 +5,7 @@ import { createInspectionRecord, type ItemResultSnapshot } from '@/utils/inspect
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { type CheckItemResult } from '@/lib/offlineDb';
 import { type ChecklistRide, type ChecklistTemplate } from './useChecklistTemplate';
+import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 interface UseChecklistRecordSaveParams {
   activeTemplate: ChecklistTemplate | null;
@@ -96,6 +97,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
     setSubmitting(true);
     setSubmitPhase('saving');
+    markCheckDebug('save started');
     const previousOverview = queryClient.getQueryData(['overview', userId]);
     queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
       if (!old) return old;
@@ -198,6 +200,8 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       if (!inspectionRecordId) throw new Error('The check saved, but the check record could not be created yet.');
 
+      markCheckDebug('inspection record created');
+
       invalidateCheckRecordQueries(queryClient);
       await loadRecentChecks().catch(() => {});
 
@@ -222,6 +226,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     } catch (error) {
       if (previousOverview) queryClient.setQueryData(['overview', userId], previousOverview);
       console.error('Error submitting checks:', error);
+      setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'check save failed');
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save check', variant: 'destructive' });
       setSubmitting(false);
       setSubmitPhase('idle');
