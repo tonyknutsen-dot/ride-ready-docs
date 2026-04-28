@@ -1212,8 +1212,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
                     setWizardStep('start-notice');
                   } else {
                     setWizardStep('checklist');
-                    setCheckStarted(true);
-                    setCheckStartedAt(new Date());
                   }
                 }}
               >
@@ -1260,8 +1258,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, executionMode 
                 onClick={() => {
                   setStartNoticeAcknowledgedAt(new Date().toISOString());
                   setWizardStep('checklist');
-                  setCheckStarted(true);
-                  setCheckStartedAt(new Date());
                 }}
               >
                 Start Check
