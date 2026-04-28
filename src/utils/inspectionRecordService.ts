@@ -257,6 +257,8 @@ export interface PaginatedRecords {
   hasMore: boolean;
 }
 
+const CHECKS_TABLE_FREQUENCIES = new Set(['daily', 'preopening', 'weekly', 'monthly', 'yearly']);
+
 /**
  * Fetch inspection records for a ride with server-side pagination and filtering.
  */
@@ -314,6 +316,14 @@ export async function fetchInspectionRecordsPaginated(
     query = query.ilike('inspector_name', `%${options.inspectorName}%`);
   }
 
+  if (options.issueOnly) {
+    query = query.or('overall_result.eq.failed,defect_ids.neq.{}');
+  } else if (options.hasDefects === true) {
+    query = query.not('defect_ids', 'eq', '{}');
+  } else if (options.hasDefects === false) {
+    query = query.or('defect_ids.eq.{},defect_ids.is.null');
+  }
+
   if (options.searchQuery) {
     const escaped = options.searchQuery.replace(/[%_]/g, '\\$&');
     query = query.or(`inspector_name.ilike.%${escaped}%,location.ilike.%${escaped}%,notes.ilike.%${escaped}%,environment_notes.ilike.%${escaped}%,template_name.ilike.%${escaped}%`);
@@ -332,6 +342,8 @@ export async function fetchInspectionRecordsPaginated(
   let records = (data || []) as unknown as InspectionRecord[];
   let totalCount = count || 0;
 
+  const includeSourceChecks = !options.frequency || options.frequency === 'all' || CHECKS_TABLE_FREQUENCIES.has(options.frequency);
+
   let checksQuery = supabase
     .from('checks')
     .select('*')
@@ -347,7 +359,9 @@ export async function fetchInspectionRecordsPaginated(
   if (options.dateTo) checksQuery = checksQuery.lte('check_date', options.dateTo);
   if (options.inspectorName) checksQuery = checksQuery.ilike('inspector_name', `%${options.inspectorName}%`);
 
-  const { data: checksData, error: checksError } = await checksQuery.limit(limit);
+  const { data: checksData, error: checksError } = includeSourceChecks
+    ? await checksQuery.limit(limit)
+    : { data: null, error: null };
   if (!checksError && checksData?.length) {
     const sourceChecks = checksData as Array<Record<string, unknown>>;
     const checkIds = sourceChecks.map((check) => String(check.id));
@@ -398,11 +412,11 @@ export async function fetchInspectionRecordsPaginated(
   }
 
   // Filter by defects client-side (can't do array length check in PostgREST easily)
-  if (options.issueOnly) {
+  if (includeSourceChecks && options.issueOnly) {
     records = records.filter(r => r.overall_result === 'failed' || (r.defect_ids?.length || 0) > 0);
-  } else if (options.hasDefects === true) {
+  } else if (includeSourceChecks && options.hasDefects === true) {
     records = records.filter(r => (r.defect_ids?.length || 0) > 0);
-  } else if (options.hasDefects === false) {
+  } else if (includeSourceChecks && options.hasDefects === false) {
     records = records.filter(r => (r.defect_ids?.length || 0) === 0);
   }
 
