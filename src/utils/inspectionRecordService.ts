@@ -281,7 +281,8 @@ export async function fetchInspectionRecordsPaginated(
     .from('inspection_records')
     .select('*', { count: 'exact' })
     .eq('ride_id', rideId)
-    .order('completed_at', { ascending: false });
+    .order('completed_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
   if (options.frequency) {
     if (options.frequency === 'daily') {
@@ -339,42 +340,48 @@ export async function fetchInspectionRecordsPaginated(
 
   const { data: checksData, error: checksError } = await checksQuery.limit(limit);
   if (!checksError && checksData?.length) {
-    const recordedCheckIds = new Set(records.map(r => r.check_id));
-    const missingRecordChecks = checksData.filter((check: any) => !recordedCheckIds.has(check.id));
-    const fallbackRecords = missingRecordChecks.map((check: any) => ({
-        id: `check-${check.id}`,
-        check_id: check.id,
-        ride_id: check.ride_id,
-        user_id: check.user_id,
+    const sourceChecks = checksData as Array<Record<string, unknown>>;
+    const checkIds = sourceChecks.map((check) => String(check.id));
+    const { data: existingRecords } = await supabase
+      .from('inspection_records')
+      .select('check_id')
+      .in('check_id', checkIds);
+    const recordedCheckIds = new Set((existingRecords || []).map((r) => r.check_id));
+    const missingRecordChecks = sourceChecks.filter((check) => !recordedCheckIds.has(String(check.id)));
+    const fallbackRecords = missingRecordChecks.map((check) => ({
+        id: `check-${String(check.id)}`,
+        check_id: String(check.id),
+        ride_id: String(check.ride_id),
+        user_id: String(check.user_id),
         version: 1,
         amended_from_id: null,
         amendment_reason: null,
         amended_by: null,
         superseded_by_id: null,
-        inspector_name: check.inspector_name,
-        completed_at: check.created_at,
-        check_date: check.check_date,
-        check_frequency: check.check_frequency,
-        template_id: check.template_id,
+        inspector_name: String(check.inspector_name || 'Inspector'),
+        completed_at: String(check.created_at),
+        check_date: String(check.check_date),
+        check_frequency: String(check.check_frequency),
+        template_id: String(check.template_id),
         template_name: null,
-        overall_result: check.status,
+        overall_result: String(check.status),
         item_results: [],
-        notes: check.notes,
-        weather_conditions: check.weather_conditions,
-        location: check.location,
-        environment_notes: check.environment_notes,
-        compliance_officer: check.compliance_officer,
-        signature_data: check.signature_data,
+        notes: check.notes ? String(check.notes) : null,
+        weather_conditions: check.weather_conditions ? String(check.weather_conditions) : null,
+        location: check.location ? String(check.location) : null,
+        environment_notes: check.environment_notes ? String(check.environment_notes) : null,
+        compliance_officer: check.compliance_officer ? String(check.compliance_officer) : null,
+        signature_data: check.signature_data ? String(check.signature_data) : null,
         defect_ids: [],
         photo_paths: [],
         pdf_file_path: null,
         document_id: null,
         is_locked: true,
-        created_at: check.created_at,
+        created_at: String(check.created_at),
         source_check_only: true,
       } as InspectionRecord));
 
-    totalCount += fallbackRecords.length;
+    totalCount += Math.max(0, fallbackRecords.length - records.filter(r => fallbackRecords.some(f => f.check_id === r.check_id)).length);
     records = [
       ...fallbackRecords,
       ...records,

@@ -28,6 +28,10 @@ export interface AddedLibraryItem {
   source: "specific" | "general";
 }
 
+const getLibraryFrequencies = (value: Frequency): Frequency[] => {
+  return value === "daily" || value === "preopening" ? ["daily", "preopening"] : [value];
+};
+
 export default function CheckLibraryDialog({
   trigger,
   frequency,
@@ -64,7 +68,7 @@ export default function CheckLibraryDialog({
         let query = supabase
           .from("check_library_items")
           .select("id,label,frequency,ride_category_id,hint,risk_level,sort_index,is_active")
-          .eq("frequency", frequency)
+          .in("frequency", getLibraryFrequencies(frequency))
           .eq("is_active", true)
           .eq("equipment_group", resolvedGroup)
           .eq("item_kind", "operational") // exclude compliance/document items from operational checklists
