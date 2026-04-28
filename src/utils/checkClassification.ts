@@ -7,7 +7,6 @@
  * - check frequency labels
  *
  * Used by:
- * - ChecksHistory
  * - InspectionChecklist
  * - ReportGenerator
  * - NotificationCenter (failed-check action-needed)
