@@ -22,6 +22,11 @@ export const isCheckDebugEnabled = () => {
   return window.location.origin === CANONICAL_DEBUG_ORIGIN && new URLSearchParams(window.location.search).get('checkDebug') === '1';
 };
 
+export const isCanonicalCheckHost = () => {
+  if (typeof window === 'undefined') return false;
+  return window.location.origin === CANONICAL_DEBUG_ORIGIN;
+};
+
 export const markCheckDebug = (marker: string, values?: Record<string, DebugValue>) => {
   if (!isCheckDebugEnabled()) return;
   const state = getState();
@@ -37,6 +42,16 @@ export const setCheckDebugValue = (key: string, value: DebugValue) => {
   const state = getState();
   state.values[key] = value;
   window.dispatchEvent(new CustomEvent(EVENT_NAME));
+};
+
+export const logCheckSavePath = (step: string, values?: Record<string, DebugValue>) => {
+  if (!isCanonicalCheckHost()) return;
+  markCheckDebug(step, values);
+  setCheckDebugValue('last save path step', step);
+  if (values?.['save path final outcome']) {
+    setCheckDebugValue('save path final outcome', values['save path final outcome']);
+  }
+  console.info(`[Check save] ${step}`, values ?? {});
 };
 
 export const getCheckDebugSnapshot = () => getState();

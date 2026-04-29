@@ -5,7 +5,7 @@ import { createInspectionRecord, findInspectionRecordIdByCheckId, type ItemResul
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { type CheckItemResult } from '@/lib/offlineDb';
 import { type ChecklistRide, type ChecklistTemplate } from './useChecklistTemplate';
-import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
+import { logCheckSavePath, markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 interface UseChecklistRecordSaveParams {
   activeTemplate: ChecklistTemplate | null;
@@ -82,6 +82,61 @@ const withSaveStageTimeout = async <T,>(promise: PromiseLike<T>, stage: string, 
   }
 };
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const findInspectionRecordIdWithRetry = async (checkId: string, attempts = 5, delayMs = 700): Promise<string | null> => {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const recordId = await withSaveStageTimeout(
+      findInspectionRecordIdByCheckId(checkId),
+      `inspection record lookup attempt ${attempt}`,
+      4000
+    );
+    if (recordId) return recordId;
+    if (attempt < attempts) await wait(delayMs);
+  }
+  return null;
+};
+
+const findRecentSourceCheckId = async ({
+  rideId,
+  templateId,
+  userId,
+  frequency,
+  inspectorName,
+  checkDate,
+  startedAt,
+}: {
+  rideId: string;
+  templateId: string;
+  userId: string;
+  frequency: string;
+  inspectorName: string;
+  checkDate: string;
+  startedAt: string;
+}): Promise<string | null> => {
+  const createdAfter = new Date(new Date(startedAt).getTime() - 5000).toISOString();
+  const { data, error } = await supabase
+    .from('checks')
+    .select('id')
+    .eq('ride_id', rideId)
+    .eq('template_id', templateId)
+    .eq('user_id', userId)
+    .eq('check_frequency', frequency)
+    .eq('check_date', checkDate)
+    .eq('inspector_name', inspectorName)
+    .gte('created_at', createdAfter)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to recover source check id after save:', error);
+    return null;
+  }
+
+  return data?.id ?? null;
+};
+
 export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
   return useCallback(async () => {
     const {
@@ -110,7 +165,10 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitting(true);
     setSubmitPhase('saving');
     markCheckDebug('save started');
+    logCheckSavePath('save started', { 'save path final outcome': 'in progress' });
     const previousOverview = queryClient.getQueryData(['overview', userId]);
+    const saveStartedAt = new Date().toISOString();
+    const checkDate = saveStartedAt.split('T')[0];
     let savedCheckId: string | undefined;
     queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
       if (!old) return old;
@@ -130,11 +188,11 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       const totalItems = activeTemplate.daily_check_template_items.length;
       const checkStatus = failedItems > 0 ? 'failed' : passedItems === totalItems ? 'passed' : 'partial';
 
-      const { success, isOffline, checkId } = await submitCheck({
+      const sourceCheckPayload = {
         rideId: ride.id,
         templateId: activeTemplate.id,
         inspectorName: inspectorName.trim(),
-        checkDate: new Date().toISOString().split('T')[0],
+        checkDate,
         checkFrequency: frequency,
         status: checkStatus,
         notes: inspectorNotes.trim() || undefined,
@@ -156,10 +214,34 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           result: itemResults[item.id] || 'na',
           notes: notes[item.id]?.trim() || undefined,
         })),
-      });
+      };
+
+      let submissionResult: { success: boolean; isOffline?: boolean; checkId?: string };
+      try {
+        submissionResult = await withSaveStageTimeout(submitCheck(sourceCheckPayload), 'source check save', 18000);
+      } catch (sourceError) {
+        logCheckSavePath('source check save finished', {
+          'any blocking error text': sourceError instanceof Error ? sourceError.message : 'source check save timed out',
+        });
+        const recoveredCheckId = effectiveUserId ? await withSaveStageTimeout(findRecentSourceCheckId({
+          rideId: ride.id,
+          templateId: activeTemplate.id,
+          userId: effectiveUserId,
+          frequency,
+          inspectorName: inspectorName.trim(),
+          checkDate,
+          startedAt: saveStartedAt,
+        }), 'source check recovery lookup', 5000).catch(() => null) : null;
+        if (!recoveredCheckId) throw sourceError;
+        submissionResult = { success: true, isOffline: false, checkId: recoveredCheckId };
+        logCheckSavePath('source check save finished', { 'created check id': recoveredCheckId });
+      }
+
+      const { success, isOffline, checkId } = submissionResult;
 
       if (!success) throw new Error('Failed to submit check');
       savedCheckId = checkId;
+      logCheckSavePath('source check save finished', { 'created check id': checkId ?? 'none' });
 
       setSubmitPhase('record');
       setCheckDebugValue('created check id', checkId ?? 'none');
@@ -170,6 +252,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         toast({ title: 'Saved offline', description: 'This check is waiting to sync. The check record will appear once the device is online.' });
         setSubmitting(false);
         setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'offline save queued' });
         return;
       }
 
@@ -203,38 +286,56 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       const defectIds = (linkedDefects || []).map(d => d.id);
 
       setCheckDebugValue('save stage', 'creating inspection record');
-      const inspectionRecordId = await withSaveStageTimeout(createInspectionRecord({
-        checkId,
-        rideId: ride.id,
-        userId: effectiveUserId!,
-        inspectorName: inspectorName.trim() || 'Inspector',
-        checkDate: new Date().toISOString().split('T')[0],
-        checkFrequency: frequency,
-        templateId: activeTemplate.id,
-        templateName: activeTemplate.template_name,
-        overallResult,
-        itemResults: itemResultSnapshots,
-        notes: inspectorNotes.trim() || null,
-        weatherConditions: null,
-        location: location.trim() || null,
-        environmentNotes: null,
-        complianceOfficer: null,
-        signatureData: null,
-        defectIds,
-      }), 'inspection record create');
+      logCheckSavePath('inspection record create started', { 'created check id': checkId });
+      let inspectionRecordId: string | null = null;
+      try {
+        inspectionRecordId = await withSaveStageTimeout(createInspectionRecord({
+          checkId,
+          rideId: ride.id,
+          userId: effectiveUserId!,
+          inspectorName: inspectorName.trim() || 'Inspector',
+          checkDate: new Date().toISOString().split('T')[0],
+          checkFrequency: frequency,
+          templateId: activeTemplate.id,
+          templateName: activeTemplate.template_name,
+          overallResult,
+          itemResults: itemResultSnapshots,
+          notes: inspectorNotes.trim() || null,
+          weatherConditions: null,
+          location: location.trim() || null,
+          environmentNotes: null,
+          complianceOfficer: null,
+          signatureData: null,
+          defectIds,
+        }), 'inspection record create');
+        logCheckSavePath('inspection record create finished', { 'created inspection record id': inspectionRecordId ?? 'none' });
+      } catch (recordError) {
+        logCheckSavePath('inspection record create failed', {
+          'any blocking error text': recordError instanceof Error ? recordError.message : 'inspection record create failed',
+        });
+      }
 
-      const resolvedRecordId = inspectionRecordId ?? await withSaveStageTimeout(
-        findInspectionRecordIdByCheckId(checkId),
-        'inspection record lookup',
-        5000
-      );
+      logCheckSavePath('fallback lookup started', { 'created check id': checkId });
+      let fallbackRecordId: string | null = null;
+      try {
+        fallbackRecordId = inspectionRecordId ? inspectionRecordId : await findInspectionRecordIdWithRetry(checkId);
+        logCheckSavePath('fallback lookup finished', { 'created inspection record id': fallbackRecordId ?? 'none' });
+      } catch (lookupError) {
+        logCheckSavePath('fallback lookup failed', {
+          'any blocking error text': lookupError instanceof Error ? lookupError.message : 'inspection record lookup failed',
+        });
+      }
+
+      const resolvedRecordId = inspectionRecordId ?? fallbackRecordId;
 
       if (!resolvedRecordId) {
         invalidateCheckRecordQueries(queryClient);
         setCheckDebugValue('save stage', 'check saved without record detail');
         setSubmitting(false);
         setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'checks list refresh fallback' });
         onChecklistSaved?.();
+        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
         toast({
           title: 'Check saved',
           description: 'The check was saved and the records list has been refreshed.',
@@ -249,7 +350,9 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       setCheckDebugValue('save stage', 'navigating to record detail');
       setSubmitting(false);
       setSubmitPhase('idle');
+      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'record detail navigation' });
       onChecklistSaved?.(resolvedRecordId);
+      logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${resolvedRecordId}` });
       void withSaveStageTimeout(loadRecentChecks(), 'recent checks refresh', 5000).catch((refreshError) => {
         console.warn('Recent checks refresh skipped after save:', refreshError);
         setCheckDebugValue('any blocking error text', refreshError instanceof Error ? refreshError.message : 'recent checks refresh failed');
@@ -271,11 +374,15 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       }
     } catch (error) {
       if (savedCheckId) {
+        logCheckSavePath('fallback lookup started', { 'created check id': savedCheckId });
         const recoveredRecordId = await withSaveStageTimeout(
           findInspectionRecordIdByCheckId(savedCheckId),
           'inspection record recovery lookup',
           5000
         ).catch(() => null);
+        logCheckSavePath(recoveredRecordId ? 'fallback lookup finished' : 'fallback lookup failed', {
+          'created inspection record id': recoveredRecordId ?? 'none',
+        });
 
         if (recoveredRecordId) {
           invalidateCheckRecordQueries(queryClient);
@@ -283,7 +390,9 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           setCheckDebugValue('save stage', 'recovered record detail navigation');
           setSubmitting(false);
           setSubmitPhase('idle');
+          logCheckSavePath('UI save state cleared', { 'save path final outcome': 'recovered record detail navigation' });
           onChecklistSaved?.(recoveredRecordId);
+          logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${recoveredRecordId}` });
           return;
         }
 
@@ -291,7 +400,9 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         setCheckDebugValue('save stage', 'check saved, returning to records');
         setSubmitting(false);
         setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'catch fallback checks list refresh' });
         onChecklistSaved?.();
+        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
         toast({ title: 'Check saved', description: 'The check was saved and the records list has been refreshed.' });
         return;
       }
@@ -302,6 +413,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save check', variant: 'destructive' });
       setSubmitting(false);
       setSubmitPhase('idle');
+      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'source check failed before id' });
     }
   }, [params]);
 }
