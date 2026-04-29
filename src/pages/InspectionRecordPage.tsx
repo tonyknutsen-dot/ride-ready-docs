@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addHours } from 'date-fns';
@@ -6,11 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAppRole } from '@/hooks/useAppRole';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import {
   isWithinAmendmentWindow,
   type InspectionRecord,
   type ItemResultSnapshot,
 } from '@/utils/inspectionRecordService';
+import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
 import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from '@/components/checks/ChecklistItemRow';
 import { InspectionAmendDialog } from '@/components/InspectionAmendDialog';
 import { Button } from '@/components/ui/button';
@@ -42,8 +44,10 @@ const InspectionRecordPage = () => {
   const role = useAppRole();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { effectiveUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
 
   // Origin-aware back navigation: always returns to the canonical hub
   // (`/rides/:id?tab=checks`); `from=checks` makes the hub bounce to `/checks`.
@@ -83,7 +87,7 @@ const InspectionRecordPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name, ride_categories(name)')
+        .select('ride_name, manufacturer, serial_number, ride_categories(name)')
         .eq('id', record!.ride_id)
         .single();
       return data;
@@ -111,6 +115,38 @@ const InspectionRecordPage = () => {
       toast({ title: 'Download failed', description: 'Could not download the PDF.', variant: 'destructive' });
     }
   };
+
+  useEffect(() => {
+    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating) return;
+
+    let cancelled = false;
+    const preparePdf = async () => {
+      setPdfGenerating(true);
+      try {
+        const result = await generateInspectionRecordPdf({
+          record,
+          rideName: ride.ride_name,
+          rideCategory: (ride as any)?.ride_categories?.name,
+          rideManufacturer: (ride as any)?.manufacturer,
+          rideSerialNumber: (ride as any)?.serial_number,
+          effectiveUserId,
+        });
+        if (!cancelled && result) {
+          await queryClient.invalidateQueries({ queryKey: ['inspection-record', recordId] });
+          await queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+        }
+      } catch (error) {
+        console.error('Inspection record PDF preparation failed:', error);
+      } finally {
+        if (!cancelled) setPdfGenerating(false);
+      }
+    };
+
+    void preparePdf();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveUserId, pdfGenerating, queryClient, record, recordId, ride]);
 
   if (isLoading) {
     return (
