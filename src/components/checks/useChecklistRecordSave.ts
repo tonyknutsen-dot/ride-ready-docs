@@ -167,6 +167,8 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     markCheckDebug('save started');
     logCheckSavePath('save started', { 'save path final outcome': 'in progress' });
     const previousOverview = queryClient.getQueryData(['overview', userId]);
+    const saveStartedAt = new Date().toISOString();
+    const checkDate = saveStartedAt.split('T')[0];
     let savedCheckId: string | undefined;
     queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
       if (!old) return old;
@@ -190,7 +192,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         rideId: ride.id,
         templateId: activeTemplate.id,
         inspectorName: inspectorName.trim(),
-        checkDate: new Date().toISOString().split('T')[0],
+        checkDate,
         checkFrequency: frequency,
         status: checkStatus,
         notes: inspectorNotes.trim() || undefined,
