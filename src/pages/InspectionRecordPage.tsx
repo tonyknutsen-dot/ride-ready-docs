@@ -238,10 +238,10 @@ const InspectionRecordPage = () => {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        <div className="mx-auto max-w-3xl space-y-6 overflow-x-hidden px-3 py-5 sm:px-4 sm:py-6">
         {/* ── Record Info ── */}
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             <div>
               <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">Check Completed By</span>
               <p className="font-bold text-foreground mt-0.5">{record.inspector_name}</p>
@@ -275,7 +275,7 @@ const InspectionRecordPage = () => {
         <Separator />
 
         {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           <SummaryCard label="Total" value={items.length} />
           <SummaryCard label="Passed" value={passedItems.length} variant="success" />
           <SummaryCard label="Failed" value={failedItems.length} variant="destructive" />
@@ -347,13 +347,21 @@ const InspectionRecordPage = () => {
         <Separator />
 
         {/* ── Actions ── */}
-        <div className="flex flex-col sm:flex-row gap-3 pb-8">
+        {!record.pdf_file_path && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            {pdfGenerating
+              ? 'Preparing PDF. The download will become active when generation finishes.'
+              : 'PDF is not ready yet. Leave this record open or return shortly to download it.'}
+          </div>
+        )}
+        <div className="flex flex-col gap-3 pb-8 sm:flex-row">
           <Button
             className="flex-1"
             onClick={handleDownloadPdf}
             disabled={!record.pdf_file_path}
           >
-            <Download className="h-4 w-4 mr-2" /> Download PDF
+            {pdfGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            {record.pdf_file_path ? 'Download PDF' : pdfGenerating ? 'Preparing PDF' : 'PDF not ready'}
           </Button>
           {isController && (
             canAmend ? (
