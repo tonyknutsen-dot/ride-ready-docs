@@ -1,4 +1,4 @@
-import { lazy, Suspense, memo } from 'react';
+import { Component, lazy, Suspense, memo, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Lazy load components that are only needed when authenticated
@@ -8,6 +8,23 @@ const InstallPromptBanner = lazy(() => import('./InstallPromptBanner').then(m =>
 const TestModeBanner = lazy(() => import('./TestModeBanner'));
 const TesterSessionTracker = lazy(() => import('./TesterSessionTracker'));
 const GlobalEventBridge = lazy(() => import('./GlobalEventBridge'));
+
+class ShellChunkBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('Authenticated shell chunk failed to load; continuing without optional shell UI.', error);
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 
 /**
@@ -25,13 +42,15 @@ export const AuthenticatedAppShell = memo(function AuthenticatedAppShell() {
   }
 
   return (
-    <Suspense fallback={null}>
-      <TestModeBanner />
-      <TesterSessionTracker />
-      <GlobalEventBridge />
-      <MobileBottomNav />
-      <FloatingBugButton />
-      <InstallPromptBanner />
-    </Suspense>
+    <ShellChunkBoundary>
+      <Suspense fallback={null}>
+        <TestModeBanner />
+        <TesterSessionTracker />
+        <GlobalEventBridge />
+        <MobileBottomNav />
+        <FloatingBugButton />
+        <InstallPromptBanner />
+      </Suspense>
+    </ShellChunkBoundary>
   );
 });
