@@ -187,6 +187,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         toast({ title: 'Saved offline', description: 'This check is waiting to sync. The check record will appear once the device is online.' });
         setSubmitting(false);
         setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'offline save queued' });
         return;
       }
 
