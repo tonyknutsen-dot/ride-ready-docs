@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { createInspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
+import { createInspectionRecord, findInspectionRecordIdByCheckId, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { type CheckItemResult } from '@/lib/offlineDb';
 import { type ChecklistRide, type ChecklistTemplate } from './useChecklistTemplate';
@@ -111,6 +111,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitPhase('saving');
     markCheckDebug('save started');
     const previousOverview = queryClient.getQueryData(['overview', userId]);
+    let savedCheckId: string | undefined;
     queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
       if (!old) return old;
       return {
@@ -158,6 +159,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       });
 
       if (!success) throw new Error('Failed to submit check');
+      savedCheckId = checkId;
 
       setSubmitPhase('record');
       setCheckDebugValue('created check id', checkId ?? 'none');
@@ -221,16 +223,33 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         defectIds,
       }), 'inspection record create');
 
-      if (!inspectionRecordId) throw new Error('The check saved, but the check record could not be created yet.');
+      const resolvedRecordId = inspectionRecordId ?? await withSaveStageTimeout(
+        findInspectionRecordIdByCheckId(checkId),
+        'inspection record lookup',
+        5000
+      );
 
-      setCheckDebugValue('created inspection record id', inspectionRecordId);
+      if (!resolvedRecordId) {
+        invalidateCheckRecordQueries(queryClient);
+        setCheckDebugValue('save stage', 'check saved without record detail');
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        onChecklistSaved?.();
+        toast({
+          title: 'Check saved',
+          description: 'The check was saved and the records list has been refreshed.',
+        });
+        return;
+      }
+
+      setCheckDebugValue('created inspection record id', resolvedRecordId);
       markCheckDebug('inspection record created');
 
-      invalidateCheckRecordQueries(queryClient);
+      await invalidateCheckRecordQueries(queryClient);
       setCheckDebugValue('save stage', 'navigating to record detail');
       setSubmitting(false);
       setSubmitPhase('idle');
-      onChecklistSaved?.(inspectionRecordId);
+      onChecklistSaved?.(resolvedRecordId);
       void withSaveStageTimeout(loadRecentChecks(), 'recent checks refresh', 5000).catch((refreshError) => {
         console.warn('Recent checks refresh skipped after save:', refreshError);
         setCheckDebugValue('any blocking error text', refreshError instanceof Error ? refreshError.message : 'recent checks refresh failed');
@@ -251,6 +270,32 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         toast({ title: 'Check completed ✓', description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check record is ready` });
       }
     } catch (error) {
+      if (savedCheckId) {
+        const recoveredRecordId = await withSaveStageTimeout(
+          findInspectionRecordIdByCheckId(savedCheckId),
+          'inspection record recovery lookup',
+          5000
+        ).catch(() => null);
+
+        if (recoveredRecordId) {
+          invalidateCheckRecordQueries(queryClient);
+          setCheckDebugValue('created inspection record id', recoveredRecordId);
+          setCheckDebugValue('save stage', 'recovered record detail navigation');
+          setSubmitting(false);
+          setSubmitPhase('idle');
+          onChecklistSaved?.(recoveredRecordId);
+          return;
+        }
+
+        invalidateCheckRecordQueries(queryClient);
+        setCheckDebugValue('save stage', 'check saved, returning to records');
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        onChecklistSaved?.();
+        toast({ title: 'Check saved', description: 'The check was saved and the records list has been refreshed.' });
+        return;
+      }
+
       if (previousOverview) queryClient.setQueryData(['overview', userId], previousOverview);
       console.error('Error submitting checks:', error);
       setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'check save failed');

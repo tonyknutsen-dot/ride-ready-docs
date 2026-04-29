@@ -121,6 +121,28 @@ export async function createInspectionRecord(
 }
 
 /**
+ * Look up the current record for a completed check.
+ * Used as a post-save recovery path when the check row exists but the UI did
+ * not receive the record-create response cleanly.
+ */
+export async function findInspectionRecordIdByCheckId(checkId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('inspection_records')
+    .select('id')
+    .eq('check_id', checkId)
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to look up inspection record by check id:', error);
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+
+/**
  * Update the PDF reference on a newly created inspection record.
  * Must be called within 60 seconds of creation.
  */
@@ -344,6 +366,34 @@ export async function fetchInspectionRecordsPaginated(
 
   const includeSourceChecks = !options.frequency || options.frequency === 'all' || CHECKS_TABLE_FREQUENCIES.has(options.frequency);
 
+  if (includeSourceChecks) {
+    let sourceCountQuery = supabase
+      .from('checks')
+      .select('id')
+      .eq('ride_id', rideId)
+      .order('created_at', { ascending: false });
+
+    if (options.frequency && options.frequency !== 'all') {
+      sourceCountQuery = options.frequency === 'daily'
+        ? sourceCountQuery.in('check_frequency', ['daily', 'preopening'])
+        : sourceCountQuery.eq('check_frequency', options.frequency);
+    }
+    if (options.dateFrom) sourceCountQuery = sourceCountQuery.gte('check_date', options.dateFrom);
+    if (options.dateTo) sourceCountQuery = sourceCountQuery.lte('check_date', options.dateTo);
+    if (options.inspectorName) sourceCountQuery = sourceCountQuery.ilike('inspector_name', `%${options.inspectorName}%`);
+
+    const { data: sourceChecksForCount } = await sourceCountQuery.limit(5000);
+    const sourceCheckIds = (sourceChecksForCount || []).map((check) => String(check.id));
+    if (sourceCheckIds.length > 0) {
+      const { data: existingSourceRecords } = await supabase
+        .from('inspection_records')
+        .select('check_id')
+        .in('check_id', sourceCheckIds);
+      const recordedSourceCheckIds = new Set((existingSourceRecords || []).map((record) => String(record.check_id)));
+      totalCount += sourceCheckIds.filter((checkId) => !recordedSourceCheckIds.has(checkId)).length;
+    }
+  }
+
   let checksQuery = supabase
     .from('checks')
     .select('*')
@@ -360,7 +410,7 @@ export async function fetchInspectionRecordsPaginated(
   if (options.inspectorName) checksQuery = checksQuery.ilike('inspector_name', `%${options.inspectorName}%`);
 
   const { data: checksData, error: checksError } = includeSourceChecks
-    ? await checksQuery.limit(limit)
+    ? await checksQuery.range(offset, offset + limit - 1)
     : { data: null, error: null };
   if (!checksError && checksData?.length) {
     const sourceChecks = checksData as Array<Record<string, unknown>>;
@@ -404,7 +454,6 @@ export async function fetchInspectionRecordsPaginated(
         source_check_only: true,
       } as InspectionRecord));
 
-    totalCount += Math.max(0, fallbackRecords.length - records.filter(r => fallbackRecords.some(f => f.check_id === r.check_id)).length);
     records = [
       ...fallbackRecords,
       ...records,
