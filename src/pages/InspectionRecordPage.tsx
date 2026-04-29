@@ -37,6 +37,13 @@ import {
 import { cn } from '@/lib/utils';
 import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
+type RideDetails = {
+  ride_name: string;
+  manufacturer?: string | null;
+  serial_number?: string | null;
+  ride_categories?: { name?: string | null } | null;
+};
+
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
   const [searchParams] = useSearchParams();
@@ -48,6 +55,7 @@ const InspectionRecordPage = () => {
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfRetryKey, setPdfRetryKey] = useState(0);
   const pdfGenerationAttemptedRef = useRef<string | null>(null);
@@ -95,18 +103,21 @@ const InspectionRecordPage = () => {
         .select('ride_name, manufacturer, serial_number, ride_categories(name)')
         .eq('id', record!.ride_id)
         .single();
-      return data;
+      return data as RideDetails | null;
     },
     enabled: !!record?.ride_id,
   });
 
   const pdfAvailablePath = record?.pdf_file_path ?? null;
+  const pdfPreparing = !pdfAvailablePath && pdfGenerating;
+  const rideCategoryName = ride?.ride_categories?.name ?? undefined;
 
   const handleDownloadPdf = async () => {
     if (!pdfAvailablePath || !record) {
       toast({ title: 'No PDF available', description: 'PDF has not been generated for this record.', variant: 'destructive' });
       return;
     }
+    setPdfDownloading(true);
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
@@ -120,6 +131,8 @@ const InspectionRecordPage = () => {
       URL.revokeObjectURL(url);
     } catch {
       toast({ title: 'Download failed', description: 'Could not download the PDF.', variant: 'destructive' });
+    } finally {
+      setPdfDownloading(false);
     }
   };
 
@@ -129,6 +142,13 @@ const InspectionRecordPage = () => {
     pdfGenerationAttemptedRef.current = null;
     setPdfRetryKey((key) => key + 1);
   };
+
+  useEffect(() => {
+    if (pdfAvailablePath) {
+      setPdfGenerating(false);
+      setPdfError(null);
+    }
+  }, [pdfAvailablePath]);
 
   useEffect(() => {
     if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === `${record.id}:${pdfRetryKey}`) return;
@@ -144,9 +164,9 @@ const InspectionRecordPage = () => {
           generateInspectionRecordPdf({
           record,
           rideName: ride.ride_name,
-          rideCategory: (ride as any)?.ride_categories?.name,
-          rideManufacturer: (ride as any)?.manufacturer,
-          rideSerialNumber: (ride as any)?.serial_number,
+          rideCategory: rideCategoryName,
+          rideManufacturer: ride.manufacturer ?? undefined,
+          rideSerialNumber: ride.serial_number ?? undefined,
           effectiveUserId,
           }),
           new Promise<null>((resolve) => {
@@ -173,7 +193,7 @@ const InspectionRecordPage = () => {
       cancelled = true;
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [effectiveUserId, pdfGenerating, pdfRetryKey, queryClient, record, recordId, ride]);
+  }, [effectiveUserId, pdfGenerating, pdfRetryKey, queryClient, record, recordId, ride, rideCategoryName]);
 
   if (isLoading) {
     return (
@@ -317,13 +337,13 @@ const InspectionRecordPage = () => {
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Check Items</h2>
 
           {failedItems.length > 0 && (
-            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} rideTypeName={(ride as any)?.ride_categories?.name} />
+            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} rideTypeName={rideCategoryName} />
           )}
           {passedItems.length > 0 && (
-            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" rideTypeName={(ride as any)?.ride_categories?.name} />
+            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" rideTypeName={rideCategoryName} />
           )}
           {naItems.length > 0 && (
-            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" rideTypeName={(ride as any)?.ride_categories?.name} />
+            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" rideTypeName={rideCategoryName} />
           )}
         </div>
 
@@ -385,10 +405,10 @@ const InspectionRecordPage = () => {
           <Button
             className="min-h-11 w-full whitespace-normal"
             onClick={handleDownloadPdf}
-            disabled={!record.pdf_file_path}
+            disabled={!record.pdf_file_path || pdfDownloading}
           >
-            {pdfGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            {record.pdf_file_path ? 'Download PDF' : pdfGenerating ? 'Preparing PDF' : 'PDF not ready'}
+            {pdfDownloading || pdfPreparing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            {pdfDownloading ? 'Opening PDF' : record.pdf_file_path ? 'Download PDF' : pdfPreparing ? 'Preparing PDF' : 'PDF not ready'}
           </Button>
           {pdfError && !record.pdf_file_path && (
             <Button variant="outline" className="min-h-11 w-full whitespace-normal" onClick={retryPdfGeneration}>
