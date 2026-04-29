@@ -193,7 +193,7 @@ const InspectionRecordPage = () => {
       cancelled = true;
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [effectiveUserId, pdfGenerating, pdfRetryKey, queryClient, record, recordId, ride]);
+  }, [effectiveUserId, pdfGenerating, pdfRetryKey, queryClient, record, recordId, ride, rideCategoryName]);
 
   if (isLoading) {
     return (
