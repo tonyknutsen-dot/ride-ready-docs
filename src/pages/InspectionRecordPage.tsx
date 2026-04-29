@@ -409,9 +409,9 @@ function SummaryCard({ label, value, variant }: { label: string; value: number; 
   };
   return (
     <Card className="border-border">
-      <CardContent className="p-3 text-center">
-        <p className={cn('text-2xl font-black', colors[variant || ''] || 'text-foreground')}>{value}</p>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-0.5">{label}</p>
+      <CardContent className="p-2 text-center sm:p-3">
+        <p className={cn('text-xl font-black sm:text-2xl', colors[variant || ''] || 'text-foreground')}>{value}</p>
+        <p className="mt-0.5 text-[10px] font-semibold uppercase leading-tight text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   );
@@ -471,7 +471,7 @@ function ItemGroup({
             )}
             {/* For failed items, show defect reference + photo hint */}
             {variant === 'destructive' && defectIds && defectIds.length > 0 && (
-              <p className="text-[11px] text-destructive flex items-center gap-1">
+              <p className="flex items-center gap-1 text-[11px] text-destructive">
                 <AlertTriangle className="h-3 w-3" />
                 Linked defect(s): {defectIds.length}
               </p>
@@ -492,9 +492,9 @@ function ItemGroup({
 
 function AuditRow({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground text-sm">{label}</span>
-      <span className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="flex min-w-0 items-center gap-1.5 break-words text-sm font-semibold text-foreground sm:justify-end sm:text-right">
         {icon}
         {value}
       </span>
