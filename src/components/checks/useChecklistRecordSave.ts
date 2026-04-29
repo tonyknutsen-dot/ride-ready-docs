@@ -146,7 +146,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       const totalItems = activeTemplate.daily_check_template_items.length;
       const checkStatus = failedItems > 0 ? 'failed' : passedItems === totalItems ? 'passed' : 'partial';
 
-      const { success, isOffline, checkId } = await submitCheck({
+      const { success, isOffline, checkId } = await withSaveStageTimeout(submitCheck({
         rideId: ride.id,
         templateId: activeTemplate.id,
         inspectorName: inspectorName.trim(),
@@ -172,7 +172,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           result: itemResults[item.id] || 'na',
           notes: notes[item.id]?.trim() || undefined,
         })),
-      });
+      }), 'source check save', 18000);
 
       if (!success) throw new Error('Failed to submit check');
       savedCheckId = checkId;
