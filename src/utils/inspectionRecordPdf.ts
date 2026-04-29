@@ -368,8 +368,12 @@ export async function generateInspectionRecordPdf(
       },
     });
 
-    // Update inspection_records row with PDF reference
-    await updateInspectionRecordPdf(record.id, filePath, docId);
+    // Update inspection_records row with PDF reference. If this fails, the
+    // detail page cannot enable Download PDF, so report generation as failed.
+    const pdfReferenceSaved = await updateInspectionRecordPdf(record.id, filePath, docId);
+    if (!pdfReferenceSaved) {
+      return null;
+    }
 
     return { filePath, documentId: docId };
   } catch (err) {
