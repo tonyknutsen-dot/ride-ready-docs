@@ -5,7 +5,7 @@ import { createInspectionRecord, findInspectionRecordIdByCheckId, type ItemResul
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { type CheckItemResult } from '@/lib/offlineDb';
 import { type ChecklistRide, type ChecklistTemplate } from './useChecklistTemplate';
-import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
+import { logCheckSavePath, markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
 interface UseChecklistRecordSaveParams {
   activeTemplate: ChecklistTemplate | null;
@@ -80,6 +80,21 @@ const withSaveStageTimeout = async <T,>(promise: PromiseLike<T>, stage: string, 
   } finally {
     clearTimeout(timeoutId!);
   }
+};
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const findInspectionRecordIdWithRetry = async (checkId: string, attempts = 5, delayMs = 700): Promise<string | null> => {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const recordId = await withSaveStageTimeout(
+      findInspectionRecordIdByCheckId(checkId),
+      `inspection record lookup attempt ${attempt}`,
+      4000
+    );
+    if (recordId) return recordId;
+    if (attempt < attempts) await wait(delayMs);
+  }
+  return null;
 };
 
 export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
