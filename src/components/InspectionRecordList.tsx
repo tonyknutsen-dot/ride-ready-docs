@@ -172,6 +172,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     [data]
   );
   const totalCount = data?.pages[0]?.totalCount || 0;
+  const remainingCount = Math.max(totalCount - records.length, 0);
+  const nextLoadCount = Math.min(pageSize, remainingCount || pageSize);
 
   const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || routineFilter !== frequency || inspectorFilter || issueOnly || searchQuery);
 
@@ -692,20 +694,23 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
       {/* Load more */}
       {hasNextPage && (
-        <div className="flex justify-center pt-1.5">
+        <div className="flex flex-col items-center gap-1 pt-1.5">
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-[11px] gap-1.5"
+            className="h-8 px-4 text-[11px] font-semibold gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
           >
             {isFetchingNextPage ? (
               <><Loader2 className="h-3 w-3 animate-spin" />Loading…</>
             ) : (
-              <>Load more records</>
+              <>Load {nextLoadCount} more record{nextLoadCount !== 1 ? 's' : ''}</>
             )}
           </Button>
+          <p className="text-[10px] text-muted-foreground">
+            {remainingCount} more record{remainingCount !== 1 ? 's' : ''} available
+          </p>
         </div>
       )}
 
