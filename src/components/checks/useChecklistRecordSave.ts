@@ -165,24 +165,55 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitting(true);
     setSubmitPhase('saving');
     markCheckDebug('save started');
-    logCheckSavePath('save started', { 'save path final outcome': 'in progress' });
+    logCheckSavePath('save started', { 'save path final outcome': 'in progress', 'save runtime': 'useChecklistRecordSave' });
     const previousOverview = queryClient.getQueryData(['overview', userId]);
     const saveStartedAt = new Date().toISOString();
     const checkDate = saveStartedAt.split('T')[0];
     let savedCheckId: string | undefined;
-    queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
-      if (!old) return old;
-      return {
-        ...old,
-        stats: { ...old.stats, recentChecks: old.stats.recentChecks + 1 },
-        recentActivity: [
-          { type: 'check', title: `Check completed - ${ride.ride_name}`, time: new Date().toLocaleDateString('en-GB'), _optimistic: true },
-          ...old.recentActivity.slice(0, 3),
-        ],
-      };
-    });
+    let saveStateCleared = false;
+
+    const clearSaveState = (outcome: string, values?: Record<string, string | number | boolean | null | undefined>) => {
+      if (saveStateCleared) return false;
+      saveStateCleared = true;
+      setSubmitting(false);
+      setSubmitPhase('idle');
+      logCheckSavePath('UI save state cleared', { ...values, 'save path final outcome': outcome });
+      return true;
+    };
+
+    const refreshChecksFallback = (outcome: string) => {
+      invalidateCheckRecordQueries(queryClient);
+      if (!clearSaveState(outcome)) return false;
+      onChecklistSaved?.();
+      logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
+      return true;
+    };
+
+    const hardDeadlineId = typeof window !== 'undefined'
+      ? window.setTimeout(() => {
+          if (refreshChecksFallback('hard timeout checks list refresh')) {
+            toast({ title: 'Check saved', description: 'The save is still finishing, so the records list has been refreshed.' });
+          }
+        }, 30000)
+      : undefined;
 
     try {
+      try {
+        queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
+          if (!old?.stats || !Array.isArray(old.recentActivity)) return old;
+          return {
+            ...old,
+            stats: { ...old.stats, recentChecks: Number(old.stats.recentChecks || 0) + 1 },
+            recentActivity: [
+              { type: 'check', title: `Check completed - ${ride.ride_name}`, time: new Date().toLocaleDateString('en-GB'), _optimistic: true },
+              ...old.recentActivity.slice(0, 3),
+            ],
+          };
+        });
+      } catch (cacheError) {
+        console.warn('Skipped optimistic overview update during check save:', cacheError);
+      }
+
       const failedItems = Object.values(itemResults).filter(r => r === 'fail').length;
       const passedItems = Object.values(itemResults).filter(r => r === 'pass').length;
       const totalItems = activeTemplate.daily_check_template_items.length;
@@ -250,9 +281,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       if (isOffline || !checkId) {
         toast({ title: 'Saved offline', description: 'This check is waiting to sync. The check record will appear once the device is online.' });
-        setSubmitting(false);
-        setSubmitPhase('idle');
-        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'offline save queued' });
+        clearSaveState('offline save queued');
         return;
       }
 
@@ -329,13 +358,8 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       const resolvedRecordId = inspectionRecordId ?? fallbackRecordId;
 
       if (!resolvedRecordId) {
-        invalidateCheckRecordQueries(queryClient);
         setCheckDebugValue('save stage', 'check saved without record detail');
-        setSubmitting(false);
-        setSubmitPhase('idle');
-        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'checks list refresh fallback' });
-        onChecklistSaved?.();
-        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
+        refreshChecksFallback('checks list refresh fallback');
         toast({
           title: 'Check saved',
           description: 'The check was saved and the records list has been refreshed.',
@@ -348,9 +372,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       await invalidateCheckRecordQueries(queryClient);
       setCheckDebugValue('save stage', 'navigating to record detail');
-      setSubmitting(false);
-      setSubmitPhase('idle');
-      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'record detail navigation' });
+      clearSaveState('record detail navigation');
       onChecklistSaved?.(resolvedRecordId);
       logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${resolvedRecordId}` });
       void withSaveStageTimeout(loadRecentChecks(), 'recent checks refresh', 5000).catch((refreshError) => {
@@ -388,21 +410,14 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           invalidateCheckRecordQueries(queryClient);
           setCheckDebugValue('created inspection record id', recoveredRecordId);
           setCheckDebugValue('save stage', 'recovered record detail navigation');
-          setSubmitting(false);
-          setSubmitPhase('idle');
-          logCheckSavePath('UI save state cleared', { 'save path final outcome': 'recovered record detail navigation' });
+          clearSaveState('recovered record detail navigation');
           onChecklistSaved?.(recoveredRecordId);
           logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${recoveredRecordId}` });
           return;
         }
 
-        invalidateCheckRecordQueries(queryClient);
         setCheckDebugValue('save stage', 'check saved, returning to records');
-        setSubmitting(false);
-        setSubmitPhase('idle');
-        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'catch fallback checks list refresh' });
-        onChecklistSaved?.();
-        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
+        refreshChecksFallback('catch fallback checks list refresh');
         toast({ title: 'Check saved', description: 'The check was saved and the records list has been refreshed.' });
         return;
       }
@@ -411,9 +426,14 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       console.error('Error submitting checks:', error);
       setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'check save failed');
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save check', variant: 'destructive' });
-      setSubmitting(false);
-      setSubmitPhase('idle');
-      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'source check failed before id' });
+      clearSaveState('source check failed before id');
+    } finally {
+      if (hardDeadlineId !== undefined) window.clearTimeout(hardDeadlineId);
+      if (!saveStateCleared) {
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'finally safety clear' });
+      }
     }
   }, [params]);
 }
