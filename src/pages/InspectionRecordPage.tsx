@@ -337,13 +337,13 @@ const InspectionRecordPage = () => {
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Check Items</h2>
 
           {failedItems.length > 0 && (
-            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} rideTypeName={(ride as any)?.ride_categories?.name} />
+            <ItemGroup label="Failed" icon={XCircle} items={failedItems} variant="destructive" defectIds={record.defect_ids} photoPaths={record.photo_paths} rideTypeName={rideCategoryName} />
           )}
           {passedItems.length > 0 && (
-            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" rideTypeName={(ride as any)?.ride_categories?.name} />
+            <ItemGroup label="Passed" icon={CheckCircle2} items={passedItems} variant="success" rideTypeName={rideCategoryName} />
           )}
           {naItems.length > 0 && (
-            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" rideTypeName={(ride as any)?.ride_categories?.name} />
+            <ItemGroup label="N/A" icon={MinusCircle} items={naItems} variant="muted" rideTypeName={rideCategoryName} />
           )}
         </div>
 
