@@ -48,6 +48,8 @@ const InspectionRecordPage = () => {
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfRetryKey, setPdfRetryKey] = useState(0);
   const pdfGenerationAttemptedRef = useRef<string | null>(null);
 
   // Origin-aware back navigation: always returns to the canonical hub
@@ -80,6 +82,8 @@ const InspectionRecordPage = () => {
       return data as unknown as InspectionRecord;
     },
     enabled: !!recordId,
+    refetchInterval: (query) => ((query.state.data as InspectionRecord | undefined)?.pdf_file_path ? false : 5000),
+    refetchIntervalInBackground: true,
   });
 
   // Fetch ride name
@@ -96,15 +100,17 @@ const InspectionRecordPage = () => {
     enabled: !!record?.ride_id,
   });
 
+  const pdfAvailablePath = record?.pdf_file_path ?? null;
+
   const handleDownloadPdf = async () => {
-    if (!record?.pdf_file_path) {
+    if (!pdfAvailablePath || !record) {
       toast({ title: 'No PDF available', description: 'PDF has not been generated for this record.', variant: 'destructive' });
       return;
     }
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
-        .download(record.pdf_file_path);
+        .download(pdfAvailablePath);
       if (error) throw error;
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
@@ -117,29 +123,47 @@ const InspectionRecordPage = () => {
     }
   };
 
+  const retryPdfGeneration = () => {
+    if (!record) return;
+    setPdfError(null);
+    pdfGenerationAttemptedRef.current = null;
+    setPdfRetryKey((key) => key + 1);
+  };
+
   useEffect(() => {
-    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === record.id) return;
+    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === `${record.id}:${pdfRetryKey}`) return;
 
     let cancelled = false;
+    let timeoutId: number | null = null;
     const preparePdf = async () => {
-      pdfGenerationAttemptedRef.current = record.id;
+      pdfGenerationAttemptedRef.current = `${record.id}:${pdfRetryKey}`;
       setPdfGenerating(true);
+      setPdfError(null);
       try {
-        const result = await generateInspectionRecordPdf({
+        const result = await Promise.race([
+          generateInspectionRecordPdf({
           record,
           rideName: ride.ride_name,
           rideCategory: (ride as any)?.ride_categories?.name,
           rideManufacturer: (ride as any)?.manufacturer,
           rideSerialNumber: (ride as any)?.serial_number,
           effectiveUserId,
-        });
+          }),
+          new Promise<null>((resolve) => {
+            timeoutId = window.setTimeout(() => resolve(null), 25000);
+          }),
+        ]);
         if (!cancelled && result) {
           await queryClient.invalidateQueries({ queryKey: ['inspection-record', recordId] });
           await queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+        } else if (!cancelled) {
+          setPdfError('PDF generation did not complete. You can retry now.');
         }
       } catch (error) {
         console.error('Inspection record PDF preparation failed:', error);
+        if (!cancelled) setPdfError('PDF generation failed. Please retry.');
       } finally {
+        if (timeoutId) window.clearTimeout(timeoutId);
         if (!cancelled) setPdfGenerating(false);
       }
     };
@@ -147,8 +171,9 @@ const InspectionRecordPage = () => {
     void preparePdf();
     return () => {
       cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [effectiveUserId, pdfGenerating, queryClient, record, recordId, ride]);
+  }, [effectiveUserId, pdfGenerating, pdfRetryKey, queryClient, record, recordId, ride]);
 
   if (isLoading) {
     return (
@@ -217,7 +242,7 @@ const InspectionRecordPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh overflow-x-hidden bg-background">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4">
@@ -240,7 +265,7 @@ const InspectionRecordPage = () => {
         </div>
       </div>
 
-        <div className="mx-auto max-w-3xl space-y-6 overflow-x-hidden px-3 py-5 sm:px-4 sm:py-6">
+        <div className="mx-auto max-w-3xl space-y-6 overflow-x-hidden px-3 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-5 sm:px-4 sm:pb-10 sm:pt-6">
         {/* ── Record Info ── */}
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
@@ -335,8 +360,8 @@ const InspectionRecordPage = () => {
             />
             <AuditRow
               label="PDF generated"
-              value={record.pdf_file_path ? 'Yes' : 'Not yet'}
-              icon={record.pdf_file_path ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+              value={record.pdf_file_path ? 'Yes' : pdfError ? 'Failed' : 'Not yet'}
+              icon={record.pdf_file_path ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : pdfError ? <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> : <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
             />
             <AuditRow
               label="Locked"
@@ -350,26 +375,31 @@ const InspectionRecordPage = () => {
 
         {/* ── Actions ── */}
         {!record.pdf_file_path && (
-          <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
-            {pdfGenerating
+          <div className={cn('rounded-lg border p-3 text-sm', pdfError ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-border bg-muted/30 text-muted-foreground')}>
+            {pdfError || (pdfGenerating
               ? 'Preparing PDF. The download will become active when generation finishes.'
-              : 'PDF is not ready yet. Leave this record open or return shortly to download it.'}
+              : 'PDF is not ready yet. Leave this record open or retry shortly to download it.')}
           </div>
         )}
-        <div className="flex flex-col gap-3 pb-8 sm:flex-row">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button
-            className="flex-1"
+            className="min-h-11 w-full whitespace-normal"
             onClick={handleDownloadPdf}
             disabled={!record.pdf_file_path}
           >
             {pdfGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
             {record.pdf_file_path ? 'Download PDF' : pdfGenerating ? 'Preparing PDF' : 'PDF not ready'}
           </Button>
+          {pdfError && !record.pdf_file_path && (
+            <Button variant="outline" className="min-h-11 w-full whitespace-normal" onClick={retryPdfGeneration}>
+              Retry PDF
+            </Button>
+          )}
           {isController && (
             canAmend ? (
               <Button
                 variant="outline"
-                className="flex-1"
+                className="min-h-11 w-full whitespace-normal"
                 onClick={() => setAmendRecord(record)}
               >
                 <Edit3 className="h-4 w-4 mr-2" /> Amend Check Record
