@@ -410,7 +410,7 @@ export async function fetchInspectionRecordsPaginated(
   if (options.inspectorName) checksQuery = checksQuery.ilike('inspector_name', `%${options.inspectorName}%`);
 
   const { data: checksData, error: checksError } = includeSourceChecks
-    ? await checksQuery.limit(limit)
+    ? await checksQuery.range(offset, offset + limit - 1)
     : { data: null, error: null };
   if (!checksError && checksData?.length) {
     const sourceChecks = checksData as Array<Record<string, unknown>>;
