@@ -125,6 +125,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitting(true);
     setSubmitPhase('saving');
     markCheckDebug('save started');
+    logCheckSavePath('save started', { 'save path final outcome': 'in progress' });
     const previousOverview = queryClient.getQueryData(['overview', userId]);
     let savedCheckId: string | undefined;
     queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
@@ -175,6 +176,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       if (!success) throw new Error('Failed to submit check');
       savedCheckId = checkId;
+      logCheckSavePath('source check save finished', { 'created check id': checkId ?? 'none' });
 
       setSubmitPhase('record');
       setCheckDebugValue('created check id', checkId ?? 'none');
