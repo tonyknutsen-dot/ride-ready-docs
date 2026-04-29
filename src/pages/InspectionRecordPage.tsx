@@ -48,7 +48,11 @@ const InspectionRecordPage = () => {
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfRetryKey, setPdfRetryKey] = useState(0);
   const pdfGenerationAttemptedRef = useRef<string | null>(null);
+
+  const pdfAvailablePath = record?.pdf_file_path ?? null;
 
   // Origin-aware back navigation: always returns to the canonical hub
   // (`/rides/:id?tab=checks`); `from=checks` makes the hub bounce to `/checks`.
@@ -97,14 +101,14 @@ const InspectionRecordPage = () => {
   });
 
   const handleDownloadPdf = async () => {
-    if (!record?.pdf_file_path) {
+    if (!pdfAvailablePath || !record) {
       toast({ title: 'No PDF available', description: 'PDF has not been generated for this record.', variant: 'destructive' });
       return;
     }
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
-        .download(record.pdf_file_path);
+        .download(pdfAvailablePath);
       if (error) throw error;
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
@@ -117,29 +121,47 @@ const InspectionRecordPage = () => {
     }
   };
 
+  const retryPdfGeneration = () => {
+    if (!record) return;
+    setPdfError(null);
+    pdfGenerationAttemptedRef.current = null;
+    setPdfRetryKey((key) => key + 1);
+  };
+
   useEffect(() => {
-    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === record.id) return;
+    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === `${record.id}:${pdfRetryKey}`) return;
 
     let cancelled = false;
+    let timeoutId: number | null = null;
     const preparePdf = async () => {
-      pdfGenerationAttemptedRef.current = record.id;
+      pdfGenerationAttemptedRef.current = `${record.id}:${pdfRetryKey}`;
       setPdfGenerating(true);
+      setPdfError(null);
       try {
-        const result = await generateInspectionRecordPdf({
+        const result = await Promise.race([
+          generateInspectionRecordPdf({
           record,
           rideName: ride.ride_name,
           rideCategory: (ride as any)?.ride_categories?.name,
           rideManufacturer: (ride as any)?.manufacturer,
           rideSerialNumber: (ride as any)?.serial_number,
           effectiveUserId,
-        });
+          }),
+          new Promise<null>((resolve) => {
+            timeoutId = window.setTimeout(() => resolve(null), 25000);
+          }),
+        ]);
         if (!cancelled && result) {
           await queryClient.invalidateQueries({ queryKey: ['inspection-record', recordId] });
           await queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+        } else if (!cancelled) {
+          setPdfError('PDF generation did not complete. You can retry now.');
         }
       } catch (error) {
         console.error('Inspection record PDF preparation failed:', error);
+        if (!cancelled) setPdfError('PDF generation failed. Please retry.');
       } finally {
+        if (timeoutId) window.clearTimeout(timeoutId);
         if (!cancelled) setPdfGenerating(false);
       }
     };
@@ -147,8 +169,9 @@ const InspectionRecordPage = () => {
     void preparePdf();
     return () => {
       cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [effectiveUserId, pdfGenerating, queryClient, record, recordId, ride]);
+  }, [effectiveUserId, pdfGenerating, pdfRetryKey, queryClient, record, recordId, ride]);
 
   if (isLoading) {
     return (
