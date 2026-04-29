@@ -48,6 +48,7 @@ const InspectionRecordPage = () => {
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfRetryKey, setPdfRetryKey] = useState(0);
   const pdfGenerationAttemptedRef = useRef<string | null>(null);
@@ -101,12 +102,14 @@ const InspectionRecordPage = () => {
   });
 
   const pdfAvailablePath = record?.pdf_file_path ?? null;
+  const pdfPreparing = !pdfAvailablePath && pdfGenerating;
 
   const handleDownloadPdf = async () => {
     if (!pdfAvailablePath || !record) {
       toast({ title: 'No PDF available', description: 'PDF has not been generated for this record.', variant: 'destructive' });
       return;
     }
+    setPdfDownloading(true);
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
@@ -120,6 +123,8 @@ const InspectionRecordPage = () => {
       URL.revokeObjectURL(url);
     } catch {
       toast({ title: 'Download failed', description: 'Could not download the PDF.', variant: 'destructive' });
+    } finally {
+      setPdfDownloading(false);
     }
   };
 
@@ -129,6 +134,13 @@ const InspectionRecordPage = () => {
     pdfGenerationAttemptedRef.current = null;
     setPdfRetryKey((key) => key + 1);
   };
+
+  useEffect(() => {
+    if (pdfAvailablePath) {
+      setPdfGenerating(false);
+      setPdfError(null);
+    }
+  }, [pdfAvailablePath]);
 
   useEffect(() => {
     if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === `${record.id}:${pdfRetryKey}`) return;
