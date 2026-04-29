@@ -188,7 +188,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       const totalItems = activeTemplate.daily_check_template_items.length;
       const checkStatus = failedItems > 0 ? 'failed' : passedItems === totalItems ? 'passed' : 'partial';
 
-      const { success, isOffline, checkId } = await withSaveStageTimeout(submitCheck({
+      const sourceCheckPayload = {
         rideId: ride.id,
         templateId: activeTemplate.id,
         inspectorName: inspectorName.trim(),
@@ -214,7 +214,29 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           result: itemResults[item.id] || 'na',
           notes: notes[item.id]?.trim() || undefined,
         })),
-      }), 'source check save', 18000);
+      };
+
+      let submissionResult: { success: boolean; isOffline?: boolean; checkId?: string };
+      try {
+        submissionResult = await withSaveStageTimeout(submitCheck(sourceCheckPayload), 'source check save', 18000);
+      } catch (sourceError) {
+        logCheckSavePath('source check save finished', {
+          'any blocking error text': sourceError instanceof Error ? sourceError.message : 'source check save timed out',
+        });
+        const recoveredCheckId = effectiveUserId ? await withSaveStageTimeout(findRecentSourceCheckId({
+          rideId: ride.id,
+          templateId: activeTemplate.id,
+          userId: effectiveUserId,
+          frequency,
+          inspectorName: inspectorName.trim(),
+          checkDate,
+          startedAt: saveStartedAt,
+        }), 'source check recovery lookup', 5000).catch(() => null) : null;
+        if (!recoveredCheckId) throw sourceError;
+        submissionResult = { success: true, isOffline: false, checkId: recoveredCheckId };
+      }
+
+      const { success, isOffline, checkId } = submissionResult;
 
       if (!success) throw new Error('Failed to submit check');
       savedCheckId = checkId;
