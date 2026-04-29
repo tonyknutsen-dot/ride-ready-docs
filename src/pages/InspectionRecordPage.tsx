@@ -218,7 +218,7 @@ const InspectionRecordPage = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={goBack} aria-label="Go back">
               <ArrowLeft className="h-4.5 w-4.5" />
@@ -232,7 +232,7 @@ const InspectionRecordPage = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {getOverallBadge()}
           </div>
         </div>
