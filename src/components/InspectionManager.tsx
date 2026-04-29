@@ -232,7 +232,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-3 md:space-y-2.5 relative">
         {/* Frequency selector — check-type cards with strong active state */}
-        <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2.5 md:pb-0">
+        <div className="overflow-x-auto scrollbar-hide -mx-4 pl-4 pr-7 md:px-4 pb-2.5 md:pb-0">
           <div className="inline-flex gap-1.5 min-w-max">
             {[
               { value: 'daily',      label: 'Daily / Pre-Opening', Icon: Clock },
