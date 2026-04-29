@@ -410,21 +410,14 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           invalidateCheckRecordQueries(queryClient);
           setCheckDebugValue('created inspection record id', recoveredRecordId);
           setCheckDebugValue('save stage', 'recovered record detail navigation');
-          setSubmitting(false);
-          setSubmitPhase('idle');
-          logCheckSavePath('UI save state cleared', { 'save path final outcome': 'recovered record detail navigation' });
+          clearSaveState('recovered record detail navigation');
           onChecklistSaved?.(recoveredRecordId);
           logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${recoveredRecordId}` });
           return;
         }
 
-        invalidateCheckRecordQueries(queryClient);
         setCheckDebugValue('save stage', 'check saved, returning to records');
-        setSubmitting(false);
-        setSubmitPhase('idle');
-        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'catch fallback checks list refresh' });
-        onChecklistSaved?.();
-        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
+        refreshChecksFallback('catch fallback checks list refresh');
         toast({ title: 'Check saved', description: 'The check was saved and the records list has been refreshed.' });
         return;
       }
@@ -433,9 +426,14 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       console.error('Error submitting checks:', error);
       setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'check save failed');
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save check', variant: 'destructive' });
-      setSubmitting(false);
-      setSubmitPhase('idle');
-      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'source check failed before id' });
+      clearSaveState('source check failed before id');
+    } finally {
+      if (hardDeadlineId !== undefined) window.clearTimeout(hardDeadlineId);
+      if (!saveStateCleared) {
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'finally safety clear' });
+      }
     }
   }, [params]);
 }
