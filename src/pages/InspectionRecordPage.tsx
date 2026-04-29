@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addHours } from 'date-fns';
@@ -48,6 +48,7 @@ const InspectionRecordPage = () => {
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const pdfGenerationAttemptedRef = useRef<string | null>(null);
 
   // Origin-aware back navigation: always returns to the canonical hub
   // (`/rides/:id?tab=checks`); `from=checks` makes the hub bounce to `/checks`.
@@ -117,10 +118,11 @@ const InspectionRecordPage = () => {
   };
 
   useEffect(() => {
-    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating) return;
+    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === record.id) return;
 
     let cancelled = false;
     const preparePdf = async () => {
+      pdfGenerationAttemptedRef.current = record.id;
       setPdfGenerating(true);
       try {
         const result = await generateInspectionRecordPdf({
