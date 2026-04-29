@@ -281,9 +281,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       if (isOffline || !checkId) {
         toast({ title: 'Saved offline', description: 'This check is waiting to sync. The check record will appear once the device is online.' });
-        setSubmitting(false);
-        setSubmitPhase('idle');
-        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'offline save queued' });
+        clearSaveState('offline save queued');
         return;
       }
 
@@ -360,13 +358,8 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       const resolvedRecordId = inspectionRecordId ?? fallbackRecordId;
 
       if (!resolvedRecordId) {
-        invalidateCheckRecordQueries(queryClient);
         setCheckDebugValue('save stage', 'check saved without record detail');
-        setSubmitting(false);
-        setSubmitPhase('idle');
-        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'checks list refresh fallback' });
-        onChecklistSaved?.();
-        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
+        refreshChecksFallback('checks list refresh fallback');
         toast({
           title: 'Check saved',
           description: 'The check was saved and the records list has been refreshed.',
@@ -379,9 +372,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
 
       await invalidateCheckRecordQueries(queryClient);
       setCheckDebugValue('save stage', 'navigating to record detail');
-      setSubmitting(false);
-      setSubmitPhase('idle');
-      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'record detail navigation' });
+      clearSaveState('record detail navigation');
       onChecklistSaved?.(resolvedRecordId);
       logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${resolvedRecordId}` });
       void withSaveStageTimeout(loadRecentChecks(), 'recent checks refresh', 5000).catch((refreshError) => {
