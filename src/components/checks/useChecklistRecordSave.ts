@@ -111,6 +111,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitPhase('saving');
     markCheckDebug('save started');
     const previousOverview = queryClient.getQueryData(['overview', userId]);
+    let savedCheckId: string | undefined;
     queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
       if (!old) return old;
       return {
@@ -158,6 +159,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       });
 
       if (!success) throw new Error('Failed to submit check');
+      savedCheckId = checkId;
 
       setSubmitPhase('record');
       setCheckDebugValue('created check id', checkId ?? 'none');
@@ -268,6 +270,32 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         toast({ title: 'Check completed ✓', description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check record is ready` });
       }
     } catch (error) {
+      if (savedCheckId) {
+        const recoveredRecordId = await withSaveStageTimeout(
+          findInspectionRecordIdByCheckId(savedCheckId),
+          'inspection record recovery lookup',
+          5000
+        ).catch(() => null);
+
+        if (recoveredRecordId) {
+          invalidateCheckRecordQueries(queryClient);
+          setCheckDebugValue('created inspection record id', recoveredRecordId);
+          setCheckDebugValue('save stage', 'recovered record detail navigation');
+          setSubmitting(false);
+          setSubmitPhase('idle');
+          onChecklistSaved?.(recoveredRecordId);
+          return;
+        }
+
+        invalidateCheckRecordQueries(queryClient);
+        setCheckDebugValue('save stage', 'check saved, returning to records');
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        onChecklistSaved?.();
+        toast({ title: 'Check saved', description: 'The check was saved and the records list has been refreshed.' });
+        return;
+      }
+
       if (previousOverview) queryClient.setQueryData(['overview', userId], previousOverview);
       console.error('Error submitting checks:', error);
       setCheckDebugValue('any blocking error text', error instanceof Error ? error.message : 'check save failed');
