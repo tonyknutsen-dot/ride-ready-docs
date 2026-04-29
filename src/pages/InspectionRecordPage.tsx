@@ -82,6 +82,8 @@ const InspectionRecordPage = () => {
       return data as unknown as InspectionRecord;
     },
     enabled: !!recordId,
+    refetchInterval: (query) => ((query.state.data as InspectionRecord | undefined)?.pdf_file_path ? false : 5000),
+    refetchIntervalInBackground: true,
   });
 
   // Fetch ride name
