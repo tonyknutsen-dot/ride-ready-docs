@@ -227,7 +227,18 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         5000
       );
 
-      if (!resolvedRecordId) throw new Error('The check saved, but the check record could not be created yet.');
+      if (!resolvedRecordId) {
+        invalidateCheckRecordQueries(queryClient);
+        setCheckDebugValue('save stage', 'check saved without record detail');
+        setSubmitting(false);
+        setSubmitPhase('idle');
+        onChecklistSaved?.();
+        toast({
+          title: 'Check saved',
+          description: 'The check was saved and the records list has been refreshed.',
+        });
+        return;
+      }
 
       setCheckDebugValue('created inspection record id', resolvedRecordId);
       markCheckDebug('inspection record created');
