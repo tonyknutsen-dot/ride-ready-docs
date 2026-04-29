@@ -366,6 +366,34 @@ export async function fetchInspectionRecordsPaginated(
 
   const includeSourceChecks = !options.frequency || options.frequency === 'all' || CHECKS_TABLE_FREQUENCIES.has(options.frequency);
 
+  if (includeSourceChecks) {
+    let sourceCountQuery = supabase
+      .from('checks')
+      .select('id')
+      .eq('ride_id', rideId)
+      .order('created_at', { ascending: false });
+
+    if (options.frequency && options.frequency !== 'all') {
+      sourceCountQuery = options.frequency === 'daily'
+        ? sourceCountQuery.in('check_frequency', ['daily', 'preopening'])
+        : sourceCountQuery.eq('check_frequency', options.frequency);
+    }
+    if (options.dateFrom) sourceCountQuery = sourceCountQuery.gte('check_date', options.dateFrom);
+    if (options.dateTo) sourceCountQuery = sourceCountQuery.lte('check_date', options.dateTo);
+    if (options.inspectorName) sourceCountQuery = sourceCountQuery.ilike('inspector_name', `%${options.inspectorName}%`);
+
+    const { data: sourceChecksForCount } = await sourceCountQuery.limit(5000);
+    const sourceCheckIds = (sourceChecksForCount || []).map((check) => String(check.id));
+    if (sourceCheckIds.length > 0) {
+      const { data: existingSourceRecords } = await supabase
+        .from('inspection_records')
+        .select('check_id')
+        .in('check_id', sourceCheckIds);
+      const recordedSourceCheckIds = new Set((existingSourceRecords || []).map((record) => String(record.check_id)));
+      totalCount += sourceCheckIds.filter((checkId) => !recordedSourceCheckIds.has(checkId)).length;
+    }
+  }
+
   let checksQuery = supabase
     .from('checks')
     .select('*')
@@ -426,7 +454,6 @@ export async function fetchInspectionRecordsPaginated(
         source_check_only: true,
       } as InspectionRecord));
 
-    totalCount += Math.max(0, fallbackRecords.length - records.filter(r => fallbackRecords.some(f => f.check_id === r.check_id)).length);
     records = [
       ...fallbackRecords,
       ...records,
