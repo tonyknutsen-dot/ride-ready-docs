@@ -373,11 +373,15 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       }
     } catch (error) {
       if (savedCheckId) {
+        logCheckSavePath('fallback lookup started', { 'created check id': savedCheckId });
         const recoveredRecordId = await withSaveStageTimeout(
           findInspectionRecordIdByCheckId(savedCheckId),
           'inspection record recovery lookup',
           5000
         ).catch(() => null);
+        logCheckSavePath(recoveredRecordId ? 'fallback lookup finished' : 'fallback lookup failed', {
+          'created inspection record id': recoveredRecordId ?? 'none',
+        });
 
         if (recoveredRecordId) {
           invalidateCheckRecordQueries(queryClient);
@@ -385,7 +389,9 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
           setCheckDebugValue('save stage', 'recovered record detail navigation');
           setSubmitting(false);
           setSubmitPhase('idle');
+          logCheckSavePath('UI save state cleared', { 'save path final outcome': 'recovered record detail navigation' });
           onChecklistSaved?.(recoveredRecordId);
+          logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': `inspection-record/${recoveredRecordId}` });
           return;
         }
 
@@ -393,7 +399,9 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         setCheckDebugValue('save stage', 'check saved, returning to records');
         setSubmitting(false);
         setSubmitPhase('idle');
+        logCheckSavePath('UI save state cleared', { 'save path final outcome': 'catch fallback checks list refresh' });
         onChecklistSaved?.();
+        logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
         toast({ title: 'Check saved', description: 'The check was saved and the records list has been refreshed.' });
         return;
       }
@@ -404,6 +412,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save check', variant: 'destructive' });
       setSubmitting(false);
       setSubmitPhase('idle');
+      logCheckSavePath('UI save state cleared', { 'save path final outcome': 'source check failed before id' });
     }
   }, [params]);
 }
