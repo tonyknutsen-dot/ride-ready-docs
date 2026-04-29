@@ -121,6 +121,28 @@ export async function createInspectionRecord(
 }
 
 /**
+ * Look up the current record for a completed check.
+ * Used as a post-save recovery path when the check row exists but the UI did
+ * not receive the record-create response cleanly.
+ */
+export async function findInspectionRecordIdByCheckId(checkId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('inspection_records')
+    .select('id')
+    .eq('check_id', checkId)
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to look up inspection record by check id:', error);
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+
+/**
  * Update the PDF reference on a newly created inspection record.
  * Must be called within 60 seconds of creation.
  */
