@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addHours } from 'date-fns';
@@ -6,11 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAppRole } from '@/hooks/useAppRole';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import {
   isWithinAmendmentWindow,
   type InspectionRecord,
   type ItemResultSnapshot,
 } from '@/utils/inspectionRecordService';
+import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
 import { ChecklistItemRow, normalizeChecklistSource, type ChecklistRowResult } from '@/components/checks/ChecklistItemRow';
 import { InspectionAmendDialog } from '@/components/InspectionAmendDialog';
 import { Button } from '@/components/ui/button';
@@ -42,8 +44,11 @@ const InspectionRecordPage = () => {
   const role = useAppRole();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { effectiveUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const pdfGenerationAttemptedRef = useRef<string | null>(null);
 
   // Origin-aware back navigation: always returns to the canonical hub
   // (`/rides/:id?tab=checks`); `from=checks` makes the hub bounce to `/checks`.
@@ -83,7 +88,7 @@ const InspectionRecordPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name, ride_categories(name)')
+        .select('ride_name, manufacturer, serial_number, ride_categories(name)')
         .eq('id', record!.ride_id)
         .single();
       return data;
@@ -111,6 +116,39 @@ const InspectionRecordPage = () => {
       toast({ title: 'Download failed', description: 'Could not download the PDF.', variant: 'destructive' });
     }
   };
+
+  useEffect(() => {
+    if (!record || record.pdf_file_path || !ride || !effectiveUserId || pdfGenerating || pdfGenerationAttemptedRef.current === record.id) return;
+
+    let cancelled = false;
+    const preparePdf = async () => {
+      pdfGenerationAttemptedRef.current = record.id;
+      setPdfGenerating(true);
+      try {
+        const result = await generateInspectionRecordPdf({
+          record,
+          rideName: ride.ride_name,
+          rideCategory: (ride as any)?.ride_categories?.name,
+          rideManufacturer: (ride as any)?.manufacturer,
+          rideSerialNumber: (ride as any)?.serial_number,
+          effectiveUserId,
+        });
+        if (!cancelled && result) {
+          await queryClient.invalidateQueries({ queryKey: ['inspection-record', recordId] });
+          await queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
+        }
+      } catch (error) {
+        console.error('Inspection record PDF preparation failed:', error);
+      } finally {
+        if (!cancelled) setPdfGenerating(false);
+      }
+    };
+
+    void preparePdf();
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveUserId, pdfGenerating, queryClient, record, recordId, ride]);
 
   if (isLoading) {
     return (
@@ -182,7 +220,7 @@ const InspectionRecordPage = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3 sm:gap-3 sm:px-4">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={goBack} aria-label="Go back">
               <ArrowLeft className="h-4.5 w-4.5" />
@@ -196,16 +234,16 @@ const InspectionRecordPage = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {getOverallBadge()}
           </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        <div className="mx-auto max-w-3xl space-y-6 overflow-x-hidden px-3 py-5 sm:px-4 sm:py-6">
         {/* ── Record Info ── */}
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
             <div>
               <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">Check Completed By</span>
               <p className="font-bold text-foreground mt-0.5">{record.inspector_name}</p>
@@ -239,7 +277,7 @@ const InspectionRecordPage = () => {
         <Separator />
 
         {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           <SummaryCard label="Total" value={items.length} />
           <SummaryCard label="Passed" value={passedItems.length} variant="success" />
           <SummaryCard label="Failed" value={failedItems.length} variant="destructive" />
@@ -311,13 +349,21 @@ const InspectionRecordPage = () => {
         <Separator />
 
         {/* ── Actions ── */}
-        <div className="flex flex-col sm:flex-row gap-3 pb-8">
+        {!record.pdf_file_path && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            {pdfGenerating
+              ? 'Preparing PDF. The download will become active when generation finishes.'
+              : 'PDF is not ready yet. Leave this record open or return shortly to download it.'}
+          </div>
+        )}
+        <div className="flex flex-col gap-3 pb-8 sm:flex-row">
           <Button
             className="flex-1"
             onClick={handleDownloadPdf}
             disabled={!record.pdf_file_path}
           >
-            <Download className="h-4 w-4 mr-2" /> Download PDF
+            {pdfGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            {record.pdf_file_path ? 'Download PDF' : pdfGenerating ? 'Preparing PDF' : 'PDF not ready'}
           </Button>
           {isController && (
             canAmend ? (
@@ -365,9 +411,9 @@ function SummaryCard({ label, value, variant }: { label: string; value: number; 
   };
   return (
     <Card className="border-border">
-      <CardContent className="p-3 text-center">
-        <p className={cn('text-2xl font-black', colors[variant || ''] || 'text-foreground')}>{value}</p>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-0.5">{label}</p>
+      <CardContent className="p-2 text-center sm:p-3">
+        <p className={cn('text-xl font-black sm:text-2xl', colors[variant || ''] || 'text-foreground')}>{value}</p>
+        <p className="mt-0.5 text-[10px] font-semibold uppercase leading-tight text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   );
@@ -427,7 +473,7 @@ function ItemGroup({
             )}
             {/* For failed items, show defect reference + photo hint */}
             {variant === 'destructive' && defectIds && defectIds.length > 0 && (
-              <p className="text-[11px] text-destructive flex items-center gap-1">
+              <p className="flex items-center gap-1 text-[11px] text-destructive">
                 <AlertTriangle className="h-3 w-3" />
                 Linked defect(s): {defectIds.length}
               </p>
@@ -448,9 +494,9 @@ function ItemGroup({
 
 function AuditRow({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground text-sm">{label}</span>
-      <span className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+    <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="flex min-w-0 items-center gap-1.5 break-words text-sm font-semibold text-foreground sm:justify-end sm:text-right">
         {icon}
         {value}
       </span>
