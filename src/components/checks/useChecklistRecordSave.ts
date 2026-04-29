@@ -165,24 +165,55 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
     setSubmitting(true);
     setSubmitPhase('saving');
     markCheckDebug('save started');
-    logCheckSavePath('save started', { 'save path final outcome': 'in progress' });
+    logCheckSavePath('save started', { 'save path final outcome': 'in progress', 'save runtime': 'useChecklistRecordSave' });
     const previousOverview = queryClient.getQueryData(['overview', userId]);
     const saveStartedAt = new Date().toISOString();
     const checkDate = saveStartedAt.split('T')[0];
     let savedCheckId: string | undefined;
-    queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
-      if (!old) return old;
-      return {
-        ...old,
-        stats: { ...old.stats, recentChecks: old.stats.recentChecks + 1 },
-        recentActivity: [
-          { type: 'check', title: `Check completed - ${ride.ride_name}`, time: new Date().toLocaleDateString('en-GB'), _optimistic: true },
-          ...old.recentActivity.slice(0, 3),
-        ],
-      };
-    });
+    let saveStateCleared = false;
+
+    const clearSaveState = (outcome: string, values?: Record<string, string | number | boolean | null | undefined>) => {
+      if (saveStateCleared) return false;
+      saveStateCleared = true;
+      setSubmitting(false);
+      setSubmitPhase('idle');
+      logCheckSavePath('UI save state cleared', { ...values, 'save path final outcome': outcome });
+      return true;
+    };
+
+    const refreshChecksFallback = (outcome: string) => {
+      invalidateCheckRecordQueries(queryClient);
+      if (!clearSaveState(outcome)) return false;
+      onChecklistSaved?.();
+      logCheckSavePath('navigate called / checks list refresh called', { 'any redirect target': 'checks page refresh fallback' });
+      return true;
+    };
+
+    const hardDeadlineId = typeof window !== 'undefined'
+      ? window.setTimeout(() => {
+          if (refreshChecksFallback('hard timeout checks list refresh')) {
+            toast({ title: 'Check saved', description: 'The save is still finishing, so the records list has been refreshed.' });
+          }
+        }, 30000)
+      : undefined;
 
     try {
+      try {
+        queryClient.setQueryData(['overview', userId], (old: OverviewCache | undefined) => {
+          if (!old?.stats || !Array.isArray(old.recentActivity)) return old;
+          return {
+            ...old,
+            stats: { ...old.stats, recentChecks: Number(old.stats.recentChecks || 0) + 1 },
+            recentActivity: [
+              { type: 'check', title: `Check completed - ${ride.ride_name}`, time: new Date().toLocaleDateString('en-GB'), _optimistic: true },
+              ...old.recentActivity.slice(0, 3),
+            ],
+          };
+        });
+      } catch (cacheError) {
+        console.warn('Skipped optimistic overview update during check save:', cacheError);
+      }
+
       const failedItems = Object.values(itemResults).filter(r => r === 'fail').length;
       const passedItems = Object.values(itemResults).filter(r => r === 'pass').length;
       const totalItems = activeTemplate.daily_check_template_items.length;
