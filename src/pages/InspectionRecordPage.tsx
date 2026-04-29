@@ -52,8 +52,6 @@ const InspectionRecordPage = () => {
   const [pdfRetryKey, setPdfRetryKey] = useState(0);
   const pdfGenerationAttemptedRef = useRef<string | null>(null);
 
-  const pdfAvailablePath = record?.pdf_file_path ?? null;
-
   // Origin-aware back navigation: always returns to the canonical hub
   // (`/rides/:id?tab=checks`); `from=checks` makes the hub bounce to `/checks`.
   const fromParam = searchParams.get('from');
@@ -99,6 +97,8 @@ const InspectionRecordPage = () => {
     },
     enabled: !!record?.ride_id,
   });
+
+  const pdfAvailablePath = record?.pdf_file_path ?? null;
 
   const handleDownloadPdf = async () => {
     if (!pdfAvailablePath || !record) {
