@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { createInspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
+import { createInspectionRecord, findInspectionRecordIdByCheckId, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
 import { type CheckItemResult } from '@/lib/offlineDb';
 import { type ChecklistRide, type ChecklistTemplate } from './useChecklistTemplate';
@@ -221,16 +221,22 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         defectIds,
       }), 'inspection record create');
 
-      if (!inspectionRecordId) throw new Error('The check saved, but the check record could not be created yet.');
+      const resolvedRecordId = inspectionRecordId ?? await withSaveStageTimeout(
+        findInspectionRecordIdByCheckId(checkId),
+        'inspection record lookup',
+        5000
+      );
 
-      setCheckDebugValue('created inspection record id', inspectionRecordId);
+      if (!resolvedRecordId) throw new Error('The check saved, but the check record could not be created yet.');
+
+      setCheckDebugValue('created inspection record id', resolvedRecordId);
       markCheckDebug('inspection record created');
 
-      invalidateCheckRecordQueries(queryClient);
+      await invalidateCheckRecordQueries(queryClient);
       setCheckDebugValue('save stage', 'navigating to record detail');
       setSubmitting(false);
       setSubmitPhase('idle');
-      onChecklistSaved?.(inspectionRecordId);
+      onChecklistSaved?.(resolvedRecordId);
       void withSaveStageTimeout(loadRecentChecks(), 'recent checks refresh', 5000).catch((refreshError) => {
         console.warn('Recent checks refresh skipped after save:', refreshError);
         setCheckDebugValue('any blocking error text', refreshError instanceof Error ? refreshError.message : 'recent checks refresh failed');
