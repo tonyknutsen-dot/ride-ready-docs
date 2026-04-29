@@ -97,6 +97,46 @@ const findInspectionRecordIdWithRetry = async (checkId: string, attempts = 5, de
   return null;
 };
 
+const findRecentSourceCheckId = async ({
+  rideId,
+  templateId,
+  userId,
+  frequency,
+  inspectorName,
+  checkDate,
+  startedAt,
+}: {
+  rideId: string;
+  templateId: string;
+  userId: string;
+  frequency: string;
+  inspectorName: string;
+  checkDate: string;
+  startedAt: string;
+}): Promise<string | null> => {
+  const createdAfter = new Date(new Date(startedAt).getTime() - 5000).toISOString();
+  const { data, error } = await supabase
+    .from('checks')
+    .select('id')
+    .eq('ride_id', rideId)
+    .eq('template_id', templateId)
+    .eq('user_id', userId)
+    .eq('check_frequency', frequency)
+    .eq('check_date', checkDate)
+    .eq('inspector_name', inspectorName)
+    .gte('created_at', createdAfter)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to recover source check id after save:', error);
+    return null;
+  }
+
+  return data?.id ?? null;
+};
+
 export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
   return useCallback(async () => {
     const {
