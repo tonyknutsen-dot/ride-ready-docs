@@ -234,6 +234,7 @@ export function useChecklistRecordSave(params: UseChecklistRecordSaveParams) {
         }), 'source check recovery lookup', 5000).catch(() => null) : null;
         if (!recoveredCheckId) throw sourceError;
         submissionResult = { success: true, isOffline: false, checkId: recoveredCheckId };
+        logCheckSavePath('source check save finished', { 'created check id': recoveredCheckId });
       }
 
       const { success, isOffline, checkId } = submissionResult;
