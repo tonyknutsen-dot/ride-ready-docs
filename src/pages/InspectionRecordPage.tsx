@@ -397,10 +397,10 @@ const InspectionRecordPage = () => {
           <Button
             className="min-h-11 w-full whitespace-normal"
             onClick={handleDownloadPdf}
-            disabled={!record.pdf_file_path}
+            disabled={!record.pdf_file_path || pdfDownloading}
           >
-            {pdfGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            {record.pdf_file_path ? 'Download PDF' : pdfGenerating ? 'Preparing PDF' : 'PDF not ready'}
+            {pdfDownloading || pdfPreparing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            {pdfDownloading ? 'Opening PDF' : record.pdf_file_path ? 'Download PDF' : pdfPreparing ? 'Preparing PDF' : 'PDF not ready'}
           </Button>
           {pdfError && !record.pdf_file_path && (
             <Button variant="outline" className="min-h-11 w-full whitespace-normal" onClick={retryPdfGeneration}>
