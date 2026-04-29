@@ -37,6 +37,13 @@ import {
 import { cn } from '@/lib/utils';
 import { markCheckDebug, setCheckDebugValue } from '@/utils/checkDebug';
 
+type RideDetails = {
+  ride_name: string;
+  manufacturer?: string | null;
+  serial_number?: string | null;
+  ride_categories?: { name?: string | null } | null;
+};
+
 const InspectionRecordPage = () => {
   const { recordId } = useParams<{ recordId: string }>();
   const [searchParams] = useSearchParams();
@@ -96,13 +103,14 @@ const InspectionRecordPage = () => {
         .select('ride_name, manufacturer, serial_number, ride_categories(name)')
         .eq('id', record!.ride_id)
         .single();
-      return data;
+      return data as RideDetails | null;
     },
     enabled: !!record?.ride_id,
   });
 
   const pdfAvailablePath = record?.pdf_file_path ?? null;
   const pdfPreparing = !pdfAvailablePath && pdfGenerating;
+  const rideCategoryName = ride?.ride_categories?.name ?? undefined;
 
   const handleDownloadPdf = async () => {
     if (!pdfAvailablePath || !record) {
@@ -156,9 +164,9 @@ const InspectionRecordPage = () => {
           generateInspectionRecordPdf({
           record,
           rideName: ride.ride_name,
-          rideCategory: (ride as any)?.ride_categories?.name,
-          rideManufacturer: (ride as any)?.manufacturer,
-          rideSerialNumber: (ride as any)?.serial_number,
+          rideCategory: rideCategoryName,
+          rideManufacturer: ride.manufacturer ?? undefined,
+          rideSerialNumber: ride.serial_number ?? undefined,
           effectiveUserId,
           }),
           new Promise<null>((resolve) => {
