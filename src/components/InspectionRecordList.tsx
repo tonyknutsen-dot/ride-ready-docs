@@ -608,7 +608,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3 text-muted-foreground" />}
-                Export PDF ({totalCount})
+                Export PDF ({displayCountLabel})
               </button>
               <button
                 onClick={handleExportCsv}
@@ -616,7 +616,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Table2 className="h-3 w-3 text-muted-foreground" />}
-                Export CSV ({totalCount})
+                Export CSV ({displayCountLabel})
               </button>
             </div>
           </div>
@@ -731,7 +731,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       )}
 
       {/* Record count footer */}
-      {records.length > 0 && !hasNextPage && totalCount > pageSize && (
+      {records.length > 0 && !hasNextPage && rawTotalCount > pageSize && (
         <p className="text-center text-[10px] text-muted-foreground pt-0.5">
           All {records.length} records loaded
         </p>
