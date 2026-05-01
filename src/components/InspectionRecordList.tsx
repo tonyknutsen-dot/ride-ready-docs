@@ -440,10 +440,12 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         <div className="flex items-center gap-1.5">
           <History className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-semibold text-foreground tracking-wide">
-            Check Records
+            Saved Check Records
           </span>
           {records.length > 0 && (
-            <span className="text-[10px] font-medium text-muted-foreground">({displayCountLabel})</span>
+            <span className="text-[10px] font-medium text-muted-foreground">
+              ({displayCountLabel} completed check{displayCount !== 1 ? 's' : ''})
+            </span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -597,7 +599,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         <div className="flex flex-col gap-1 py-1.5">
           <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{displayCountLabel}</span> record{displayCount !== 1 ? 's' : ''}
+              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{displayCountLabel}</span> saved check{displayCount !== 1 ? 's' : ''}
               {scopeLabel && <span className="font-medium text-foreground"> for {scopeLabel}</span>}
               {hasActiveFilters && <span> · filters applied</span>}
             </p>
@@ -608,7 +610,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3 text-muted-foreground" />}
-                Export PDF ({displayCountLabel})
+                Export PDF ({displayCountLabel} check{displayCount !== 1 ? 's' : ''})
               </button>
               <button
                 onClick={handleExportCsv}
@@ -616,7 +618,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Table2 className="h-3 w-3 text-muted-foreground" />}
-                Export CSV ({displayCountLabel})
+                Export CSV ({displayCountLabel} check{displayCount !== 1 ? 's' : ''})
               </button>
             </div>
           </div>
