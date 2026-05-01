@@ -167,12 +167,28 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     refetch();
   }, [effectiveUserId, rideId, frequency, queryClient, refetch]);
 
-  const records = useMemo(
-    () => data?.pages.flatMap(p => p.records) || [],
-    [data]
-  );
-  const totalCount = data?.pages[0]?.totalCount || 0;
-  const remainingCount = Math.max(totalCount - records.length, 0);
+  const records = useMemo(() => {
+    const all = data?.pages.flatMap(p => p.records) || [];
+    // Dedupe across pages: keep latest version per check_id (matches export body)
+    const latestByCheck = new Map<string, typeof all[number]>();
+    for (const r of all) {
+      const existing = latestByCheck.get(r.check_id);
+      if (!existing || (r.version || 1) > (existing.version || 1)) {
+        latestByCheck.set(r.check_id, r);
+      }
+    }
+    return Array.from(latestByCheck.values()).sort(
+      (a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
+    );
+  }, [data]);
+  // Raw server count may include amended versions; the rendered/exported list is deduped
+  // to the latest version per check. Use records.length as the source of truth for display
+  // when fully loaded; otherwise show it as a lower bound with a "+" indicator.
+  const rawTotalCount = data?.pages[0]?.totalCount || 0;
+  const isFullyLoaded = !hasNextPage;
+  const displayCount = isFullyLoaded ? records.length : Math.max(records.length, 0);
+  const displayCountLabel = isFullyLoaded ? `${displayCount}` : `${displayCount}+`;
+  const remainingCount = Math.max(rawTotalCount - records.length, 0);
   const nextLoadCount = Math.min(pageSize, remainingCount || pageSize);
 
   const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || routineFilter !== frequency || inspectorFilter || issueOnly || searchQuery);
@@ -426,8 +442,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
           <span className="text-xs font-semibold text-foreground tracking-wide">
             Check Records
           </span>
-          {totalCount > 0 && (
-            <span className="text-[10px] font-medium text-muted-foreground">({totalCount})</span>
+          {records.length > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground">({displayCountLabel})</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -581,7 +597,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         <div className="flex flex-col gap-1 py-1.5">
           <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{displayCountLabel}</span> record{displayCount !== 1 ? 's' : ''}
               {scopeLabel && <span className="font-medium text-foreground"> for {scopeLabel}</span>}
               {hasActiveFilters && <span> · filters applied</span>}
             </p>
@@ -592,7 +608,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3 text-muted-foreground" />}
-                Export PDF ({totalCount})
+                Export PDF ({displayCountLabel})
               </button>
               <button
                 onClick={handleExportCsv}
@@ -600,7 +616,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
               >
                 {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Table2 className="h-3 w-3 text-muted-foreground" />}
-                Export CSV ({totalCount})
+                Export CSV ({displayCountLabel})
               </button>
             </div>
           </div>
@@ -715,7 +731,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       )}
 
       {/* Record count footer */}
-      {records.length > 0 && !hasNextPage && totalCount > pageSize && (
+      {records.length > 0 && !hasNextPage && rawTotalCount > pageSize && (
         <p className="text-center text-[10px] text-muted-foreground pt-0.5">
           All {records.length} records loaded
         </p>
