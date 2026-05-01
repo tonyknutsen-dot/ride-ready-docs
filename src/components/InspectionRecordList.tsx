@@ -167,12 +167,28 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     refetch();
   }, [effectiveUserId, rideId, frequency, queryClient, refetch]);
 
-  const records = useMemo(
-    () => data?.pages.flatMap(p => p.records) || [],
-    [data]
-  );
-  const totalCount = data?.pages[0]?.totalCount || 0;
-  const remainingCount = Math.max(totalCount - records.length, 0);
+  const records = useMemo(() => {
+    const all = data?.pages.flatMap(p => p.records) || [];
+    // Dedupe across pages: keep latest version per check_id (matches export body)
+    const latestByCheck = new Map<string, typeof all[number]>();
+    for (const r of all) {
+      const existing = latestByCheck.get(r.check_id);
+      if (!existing || (r.version || 1) > (existing.version || 1)) {
+        latestByCheck.set(r.check_id, r);
+      }
+    }
+    return Array.from(latestByCheck.values()).sort(
+      (a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
+    );
+  }, [data]);
+  // Raw server count may include amended versions; the rendered/exported list is deduped
+  // to the latest version per check. Use records.length as the source of truth for display
+  // when fully loaded; otherwise show it as a lower bound with a "+" indicator.
+  const rawTotalCount = data?.pages[0]?.totalCount || 0;
+  const isFullyLoaded = !hasNextPage;
+  const displayCount = isFullyLoaded ? records.length : Math.max(records.length, 0);
+  const displayCountLabel = isFullyLoaded ? `${displayCount}` : `${displayCount}+`;
+  const remainingCount = Math.max(rawTotalCount - records.length, 0);
   const nextLoadCount = Math.min(pageSize, remainingCount || pageSize);
 
   const hasActiveFilters = !!(dateFrom || dateTo || resultFilter !== 'all' || routineFilter !== frequency || inspectorFilter || issueOnly || searchQuery);
