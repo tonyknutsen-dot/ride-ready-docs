@@ -442,8 +442,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
           <span className="text-xs font-semibold text-foreground tracking-wide">
             Check Records
           </span>
-          {totalCount > 0 && (
-            <span className="text-[10px] font-medium text-muted-foreground">({totalCount})</span>
+          {records.length > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground">({displayCountLabel})</span>
           )}
         </div>
         <div className="flex items-center gap-1">
