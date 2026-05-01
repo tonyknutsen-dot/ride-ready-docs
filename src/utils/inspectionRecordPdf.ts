@@ -131,7 +131,7 @@ export async function generateInspectionRecordPdf(
     // Summary boxes
     const boxW = contentW / 5;
     const summaryData = [
-      { label: 'TOTAL', value: String(items.length), color: PDF_COLORS.navy },
+      { label: 'CHECKLIST ITEMS', value: String(items.length), color: PDF_COLORS.navy },
       { label: 'PASSED', value: String(passCount), color: PDF_COLORS.green },
       { label: 'FAILED', value: String(failCount), color: PDF_COLORS.red },
       { label: 'N/A', value: String(naCount), color: PDF_COLORS.muted },

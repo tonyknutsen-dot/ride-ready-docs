@@ -323,7 +323,7 @@ const InspectionRecordPage = () => {
 
         {/* ── Summary Cards ── */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          <SummaryCard label="Total" value={items.length} />
+          <SummaryCard label="Checklist items" value={items.length} />
           <SummaryCard label="Passed" value={passedItems.length} variant="success" />
           <SummaryCard label="Failed" value={failedItems.length} variant="destructive" />
           <SummaryCard label="N/A" value={naItems.length} variant="muted" />
