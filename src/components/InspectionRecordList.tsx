@@ -597,7 +597,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         <div className="flex flex-col gap-1 py-1.5">
           <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+              Showing <span className="font-semibold text-foreground">{records.length}</span> of <span className="font-semibold text-foreground">{displayCountLabel}</span> record{displayCount !== 1 ? 's' : ''}
               {scopeLabel && <span className="font-medium text-foreground"> for {scopeLabel}</span>}
               {hasActiveFilters && <span> · filters applied</span>}
             </p>
