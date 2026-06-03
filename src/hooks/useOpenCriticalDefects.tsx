@@ -102,6 +102,7 @@ export function useAllRidesOpenDefects() {
       const { data, error } = await supabase
         .from('defects')
         .select('ride_id, severity')
+        .eq('user_id', effectiveUserId)
         .neq('status', 'resolved');
 
       if (error) {
