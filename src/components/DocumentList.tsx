@@ -165,6 +165,18 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   const loadDocuments = async () => {
+    setLoadError(null);
+    setLoading(true);
+
+    // Hard timeout so loading state can never hang forever on mobile.
+    let timedOut = false;
+    const timeoutMs = 15000;
+    const timeoutHandle = window.setTimeout(() => {
+      timedOut = true;
+      setLoading(false);
+      setLoadError('Loading documents took too long. Check your connection and try again.');
+    }, timeoutMs);
+
     try {
       // For staff, don't filter by user_id - RLS handles access
       // For owners, filter by effectiveUserId
@@ -194,6 +206,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       }
 
       const { data, error } = await query;
+      if (timedOut) return;
 
       if (error) {
         throw error;
@@ -233,14 +246,19 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         setThumbs({});
       }
     } catch (error: any) {
+      if (timedOut) return;
       console.error('Error loading documents:', error);
+      setLoadError(error?.message || 'Failed to load documents.');
       toast({
         title: "Error loading documents",
-        description: error.message,
+        description: error?.message || 'Unknown error',
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      window.clearTimeout(timeoutHandle);
+      if (!timedOut) {
+        setLoading(false);
+      }
     }
   };
 
