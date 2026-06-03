@@ -29,6 +29,9 @@ const Documents = () => {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [expandedRides, setExpandedRides] = useState<Set<string>>(new Set());
+  // Track which rides have ever been opened so we can keep their DocumentList
+  // mounted across collapse/expand toggles (prevents mobile refetch loop).
+  const [openedOnce, setOpenedOnce] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (effectiveUserId) {
