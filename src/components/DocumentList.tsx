@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,9 +55,86 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { toast } = useToast();
   const navigate = useNavigate();
   const { labelMap, categoryMap } = useDocumentTypes();
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // ── Cached document fetch via React Query ─────────────────────────────
+  // Cached per scope (ride/global/all) and per user so collapsing and re-opening
+  // an equipment folder serves instantly from cache (no refetch within session).
+  const queryKey = useMemo(
+    () => [
+      'documents',
+      'list',
+      {
+        userId: isStaff ? null : effectiveUserId,
+        isStaff,
+        rideId: rideId ?? null,
+        isGlobal: !!isGlobal,
+        showAll: !!showAllDocuments,
+        excludeGlobal: !!excludeGlobal,
+      },
+    ],
+    [effectiveUserId, isStaff, rideId, isGlobal, showAllDocuments, excludeGlobal],
+  );
+
+  const fetchDocuments = useCallback(async (): Promise<Document[]> => {
+    let query = supabase
+      .from('documents')
+      .select('*')
+      .neq('document_type', 'maintenance')
+      .neq('document_type', 'photo')
+      .order('uploaded_at', { ascending: false });
+
+    if (!isStaff) {
+      query = query.eq('user_id', effectiveUserId as string);
+    }
+
+    if (showAllDocuments) {
+      // No additional filter
+    } else if (rideId) {
+      if (excludeGlobal) {
+        query = query.eq('ride_id', rideId);
+      } else {
+        query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
+      }
+    } else if (isGlobal) {
+      query = query.eq('is_global', true);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []) as Document[];
+  }, [effectiveUserId, isStaff, rideId, isGlobal, showAllDocuments, excludeGlobal]);
+
+  const {
+    data: documents = [] as Document[],
+    isLoading: queryLoading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey,
+    queryFn: fetchDocuments,
+    enabled: !!effectiveUserId,
+    staleTime: 60_000, // fresh for 60s
+    gcTime: 5 * 60_000, // keep in memory 5min
+    retry: 1,
+  });
+
+  const loading = queryLoading && !!effectiveUserId;
+  const loadError = queryError ? ((queryError as Error).message || 'Failed to load documents.') : null;
+  // Back-compat shim for handlers that previously called loadDocuments() to refresh.
+  const loadDocuments = useCallback(() => { void refetch(); }, [refetch]);
+
+  // Slow-network hint: after 4s of loading, switch from spinner to a clearer message
+  const [showSlowHint, setShowSlowHint] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setShowSlowHint(false);
+      return;
+    }
+    setShowSlowHint(false);
+    const t = window.setTimeout(() => setShowSlowHint(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [loading, queryKey]);
+
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
@@ -124,14 +202,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     return normalizeLegacyCheckRecordTitle(raw);
   };
 
+  // Load assignments only when needed (global view). Document list itself
+  // is loaded by the React Query hook declared above.
   useEffect(() => {
-    if (effectiveUserId) {
-      loadDocuments();
-      if (isGlobal) {
-        loadAssignments();
-      }
+    if (effectiveUserId && isGlobal) {
+      loadAssignments();
     }
-  }, [effectiveUserId, rideId, isGlobal]);
+  }, [effectiveUserId, isGlobal]);
 
   const loadAssignments = async () => {
     if (!effectiveUserId) return;
@@ -164,103 +241,49 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  const loadDocuments = async () => {
-    setLoadError(null);
-    setLoading(true);
-
-    // Hard timeout so loading state can never hang forever on mobile.
-    let timedOut = false;
-    const timeoutMs = 15000;
-    const timeoutHandle = window.setTimeout(() => {
-      timedOut = true;
-      setLoading(false);
-      setLoadError('Loading documents took too long. Check your connection and try again.');
-    }, timeoutMs);
-
-    try {
-      // For staff, don't filter by user_id - RLS handles access
-      // For owners, filter by effectiveUserId
-      let query = supabase
-        .from('documents')
-        .select('*')
-        .neq('document_type', 'maintenance') // Exclude maintenance attachments - they belong to maintenance section only
-        .neq('document_type', 'photo') // Exclude device photos - shown on ride detail only
-        .order('uploaded_at', { ascending: false });
-      
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
-
-      if (showAllDocuments) {
-        // Show all documents - no filter needed
-      } else if (rideId) {
-        if (excludeGlobal) {
-          // Only show documents for this specific ride, exclude global
-          query = query.eq('ride_id', rideId);
-        } else {
-          // Show ride-specific AND global documents
-          query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
-        }
-      } else if (isGlobal) {
-        query = query.eq('is_global', true);
-      }
-
-      const { data, error } = await query;
-      if (timedOut) return;
-
-      if (error) {
-        throw error;
-      }
-
-      setDocuments(data || []);
-      
-      // Fetch thumbnails for image documents
-      if (data && data.length > 0) {
-        const fetchThumbs = async () => {
-          try {
-            const next: Record<string, string> = {};
-            const imageDocs = data.filter(isImageDoc);
-
-            await Promise.all(
-              imageDocs.map(async (doc) => {
-                const { data: signedData, error } = await supabase
-                  .storage
-                  .from('ride-documents')
-                  .createSignedUrl(doc.file_path, 3600); // 1 hour preview
-
-                if (!error && signedData?.signedUrl) {
-                  next[doc.id] = signedData.signedUrl;
-                }
-              })
-            );
-
-            setThumbs(next);
-          } catch (e) {
-            // Silent fail – fall back to icon
-            console.warn('Thumbnail fetch skipped:', e);
-          }
-        };
-
-        fetchThumbs();
-      } else {
-        setThumbs({});
-      }
-    } catch (error: any) {
-      if (timedOut) return;
-      console.error('Error loading documents:', error);
-      setLoadError(error?.message || 'Failed to load documents.');
-      toast({
-        title: "Error loading documents",
-        description: error?.message || 'Unknown error',
-        variant: "destructive",
-      });
-    } finally {
-      window.clearTimeout(timeoutHandle);
-      if (!timedOut) {
-        setLoading(false);
-      }
+  // Lazy thumbnail generation — runs after documents resolve, never blocks the list.
+  useEffect(() => {
+    if (!documents || documents.length === 0) {
+      setThumbs({});
+      return;
     }
-  };
+    const imageDocs = documents.filter(isImageDoc);
+    if (imageDocs.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const next: Record<string, string> = {};
+        await Promise.all(
+          imageDocs.map(async (doc) => {
+            const { data: signedData, error } = await supabase
+              .storage
+              .from('ride-documents')
+              .createSignedUrl(doc.file_path, 3600);
+            if (!error && signedData?.signedUrl) {
+              next[doc.id] = signedData.signedUrl;
+            }
+          }),
+        );
+        if (!cancelled) setThumbs(prev => ({ ...prev, ...next }));
+      } catch (e) {
+        console.warn('Thumbnail fetch skipped:', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [documents]);
+
+  // Surface fetch errors as a toast (once per error).
+  useEffect(() => {
+    if (loadError) {
+      toast({
+        title: 'Error loading documents',
+        description: loadError,
+        variant: 'destructive',
+      });
+    }
+  }, [loadError, toast]);
 
 
   const handleCopyLink = async (document: Document) => {
@@ -438,14 +461,31 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   if (loading) {
+    // Compact row-level skeleton — sits inside the equipment folder, not over the whole page.
     return (
-      <div className="py-8">
-        <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
-            <FileText className="h-7 w-7 text-white animate-pulse" />
+      <div className="py-2 px-1 space-y-1.5" aria-busy="true" aria-live="polite">
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-3 py-3 rounded-md border border-border/40 bg-muted/30 animate-pulse"
+          >
+            <div className="w-9 h-9 rounded-lg bg-muted" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3 w-2/3 rounded bg-muted" />
+              <div className="h-2.5 w-1/3 rounded bg-muted/80" />
+            </div>
           </div>
-          <p className="text-muted-foreground mt-2 font-medium">Loading documents...</p>
-        </div>
+        ))}
+        <p className="text-xs text-muted-foreground text-center pt-1.5">
+          {showSlowHint ? 'Still loading documents…' : 'Loading documents…'}
+        </p>
+        {showSlowHint && (
+          <div className="text-center">
+            <Button size="sm" variant="ghost" onClick={() => loadDocuments()} className="h-7 text-xs">
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
