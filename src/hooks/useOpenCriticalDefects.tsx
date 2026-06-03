@@ -27,6 +27,7 @@ export function useOpenCriticalDefects(rideId: string) {
       const { data, error } = await supabase
         .from('defects')
         .select('id, description, severity, status, reported_at, ride_id, check_id, location_on_ride')
+        .eq('user_id', effectiveUserId)
         .eq('ride_id', rideId)
         .eq('severity', 'stop_operation')
         .neq('status', 'resolved')
