@@ -56,6 +56,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { labelMap, categoryMap } = useDocumentTypes();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
@@ -164,6 +165,18 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   const loadDocuments = async () => {
+    setLoadError(null);
+    setLoading(true);
+
+    // Hard timeout so loading state can never hang forever on mobile.
+    let timedOut = false;
+    const timeoutMs = 15000;
+    const timeoutHandle = window.setTimeout(() => {
+      timedOut = true;
+      setLoading(false);
+      setLoadError('Loading documents took too long. Check your connection and try again.');
+    }, timeoutMs);
+
     try {
       // For staff, don't filter by user_id - RLS handles access
       // For owners, filter by effectiveUserId
@@ -193,6 +206,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       }
 
       const { data, error } = await query;
+      if (timedOut) return;
 
       if (error) {
         throw error;
@@ -232,14 +246,19 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         setThumbs({});
       }
     } catch (error: any) {
+      if (timedOut) return;
       console.error('Error loading documents:', error);
+      setLoadError(error?.message || 'Failed to load documents.');
       toast({
         title: "Error loading documents",
-        description: error.message,
+        description: error?.message || 'Unknown error',
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      window.clearTimeout(timeoutHandle);
+      if (!timedOut) {
+        setLoading(false);
+      }
     }
   };
 
@@ -426,6 +445,23 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
             <FileText className="h-7 w-7 text-white animate-pulse" />
           </div>
           <p className="text-muted-foreground mt-2 font-medium">Loading documents...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="py-6">
+        <div className="text-center px-4">
+          <div className="w-14 h-14 rounded-2xl bg-destructive/10 mx-auto flex items-center justify-center mb-3">
+            <AlertTriangle className="h-7 w-7 text-destructive" />
+          </div>
+          <h3 className="text-base font-semibold mt-2">Couldn't load documents</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-3">{loadError}</p>
+          <Button size="sm" variant="outline" onClick={() => loadDocuments()}>
+            Try again
+          </Button>
         </div>
       </div>
     );

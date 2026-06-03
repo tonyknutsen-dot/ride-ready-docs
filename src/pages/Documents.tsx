@@ -29,6 +29,9 @@ const Documents = () => {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [expandedRides, setExpandedRides] = useState<Set<string>>(new Set());
+  // Track which rides have ever been opened so we can keep their DocumentList
+  // mounted across collapse/expand toggles (prevents mobile refetch loop).
+  const [openedOnce, setOpenedOnce] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (effectiveUserId) {
@@ -101,6 +104,12 @@ const Documents = () => {
       } else {
         next.add(rideId);
       }
+      return next;
+    });
+    setOpenedOnce(prev => {
+      if (prev.has(rideId)) return prev;
+      const next = new Set(prev);
+      next.add(rideId);
       return next;
     });
   };
@@ -198,14 +207,16 @@ const Documents = () => {
                 </div>
 
                 <div className="space-y-1">
-                  {ridesWithDocs.map(ride => (
+                  {ridesWithDocs.map(ride => {
+                    const isOpen = expandedRides.has(ride.id);
+                    return (
                     <Collapsible
                       key={ride.id}
-                      open={expandedRides.has(ride.id)}
+                      open={isOpen}
                       onOpenChange={() => toggleRide(ride.id)}
                     >
                       <CollapsibleTrigger asChild>
-                        <button className="w-full flex items-center gap-2.5 px-3 py-2 border border-border/60 rounded-lg bg-card hover:border-primary/25 transition-colors">
+                        <button className="w-full flex items-center gap-2.5 px-3 py-2.5 border border-border/60 rounded-lg bg-card hover:border-primary/25 transition-colors min-h-[44px]">
                           <div className="p-1.5 bg-muted rounded-md shrink-0">
                             <FolderOpen className="h-3.5 w-3.5 text-primary" />
                           </div>
@@ -220,22 +231,30 @@ const Documents = () => {
                             >
                               {ride.document_count}
                             </Badge>
-                            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                           </div>
                         </button>
                       </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-1.5 px-1 border-t border-border/30 mt-0.5">
-                        <DocumentList
-                          key={`${ride.id}-${refreshKey}`}
-                          rideId={ride.id}
-                          rideName={ride.ride_name}
-                          onDocumentDeleted={handleDocumentDeleted}
-                          excludeGlobal
-                          grouped
-                        />
+                      {/* forceMount + hidden-when-closed keeps DocumentList alive
+                          across toggles so we don't re-fetch on every tap (mobile fix). */}
+                      <CollapsibleContent
+                        forceMount
+                        className="pt-1.5 px-1 border-t border-border/30 mt-0.5 data-[state=closed]:hidden"
+                      >
+                        {openedOnce.has(ride.id) && (
+                          <DocumentList
+                            key={`${ride.id}-${refreshKey}`}
+                            rideId={ride.id}
+                            rideName={ride.ride_name}
+                            onDocumentDeleted={handleDocumentDeleted}
+                            excludeGlobal
+                            grouped
+                          />
+                        )}
                       </CollapsibleContent>
                     </Collapsible>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}
