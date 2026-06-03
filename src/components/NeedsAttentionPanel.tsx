@@ -47,6 +47,7 @@ const NeedsAttentionPanel = () => {
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
+          .eq('user_id', effectiveUserId)
           .eq('severity', 'stop_operation')
           .neq('status', 'resolved')
           .order('reported_at', { ascending: false })
@@ -191,6 +192,7 @@ const NeedsAttentionPanel = () => {
         const { data: rideConfigs } = await supabase
           .from('rides')
           .select('id, section_config')
+          .eq('user_id', effectiveUserId)
           .in('id', rideIds);
         const rideConfigMap = new Map((rideConfigs || []).map((r: any) => [r.id, (r.section_config || []) as Array<{ min_pressure?: number; max_pressure?: number }>]));
 

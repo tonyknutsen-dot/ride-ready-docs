@@ -27,6 +27,7 @@ export function useOpenCriticalDefects(rideId: string) {
       const { data, error } = await supabase
         .from('defects')
         .select('id, description, severity, status, reported_at, ride_id, check_id, location_on_ride')
+        .eq('user_id', effectiveUserId)
         .eq('ride_id', rideId)
         .eq('severity', 'stop_operation')
         .neq('status', 'resolved')
@@ -66,6 +67,7 @@ export function useAllRidesCriticalDefects() {
       const { data, error } = await supabase
         .from('defects')
         .select('ride_id')
+        .eq('user_id', effectiveUserId)
         .eq('severity', 'stop_operation')
         .neq('status', 'resolved');
 
@@ -100,6 +102,7 @@ export function useAllRidesOpenDefects() {
       const { data, error } = await supabase
         .from('defects')
         .select('ride_id, severity')
+        .eq('user_id', effectiveUserId)
         .neq('status', 'resolved');
 
       if (error) {

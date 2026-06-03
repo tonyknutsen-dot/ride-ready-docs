@@ -15,6 +15,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { StaffRoute } from "@/components/StaffRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import { LastRouteTracker } from "@/components/LastRouteTracker";
+import { TenantSwitchReset } from "@/components/TenantSwitchReset";
 import CheckDebugOverlay from "@/components/CheckDebugOverlay";
 
 import { AppLayout } from "@/components/AppLayout";
@@ -135,6 +136,7 @@ const App = () => (
           <AdminProvider>
             <TesterProvider>
               <StaffProvider>
+              <TenantSwitchReset />
               {/* Authenticated user components loaded lazily */}
               <AuthenticatedAppShell />
               <LockScreenProvider>
