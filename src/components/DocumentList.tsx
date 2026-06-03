@@ -56,6 +56,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { labelMap, categoryMap } = useDocumentTypes();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
