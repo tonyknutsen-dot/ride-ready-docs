@@ -461,14 +461,31 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   if (loading) {
+    // Compact row-level skeleton — sits inside the equipment folder, not over the whole page.
     return (
-      <div className="py-8">
-        <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
-            <FileText className="h-7 w-7 text-white animate-pulse" />
+      <div className="py-2 px-1 space-y-1.5" aria-busy="true" aria-live="polite">
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-3 py-3 rounded-md border border-border/40 bg-muted/30 animate-pulse"
+          >
+            <div className="w-9 h-9 rounded-lg bg-muted" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3 w-2/3 rounded bg-muted" />
+              <div className="h-2.5 w-1/3 rounded bg-muted/80" />
+            </div>
           </div>
-          <p className="text-muted-foreground mt-2 font-medium">Loading documents...</p>
-        </div>
+        ))}
+        <p className="text-xs text-muted-foreground text-center pt-1.5">
+          {showSlowHint ? 'Still loading documents…' : 'Loading documents…'}
+        </p>
+        {showSlowHint && (
+          <div className="text-center">
+            <Button size="sm" variant="ghost" onClick={() => loadDocuments()} className="h-7 text-xs">
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
