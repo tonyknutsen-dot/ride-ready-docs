@@ -47,6 +47,7 @@ const NeedsAttentionPanel = () => {
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
+          .eq('user_id', effectiveUserId)
           .eq('severity', 'stop_operation')
           .neq('status', 'resolved')
           .order('reported_at', { ascending: false })
