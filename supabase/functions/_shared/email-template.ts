@@ -172,6 +172,9 @@ export const logoHtml = `
   />
 `;
 
+// Backwards-compatible alias used by older transactional functions
+export const logoSvg = logoHtml;
+
 /**
  * Build a complete branded marketing email HTML wrapper.
  * Content should already be HTML (use textToHtml for plain text).
