@@ -202,14 +202,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     return normalizeLegacyCheckRecordTitle(raw);
   };
 
+  // Load assignments only when needed (global view). Document list itself
+  // is loaded by the React Query hook declared above.
   useEffect(() => {
-    if (effectiveUserId) {
-      loadDocuments();
-      if (isGlobal) {
-        loadAssignments();
-      }
+    if (effectiveUserId && isGlobal) {
+      loadAssignments();
     }
-  }, [effectiveUserId, rideId, isGlobal]);
+  }, [effectiveUserId, isGlobal]);
 
   const loadAssignments = async () => {
     if (!effectiveUserId) return;
