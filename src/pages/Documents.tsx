@@ -241,7 +241,7 @@ const Documents = () => {
                         forceMount
                         className="pt-1.5 px-1 border-t border-border/30 mt-0.5 data-[state=closed]:hidden"
                       >
-                        {isOpen && (
+                        {openedOnce.has(ride.id) && (
                           <DocumentList
                             key={`${ride.id}-${refreshKey}`}
                             rideId={ride.id}
