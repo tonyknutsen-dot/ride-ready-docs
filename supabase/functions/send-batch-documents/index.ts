@@ -151,23 +151,16 @@ const handler = async (req: Request): Promise<Response> => {
       return acc;
     }, {} as Record<string, typeof attachments>);
 
-    const buildGroupedDocList = (docs: typeof attachments, label: string) => `
-      <div style="margin: 24px 0;">
-        <p style="${emailStyles.label}">${label}</p>
-        ${Object.entries(docsByRide).map(([rideName, rideDocs]) => `
-          <div style="margin-top: 16px;">
-            <p style="font-weight: 600; color: ${brandColors.primary}; margin: 0 0 8px 0;">🎪 ${escapeHtml(rideName)}</p>
-            ${(rideDocs as any[]).map(att => `
-              <div style="padding: 12px; margin: 4px 0; background: ${brandColors.background}; border-radius: 6px; border-left: 3px solid ${brandColors.primary};">
-                <span style="font-weight: 500;">📄 ${escapeHtml(att.documentName)}</span>
-                <span style="color: ${brandColors.textLight}; font-size: 13px;"> (${escapeHtml(att.documentType)})</span>
-                ${att.expiresAt ? `<br><span style="color: ${brandColors.textLight}; font-size: 12px;">Expires: ${escapeHtml(att.expiresAt)}</span>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        `).join('')}
-        <p style="color: ${brandColors.textLight}; font-size: 13px; margin-top: 16px;">${docs.length} document(s)</p>
-      </div>`;
+    const buildGroupedDocList = (docs: typeof attachments, label: string) =>
+      buildDocumentTable(
+        docs.map(d => ({
+          name: d.documentName,
+          type: d.documentType,
+          expiresAt: d.expiresAt,
+          group: d.rideName,
+        })),
+        label
+      );
 
     const buildEmailWrapper = (subtitle: string, innerContent: string) => `
 <!DOCTYPE html>
