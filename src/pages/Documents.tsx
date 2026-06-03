@@ -106,6 +106,12 @@ const Documents = () => {
       }
       return next;
     });
+    setOpenedOnce(prev => {
+      if (prev.has(rideId)) return prev;
+      const next = new Set(prev);
+      next.add(rideId);
+      return next;
+    });
   };
 
   const totalDocs = ridesWithDocs.reduce((sum, r) => sum + r.document_count, 0) + globalDocCount;
