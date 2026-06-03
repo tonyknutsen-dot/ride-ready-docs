@@ -13,10 +13,10 @@ export const SELF_SERVE_MAX = 50;
 
 // Price IDs (one per tier, monthly)
 export const TIER_PRICE_IDS: Record<RideTier, string> = {
-  starter: "price_1T1TVLAG8uIRefcZ1nMRWRVV",
-  operator: "price_1T1TVMAG8uIRefcZKyL8XcLz",
-  professional: "price_1T1TVNAG8uIRefcZviQXUgrA",
-  business: "price_1T1TVOAG8uIRefcZKAcqeqNw",
+  starter: "price_1TSaveAsl8xleyvDADCNwAr5",
+  operator: "price_1TSavZAsl8xleyvDgsz1qow1",
+  professional: "price_1TSavVAsl8xleyvDGbxKtlm7",
+  business: "price_1TSavNAsl8xleyvDmdB4GfGn",
 };
 
 // Product ID → tier reverse lookup
