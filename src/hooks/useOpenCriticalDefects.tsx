@@ -67,6 +67,7 @@ export function useAllRidesCriticalDefects() {
       const { data, error } = await supabase
         .from('defects')
         .select('ride_id')
+        .eq('user_id', effectiveUserId)
         .eq('severity', 'stop_operation')
         .neq('status', 'resolved');
 
