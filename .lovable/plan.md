@@ -1,78 +1,28 @@
-# Page-Family Design System
+Confirmed from the current project context:
 
-## 1. Chooser Pages
-**Pages:** Maintenance landing, Checks landing
+1. The Supabase project used by the app is `sbtldudgiskqfqqkrmaa`.
+2. The live billing flow calls the Supabase Edge Function `create-checkout` via `supabase.functions.invoke('create-checkout')`.
+3. That exact function reads `STRIPE_SECRET_KEY` from Supabase Edge Function runtime secrets using `Deno.env.get('STRIPE_SECRET_KEY')`.
+4. The recent runtime logs prove the failing live request is reaching this same `create-checkout` function, but the runtime currently reports `keyMode: "test"` and account `acct_1RviE3AG8uIRefcZ`, so the secret available to the function runtime is not the intended live Knuts Software Ltd key.
 
-**Rules:**
-- `PageHeader` with module icon (40×40 circle, h-5 w-5 icon), bold title, [13px] subtitle
-- Back button → `/overview`
-- Single ghost action: "How it works" (`HelpCircle` icon, h-8 button, `text-[13px]`)
-- `EquipmentSelector` with KPI strip, search, status filter chips, equipment cards
-- Container: `space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8`
-- **NOT allowed:** RegisterHeader, export buttons, PreviousReportsSection
+Plan:
 
-## 2. Register Pages
-**Pages:** Defect Register, Wind Speed Register, Maintenance (selected asset), Checks (selected asset/history)
+1. Trigger a secure update for the Supabase Edge Function runtime secret named exactly `STRIPE_SECRET_KEY`.
+   - This will not update the Lovable Stripe MCP/tool connection.
+   - The key value will not be exposed in chat or logs.
 
-**Rules — strict vertical order:**
-1. `PageHeader` (provided by parent page for Maintenance/Checks, or self-contained for Defects/Wind)
-2. **KPI cards** — *only* if the module has pass/fail aggregate metrics (Checks). Other registers omit this.
-3. `RegisterHeader` containing in order:
-   - Primary CTA (full-width mobile, auto desktop, `rounded-xl h-10 min-h-[44px]`)
-   - `extraContent` slot (e.g. stop-use banner for Defects)
-   - Search bar (`pl-9 h-10 rounded-xl text-[13px]`, `mt-3`)
-   - Collapsible "Filters & date range" (`mt-3`) with shared date pickers + module-specific dropdowns
-   - **"Clear all filters" link** inside filterContent when filters active (`text-[12px] font-medium text-primary`)
-   - Export actions row (`mt-3`): **CSV then PDF**, both using `FileDown` icon (`h-4 w-4`), `variant="outline"`, `h-9 min-h-[40px] text-[13px] rounded-xl`
-   - Result count + export hint (`mt-3`, `text-[13px]` + `text-[11px]`)
-4. Records list (`space-y-3`)
-5. `PreviousReportsSection` (shared component, View/Save to Device/Send/Copy Link action order)
-- Container: `space-y-3` (all registers)
+2. After you paste the new live key, force the `create-checkout` runtime to pick it up.
+   - Redeploy/restart only the existing `create-checkout` Edge Function runtime if needed.
+   - No changes to Stripe products, prices, webhooks, promo codes, trial logic, billing page code, or price IDs.
 
-**Export icon rule:** All export buttons use `FileDown`, never `Download`.
+3. Run diagnostics from the actual Supabase `create-checkout` runtime, not the Stripe MCP connection.
+   - Confirm the key mode is live only, without logging the key.
+   - Confirm Stripe account retrieval returns the live Knuts Software Ltd account.
+   - Confirm `stripe.prices.retrieve("price_1TSaveAsl8xleyvDADCNwAr5")` succeeds from that runtime.
+   - Confirm checkout session creation succeeds through the same runtime and returns a live Checkout session ID/URL beginning with `cs_live_` / live Stripe Checkout URL.
 
-## 3. Management Pages
-**Pages:** Risk Assessments, Equipment, Documents, Send Documents
+4. Verify the frontend path.
+   - Confirm the live billing button receives a checkout URL from `create-checkout`.
+   - Confirm the app redirects/open Stripe Checkout instead of showing “Failed to process request.”
 
-**Rules:**
-- `PageHeader` with module icon, title, optional subtitle
-- Module-specific content layout (grids, tabs, lists)
-- No RegisterHeader required — each module owns its own filter/search patterns
-- Consistent card styling: `rounded-xl border bg-card shadow-sm`
-
-## 4. Utility Pages
-**Pages:** Overview, Calendar
-
-**Rules:**
-- Minimal/no `PageHeader` (Overview uses custom dashboard header, Calendar uses `CalendarView`)
-- Content-driven layouts, not form/list patterns
-- `StaffAccountBanner` shown where applicable
-
----
-
-## Deliberate Exceptions
-
-| Exception | Page | Reason |
-|-----------|------|--------|
-| KPI cards above RegisterHeader | Checks history | Pass/fail aggregate metrics are core to the checks workflow and provide immediate operational awareness |
-| `extraContent` stop-use banner | Defect Register | Safety-critical alert that must appear prominently before search/filters |
-| Defects show status in subtitle | Defect Register | Open defect count is operationally critical — shown in PageHeader subtitle |
-
-All other visual differences across pages within the same family are considered bugs.
-
----
-
-## Admin Technical Debt / Follow-up
-
-### Support Access Grants — signed off PASS with minor issues
-
-Status: **Complete for current scope. Not blocked. Safe to move on.**
-
-Non-blocking follow-up items:
-
-1. **Pagination**: Add pagination or load-more once grant count exceeds 200 (current `.limit(200)` query has no UI warning if truncated)
-2. **Expiry audit logging**: Add individual `audit_logs` entries when the `expire_support_grants()` cron job flips grants to expired — currently silent
-3. **SupportView rides status**: Remove hardcoded `status: 'active'` in `/admin/support-view` rides tab — the `rides` table has no `status` column; display honest data only
-4. **Storage access documentation**: Maintain clear distinction between:
-   - **Metadata visibility**: Document names, types, dates are visible under an active grant via RLS-gated tables
-   - **File download access**: Private storage buckets (`ride-documents`, `defect-photos`) remain scoped to file owner's `auth.uid()` — admins with grants cannot download actual files without separate storage policy work
+Nothing else will be changed.
