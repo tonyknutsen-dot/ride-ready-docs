@@ -55,9 +55,86 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const { toast } = useToast();
   const navigate = useNavigate();
   const { labelMap, categoryMap } = useDocumentTypes();
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // ── Cached document fetch via React Query ─────────────────────────────
+  // Cached per scope (ride/global/all) and per user so collapsing and re-opening
+  // an equipment folder serves instantly from cache (no refetch within session).
+  const queryKey = useMemo(
+    () => [
+      'documents',
+      'list',
+      {
+        userId: isStaff ? null : effectiveUserId,
+        isStaff,
+        rideId: rideId ?? null,
+        isGlobal: !!isGlobal,
+        showAll: !!showAllDocuments,
+        excludeGlobal: !!excludeGlobal,
+      },
+    ],
+    [effectiveUserId, isStaff, rideId, isGlobal, showAllDocuments, excludeGlobal],
+  );
+
+  const fetchDocuments = useCallback(async (): Promise<Document[]> => {
+    let query = supabase
+      .from('documents')
+      .select('*')
+      .neq('document_type', 'maintenance')
+      .neq('document_type', 'photo')
+      .order('uploaded_at', { ascending: false });
+
+    if (!isStaff) {
+      query = query.eq('user_id', effectiveUserId as string);
+    }
+
+    if (showAllDocuments) {
+      // No additional filter
+    } else if (rideId) {
+      if (excludeGlobal) {
+        query = query.eq('ride_id', rideId);
+      } else {
+        query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
+      }
+    } else if (isGlobal) {
+      query = query.eq('is_global', true);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []) as Document[];
+  }, [effectiveUserId, isStaff, rideId, isGlobal, showAllDocuments, excludeGlobal]);
+
+  const {
+    data: documents = [] as Document[],
+    isLoading: queryLoading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey,
+    queryFn: fetchDocuments,
+    enabled: !!effectiveUserId,
+    staleTime: 60_000, // fresh for 60s
+    gcTime: 5 * 60_000, // keep in memory 5min
+    retry: 1,
+  });
+
+  const loading = queryLoading && !!effectiveUserId;
+  const loadError = queryError ? ((queryError as Error).message || 'Failed to load documents.') : null;
+  // Back-compat shim for handlers that previously called loadDocuments() to refresh.
+  const loadDocuments = useCallback(() => { void refetch(); }, [refetch]);
+
+  // Slow-network hint: after 4s of loading, switch from spinner to a clearer message
+  const [showSlowHint, setShowSlowHint] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setShowSlowHint(false);
+      return;
+    }
+    setShowSlowHint(false);
+    const t = window.setTimeout(() => setShowSlowHint(true), 4000);
+    return () => window.clearTimeout(t);
+  }, [loading, queryKey]);
+
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
