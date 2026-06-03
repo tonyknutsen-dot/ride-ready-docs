@@ -83,6 +83,23 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
+    // Early diagnostic — runs before auth so we can verify the configured key
+    // without requiring a signed-in user. Logs only key prefix mode, account ID,
+    // and price retrieve result. Never logs the actual secret.
+    let earlyBody: { diagnosticOnly?: boolean } = {};
+    try {
+      earlyBody = await req.clone().json();
+    } catch (_) { /* ignore */ }
+    if (earlyBody?.diagnosticOnly === true) {
+      const stripeEarly = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+      await logStripeDiagnostics(stripeEarly, stripeKey, TIER_PRICE_IDS.starter);
+      return new Response(JSON.stringify({ diagnosticOnly: true, ran: "pre-auth" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
     
