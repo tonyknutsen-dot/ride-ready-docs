@@ -136,6 +136,7 @@ const App = () => (
           <AdminProvider>
             <TesterProvider>
               <StaffProvider>
+              <TenantSwitchReset />
               {/* Authenticated user components loaded lazily */}
               <AuthenticatedAppShell />
               <LockScreenProvider>
