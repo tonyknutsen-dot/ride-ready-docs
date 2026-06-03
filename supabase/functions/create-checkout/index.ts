@@ -113,8 +113,8 @@ serve(async (req) => {
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
-    const { tier, returnUrl } = await req.json();
-    logStep("Request params", { tier, returnUrl });
+    const { tier, returnUrl, diagnosticOnly } = await req.json();
+    logStep("Request params", { tier, returnUrl, diagnosticOnly: Boolean(diagnosticOnly) });
 
     if (!tier) {
       throw new Error("Missing required parameter: tier");
@@ -128,6 +128,14 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     await logStripeDiagnostics(stripe, stripeKey, TIER_PRICE_IDS.starter);
+
+    if (diagnosticOnly === true) {
+      logStep("Diagnostic-only request completed before checkout creation", { userId: user.id });
+      return new Response(JSON.stringify({ diagnosticOnly: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
