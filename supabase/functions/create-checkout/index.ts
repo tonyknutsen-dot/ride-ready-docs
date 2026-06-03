@@ -151,6 +151,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
       mode: "subscription",
+      allow_promotion_codes: true,
       success_url: successUrl.toString(),
       cancel_url: cancelUrl.toString(),
       metadata: {
