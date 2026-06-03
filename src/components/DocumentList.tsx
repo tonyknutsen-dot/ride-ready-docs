@@ -450,6 +450,23 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="py-6">
+        <div className="text-center px-4">
+          <div className="w-14 h-14 rounded-2xl bg-destructive/10 mx-auto flex items-center justify-center mb-3">
+            <AlertTriangle className="h-7 w-7 text-destructive" />
+          </div>
+          <h3 className="text-base font-semibold mt-2">Couldn't load documents</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-3">{loadError}</p>
+          <Button size="sm" variant="outline" onClick={() => loadDocuments()}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (documents.length === 0) {
     return (
       <div className="py-12">
