@@ -241,103 +241,49 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  const loadDocuments = async () => {
-    setLoadError(null);
-    setLoading(true);
-
-    // Hard timeout so loading state can never hang forever on mobile.
-    let timedOut = false;
-    const timeoutMs = 15000;
-    const timeoutHandle = window.setTimeout(() => {
-      timedOut = true;
-      setLoading(false);
-      setLoadError('Loading documents took too long. Check your connection and try again.');
-    }, timeoutMs);
-
-    try {
-      // For staff, don't filter by user_id - RLS handles access
-      // For owners, filter by effectiveUserId
-      let query = supabase
-        .from('documents')
-        .select('*')
-        .neq('document_type', 'maintenance') // Exclude maintenance attachments - they belong to maintenance section only
-        .neq('document_type', 'photo') // Exclude device photos - shown on ride detail only
-        .order('uploaded_at', { ascending: false });
-      
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
-
-      if (showAllDocuments) {
-        // Show all documents - no filter needed
-      } else if (rideId) {
-        if (excludeGlobal) {
-          // Only show documents for this specific ride, exclude global
-          query = query.eq('ride_id', rideId);
-        } else {
-          // Show ride-specific AND global documents
-          query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
-        }
-      } else if (isGlobal) {
-        query = query.eq('is_global', true);
-      }
-
-      const { data, error } = await query;
-      if (timedOut) return;
-
-      if (error) {
-        throw error;
-      }
-
-      setDocuments(data || []);
-      
-      // Fetch thumbnails for image documents
-      if (data && data.length > 0) {
-        const fetchThumbs = async () => {
-          try {
-            const next: Record<string, string> = {};
-            const imageDocs = data.filter(isImageDoc);
-
-            await Promise.all(
-              imageDocs.map(async (doc) => {
-                const { data: signedData, error } = await supabase
-                  .storage
-                  .from('ride-documents')
-                  .createSignedUrl(doc.file_path, 3600); // 1 hour preview
-
-                if (!error && signedData?.signedUrl) {
-                  next[doc.id] = signedData.signedUrl;
-                }
-              })
-            );
-
-            setThumbs(next);
-          } catch (e) {
-            // Silent fail – fall back to icon
-            console.warn('Thumbnail fetch skipped:', e);
-          }
-        };
-
-        fetchThumbs();
-      } else {
-        setThumbs({});
-      }
-    } catch (error: any) {
-      if (timedOut) return;
-      console.error('Error loading documents:', error);
-      setLoadError(error?.message || 'Failed to load documents.');
-      toast({
-        title: "Error loading documents",
-        description: error?.message || 'Unknown error',
-        variant: "destructive",
-      });
-    } finally {
-      window.clearTimeout(timeoutHandle);
-      if (!timedOut) {
-        setLoading(false);
-      }
+  // Lazy thumbnail generation — runs after documents resolve, never blocks the list.
+  useEffect(() => {
+    if (!documents || documents.length === 0) {
+      setThumbs({});
+      return;
     }
-  };
+    const imageDocs = documents.filter(isImageDoc);
+    if (imageDocs.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const next: Record<string, string> = {};
+        await Promise.all(
+          imageDocs.map(async (doc) => {
+            const { data: signedData, error } = await supabase
+              .storage
+              .from('ride-documents')
+              .createSignedUrl(doc.file_path, 3600);
+            if (!error && signedData?.signedUrl) {
+              next[doc.id] = signedData.signedUrl;
+            }
+          }),
+        );
+        if (!cancelled) setThumbs(prev => ({ ...prev, ...next }));
+      } catch (e) {
+        console.warn('Thumbnail fetch skipped:', e);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [documents]);
+
+  // Surface fetch errors as a toast (once per error).
+  useEffect(() => {
+    if (loadError) {
+      toast({
+        title: 'Error loading documents',
+        description: loadError,
+        variant: 'destructive',
+      });
+    }
+  }, [loadError, toast]);
 
 
   const handleCopyLink = async (document: Document) => {
