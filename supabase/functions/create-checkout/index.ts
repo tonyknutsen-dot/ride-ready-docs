@@ -10,6 +10,53 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
+const getStripeKeyDiagnostic = (stripeKey: string) => {
+  const trimmed = stripeKey.trim();
+  const keyMode = trimmed.includes("_live_") ? "live" : trimmed.includes("_test_") ? "test" : "unknown";
+  const keyType = trimmed.startsWith("sk_") ? "secret" : trimmed.startsWith("rk_") ? "restricted" : "unknown";
+  return { keyMode, keyType };
+};
+
+const getStripeErrorDetails = (error: unknown) => {
+  if (error && typeof error === "object") {
+    const stripeError = error as { message?: string; type?: string; code?: string; statusCode?: number };
+    return {
+      message: stripeError.message ?? String(error),
+      type: stripeError.type,
+      code: stripeError.code,
+      statusCode: stripeError.statusCode,
+    };
+  }
+  return { message: String(error) };
+};
+
+const logStripeDiagnostics = async (stripe: Stripe, stripeKey: string, priceId: string) => {
+  const keyDiagnostic = getStripeKeyDiagnostic(stripeKey);
+  logStep("Stripe diagnostic: key mode/type", keyDiagnostic);
+
+  try {
+    const account = await stripe.accounts.retrieve();
+    logStep("Stripe diagnostic: account retrieved", { accountId: account.id });
+  } catch (error) {
+    logStep("Stripe diagnostic: account retrieve failed", getStripeErrorDetails(error));
+  }
+
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    logStep("Stripe diagnostic: price retrieve succeeded", {
+      priceId: price.id,
+      productId: typeof price.product === "string" ? price.product : price.product.id,
+      active: price.active,
+      livemode: price.livemode,
+    });
+  } catch (error) {
+    logStep("Stripe diagnostic: price retrieve failed", {
+      priceId,
+      ...getStripeErrorDetails(error),
+    });
+  }
+};
+
 serve(async (req) => {
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
@@ -66,8 +113,8 @@ serve(async (req) => {
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
-    const { tier, returnUrl } = await req.json();
-    logStep("Request params", { tier, returnUrl });
+    const { tier, returnUrl, diagnosticOnly } = await req.json();
+    logStep("Request params", { tier, returnUrl, diagnosticOnly: Boolean(diagnosticOnly) });
 
     if (!tier) {
       throw new Error("Missing required parameter: tier");
@@ -80,6 +127,15 @@ serve(async (req) => {
     logStep("Price ID determined", { tier, priceId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    await logStripeDiagnostics(stripe, stripeKey, TIER_PRICE_IDS.starter);
+
+    if (diagnosticOnly === true) {
+      logStep("Diagnostic-only request completed before checkout creation", { userId: user.id });
+      return new Response(JSON.stringify({ diagnosticOnly: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
