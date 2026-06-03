@@ -181,18 +181,15 @@ const handler = async (req: Request): Promise<Response> => {
         </table>
       </div>`;
 
-    const buildDocumentList = (docs: typeof attachments, label?: string) => `
-      <div style="margin: 24px 0;">
-        <p style="${emailStyles.label}">${label || 'DOCUMENTS'}</p>
-        ${docs.map(att => `
-          <div style="padding: 12px; margin: 8px 0; background: ${brandColors.background}; border-radius: 6px; border-left: 3px solid ${brandColors.primary};">
-            <span style="font-weight: 500;">📄 ${escapeHtml(att.documentName)}</span>
-            <span style="color: ${brandColors.textLight}; font-size: 13px;"> (${escapeHtml(att.documentType)})</span>
-            ${att.expiresAt ? `<br><span style="color: ${brandColors.textLight}; font-size: 12px;">Expires: ${escapeHtml(att.expiresAt)}</span>` : ''}
-          </div>
-        `).join('')}
-        <p style="color: ${brandColors.textLight}; font-size: 13px; margin-top: 16px;">${docs.length} document(s)</p>
-      </div>`;
+    const buildDocumentList = (docs: typeof attachments, label?: string) =>
+      buildDocumentTable(
+        docs.map(d => ({
+          name: d.documentName,
+          type: d.documentType,
+          expiresAt: d.expiresAt,
+        })),
+        label || 'Attached documents'
+      );
 
     const buildFooter = () => `
       <hr style="${emailStyles.divider}">
