@@ -141,10 +141,13 @@ export function useProfileComplete() {
       } finally {
         checkedUserIdRef.current = user.id;
         setLoading(false);
+        clearTimeout(safetyTimeout);
       }
     };
 
     checkProfile();
+
+    return () => clearTimeout(safetyTimeout);
   }, [user?.id, isOfflineMode]); // Depend on user.id (stable string), not user object or cachedIdentity
 
   return { isProfileComplete, isStaffMember, loading };
