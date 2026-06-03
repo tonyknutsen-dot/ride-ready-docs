@@ -25,18 +25,28 @@ export function useProfileComplete() {
       return;
     }
 
+    // Safety timeout: never let the profile check leave the UI stuck on a
+    // spinner. After 8s force loading=false; ProfileGuard will then route
+    // to onboarding if profile is still unknown.
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[PROFILE] check timed out, forcing loading=false');
+      setLoading(false);
+    }, 8000);
+
     // Offline mode: use cached identity from IndexedDB (already loaded in AuthContext)
     if (isOfflineMode || !navigator.onLine) {
       if (cachedIdentity && cachedIdentity.userId === user.id) {
         setIsProfileComplete(cachedIdentity.setupComplete);
         setIsStaffMember(cachedIdentity.role === 'employee');
         setLoading(false);
+        clearTimeout(safetyTimeout);
         return;
       }
       // No cached identity – treat as complete to avoid onboarding redirect
       // ProfileGuard will show the "needs internet" screen instead
       setIsProfileComplete(null);
       setLoading(false);
+      clearTimeout(safetyTimeout);
       return;
     }
 
