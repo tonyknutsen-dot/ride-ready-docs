@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import appLogo from '@/assets/app-logo.jpg';
 
-type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted';
+type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted' | 'cancelled';
 
 const permissionLabels: Record<string, string> = {
   staff: 'Staff',
