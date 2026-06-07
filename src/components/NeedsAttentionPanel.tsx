@@ -12,7 +12,7 @@ import { SEVERITY_HEADER, SEVERITY_ROW, type SeverityTier } from '@/utils/severi
 
 interface AttentionItem {
   id: string;
-  type: 'stop_use' | 'doc_expiring' | 'check_due' | 'inspection_due' | 'pressure_failed';
+  type: 'stop_use' | 'open_defect' | 'doc_expiring' | 'check_due' | 'inspection_due' | 'pressure_failed';
   label: string;
   sublabel?: string;
   urgency: 'critical' | 'warning' | 'info';
