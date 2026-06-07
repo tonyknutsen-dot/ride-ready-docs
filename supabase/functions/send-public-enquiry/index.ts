@@ -192,7 +192,7 @@ const handler = async (req: Request): Promise<Response> => {
     const enquirySubject = `[${typeLabel}] New enquiry from ${name}`;
     const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready <notifications@ridereadydocs.com>",
-      to: ["info@ridereadydocs.com"],
+      to: ["info@knutssoftware.co.uk", "info@ridereadydocs.com"],
       replyTo: email,
       subject: enquirySubject,
       html: htmlContent,
