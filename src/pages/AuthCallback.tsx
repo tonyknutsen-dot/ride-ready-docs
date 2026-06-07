@@ -19,8 +19,21 @@ const AuthCallback = () => {
   useEffect(() => {
     let cancelled = false;
 
+    const isRecoveryLink = () => {
+      const url = new URL(window.location.href);
+      if ((url.searchParams.get('type') || '').toLowerCase() === 'recovery') return true;
+      const hash = url.hash || '';
+      if (/(^|[#&?])type=recovery(\b|&|$)/i.test(hash)) return true;
+      return false;
+    };
+
     const route = async (userId: string) => {
       try {
+        // Password recovery: always send the user to the set-new-password screen.
+        if (isRecoveryLink()) {
+          navigate('/auth/reset-password', { replace: true });
+          return;
+        }
         const { data: profile } = await supabase
           .from('profiles')
           .select('company_name, controller_name')
