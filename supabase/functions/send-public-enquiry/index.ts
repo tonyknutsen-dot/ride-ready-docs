@@ -138,13 +138,34 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr><td style="height: 12px;"></td></tr>
                       <tr>
                         <td style="padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">
-                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Company</p>
-                          <p style="margin: 0; font-size: 16px; color: #1e293b;">${safeCompany}</p>
+                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Phone</p>
+                          <p style="margin: 0; font-size: 16px; color: #1e293b;">${safePhone || '—'}</p>
+                        </td>
+                      </tr>
+                      <tr><td style="height: 12px;"></td></tr>
+                      <tr>
+                        <td style="padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">
+                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Business / Organisation</p>
+                          <p style="margin: 0; font-size: 16px; color: #1e293b;">${safeCompany || '—'}</p>
                         </td>
                       </tr>
                       <tr><td style="height: 24px;"></td></tr>
                       <tr>
                         <td>
+                          <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Message</p>
+                          <div style="padding: 20px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #f97316;">
+                            <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6;">${safeMessage}</p>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr><td style="height: 16px;"></td></tr>
+                      <tr>
+                        <td style="padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">
+                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Source</p>
+                          <p style="margin: 0; font-size: 13px; color: #1e293b; word-break: break-all;">${safeSource || '—'}</p>
+                          <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">Submitted: ${safeTimestamp}</p>
+                        </td>
+                      </tr>
                           <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Message</p>
                           <div style="padding: 20px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #f97316;">
                             <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6;">${safeMessage}</p>
