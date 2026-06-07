@@ -53,8 +53,7 @@ const Hero = () => {
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
             Complete Operations
-            <br />
-            <span className="text-accent">Management</span>
+            <span className="text-[hsl(210_55%_80%)]">Management</span>
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-white/80 mb-6 max-w-2xl mx-auto">
             for ride, amusement and event operators
