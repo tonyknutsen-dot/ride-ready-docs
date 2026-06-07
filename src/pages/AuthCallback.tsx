@@ -212,21 +212,29 @@ const AuthCallback = () => {
               </p>
 
               <div className="w-full flex flex-col gap-2 pt-2">
-                <Button onClick={() => navigate('/auth', { replace: true })} className="w-full">
-                  Go to sign in
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleResend}
-                  disabled={resending || resendDone}
-                  className="w-full"
-                >
-                  {resendDone
-                    ? 'Confirmation email sent'
-                    : resending
-                    ? 'Sending…'
-                    : 'Resend confirmation email'}
-                </Button>
+                {isResetLinkError ? (
+                  <Button onClick={() => navigate('/auth?reset=true', { replace: true })} className="w-full">
+                    Request a new reset email
+                  </Button>
+                ) : (
+                  <>
+                    <Button onClick={() => navigate('/auth', { replace: true })} className="w-full">
+                      Go to sign in
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleResend}
+                      disabled={resending || resendDone}
+                      className="w-full"
+                    >
+                      {resendDone
+                        ? 'Confirmation email sent'
+                        : resending
+                        ? 'Sending…'
+                        : 'Resend confirmation email'}
+                    </Button>
+                  </>
+                )}
                 <Link
                   to="/help"
                   className="text-xs text-muted-foreground underline underline-offset-2 mt-1"
