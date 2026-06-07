@@ -166,12 +166,6 @@ const handler = async (req: Request): Promise<Response> => {
                           <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">Submitted: ${safeTimestamp}</p>
                         </td>
                       </tr>
-                          <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Message</p>
-                          <div style="padding: 20px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #f97316;">
-                            <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6;">${safeMessage}</p>
-                          </div>
-                        </td>
-                      </tr>
                     </table>
                   </td>
                 </tr>
