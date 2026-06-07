@@ -202,7 +202,11 @@ export const PublicContactDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold shadow-sm"
+            >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </Button>
           </div>
