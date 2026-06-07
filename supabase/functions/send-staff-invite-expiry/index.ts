@@ -85,7 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
         const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
 
         // Send expiry reminder email
-        const emailResponse = await resend.emails.send({
+        const emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [invite.email],
           subject: `⏰ Your staff invite expires soon - ${companyName}`,

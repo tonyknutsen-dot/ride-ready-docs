@@ -131,19 +131,21 @@ const handler = async (req: Request): Promise<Response> => {
         );
 
         // Send email
-        const emailResponse = await resend.emails.send({
+        const emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <noreply@ridereadydocs.com>",
           to: [userEmail],
           subject: "Your Tester Access Expires in 3 Days - Ride Ready Docs",
           html,
+        }, {
+          function_name: 'send-tester-expiry-reminders',
+          template_name: 'tester-expiry-reminder',
+          user_id: role.user_id,
         });
 
         console.log(`Email sent to ${userEmail}:`, emailResponse);
-        await logEmailSend({ template_name: 'tester-expiry-reminder', recipient_email: userEmail, subject: 'Your Tester Access Expires in 3 Days - Ride Ready Docs', status: 'sent', user_id: role.user_id });
         emailsSent.push(userEmail);
       } catch (emailError: any) {
         console.error(`Error sending email for user ${role.user_id}:`, emailError);
-        await logEmailSend({ template_name: 'tester-expiry-reminder', recipient_email: userEmail || 'unknown', status: 'failed', error_message: emailError.message, user_id: role.user_id });
         errors.push(`User ${role.user_id}: ${emailError.message}`);
       }
     }

@@ -105,22 +105,17 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs Support <info@ridereadydocs.com>",
       to: [userEmail],
       subject: `Re: ${subject}`,
       html,
+    }, {
+      function_name: 'send-support-response',
+      template_name: 'support-response',
     });
 
     console.log("Support response email sent successfully:", emailResponse);
-
-    await logEmailSend({
-      template_name: 'support-response',
-      recipient_email: userEmail,
-      subject: `Re: ${subject}`,
-      status: 'sent',
-      message_id: emailResponse?.data?.id || undefined,
-    });
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,

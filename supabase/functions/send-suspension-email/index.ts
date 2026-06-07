@@ -149,15 +149,18 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject,
       html,
+    }, {
+      function_name: 'send-suspension-email',
+      template_name: isSuspended ? 'account-suspended' : 'account-reactivated',
+      metadata: { is_suspended: isSuspended },
     });
 
     console.log("Suspension email sent successfully:", emailResponse);
-    await logEmailSend({ template_name: isSuspended ? 'account-suspended' : 'account-reactivated', recipient_email: email, subject, status: 'sent', metadata: { is_suspended: isSuspended } });
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,

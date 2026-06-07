@@ -187,17 +187,18 @@ serve(async (req) => {
 
     // Send email to user
     try {
-      await resend.emails.send({
+      await auditedResendSend(resend, {
         from: "Ride Ready Docs <noreply@ridereadydocs.co.uk>",
         to: [trimmedEmail],
         subject: "You're on the Ride Ready Docs Early Access List!",
         html: userEmailHtml,
+      }, {
+        function_name: 'early-access-signup',
+        template_name: 'early-access-signup',
       });
       console.log(`Confirmation email sent to ${trimmedEmail}`);
-      await logEmailSend({ template_name: 'early-access-signup', recipient_email: trimmedEmail, subject: "You're on the Ride Ready Docs Early Access List!", status: 'sent' });
     } catch (emailError) {
       console.error("Failed to send user confirmation email:", emailError);
-      await logEmailSend({ template_name: 'early-access-signup', recipient_email: trimmedEmail, status: 'failed', error_message: (emailError as any)?.message });
     }
 
     // Send notification email to admin
@@ -234,16 +235,19 @@ serve(async (req) => {
 
     // Send email to admin
     try {
-      await resend.emails.send({
+      await auditedResendSend(resend, {
         from: "Ride Ready Docs <noreply@ridereadydocs.co.uk>",
         to: ["info@ridereadydocs.com"],
         subject: `New Early Access Signup: ${trimmedEmail}`,
         html: adminEmailHtml,
+      }, {
+        function_name: 'early-access-signup',
+        template_name: 'early-access-admin-notification',
+        metadata: { signup_email: trimmedEmail, total_signups: count || 1 },
       });
       console.log("Admin notification sent");
     } catch (emailError) {
       console.error("Failed to send admin notification:", emailError);
-      // Don't fail the request
     }
 
     console.log(`Early access signup recorded: ${trimmedEmail}`);

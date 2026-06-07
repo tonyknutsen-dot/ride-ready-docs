@@ -38,10 +38,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     const severityEmoji = getSeverityEmoji(severity);
     
-    const emailResponse = await resend.emails.send({
+    const bugSubject = `${severityEmoji} Bug Report ${referenceId}: ${title}`;
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready <onboarding@resend.dev>",
       to: ["info@knutssoftware.co.uk"],
-      subject: `${severityEmoji} Bug Report ${referenceId}: ${title}`,
+      subject: bugSubject,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #ef4444; margin-bottom: 24px;">🐛 New Bug Report</h1>
@@ -82,18 +83,13 @@ const handler = async (req: Request): Promise<Response> => {
           </p>
         </div>
       `,
+    }, {
+      function_name: 'send-bug-report-notification',
+      template_name: 'bug-report-notification',
+      metadata: { reference_id: referenceId, severity, app_version: appVersion },
     });
 
     console.log("Bug report notification sent:", emailResponse);
-
-    const emailSubject = `${severityEmoji} Bug Report ${referenceId}: ${title}`;
-    await logEmailSend({
-      template_name: 'bug-report-notification',
-      recipient_email: 'info@knutssoftware.co.uk',
-      subject: emailSubject,
-      status: 'sent',
-      message_id: emailResponse?.data?.id || undefined,
-    });
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

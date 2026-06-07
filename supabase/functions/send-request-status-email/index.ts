@@ -122,15 +122,19 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    const emailResponse = await resend.emails.send({
+    const statusSubject = `${isApproved ? '✓' : '✗'} Your ${typeLabel} Request has been ${statusLabel}`;
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [userEmail],
-      subject: `${isApproved ? '✓' : '✗'} Your ${typeLabel} Request has been ${statusLabel}`,
+      subject: statusSubject,
       html,
+    }, {
+      function_name: 'send-request-status-email',
+      template_name: 'request-status-update',
+      metadata: { request_type: requestType, request_name: requestName, decision: status },
     });
 
     console.log("Request status email sent successfully:", emailResponse);
-    await logEmailSend({ template_name: 'request-status-update', recipient_email: userEmail, subject: `${isApproved ? '✓' : '✗'} Your ${typeLabel} Request has been ${statusLabel}`, status: 'sent', metadata: { request_type: requestType, request_name: requestName, decision: status } });
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,

@@ -241,16 +241,20 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    // Send email
-    const emailResponse = await resend.emails.send({
+    const shareSubject = `Equipment Documentation Package - ${senderName}`;
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [recipientEmail],
-      subject: `Equipment Documentation Package - ${senderName}`,
+      subject: shareSubject,
       html: htmlContent
+    }, {
+      function_name: 'create-document-share',
+      template_name: 'document-share',
+      user_id: user.id,
+      metadata: { doc_count: documents.length, share_token_set: true },
     });
 
     console.log(`Email sent successfully:`, emailResponse);
-    await logEmailSend({ template_name: 'document-share', recipient_email: recipientEmail, subject: `Equipment Documentation Package - ${senderName}`, status: 'sent', user_id: user.id, metadata: { doc_count: documents.length } });
 
     // Log notification
     await supabase

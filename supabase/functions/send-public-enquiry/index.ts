@@ -168,23 +168,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending notification email...");
 
-    const emailResponse = await resend.emails.send({
+    const enquirySubject = `[${typeLabel}] New enquiry from ${name}`;
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready <notifications@ridereadydocs.com>",
       to: ["info@ridereadydocs.com"],
       replyTo: email,
-      subject: `[${typeLabel}] New enquiry from ${name}`,
+      subject: enquirySubject,
       html: htmlContent,
+    }, {
+      function_name: 'send-public-enquiry',
+      template_name: 'public-enquiry-notification',
+      metadata: { enquiry_type: typeLabel, from_name: name, from_email: email },
     });
 
     console.log("Email sent successfully:", emailResponse);
-
-    await logEmailSend({
-      template_name: 'public-enquiry-notification',
-      recipient_email: 'info@ridereadydocs.com',
-      subject: `[${typeLabel}] New enquiry from ${name}`,
-      status: 'sent',
-      message_id: emailResponse?.data?.id || undefined,
-    });
 
     // Send confirmation email to the enquirer
     const confirmationHtml = `
@@ -227,18 +224,14 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    await resend.emails.send({
+    await auditedResendSend(resend, {
       from: "Ride Ready <notifications@ridereadydocs.com>",
       to: [email],
       subject: "Thank you for contacting Ride Ready",
       html: confirmationHtml,
-    });
-
-    await logEmailSend({
+    }, {
+      function_name: 'send-public-enquiry',
       template_name: 'public-enquiry-confirmation',
-      recipient_email: email,
-      subject: "Thank you for contacting Ride Ready",
-      status: 'sent',
     });
 
     console.log("Confirmation email sent to:", email);

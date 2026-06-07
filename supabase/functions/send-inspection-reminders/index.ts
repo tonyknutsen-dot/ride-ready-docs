@@ -153,16 +153,20 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
           `;
 
-          const emailResponse = await resend.emails.send({
+          const reminderSubject = `🔔 Inspection Reminder: ${schedule.inspection_name} - ${rideName}`;
+          const emailResponse = await auditedResendSend(resend, {
             from: "Ride Ready Docs <info@ridereadydocs.com>",
             to: [user.email],
-            subject: `🔔 Inspection Reminder: ${schedule.inspection_name} - ${rideName}`,
+            subject: reminderSubject,
             html,
+          }, {
+            function_name: 'send-inspection-reminders',
+            template_name: 'inspection-reminder',
+            user_id: schedule.user_id,
+            metadata: { schedule_id: schedule.id, days_until_due: daysUntilDue },
           });
 
           console.log("Email sent successfully:", emailResponse);
-          const reminderSubject = `🔔 Inspection Reminder: ${schedule.inspection_name} - ${rideName}`;
-          await logEmailSend({ template_name: 'inspection-reminder', recipient_email: user.email, subject: reminderSubject, status: 'sent', user_id: schedule.user_id, metadata: { schedule_id: schedule.id, days_until_due: daysUntilDue } });
 
           await supabase
             .from("inspection_schedules")
