@@ -101,8 +101,7 @@ const Footer = () => {
           <p className="text-xs text-background/60 max-w-2xl mx-auto">
             Ride Ready Docs is an independent platform. We do not share your operational data
             with inspectors, regulators or third parties unless required to provide the service,
-            requested by you, or required by law. The controller remains responsible for ensuring
-            their equipment, documents and procedures are suitable and compliant.
+            requested by you, or required by law.
           </p>
           <p>&copy; {currentYear} Ride Ready Docs. All rights reserved.</p>
           <div className="flex items-center justify-center gap-2">
