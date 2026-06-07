@@ -125,6 +125,25 @@ const queryClient = new QueryClient({
   },
 });
 
+const STANDALONE_AUTH_ROUTES = new Set(['/auth/callback', '/auth/reset-password']);
+
+function StandaloneAuthRouteGate({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+
+  if (STANDALONE_AUTH_ROUTES.has(pathname)) {
+    return (
+      <LocationAwareOfflineSuspense>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+        </Routes>
+      </LocationAwareOfflineSuspense>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -134,8 +153,9 @@ const App = () => (
         <ScrollToTop />
         <CheckDebugOverlay />
         <AuthProvider>
-          <LastRouteTracker />
-          <AdminProvider>
+          <StandaloneAuthRouteGate>
+            <LastRouteTracker />
+            <AdminProvider>
             <TesterProvider>
               <StaffProvider>
               <TenantSwitchReset />
@@ -850,6 +870,7 @@ const App = () => (
               </StaffProvider>
             </TesterProvider>
           </AdminProvider>
+          </StandaloneAuthRouteGate>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
