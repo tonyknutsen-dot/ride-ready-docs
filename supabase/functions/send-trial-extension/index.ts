@@ -3,6 +3,7 @@ import { Resend } from "npm:resend@4.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { generateEmailWrapper, emailStyles, brandColors } from "../_shared/email-template.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

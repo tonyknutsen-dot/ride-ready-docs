@@ -5,6 +5,7 @@ import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 interface CreateDocumentShareRequest {
   recipientEmail: string;
