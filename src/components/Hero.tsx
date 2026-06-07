@@ -37,8 +37,12 @@ const Hero = () => {
           decoding="async"
           style={{ contentVisibility: 'auto' }}
         />
-        <div className="absolute inset-0 bg-[hsl(215_55%_10%)]/75" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(215_55%_8%)]/70 via-[hsl(215_55%_10%)]/60 to-[hsl(215_55%_8%)]/85" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/25 to-black/60" />
+      </div>
+
+      {/* Local readability panel behind text */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[70%] z-[1] pointer-events-none">
+        <div className="max-w-4xl mx-auto h-full bg-[hsl(215_55%_10%)]/35 blur-2xl rounded-full" />
       </div>
 
       {/* Content */}
