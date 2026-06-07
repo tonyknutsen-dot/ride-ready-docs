@@ -14,9 +14,9 @@ const Footer = () => {
           <div className="md:col-span-2">
             <h3 className="text-xl font-bold mb-4">Ride Ready Docs</h3>
             <p className="text-background/70 mb-6 max-w-md text-sm leading-relaxed">
-              The complete operations management solution designed for amusement 
-              professionals worldwide. Keep all your ride documents, safety certificates, 
-              and compliance records organized in one secure place.
+              Ride Ready Docs helps operators, controllers and event professionals organise
+              equipment records, documents, checks, maintenance, defects and operational logs
+              in one secure system.
             </p>
             <div className="flex items-center gap-2 text-background/60 text-sm">
               <MapPin className="h-4 w-4" />
