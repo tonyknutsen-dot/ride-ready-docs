@@ -37,7 +37,8 @@ const Hero = () => {
           decoding="async"
           style={{ contentVisibility: 'auto' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+        <div className="absolute inset-0 bg-[hsl(215_55%_10%)]/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(215_55%_8%)]/70 via-[hsl(215_55%_10%)]/60 to-[hsl(215_55%_8%)]/85" />
       </div>
 
       {/* Content */}
@@ -52,8 +53,7 @@ const Hero = () => {
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
             Complete Operations
-            <br />
-            <span className="text-accent">Management</span>
+            <span className="text-[hsl(210_55%_80%)]">Management</span>
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-white/80 mb-6 max-w-2xl mx-auto">
             for ride, amusement and event operators

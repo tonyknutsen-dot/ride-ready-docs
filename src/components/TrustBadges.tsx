@@ -11,13 +11,13 @@ export default function TrustBadges({ variant = 'default', className = '' }: Tru
   const badges = [
     {
       icon: Shield,
-      label: 'GDPR Compliant',
-      description: 'Full data protection'
+      label: 'Secure data handling',
+      description: 'Privacy-focused by design'
     },
     {
       icon: Lock,
-      label: 'Encrypted',
-      description: 'TLS 1.3 & AES-256'
+      label: 'Encrypted connections',
+      description: 'Data protected in transit'
     }
   ];
 
