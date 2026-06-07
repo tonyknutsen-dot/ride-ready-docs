@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowRight, Sparkles, Share, Download } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
 import { toast } from "sonner";
-import { CANONICAL_ORIGIN } from "@/config/canonicalOrigin";
+import { CANONICAL_APP_ORIGIN } from "@/config/canonicalOrigin";
 
 const CallToAction = () => {
   const navigate = useNavigate();
