@@ -154,10 +154,20 @@ const HelpCenter = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { terminology } = useTerminology();
+  const { isStaff } = useStaff();
   const [search, setSearch] = useState("");
   const [selectedTopic, setSelectedTopic] = useState<HelpTopic | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
+
+  // Staff cannot access Documents, Calendar, or Staff management — hide those topics
+  const staffHiddenTitles = new Set(["Documents", "Calendar", "Staff"]);
+  const visibleCoreModules = isStaff
+    ? coreModules.filter((t) => !staffHiddenTitles.has(t.title))
+    : coreModules;
+  const visibleAdvancedFeatures = isStaff
+    ? advancedFeatures.filter((t) => !staffHiddenTitles.has(t.title))
+    : advancedFeatures;
 
   const filterTopics = (topics: HelpTopic[]) => {
     if (!search.trim()) return topics;
