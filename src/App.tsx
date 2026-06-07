@@ -146,6 +146,7 @@ const App = () => (
               <Routes>
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
               <Route path="/session-diagnostics" element={<SessionDiagnostics />} />
               <Route path="/source-of-truth" element={<ProtectedRoute><ProfileGuard><AppLayout><SourceOfTruthAudit /></AppLayout></ProfileGuard></ProtectedRoute>} />
