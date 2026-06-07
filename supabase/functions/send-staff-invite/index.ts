@@ -278,94 +278,125 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresDate = new Date(invite.expires_at);
     const expiresFormatted = expiresDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
+    // ---- Email HTML — fully inline, mobile-safe, Gmail-safe ----
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+    const safeInviter = esc(inviterName);
+    const safeCompany = esc(companyName);
+    const safeEmail = esc(email);
+    const safeExpires = esc(expiresFormatted);
+
+    const PRIMARY = '#1F3A5F';
+    const ACCENT = '#FCBA04';
+    const TEXT = '#1f2937';
+    const MUTED = '#6b7280';
+    const BORDER = '#e5e7eb';
+    const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+
+    const wrapWord = 'word-break:break-word;overflow-wrap:anywhere;';
+
+    const detailRow = (label: string, value: string) => `
+      <tr>
+        <td style="padding:8px 0 8px 0;font-family:${FONT};font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:${MUTED};vertical-align:top;">${label}</td>
+      </tr>
+      <tr>
+        <td style="padding:0 0 12px 0;font-family:${FONT};font-size:14px;color:${TEXT};font-weight:500;line-height:1.45;${wrapWord}">${value}</td>
+      </tr>`;
+
+    const featureItems = featureList.map(f => `
+      <tr><td style="padding:3px 0;font-family:${FONT};font-size:13px;color:${TEXT};line-height:1.5;">
+        <span style="color:#22c55e;font-weight:bold;">✓</span> ${esc(f)}
+      </td></tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>${esc(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f7f9;font-family:${FONT};color:${TEXT};-webkit-text-size-adjust:100%;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f6f7f9;padding:20px 10px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;background-color:#ffffff;border:1px solid ${BORDER};border-radius:10px;overflow:hidden;">
+      <tr>
+        <td style="background-color:${PRIMARY};padding:24px 24px;text-align:center;border-bottom:3px solid ${ACCENT};">
+          <div style="font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">Ride Ready Docs</div>
+          <h1 style="margin:6px 0 0 0;font-family:${FONT};font-size:20px;font-weight:700;color:#ffffff;line-height:1.3;">Staff Invitation</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:24px 24px 8px 24px;font-family:${FONT};font-size:15px;color:${TEXT};line-height:1.6;">
+          <p style="margin:0 0 12px 0;">Hi there 👋</p>
+          <p style="margin:0 0 16px 0;${wrapWord}"><strong style="${wrapWord}">${safeInviter}</strong> has invited you to join <strong style="${wrapWord}">${safeCompany}</strong> as a staff member on Ride Ready Docs.</p>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:8px 0 16px 0;border-top:1px solid ${BORDER};">
+            <tr><td style="padding-top:12px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                ${detailRow('Invited by', safeInviter)}
+                ${detailRow('Organisation', safeCompany)}
+                ${detailRow('Invited email', safeEmail)}
+                ${detailRow('Role', 'Staff')}
+                ${detailRow('Expires', safeExpires)}
+              </table>
+            </td></tr>
+          </table>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#eff6ff;border:1px solid #dbeafe;border-radius:8px;margin:8px 0 20px 0;">
+            <tr><td style="padding:14px 16px;">
+              <div style="font-family:${FONT};font-size:13px;font-weight:600;color:${TEXT};margin-bottom:6px;">Your access will include:</div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${featureItems}</table>
+            </td></tr>
+          </table>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:20px 0;">
+            <tr><td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${inviteUrl}" style="height:46px;v-text-anchor:middle;width:240px;" arcsize="14%" strokecolor="${ACCENT}" fillcolor="${ACCENT}">
+              <center style="color:#000000;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Accept Invitation</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="${inviteUrl}" style="display:inline-block;background-color:${ACCENT};color:#000000;padding:14px 32px;text-decoration:none;border-radius:8px;font-family:${FONT};font-weight:bold;font-size:15px;line-height:1;mso-padding-alt:14px 32px;">Accept Invitation</a>
+              <!--<![endif]-->
+            </td></tr>
+          </table>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#fff8e1;border-left:3px solid ${ACCENT};border-radius:6px;margin:0 0 14px 0;">
+            <tr><td style="padding:12px 14px;font-family:${FONT};font-size:13px;color:#555;line-height:1.5;">
+              <strong>New to Ride Ready Docs?</strong> You'll create a password when you accept. If you already have an account with this email, just sign in on the invite page.
+            </td></tr>
+          </table>
+
+          <p style="font-family:${FONT};font-size:12px;color:#999;margin:14px 0 4px 0;line-height:1.5;${wrapWord}">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${inviteUrl}" style="color:${PRIMARY};${wrapWord}">${inviteUrl}</a>
+          </p>
+
+          <p style="font-family:${FONT};font-size:12px;color:#999;margin:14px 0 0 0;">
+            If you didn't expect this invite, you can safely ignore this email.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 24px 20px 24px;background-color:#fafbfc;border-top:1px solid ${BORDER};text-align:center;font-family:${FONT};font-size:11px;color:${MUTED};line-height:1.5;">
+          Sent by Ride Ready Docs &middot; <a href="https://ridereadydocs.com" style="color:${PRIMARY};text-decoration:none;">ridereadydocs.com</a>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-            .container { max-width: 560px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #1F3A5F; background-image: linear-gradient(135deg, #1F3A5F, #2F6FB2); color: white; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center; }
-            .header h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
-            .header p { margin: 0; font-size: 13px; opacity: 0.85; }
-            .content { background: #f8f9fa; padding: 28px 30px; border-radius: 0 0 12px 12px; }
-            .detail-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-            .detail-table td { padding: 8px 0; vertical-align: top; font-size: 14px; }
-            .detail-label { color: #666; width: 130px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-            .detail-value { color: #111; font-weight: 500; }
-            .button { display: inline-block; background: #FCBA04; color: #000; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; font-size: 15px; }
-            .feature-box { background: #e8f4f8; padding: 14px 16px; border-radius: 8px; margin: 16px 0; }
-            .feature-box p { margin: 0 0 6px; font-weight: 600; font-size: 13px; }
-            .feature-list { list-style: none; padding: 0; margin: 0; }
-            .feature-list li { padding: 3px 0; font-size: 13px; }
-            .feature-list li:before { content: "✓ "; color: #22c55e; font-weight: bold; }
-            .footer { text-align: center; color: #888; font-size: 11px; margin-top: 20px; padding: 0 20px; }
-            .help-text { font-size: 13px; color: #555; background: #fff8e1; padding: 12px 14px; border-radius: 8px; margin: 16px 0; border-left: 3px solid #FCBA04; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Ride Ready Docs</h1>
-              <p>Staff Invitation</p>
-            </div>
-            <div class="content">
-              <p style="font-size: 16px; margin-top: 0;">Hi there 👋</p>
-              <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> as a staff member on Ride Ready Docs.</p>
-              
-              <table class="detail-table">
-                <tr>
-                  <td class="detail-label">Invited by</td>
-                  <td class="detail-value">${inviterName}</td>
-                </tr>
-                <tr>
-                  <td class="detail-label">Organisation</td>
-                  <td class="detail-value">${companyName}</td>
-                </tr>
-                <tr>
-                  <td class="detail-label">Invited email</td>
-                  <td class="detail-value">${email}</td>
-                </tr>
-                <tr>
-                  <td class="detail-label">Role</td>
-                  <td class="detail-value">Staff</td>
-                </tr>
-                <tr>
-                  <td class="detail-label">Expires</td>
-                  <td class="detail-value">${expiresFormatted}</td>
-                </tr>
-              </table>
-
-              <div class="feature-box">
-                <p>Your access will include:</p>
-                <ul class="feature-list">
-                  ${featureList.map(f => `<li>${f}</li>`).join('')}
-                </ul>
-              </div>
-
-              <p style="text-align: center;">
-                <a href="${inviteUrl}" class="button">Accept Invitation</a>
-              </p>
-              
-              <div class="help-text">
-                <strong>New to Ride Ready Docs?</strong> You'll create a password when you accept. If you already have an account with this email, just sign in on the invite page.
-              </div>
-
-              <p style="font-size: 12px; color: #999; margin-bottom: 0;">
-                If you didn't expect this invite, you can safely ignore this email.
-              </p>
-            </div>
-            <div class="footer">
-              <p>Sent by Ride Ready Docs &middot; <a href="https://ridereadydocs.com" style="color: #888;">ridereadydocs.com</a></p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html,
     });
 
     if ((emailResponse as any)?.error) {
