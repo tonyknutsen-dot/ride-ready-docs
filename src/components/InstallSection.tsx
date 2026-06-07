@@ -152,16 +152,6 @@ const InstallSection = () => {
                 </Button>
               </Link>
             )}
-            
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={handleShare}
-              className="gap-2"
-            >
-              <Share className="h-5 w-5" />
-              Share with Colleagues
-            </Button>
           </div>
 
           {/* Help text */}

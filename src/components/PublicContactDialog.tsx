@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageCircle } from 'lucide-react';
+import appLogo from '@/assets/app-logo.jpg';
 
 interface PublicContactDialogProps {
   open?: boolean;
@@ -99,30 +100,35 @@ export const PublicContactDialog = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden">
         {!isOn('public_enquiries_enabled') ? (
-          <>
+          <div className="p-6">
             <DialogHeader>
               <DialogTitle>Contact Unavailable</DialogTitle>
               <DialogDescription>
                 Public enquiries are temporarily unavailable. Please check back later.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-4">
               <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
             </div>
-          </>
+          </div>
         ) : (
         <>
-        <DialogHeader>
-          <DialogTitle>Contact us</DialogTitle>
-          <DialogDescription>
-            Send us a message and we'll reply by email.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+        {/* Branded header */}
+        <div className="bg-[hsl(215_55%_16%)] text-white px-6 py-5 flex items-center gap-3 border-b-2 border-accent/60">
+          <img src={appLogo} alt="Ride Ready Docs" className="h-10 w-10 rounded-full ring-2 ring-white/20 shrink-0" />
+          <div className="min-w-0">
+            <DialogTitle className="text-white text-lg leading-tight">Contact Ride Ready Docs</DialogTitle>
+            <DialogDescription className="text-white/75 text-sm mt-0.5">
+              Send us a message and we'll reply by email.
+            </DialogDescription>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
@@ -196,7 +202,11 @@ export const PublicContactDialog = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold shadow-sm"
+            >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </Button>
           </div>
