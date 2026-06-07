@@ -131,7 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Check for existing pending invite for this org
     const { data: existingInvite } = await supabase
       .from("staff_invites")
-      .select("id, status, invite_token, expires_at")
+      .select("id, status, invite_token, expires_at, created_at, updated_at")
       .eq("email", normalizedEmail)
       .eq("organisation_id", organisation.id)
       .eq("status", "pending")
@@ -143,10 +143,22 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ status: "expired" })
         .eq("id", existingInvite.id);
     } else if (existingInvite) {
-      // Still valid pending invite — block duplicate
+      // Still valid pending invite — block duplicate, return structured details
+      const sentAt = existingInvite.updated_at || existingInvite.created_at;
+      const fmt = (iso: string | null) => iso
+        ? new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '';
       return new Response(
-        JSON.stringify({ error: "This email already has a pending invite for your organisation." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: `Invite already pending. An invite was already sent to ${email} on ${fmt(sentAt)} and expires on ${fmt(existingInvite.expires_at)}. Use Resend, Copy Link, or Cancel from the pending invite card.`,
+          code: "duplicate_pending",
+          details: {
+            email,
+            sentAt,
+            expiresAt: existingInvite.expires_at,
+          },
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
