@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, ${danger} 0%, #991b1b 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+    <div style="background-color: ${danger}; background-image: linear-gradient(135deg, ${danger} 0%, #991b1b 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
       <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
         <span style="font-size: 24px;">⚠️</span>
       </div>
@@ -110,7 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, ${success} 0%, #15803d 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+    <div style="background-color: ${success}; background-image: linear-gradient(135deg, ${success} 0%, #15803d 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
       <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
         <span style="font-size: 24px;">✓</span>
       </div>
@@ -130,7 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
       <p style="font-size: 15px;">All your data, documents, and settings remain intact. You can continue managing your registered items and compliance documentation as before.</p>
       
       <div style="text-align: center; margin: 32px 0;">
-        <a href="https://ridereadydocs.com/auth" style="display: inline-block; background: linear-gradient(135deg, ${success} 0%, #15803d 100%); color: white; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Log In Now</a>
+        <a href="https://ridereadydocs.com/auth" style="display: inline-block; background-color: ${success}; background-image: linear-gradient(135deg, ${success} 0%, #15803d 100%); color: white; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Log In Now</a>
       </div>
       
       <p style="margin-top: 24px; margin-bottom: 0;">Welcome back!<br><strong>The Ride Ready Docs Team</strong></p>

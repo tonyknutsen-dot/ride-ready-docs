@@ -44,7 +44,7 @@ export function clearOfflineIdentity(): void {
 
 export function saveLastRoute(path: string): void {
   // Don't save public / auth / setup routes
-  const skip = ['/', '/auth', '/profile-setup', '/staff-invite', '/tester-invite'];
+  const skip = ['/', '/auth', '/auth/callback', '/profile-setup', '/staff-invite', '/tester-invite'];
   if (skip.some(s => path === s || path.startsWith('/staff-invite/') || path.startsWith('/tester-invite/'))) return;
   try {
     localStorage.setItem(LAST_ROUTE_KEY, path);
