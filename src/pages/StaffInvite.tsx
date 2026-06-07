@@ -84,13 +84,13 @@ export default function StaffInvite() {
     validateToken();
   }, [token]);
 
-  // If user is logged in and invite is valid, try to accept
+  // If user is logged in and invite is valid, try to accept (only when emails match)
   useEffect(() => {
     const acceptInvite = async () => {
       if (!user || status !== 'valid' || accepting) return;
 
+      // Email mismatch — do not auto-accept; mismatch card is rendered below.
       if (user.email?.toLowerCase() !== inviteEmail.toLowerCase()) {
-        toast.error(`This invite was sent to ${inviteEmail}. Please sign in with that email.`);
         return;
       }
 
@@ -122,6 +122,22 @@ export default function StaffInvite() {
 
     acceptInvite();
   }, [user, status, inviteEmail, token, navigate, accepting]);
+
+  const handleSignOutAndContinue = async () => {
+    const returnPath = `/staff-invite/${token}`;
+    try {
+      sessionStorage.setItem('postAuthRedirect', returnPath);
+    } catch {}
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Sign out failed:', err);
+    }
+    navigate('/auth', {
+      replace: true,
+      state: { from: { pathname: returnPath } },
+    });
+  };
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
