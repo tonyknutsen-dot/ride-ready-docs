@@ -414,20 +414,58 @@ const Staff = () => {
               )}
 
               {/* Pending invites */}
-              {showInvites && invites.length > 0 && (
-                <div className="space-y-2 pt-1">
+              {showInvites && invites.length > 0 && (() => {
+                const isLive = (inv: PendingInviteData) =>
+                  inv.status === 'pending' && new Date(inv.expires_at).getTime() >= Date.now();
+                const live = invites.filter(isLive);
+                const history = invites.filter(inv => !isLive(inv));
+                return (
+                  <>
+                    <div className="space-y-2 pt-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+                        Pending Invitations — {live.length}
+                      </p>
+                      {live.length === 0 ? (
+                        <p className="text-xs text-muted-foreground px-0.5 py-1">No pending staff invitations.</p>
+                      ) : live.map(invite => (
+                        <PendingInviteCard
+                          key={invite.id}
+                          invite={invite}
+                          canManage={canManage}
+                          onResend={() => resendInvite(invite)}
+                          onCancel={() => cancelInvite(invite)}
+                          onCopyLink={() => copyInviteLink(invite)}
+                        />
+                      ))}
+                    </div>
+                    {history.length > 0 && (
+                      <div className="space-y-2 pt-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+                          Expired & cancelled — {history.length}
+                        </p>
+                        {history.map(invite => (
+                          <PendingInviteCard
+                            key={invite.id}
+                            invite={invite}
+                            canManage={canManage}
+                            onResend={() => resendInvite(invite)}
+                            onCancel={() => cancelInvite(invite)}
+                            onCopyLink={() => copyInviteLink(invite)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Empty state for the invites section when there are staff but no invites at all */}
+              {showInvites && invites.length === 0 && staff.length > 0 && (
+                <div className="pt-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
-                    Pending — {invites.length}
+                    Pending Invitations — 0
                   </p>
-                  {invites.map(invite => (
-                    <PendingInviteCard
-                      key={invite.id}
-                      invite={invite}
-                      canManage={canManage}
-                      onResend={() => resendInvite(invite)}
-                      onCancel={() => cancelInvite(invite.id)}
-                    />
-                  ))}
+                  <p className="text-xs text-muted-foreground px-0.5 py-1">No pending staff invitations.</p>
                 </div>
               )}
             </div>
