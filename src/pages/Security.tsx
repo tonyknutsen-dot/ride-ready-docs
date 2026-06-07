@@ -288,9 +288,9 @@ const Security = () => {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Industry Standards</h3>
+                  <h3 className="text-lg font-semibold mb-2">Security Practices</h3>
                   <p className="text-muted-foreground">
-                    While not legally required for our industry, we follow security best practices from standards like ISO 27001 and SOC 2 to ensure robust data protection.
+                    We follow widely recognised security practices for cloud-hosted applications. Ride Ready Docs does not hold third-party security certifications, and we do not claim to.
                   </p>
                 </div>
               </CardContent>
