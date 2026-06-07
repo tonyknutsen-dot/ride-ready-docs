@@ -95,7 +95,17 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
         },
       });
 
-      if (response.error) throw new Error(response.error.message || 'Failed to send invite');
+      if (response.error) {
+        let realMessage = response.error.message || 'Failed to send invite';
+        try {
+          const ctx: any = (response.error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) realMessage = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(realMessage);
+      }
 
       toast({ title: 'Invitation Sent', description: `An invite has been sent to ${email}` });
       onOpenChange(false);
