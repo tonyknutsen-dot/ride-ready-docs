@@ -341,7 +341,7 @@ const Staff = () => {
           <h1 className="text-lg font-bold">Staff & Permissions</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {staff.length} member{staff.length !== 1 ? 's' : ''}
-            {invites.length > 0 && ` · ${invites.length} pending`}
+            {livePendingCount > 0 && ` · ${livePendingCount} pending`}
           </p>
         </div>
         {canManage && (
