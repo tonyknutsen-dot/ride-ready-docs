@@ -59,25 +59,28 @@ export default function StaffInvite() {
           body: { token },
         });
 
-        if (error) throw error;
+        // Network/transport error only — backend returns 200 for invite-state issues
+        if (error && !data) throw error;
 
-        if (data.valid) {
+        if (data?.valid) {
           setStatus('valid');
           setInviteEmail(data.email);
           setOrganisationName(data.organisationName || 'the organisation');
           setPermissionLevel(data.permissionLevel || 'staff');
-        } else if (data.status === 'accepted') {
+        } else if (data?.status === 'accepted') {
           setStatus('already_accepted');
-        } else if (data.status === 'expired') {
+        } else if (data?.status === 'expired') {
           setStatus('expired');
+        } else if (data?.status === 'cancelled' || data?.status === 'revoked') {
+          setStatus('cancelled');
         } else {
           setStatus('invalid');
-          setErrorMessage(data.error || 'Invalid invite');
+          setErrorMessage('This invite link is no longer valid.');
         }
-      } catch (error: any) {
-        console.error('Error validating invite:', error);
+      } catch (err: any) {
+        console.error('Error validating invite:', err);
         setStatus('invalid');
-        setErrorMessage(error.message || 'Failed to validate invite');
+        setErrorMessage('We could not check this invite right now. Please try again in a moment.');
       }
     };
 
