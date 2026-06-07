@@ -1,5 +1,6 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Settings2, Eye, Trash2, Mail, X, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MoreVertical, Settings2, Eye, Trash2, Mail, X, Clock, Link2, AlertTriangle, CheckCircle2, Ban } from 'lucide-react';
 import { StaffRoleBadge } from './StaffRoleBadge';
 import { format } from 'date-fns';
 import type { AppRole } from '@/utils/permissions';
