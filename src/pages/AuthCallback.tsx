@@ -23,11 +23,11 @@ const AuthCallback = () => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('setup_complete, full_name')
+          .select('company_name, controller_name')
           .eq('user_id', userId)
           .maybeSingle();
         if (cancelled) return;
-        const complete = !!profile?.setup_complete;
+        const complete = !!(profile?.company_name && profile?.controller_name);
         navigate(complete ? '/overview' : '/profile-setup', { replace: true });
       } catch {
         if (!cancelled) navigate('/profile-setup', { replace: true });
