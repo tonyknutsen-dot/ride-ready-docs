@@ -1,42 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSubscription } from "@/hooks/useSubscription";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
-import { FileText, Settings, ArrowRight, Check, Globe } from "lucide-react";
+import { ArrowRight, Check, Globe, Smartphone } from "lucide-react";
 
 // Lazy load non-critical components to improve LCP
-const Dialog = lazy(() => import("@/components/ui/dialog").then(m => ({ default: m.Dialog })));
-const DialogContent = lazy(() => import("@/components/ui/dialog").then(m => ({ default: m.DialogContent })));
-const PlanSelection = lazy(() => import("./PlanSelection").then(m => ({ default: m.PlanSelection })));
 const DeviceHintBanner = lazy(() => import("./DeviceHintBanner"));
 const TrustBadges = lazy(() => import("./TrustBadges"));
 
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscription } = useSubscription();
-  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
-  const handleDocsApp = () => {
-    const destination = user ? '/overview' : '/auth';
-    navigate(destination);
+  const handlePrimary = () => {
+    navigate(user ? '/overview' : '/auth');
   };
 
-  const handleChecksApp = () => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const hasAdvancedAccess = subscription?.subscriptionStatus === 'active';
-    
-    if (hasAdvancedAccess) {
-      navigate('/checks');
-    } else {
-      setShowUpgradeDialog(true);
-    }
+  const handleSecondary = () => {
+    const el = document.getElementById('features');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
