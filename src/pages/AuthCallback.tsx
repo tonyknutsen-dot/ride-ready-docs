@@ -11,6 +11,8 @@ type Status = 'working' | 'error' | 'success';
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const initialRecoveryParams = parseAuthRecoveryParams();
+  const initiallyExpiredRecoveryLink = initialRecoveryParams.isRecoveryError;
   const [status, setStatus] = useState<Status>('working');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [resending, setResending] = useState(false);
@@ -62,20 +64,9 @@ const AuthCallback = () => {
         }
 
         if (errorParam) {
-          if (recoveryParams.isRecoveryError) {
-            logRecoveryDiagnostic('routing expired recovery link to reset error screen', {
-              error: recoveryParams.error,
-              errorCode: recoveryParams.errorCode,
-            });
-            navigate(
-              '/auth/reset-password#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired',
-              { replace: true }
-            );
-            return;
-          }
           setStatus('error');
           setIsResetLinkError(recoveryParams.isRecoveryError);
-          setErrorMessage(decodeURIComponent(errorParam).replace(/\+/g, ' '));
+          setErrorMessage(recoveryParams.isRecoveryError ? RESET_LINK_EXPIRED_MESSAGE : decodeURIComponent(errorParam).replace(/\+/g, ' '));
           return;
         }
 
@@ -211,19 +202,21 @@ const AuthCallback = () => {
             </>
           )}
 
-          {status === 'error' && (
+          {(status === 'error' || initiallyExpiredRecoveryLink) && (
             <>
               <AlertCircle className="h-8 w-8 text-destructive" aria-hidden />
-              <h1 className="text-xl font-semibold text-foreground">We couldn’t confirm your account</h1>
+              <h1 className="text-xl font-semibold text-foreground">
+                {isResetLinkError || initiallyExpiredRecoveryLink ? 'Reset link expired' : 'We couldn’t confirm your account'}
+              </h1>
               <p
                 className="text-sm text-muted-foreground break-words"
                 style={{ overflowWrap: 'anywhere' }}
               >
-                {errorMessage}
+                {initiallyExpiredRecoveryLink ? RESET_LINK_EXPIRED_MESSAGE : errorMessage}
               </p>
 
               <div className="w-full flex flex-col gap-2 pt-2">
-                {isResetLinkError ? (
+                {isResetLinkError || initiallyExpiredRecoveryLink ? (
                   <Button onClick={() => navigate('/auth?reset=true', { replace: true })} className="w-full">
                     Request a new reset email
                   </Button>
