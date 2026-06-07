@@ -55,6 +55,66 @@ const ResetPassword = () => {
     });
 
     (async () => {
+      if (params.accessToken && params.refreshToken) {
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: params.accessToken,
+          refresh_token: params.refreshToken,
+        });
+        if (cancelled) return;
+        if (sessionError) {
+          logRecoveryDiagnostic('/auth/reset-password hash session failed', { message: sessionError.message });
+          setError(RESET_LINK_EXPIRED_MESSAGE);
+          setHasSession(false);
+          setChecking(false);
+          return;
+        }
+        if (data.session?.user) {
+          logRecoveryDiagnostic('/auth/reset-password hash session established', { userIdPresent: true });
+          setHasSession(true);
+          setChecking(false);
+          return;
+        }
+      }
+
+      if (params.isRecovery && params.tokenHash) {
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          type: 'recovery',
+          token_hash: params.tokenHash,
+        });
+        if (cancelled) return;
+        if (verifyError) {
+          logRecoveryDiagnostic('/auth/reset-password token exchange failed', { message: verifyError.message });
+          setError(RESET_LINK_EXPIRED_MESSAGE);
+          setHasSession(false);
+          setChecking(false);
+          return;
+        }
+        if (data.session?.user) {
+          logRecoveryDiagnostic('/auth/reset-password token session established', { userIdPresent: true });
+          setHasSession(true);
+          setChecking(false);
+          return;
+        }
+      }
+
+      if (params.isRecovery && params.code) {
+        const { data, error: codeError } = await supabase.auth.exchangeCodeForSession(params.code);
+        if (cancelled) return;
+        if (codeError) {
+          logRecoveryDiagnostic('/auth/reset-password code exchange failed', { message: codeError.message });
+          setError(RESET_LINK_EXPIRED_MESSAGE);
+          setHasSession(false);
+          setChecking(false);
+          return;
+        }
+        if (data.session?.user) {
+          logRecoveryDiagnostic('/auth/reset-password code session established', { userIdPresent: true });
+          setHasSession(true);
+          setChecking(false);
+          return;
+        }
+      }
+
       for (let i = 0; i < 16; i++) {
         const { data: { session } } = await supabase.auth.getSession();
         if (cancelled) return;

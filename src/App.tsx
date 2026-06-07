@@ -25,6 +25,7 @@ import { OfflineSuspense } from "@/components/OfflineSuspense";
 import { MaintenanceGuard } from "@/components/MaintenanceGuard";
 import { FeatureFlagGate } from "@/components/FeatureFlagGate";
 import { useLocation } from "react-router-dom";
+import { AuthRouteErrorBoundary } from "@/components/AuthRouteErrorBoundary";
 
 /** Wrapper that passes current pathname to OfflineSuspense so it resets on navigation */
 function LocationAwareOfflineSuspense({ children }: { children: React.ReactNode }) {
@@ -132,12 +133,14 @@ function StandaloneAuthRouteGate({ children }: { children: React.ReactNode }) {
 
   if (STANDALONE_AUTH_ROUTES.has(pathname)) {
     return (
-      <LocationAwareOfflineSuspense>
-        <Routes>
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
-        </Routes>
-      </LocationAwareOfflineSuspense>
+      <AuthRouteErrorBoundary resetKey={pathname}>
+        <LocationAwareOfflineSuspense>
+          <Routes>
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+          </Routes>
+        </LocationAwareOfflineSuspense>
+      </AuthRouteErrorBoundary>
     );
   }
 
@@ -152,8 +155,8 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <CheckDebugOverlay />
-        <AuthProvider>
-          <StandaloneAuthRouteGate>
+        <StandaloneAuthRouteGate>
+          <AuthProvider>
             <LastRouteTracker />
             <AdminProvider>
             <TesterProvider>
@@ -870,8 +873,8 @@ const App = () => (
               </StaffProvider>
             </TesterProvider>
           </AdminProvider>
-          </StandaloneAuthRouteGate>
-        </AuthProvider>
+          </AuthProvider>
+        </StandaloneAuthRouteGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
