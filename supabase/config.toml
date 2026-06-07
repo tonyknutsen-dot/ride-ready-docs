@@ -87,6 +87,9 @@ verify_jwt = false
 [functions.send-welcome-email]
 verify_jwt = false
 
+[functions.internal-new-signup-alert]
+verify_jwt = false
+
 [functions.send-daily-check-report]
 verify_jwt = true
 
