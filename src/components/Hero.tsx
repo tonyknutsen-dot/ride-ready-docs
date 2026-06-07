@@ -88,15 +88,6 @@ const Hero = () => {
             </Button>
           </div>
 
-          {/* Device suitability note */}
-          <p className="text-xs sm:text-sm text-white/70 max-w-2xl mx-auto mb-2 flex items-start sm:items-center justify-center gap-2 px-2">
-            <Smartphone className="h-4 w-4 text-accent shrink-0 mt-0.5 sm:mt-0" />
-            <span>
-              Works on mobile, tablet and laptop. Daily checks, defects, wind logs and pressure readings
-              are designed for mobile; initial setup and bulk document uploads are easier on tablet or laptop.
-            </span>
-          </p>
-
           {/* Trust indicators */}
           <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70 animate-fade-up animate-delay-500">
             <div className="flex items-center gap-2">
@@ -120,12 +111,22 @@ const Hero = () => {
             </Suspense>
           </div>
 
+          {/* Device suitability note - moved below trust badges */}
+          <p className="mt-6 text-xs sm:text-sm text-white/70 max-w-2xl mx-auto flex items-start sm:items-center justify-center gap-2 px-2">
+            <Smartphone className="h-4 w-4 text-accent shrink-0 mt-0.5 sm:mt-0" />
+            <span>
+              Works on mobile, tablet and laptop. Daily checks, defects, wind logs and pressure readings
+              are designed for mobile; initial setup and bulk document uploads are easier on tablet or laptop.
+            </span>
+          </p>
+
           {/* Device Hint for Mobile Users */}
           <div className="mt-6 max-w-lg mx-auto animate-fade-up animate-delay-600">
             <Suspense fallback={null}>
               <DeviceHintBanner variant="hero" />
             </Suspense>
           </div>
+
         </div>
       </div>
 
