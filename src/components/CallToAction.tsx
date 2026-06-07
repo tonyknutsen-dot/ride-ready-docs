@@ -77,12 +77,11 @@ const CallToAction = () => {
             
             <Button 
               size="lg" 
-              variant="outline"
-              className="w-full sm:w-auto border-white/30 text-white hover:bg-white/10 px-6 py-6 text-base font-semibold"
+              className="w-full sm:w-auto bg-[hsl(215_55%_22%)] hover:bg-[hsl(215_55%_28%)] text-white border-2 border-white/60 px-6 py-6 text-base font-semibold"
               onClick={handleShare}
             >
               <Share className="mr-2 h-4 w-4" />
-              Share with a Colleague
+              Share with a colleague
             </Button>
           </div>
           
