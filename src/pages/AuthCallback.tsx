@@ -62,9 +62,20 @@ const AuthCallback = () => {
         }
 
         if (errorParam) {
+          if (recoveryParams.isRecoveryError) {
+            logRecoveryDiagnostic('routing expired recovery link to reset error screen', {
+              error: recoveryParams.error,
+              errorCode: recoveryParams.errorCode,
+            });
+            navigate(
+              '/auth/reset-password#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired',
+              { replace: true }
+            );
+            return;
+          }
           setStatus('error');
           setIsResetLinkError(recoveryParams.isRecoveryError);
-          setErrorMessage(recoveryParams.isRecoveryError ? RESET_LINK_EXPIRED_MESSAGE : decodeURIComponent(errorParam).replace(/\+/g, ' '));
+          setErrorMessage(decodeURIComponent(errorParam).replace(/\+/g, ' '));
           return;
         }
 
