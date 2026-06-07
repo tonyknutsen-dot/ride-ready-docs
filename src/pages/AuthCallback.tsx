@@ -16,6 +16,7 @@ const AuthCallback = () => {
   const [resending, setResending] = useState(false);
   const [resendDone, setResendDone] = useState(false);
   const [emailForResend, setEmailForResend] = useState<string>('');
+  const [isResetLinkError, setIsResetLinkError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +46,7 @@ const AuthCallback = () => {
     const handle = async () => {
       try {
         const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
+        const code = recoveryParams.code ?? url.searchParams.get('code');
         const errorParam = recoveryParams.errorDescription || recoveryParams.error;
 
         if (recoveryParams.isRecovery || recoveryParams.isRecoveryError) {
@@ -62,6 +63,7 @@ const AuthCallback = () => {
 
         if (errorParam) {
           setStatus('error');
+          setIsResetLinkError(recoveryParams.isRecoveryError);
           setErrorMessage(recoveryParams.isRecoveryError ? RESET_LINK_EXPIRED_MESSAGE : decodeURIComponent(errorParam).replace(/\+/g, ' '));
           return;
         }
@@ -74,6 +76,7 @@ const AuthCallback = () => {
           if (error) {
             logRecoveryDiagnostic('Supabase recovery token exchange failed', { message: error.message });
             setStatus('error');
+            setIsResetLinkError(true);
             setErrorMessage(RESET_LINK_EXPIRED_MESSAGE);
             return;
           }
@@ -95,6 +98,7 @@ const AuthCallback = () => {
             }
             console.error('[AuthCallback] exchangeCodeForSession failed:', error);
             setStatus('error');
+            setIsResetLinkError(recoveryParams.isRecovery);
             setErrorMessage(recoveryParams.isRecovery ? RESET_LINK_EXPIRED_MESSAGE : error.message || 'Could not confirm your email. The link may have expired.');
             return;
           }
@@ -113,6 +117,9 @@ const AuthCallback = () => {
         // Wait briefly for onAuthStateChange to fire.
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          if (recoveryParams.isRecovery) {
+            logRecoveryDiagnostic('Supabase recovery hash session detected', { userIdPresent: true });
+          }
           setStatus('success');
           setEmailForResend(session.user.email ?? '');
           await route(session.user.id);
@@ -125,6 +132,9 @@ const AuthCallback = () => {
           if (cancelled) return;
           const { data: { session: s } } = await supabase.auth.getSession();
           if (s?.user) {
+            if (recoveryParams.isRecovery) {
+              logRecoveryDiagnostic('Supabase recovery hash session detected after wait', { userIdPresent: true });
+            }
             setStatus('success');
             setEmailForResend(s.user.email ?? '');
             await route(s.user.id);
