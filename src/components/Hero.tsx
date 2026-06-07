@@ -50,18 +50,19 @@ const Hero = () => {
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
-            Ride operations,
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
+            Complete Operations
             <br />
-            documents & <span className="text-accent">compliance</span>
-            <br />
-            in one place
+            <span className="text-accent">Management</span>
           </h1>
+          <p className="text-base sm:text-lg md:text-xl text-white/80 mb-6 max-w-2xl mx-auto">
+            for ride, amusement and event operators
+          </p>
 
           {/* Subheadline - LCP element */}
-          <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
-            One complete system for mobile ride, inflatable, attraction, stall, game and event operators —
-            equipment records, daily checks, defects, maintenance, wind &amp; pressure logs, documents and compliance records.
+          <p className="text-base md:text-lg text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Manage equipment records, documents, safety checks, defects, maintenance,
+            wind and pressure logs, and compliance records in one secure system.
           </p>
 
           {/* CTA Buttons — single primary + secondary */}
@@ -71,16 +72,15 @@ const Hero = () => {
               className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-6 text-base font-semibold shadow-glow transition-smooth group"
               onClick={handlePrimary}
             >
-              Start free trial
+              Start Free Trial
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button
               size="lg"
-              variant="outline"
-              className="w-full sm:w-auto border-white/40 bg-white/5 hover:bg-white/15 text-white px-8 py-6 text-base font-semibold backdrop-blur-sm"
+              className="w-full sm:w-auto bg-[hsl(215_45%_18%)] hover:bg-[hsl(215_45%_24%)] text-white border-2 border-white/70 px-8 py-6 text-base font-semibold"
               onClick={handleSecondary}
             >
-              See features
+              See Features
             </Button>
           </div>
 
@@ -97,19 +97,15 @@ const Hero = () => {
           <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70 animate-fade-up animate-delay-500">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
-              <span>Full access free for 14 days</span>
+              <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
-              <span>No payment details required</span>
+              <span>Full access for 14 days</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
-              <span>Install on any device</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-accent" />
-              <span>UK, Europe, Americas & Worldwide</span>
+              <span>Works on mobile, tablet and laptop</span>
             </div>
           </div>
 
