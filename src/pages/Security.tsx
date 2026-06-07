@@ -10,7 +10,7 @@ const Security = () => {
     {
       icon: Lock,
       title: "End-to-End Encryption",
-      description: "All data transmitted between your browser and our servers is encrypted using industry-standard TLS 1.3 protocol, ensuring your documents and information are protected during transmission."
+      description: "Data transmitted between your browser and our servers is encrypted in transit using standard HTTPS, helping protect your documents and information while they travel across the internet."
     },
     {
       icon: Database,
