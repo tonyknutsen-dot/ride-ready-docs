@@ -80,26 +80,25 @@ const Features = () => {
             Features
           </Badge>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
-            Everything You Need,{" "}
-            <span className="text-primary">One Complete Platform</span>
+            One complete system for{" "}
+            <span className="text-primary">ride operations</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            All features included with every plan. Perfect for rides, stalls, games, inflatables, attractions, and equipment.
+            Equipment records, daily checks, defects, maintenance, wind &amp; pressure logs,
+            documents and compliance — all in one place. Designed for rides, inflatables,
+            games, stalls, attractions, food stalls and general equipment.
           </p>
         </div>
 
-        {/* Documents & Compliance */}
+        {/* Records & Compliance */}
         <div className="mb-10">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-accent/10 rounded-xl">
                 <FileText className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="text-xl md:text-2xl font-bold">Documents & Compliance</h3>
+              <h3 className="text-xl md:text-2xl font-bold">Equipment records &amp; compliance</h3>
             </div>
-            <Badge className="bg-accent/10 text-accent border-accent/20 hover:bg-accent/20">
-              Included
-            </Badge>
           </div>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
