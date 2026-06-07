@@ -36,6 +36,7 @@ function LocationAwareOfflineSuspense({ children }: { children: React.ReactNode 
 import ComingSoon from "./pages/ComingSoon";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
 
 // Lazy load non-critical pages for better initial load
 const Overview = lazy(() => import("./pages/Overview"));
