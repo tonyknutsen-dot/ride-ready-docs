@@ -280,11 +280,17 @@ const Staff = () => {
   };
 
   // Counts
+  // Counts (pending = live pendings only, not expired/cancelled)
+  const livePendingCount = useMemo(
+    () => invites.filter(i => i.status === 'pending' && new Date(i.expires_at).getTime() >= Date.now()).length,
+    [invites]
+  );
   const counts = useMemo(() => ({
     all: staff.length,
     staff: staff.length,
-    pending: invites.length,
-  }), [staff, invites]);
+    pending: livePendingCount,
+  }), [staff, livePendingCount]);
+
 
   // Filtered list
   const filteredStaff = useMemo(() => {
