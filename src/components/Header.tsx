@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
+import { PublicContactDialog } from "@/components/PublicContactDialog";
 import appLogo from "@/assets/app-logo.jpg";
 
 const Header = () => {
@@ -217,10 +218,17 @@ const Header = () => {
         )}
       </div>
       
-      <ContactSupportDialog 
-        open={contactDialogOpen} 
-        onOpenChange={setContactDialogOpen} 
-      />
+      {user ? (
+        <ContactSupportDialog 
+          open={contactDialogOpen} 
+          onOpenChange={setContactDialogOpen} 
+        />
+      ) : (
+        <PublicContactDialog
+          open={contactDialogOpen}
+          onOpenChange={setContactDialogOpen}
+        />
+      )}
     </header>
   );
 };

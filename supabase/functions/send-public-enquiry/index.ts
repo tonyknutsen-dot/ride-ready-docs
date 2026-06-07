@@ -10,9 +10,12 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 interface PublicEnquiryRequest {
   name: string;
   email: string;
+  phone?: string;
   company: string;
   enquiryType: string;
   message: string;
+  source?: string;
+  timestamp?: string;
   honeypot?: string; // Hidden field for bot detection
 }
 
@@ -53,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
       return createBlockedIpResponse(blockResult, corsHeaders);
     }
 
-    const { name, email, company, enquiryType, message, honeypot }: PublicEnquiryRequest = await req.json();
+    const { name, email, phone, company, enquiryType, message, source, timestamp, honeypot }: PublicEnquiryRequest = await req.json();
     
     // Honeypot check - bots will fill this hidden field
     if (honeypot) {
@@ -86,8 +89,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     const safeName = escapeHtml(name);
     const safeEmail = escapeHtml(email);
-    const safeCompany = escapeHtml(company);
+    const safePhone = escapeHtml(phone || '');
+    const safeCompany = escapeHtml(company || '');
     const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+    const safeSource = escapeHtml(source || '');
+    const safeTimestamp = escapeHtml(timestamp || new Date().toISOString());
     const typeLabel = enquiryTypeLabels[enquiryType] || 'General Enquiry';
 
     const htmlContent = `
@@ -132,8 +138,15 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr><td style="height: 12px;"></td></tr>
                       <tr>
                         <td style="padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">
-                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Company</p>
-                          <p style="margin: 0; font-size: 16px; color: #1e293b;">${safeCompany}</p>
+                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Phone</p>
+                          <p style="margin: 0; font-size: 16px; color: #1e293b;">${safePhone || '—'}</p>
+                        </td>
+                      </tr>
+                      <tr><td style="height: 12px;"></td></tr>
+                      <tr>
+                        <td style="padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">
+                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Business / Organisation</p>
+                          <p style="margin: 0; font-size: 16px; color: #1e293b;">${safeCompany || '—'}</p>
                         </td>
                       </tr>
                       <tr><td style="height: 24px;"></td></tr>
@@ -143,6 +156,14 @@ const handler = async (req: Request): Promise<Response> => {
                           <div style="padding: 20px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #f97316;">
                             <p style="margin: 0; font-size: 15px; color: #334155; line-height: 1.6;">${safeMessage}</p>
                           </div>
+                        </td>
+                      </tr>
+                      <tr><td style="height: 16px;"></td></tr>
+                      <tr>
+                        <td style="padding: 12px 16px; background-color: #f8fafc; border-radius: 8px;">
+                          <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Source</p>
+                          <p style="margin: 0; font-size: 13px; color: #1e293b; word-break: break-all;">${safeSource || '—'}</p>
+                          <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">Submitted: ${safeTimestamp}</p>
                         </td>
                       </tr>
                     </table>
@@ -171,7 +192,7 @@ const handler = async (req: Request): Promise<Response> => {
     const enquirySubject = `[${typeLabel}] New enquiry from ${name}`;
     const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready <notifications@ridereadydocs.com>",
-      to: ["info@ridereadydocs.com"],
+      to: ["info@knutssoftware.co.uk", "info@ridereadydocs.com"],
       replyTo: email,
       subject: enquirySubject,
       html: htmlContent,
