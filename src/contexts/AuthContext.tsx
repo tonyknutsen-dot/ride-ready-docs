@@ -340,6 +340,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await supabase.functions.invoke('send-welcome-email', {
             body: { email }
           });
+
+          // Non-blocking internal alert to ops inbox for new controller signups.
+          // Failures must never affect onboarding.
+          supabase.functions
+            .invoke('internal-new-signup-alert', { body: { email } })
+            .catch((alertErr) => {
+              console.error('Failed to send internal signup alert:', alertErr);
+            });
         } catch (emailError) {
           console.error('Failed to send welcome email:', emailError);
         }
