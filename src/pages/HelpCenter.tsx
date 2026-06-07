@@ -16,6 +16,7 @@ import { BugReportDialog } from "@/components/BugReportDialog";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTerminology } from "@/hooks/useTerminology";
+import { useStaff } from "@/contexts/StaffContext";
 
 // ── types ────────────────────────────────────────────────────────────────────
 interface HelpTopic {
