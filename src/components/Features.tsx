@@ -125,18 +125,15 @@ const Features = () => {
           </div>
         </div>
 
-        {/* Checks & Maintenance */}
+        {/* Daily operations */}
         <div>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-primary/10 rounded-xl">
                 <Wrench className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl md:text-2xl font-bold">Checks & Maintenance</h3>
+              <h3 className="text-xl md:text-2xl font-bold">Daily operations, checks &amp; maintenance</h3>
             </div>
-            <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-              Included
-            </Badge>
           </div>
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
