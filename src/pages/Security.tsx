@@ -73,7 +73,7 @@ const Security = () => {
     {
       title: "Privacy & Compliance",
       items: [
-        "GDPR compliant data processing and storage",
+        "Privacy-focused data handling aligned with UK GDPR principles",
         "Clear data retention and deletion policies",
         "No selling or sharing of user data",
         "Minimal data collection - only what's necessary",
