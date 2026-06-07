@@ -9,18 +9,28 @@ import { toast } from "@/hooks/use-toast";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { useAppRole } from "@/hooks/useAppRole";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
-const SUGGESTED_QUESTIONS = [
+const CONTROLLER_SUGGESTED_QUESTIONS = [
   "How do I add my first ride?",
   "What documents should I upload?",
   "How do daily checks work?",
   "What's included in my plan?",
   "How do I schedule inspections?",
+];
+
+const STAFF_SUGGESTED_QUESTIONS = [
+  "How do I start a check?",
+  "How do I report a defect?",
+  "How do I log maintenance?",
+  "How do I record a wind reading?",
+  "How do I record a pressure reading?",
+  "How do I view my assigned equipment?",
 ];
 
 export function HelpChatWidget() {
