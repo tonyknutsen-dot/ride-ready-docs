@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@4.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
 import { auditedResendSend } from "../_shared/resend-audit.ts";
@@ -13,6 +14,8 @@ const accent = '#f59e0b';
 
 interface WelcomeEmailRequest {
   email: string;
+  asStaff?: boolean;
+  organisationName?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,7 +27,10 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { email }: WelcomeEmailRequest = await req.json();
+    const body: WelcomeEmailRequest = await req.json();
+    const email = body.email;
+    let asStaff = body.asStaff === true;
+    let organisationName = body.organisationName || '';
 
     if (!email) {
       return new Response(
@@ -33,9 +39,88 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Sending welcome email to: ${email}`);
+    // Defensive guard: if not explicitly flagged as staff, look up whether
+    // this email has an accepted/pending staff invite. If so, treat as staff
+    // so controller-style welcome wording (trial, Go to Dashboard) is never
+    // sent to invited staff members.
+    if (!asStaff) {
+      try {
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+        const { data: invite } = await supabaseAdmin
+          .from("staff_invites")
+          .select("status, organisations(name)")
+          .eq("email", email.toLowerCase())
+          .in("status", ["pending", "accepted"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (invite) {
+          asStaff = true;
+          if (!organisationName) {
+            organisationName = (invite as any).organisations?.name || '';
+          }
+        }
+      } catch (lookupErr) {
+        console.warn("Staff invite lookup failed, defaulting to controller welcome:", lookupErr);
+      }
+    }
+
+    console.log(`Sending welcome email to: ${email} (asStaff=${asStaff})`);
 
     const currentYear = new Date().getFullYear();
+
+    if (asStaff) {
+      const orgLine = organisationName
+        ? `You have joined <strong>${organisationName}</strong> on Ride Ready Docs.`
+        : `You have joined a team on Ride Ready Docs.`;
+      const staffHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Welcome to Ride Ready Docs</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: ${primary}; background-image: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); padding: 32px; border-radius: 12px 12px 0 0; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Welcome to the team</h1>
+    </div>
+    <div style="background: white; padding: 32px; border: 1px solid #e5e7eb; border-top: none;">
+      <p style="font-size: 15px; margin-top: 0;">${orgLine}</p>
+      <p style="font-size: 15px;">You can now carry out checks, defect reports, maintenance records, wind logs and pressure readings on assigned equipment.</p>
+      <p style="font-size: 14px; color: #6b7280;">Your access is managed by your organisation's controller. There is no trial, subscription or billing on your staff login.</p>
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="https://ridereadydocs.com/overview" style="display: inline-block; background-color: ${primary}; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Open Ride Ready Docs</a>
+      </div>
+      <p style="font-size: 13px; color: #6b7280; margin-bottom: 0;">Need help? Contact your controller or <a href="mailto:info@ridereadydocs.com" style="color: ${primary}; text-decoration: none;">info@ridereadydocs.com</a></p>
+    </div>
+    <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
+      <p style="color: #6b7280; font-size: 12px; margin: 0;">© ${currentYear} Ride Ready Docs</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const staffSubject = organisationName
+        ? `You've joined ${organisationName} on Ride Ready Docs`
+        : `You've joined the team on Ride Ready Docs`;
+
+      const staffResponse = await auditedResendSend(resend, {
+        from: "Ride Ready Docs <info@ridereadydocs.com>",
+        to: [email],
+        subject: staffSubject,
+        html: staffHtml,
+      }, {
+        function_name: 'send-welcome-email',
+        template_name: 'welcome-email-staff',
+      });
+
+      return new Response(JSON.stringify(staffResponse), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     const html = `
 <!DOCTYPE html>

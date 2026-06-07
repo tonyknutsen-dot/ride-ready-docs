@@ -322,6 +322,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!error) {
       setTimeout(async () => {
         try {
+          // Skip controller welcome email if this email has a pending/accepted
+          // staff invite — invited staff get a staff-specific welcome instead.
+          const { data: staffInvite } = await supabase
+            .from('staff_invites')
+            .select('id')
+            .eq('email', email.toLowerCase())
+            .in('status', ['pending', 'accepted'])
+            .limit(1)
+            .maybeSingle();
+
+          if (staffInvite) {
+            console.log('Skipping controller welcome email — staff invite exists for', email);
+            return;
+          }
+
           await supabase.functions.invoke('send-welcome-email', {
             body: { email }
           });
