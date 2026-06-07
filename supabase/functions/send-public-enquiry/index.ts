@@ -89,8 +89,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     const safeName = escapeHtml(name);
     const safeEmail = escapeHtml(email);
-    const safeCompany = escapeHtml(company);
+    const safePhone = escapeHtml(phone || '');
+    const safeCompany = escapeHtml(company || '');
     const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+    const safeSource = escapeHtml(source || '');
+    const safeTimestamp = escapeHtml(timestamp || new Date().toISOString());
     const typeLabel = enquiryTypeLabels[enquiryType] || 'General Enquiry';
 
     const htmlContent = `
