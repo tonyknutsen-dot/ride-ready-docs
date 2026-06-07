@@ -15,7 +15,7 @@ type AuditAction =
 type ResourceType = 
   | 'document' | 'ride' | 'check' | 'check_template'
   | 'defect' | 'maintenance' | 'risk_assessment' | 'risk_library'
-  | 'profile' | 'staff' | 'session' | 'ride_category'
+  | 'profile' | 'staff' | 'staff_invite' | 'session' | 'ride_category'
   | 'check_library_item' | 'marketing_contact' | 'marketing_campaign'
   | 'document_type' | 'equipment_type' | 'equipment_type_request'
   | 'document_type_request' | 'check_intake' | 'risk_intake'
