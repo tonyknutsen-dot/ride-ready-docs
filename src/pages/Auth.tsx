@@ -132,8 +132,17 @@ const Auth = () => {
         }
         // No MFA or already verified — proceed
         setIsOAuthCallback(false);
-        const from = (location.state as any)?.from?.pathname || '/overview';
-        navigate(from, { replace: true });
+        let from = (location.state as any)?.from?.pathname;
+        if (!from) {
+          try {
+            const stored = sessionStorage.getItem('postAuthRedirect');
+            if (stored) {
+              sessionStorage.removeItem('postAuthRedirect');
+              from = stored;
+            }
+          } catch {}
+        }
+        navigate(from || '/overview', { replace: true });
       })();
     }
     if (!authLoading && !user) {
