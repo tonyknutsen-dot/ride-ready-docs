@@ -218,10 +218,17 @@ const Header = () => {
         )}
       </div>
       
-      <ContactSupportDialog 
-        open={contactDialogOpen} 
-        onOpenChange={setContactDialogOpen} 
-      />
+      {user ? (
+        <ContactSupportDialog 
+          open={contactDialogOpen} 
+          onOpenChange={setContactDialogOpen} 
+        />
+      ) : (
+        <PublicContactDialog
+          open={contactDialogOpen}
+          onOpenChange={setContactDialogOpen}
+        />
+      )}
     </header>
   );
 };
