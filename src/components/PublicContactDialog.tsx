@@ -41,8 +41,8 @@ export const PublicContactDialog = ({
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     company: '',
-    enquiryType: 'general',
     message: '',
   });
 
@@ -54,7 +54,6 @@ export const PublicContactDialog = ({
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error('Please enter a valid email address');
@@ -64,21 +63,23 @@ export const PublicContactDialog = ({
     setIsSubmitting(true);
 
     try {
-      // Call edge function to send the enquiry email
       const { error } = await supabase.functions.invoke('send-public-enquiry', {
         body: {
           name: formData.name.trim(),
           email: formData.email.trim(),
-          company: formData.company.trim() || 'Not specified',
-          enquiryType: formData.enquiryType,
+          phone: formData.phone.trim() || '',
+          company: formData.company.trim() || '',
+          enquiryType: 'general',
           message: formData.message.trim(),
+          source: typeof window !== 'undefined' ? window.location.href : 'unknown',
+          timestamp: new Date().toISOString(),
         },
       });
 
       if (error) throw error;
 
-      toast.success('Message sent successfully! We\'ll be in touch soon.');
-      setFormData({ name: '', email: '', company: '', enquiryType: 'general', message: '' });
+      toast.success("Thanks — your message has been sent. We'll reply by email.");
+      setFormData({ name: '', email: '', phone: '', company: '', message: '' });
       setOpen(false);
     } catch (error: any) {
       console.error('Error sending enquiry:', error);
