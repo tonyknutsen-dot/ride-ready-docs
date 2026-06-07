@@ -21,10 +21,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const Install = () => {
+  const { user } = useAuth();
+  const homeHref = user ? '/overview' : '/';
   const { isInstalled, isInstallable, promptInstall, isIOS, isAndroid, isStandalone } = useInstallPrompt();
   const [installAttempted, setInstallAttempted] = useState(false);
 
