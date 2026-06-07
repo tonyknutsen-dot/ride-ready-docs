@@ -7,7 +7,12 @@ export default function ScrollToTop() {
   useEffect(() => {
     if (hash) {
       // If there's a hash, scroll to that element
-      const element = document.querySelector(hash);
+      let element: Element | null = null;
+      try {
+        element = document.querySelector(hash);
+      } catch {
+        element = null;
+      }
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
       }

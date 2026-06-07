@@ -1,3 +1,4 @@
+import "./utils/resetPasswordRouteFallback";
 import React from "react"; // refreshed
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
@@ -24,7 +25,6 @@ if ('caches' in window) {
   });
 }
 
-// Initialize the app with StrictMode disabled in production for performance
 const root = createRoot(document.getElementById("root")!);
 if (!redirectedToCanonicalOrigin) {
   root.render(<App />);
