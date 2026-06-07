@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -148,15 +149,18 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject,
       html,
+    }, {
+      function_name: 'send-suspension-email',
+      template_name: isSuspended ? 'account-suspended' : 'account-reactivated',
+      metadata: { is_suspended: isSuspended },
     });
 
     console.log("Suspension email sent successfully:", emailResponse);
-    await logEmailSend({ template_name: isSuspended ? 'account-suspended' : 'account-reactivated', recipient_email: email, subject, status: 'sent', metadata: { is_suspended: isSuspended } });
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,

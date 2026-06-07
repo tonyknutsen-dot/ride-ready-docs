@@ -4,6 +4,7 @@ import { Resend } from "npm:resend@4.0.0";
 import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
@@ -88,22 +89,18 @@ const handler = async (req: Request): Promise<Response> => {
       : `Daily Safety Check Reports - ${checks.length} Reports`;
 
     // Send email with the report
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [recipientEmail],
       subject,
       html: htmlReport,
+    }, {
+      function_name: 'send-daily-check-report',
+      template_name: 'daily-check-report',
+      metadata: { check_ids: idsToFetch, check_count: checks.length },
     });
 
     console.log("Report email sent successfully:", emailResponse);
-
-    await logEmailSend({
-      template_name: 'daily-check-report',
-      recipient_email: recipientEmail,
-      subject,
-      status: 'sent',
-      message_id: emailResponse?.data?.id || undefined,
-    });
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,

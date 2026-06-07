@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -84,7 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
         const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
 
         // Send expiry reminder email
-        const emailResponse = await resend.emails.send({
+        const emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [invite.email],
           subject: `⏰ Your staff invite expires soon - ${companyName}`,
@@ -133,16 +134,18 @@ const handler = async (req: Request): Promise<Response> => {
             </body>
             </html>
           `,
+        }, {
+          function_name: 'send-staff-invite-expiry',
+          template_name: 'staff-invite-expiry',
+          metadata: { invite_id: invite.id, company_name: companyName, hours_remaining: hoursRemaining },
         });
 
         if ((emailResponse as any)?.error) {
           console.error(`[STAFF-INVITE-EXPIRY] Failed to send to ${invite.email}:`, (emailResponse as any).error);
-          await logEmailSend({ template_name: 'staff-invite-expiry', recipient_email: invite.email, subject: `⏰ Your staff invite expires soon - ${companyName}`, status: 'failed', error_message: (emailResponse as any).error.message });
           errors.push(`${invite.email}: ${(emailResponse as any).error.message}`);
           continue;
         }
 
-        await logEmailSend({ template_name: 'staff-invite-expiry', recipient_email: invite.email, subject: `⏰ Your staff invite expires soon - ${companyName}`, status: 'sent' });
 
         // Mark as reminded
         await supabase

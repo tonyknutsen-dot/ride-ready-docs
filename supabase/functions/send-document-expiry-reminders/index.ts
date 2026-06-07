@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -208,15 +209,20 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
         `;
 
-        const emailResponse = await resend.emails.send({
+        const reminderSubject = `📄 Document Expiry Reminder - ${thirtyDayDocs.length + sevenDayDocs.length} Document(s) Expiring Soon`;
+        const emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [user.email],
-          subject: `📄 Document Expiry Reminder - ${thirtyDayDocs.length + sevenDayDocs.length} Document(s) Expiring Soon`,
+          subject: reminderSubject,
           html,
+        }, {
+          function_name: 'send-document-expiry-reminders',
+          template_name: 'document-expiry-reminder',
+          user_id: userId,
+          metadata: { doc_count: userDocs.length },
         });
 
         console.log(`Email sent to ${user.email}:`, emailResponse);
-        await logEmailSend({ template_name: 'document-expiry-reminder', recipient_email: user.email, subject: `📄 Document Expiry Reminder - ${thirtyDayDocs.length + sevenDayDocs.length} Document(s) Expiring Soon`, status: 'sent', user_id: userId, metadata: { doc_count: userDocs.length } });
         emailsSent++;
 
       } catch (error) {

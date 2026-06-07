@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
@@ -96,22 +97,17 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject: "Welcome to Ride Ready Docs! 🎡",
       html,
+    }, {
+      function_name: 'send-welcome-email',
+      template_name: 'welcome-email',
     });
 
     console.log("Welcome email sent successfully:", emailResponse);
-
-    await logEmailSend({
-      template_name: 'welcome-email',
-      recipient_email: email,
-      subject: "Welcome to Ride Ready Docs! 🎡",
-      status: 'sent',
-      message_id: emailResponse?.data?.id || undefined,
-    });
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,

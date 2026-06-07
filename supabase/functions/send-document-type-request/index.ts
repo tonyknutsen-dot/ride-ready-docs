@@ -3,6 +3,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -123,15 +124,18 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: ["info@ridereadydocs.com"],
       subject: `📋 New Document Type Request: ${safeDocumentTypeName}`,
       html,
+    }, {
+      function_name: 'send-document-type-request',
+      template_name: 'document-type-request',
+      metadata: { document_type_name: documentTypeName },
     });
 
     console.log("Document type request email sent successfully:", emailResponse);
-    await logEmailSend({ template_name: 'document-type-request', recipient_email: 'info@ridereadydocs.com', subject: `📋 New Document Type Request: ${safeDocumentTypeName}`, status: 'sent', metadata: { document_type_name: documentTypeName } });
 
     return new Response(JSON.stringify({ success: true, messageId: emailResponse.data?.id }), {
       status: 200,

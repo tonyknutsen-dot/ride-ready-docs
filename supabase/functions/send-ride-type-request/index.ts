@@ -3,6 +3,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -144,15 +145,19 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: "Ride Ready Docs <info@ridereadydocs.com>", 
+    const adminSubject = `🎡 New ${typeLabel} Request: ${safeName}`;
+    const emailResponse = await auditedResendSend(resend, {
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: ["info@ridereadydocs.com"],
-      subject: `🎡 New ${typeLabel} Request: ${safeName}`,
+      subject: adminSubject,
       html: adminHtml,
+    }, {
+      function_name: 'send-ride-type-request',
+      template_name: 'ride-type-request-admin',
+      metadata: { request_name: requestData.name, request_type: requestData.type },
     });
 
     console.log("Admin notification sent successfully:", emailResponse);
-    await logEmailSend({ template_name: 'ride-type-request-admin', recipient_email: 'info@ridereadydocs.com', subject: `🎡 New ${typeLabel} Request: ${safeName}`, status: 'sent', metadata: { request_name: requestData.name, request_type: requestData.type } });
 
     const userHtml = `
 <!DOCTYPE html>
@@ -196,15 +201,18 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const userSubject = `✓ Request Confirmed: ${safeName}`;
-    const userEmailResponse = await resend.emails.send({
+    const userEmailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [requestData.userEmail],
       subject: userSubject,
       html: userHtml,
+    }, {
+      function_name: 'send-ride-type-request',
+      template_name: 'ride-type-request-confirm',
+      metadata: { request_name: requestData.name },
     });
 
     console.log("User confirmation sent successfully:", userEmailResponse);
-    await logEmailSend({ template_name: 'ride-type-request-confirm', recipient_email: requestData.userEmail, subject: userSubject, status: 'sent', metadata: { request_name: requestData.name } });
 
     return new Response(
       JSON.stringify({ 
