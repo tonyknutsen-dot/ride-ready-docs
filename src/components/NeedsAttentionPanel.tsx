@@ -246,6 +246,14 @@ const NeedsAttentionPanel = () => {
         headerStyle: SEVERITY_HEADER.critical,
       },
       {
+        type: 'open_defect',
+        title: 'Open Defects',
+        icon: AlertOctagon,
+        defaultOpen: true,
+        tier: 'warning',
+        headerStyle: SEVERITY_HEADER.warning,
+      },
+      {
         type: 'check_due',
         title: 'Routine Checks',
         icon: ClipboardCheck,
