@@ -10,7 +10,7 @@ const Security = () => {
     {
       icon: Lock,
       title: "End-to-End Encryption",
-      description: "All data transmitted between your browser and our servers is encrypted using industry-standard TLS 1.3 protocol, ensuring your documents and information are protected during transmission."
+      description: "Data transmitted between your browser and our servers is encrypted in transit using standard HTTPS, helping protect your documents and information while they travel across the internet."
     },
     {
       icon: Database,
@@ -73,7 +73,7 @@ const Security = () => {
     {
       title: "Privacy & Compliance",
       items: [
-        "GDPR compliant data processing and storage",
+        "Privacy-focused data handling aligned with UK GDPR principles",
         "Clear data retention and deletion policies",
         "No selling or sharing of user data",
         "Minimal data collection - only what's necessary",
@@ -288,9 +288,9 @@ const Security = () => {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Industry Standards</h3>
+                  <h3 className="text-lg font-semibold mb-2">Security Practices</h3>
                   <p className="text-muted-foreground">
-                    While not legally required for our industry, we follow security best practices from standards like ISO 27001 and SOC 2 to ensure robust data protection.
+                    We follow widely recognised security practices for cloud-hosted applications. Ride Ready Docs does not hold third-party security certifications, and we do not claim to.
                   </p>
                 </div>
               </CardContent>

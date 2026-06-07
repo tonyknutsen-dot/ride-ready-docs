@@ -111,11 +111,11 @@ const DataIndependence = () => {
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
-                      <span className="text-muted-foreground text-sm">TLS 1.3 encryption for all data in transit</span>
+                      <span className="text-muted-foreground text-sm">Encrypted connections (HTTPS) for data in transit</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
-                      <span className="text-muted-foreground text-sm">AES-256 encryption for all data at rest</span>
+                      <span className="text-muted-foreground text-sm">Encryption at rest via our secure hosting provider</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
