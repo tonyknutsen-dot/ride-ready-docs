@@ -37,7 +37,8 @@ const Hero = () => {
           decoding="async"
           style={{ contentVisibility: 'auto' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+        <div className="absolute inset-0 bg-[hsl(215_55%_10%)]/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[hsl(215_55%_8%)]/70 via-[hsl(215_55%_10%)]/60 to-[hsl(215_55%_8%)]/85" />
       </div>
 
       {/* Content */}
