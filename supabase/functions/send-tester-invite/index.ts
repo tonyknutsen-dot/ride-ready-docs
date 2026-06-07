@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -240,16 +241,19 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject,
       html,
+    }, {
+      function_name: 'send-tester-invite',
+      template_name: 'tester-invite',
+      user_id: user.id,
     });
 
     if ((emailResponse as any)?.error) {
       console.error("Tester invite email send error:", (emailResponse as any).error);
-      await logEmailSend({ template_name: 'tester-invite', recipient_email: email, subject, status: 'failed', error_message: (emailResponse as any).error?.message, user_id: user.id });
 
       if (inviteIdForCleanup) {
         await supabase.from("tester_invites").delete().eq("id", inviteIdForCleanup);
@@ -262,7 +266,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Tester invite email sent:", emailResponse);
-    await logEmailSend({ template_name: 'tester-invite', recipient_email: email, subject, status: 'sent', user_id: user.id });
 
     return new Response(
       JSON.stringify({ 

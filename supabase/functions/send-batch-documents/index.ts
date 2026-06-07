@@ -6,6 +6,7 @@ import { brandColors, emailStyles, logoSvg, escapeHtml, buildDocumentTable } fro
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 interface SendBatchDocumentsRequest {
   recipientEmail: string;
@@ -212,12 +213,17 @@ const handler = async (req: Request): Promise<Response> => {
         buildGroupedDocList(attachments, 'ATTACHED DOCUMENTS')
       );
 
-      emailResponse = await resend.emails.send({
+      emailResponse = await auditedResendSend(resend, {
         from: "Ride Ready Docs <info@ridereadydocs.com>",
         to: [recipientEmail],
         subject: `Equipment Documentation Package - ${senderName}`,
         html: htmlContent,
         attachments: emailAttachments,
+      }, {
+        function_name: 'send-batch-documents',
+        template_name: 'batch-documents',
+        user_id: user.id,
+        metadata: { send_method: 'attachment', doc_count: attachments.length },
       });
 
     } else {
@@ -248,7 +254,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         const htmlContent = buildEmailWrapper('Document Package', innerContent);
 
-        emailResponse = await resend.emails.send({
+        emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [recipientEmail],
           subject: `Equipment Documentation Package - ${senderName}`,
@@ -258,6 +264,11 @@ const handler = async (req: Request): Promise<Response> => {
             content: zipBase64,
             type: 'application/zip',
           }],
+        }, {
+          function_name: 'send-batch-documents',
+          template_name: 'batch-documents',
+          user_id: user.id,
+          metadata: { send_method: 'zip', doc_count: attachments.length },
         });
 
       } else {
@@ -316,17 +327,21 @@ const handler = async (req: Request): Promise<Response> => {
 
         const htmlContent = buildEmailWrapper('Secure Download Link', innerContent);
 
-        emailResponse = await resend.emails.send({
+        emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [recipientEmail],
           subject: `Equipment Documentation Package - ${senderName}`,
           html: htmlContent,
+        }, {
+          function_name: 'send-batch-documents',
+          template_name: 'batch-documents',
+          user_id: user.id,
+          metadata: { send_method: 'share-link', doc_count: attachments.length },
         });
       }
     }
 
     console.log(`Email sent via ${sendMethod}:`, emailResponse);
-    await logEmailSend({ template_name: 'batch-documents', recipient_email: recipientEmail, subject: `Equipment Documentation Package`, status: 'sent', user_id: user.id, metadata: { send_method: sendMethod, doc_count: attachments.length } });
 
     // Audit notification
     const notificationMessage = sendMethod === 'share-link'

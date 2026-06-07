@@ -5,6 +5,7 @@ import { brandColors, emailStyles, logoSvg, generateEmailWrapper, escapeHtml } f
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 interface SendRiskAssessmentRequest {
   assessmentId: string;
@@ -165,7 +166,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const htmlContent = generateEmailWrapper('Risk Assessment', safeRideName, content);
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [recipientEmail],
       subject: `Risk Assessment: ${safeRideName}`,
@@ -175,10 +176,14 @@ const handler = async (req: Request): Promise<Response> => {
         content: pdfBase64,
         type: "application/pdf",
       }],
+    }, {
+      function_name: 'send-risk-assessment',
+      template_name: 'risk-assessment',
+      user_id: user.id,
+      metadata: { assessment_id: assessmentId, ride_id: rideId },
     });
 
     console.log("Email sent successfully:", emailResponse);
-    await logEmailSend({ template_name: 'risk-assessment', recipient_email: recipientEmail, subject: `Risk Assessment: ${rideName}`, status: 'sent', user_id: user.id, metadata: { assessment_id: assessmentId, ride_id: rideId } });
 
     // Log the email send for audit trail
     await supabase

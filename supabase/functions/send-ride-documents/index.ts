@@ -6,6 +6,7 @@ import { brandColors, emailStyles, logoSvg, escapeHtml, buildDocumentTable } fro
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 interface SendDocumentsRequest {
   rideId: string;
@@ -245,12 +246,17 @@ const handler = async (req: Request): Promise<Response> => {
         buildDocumentList(attachments, 'ATTACHED DOCUMENTS')
       );
 
-      emailResponse = await resend.emails.send({
+      emailResponse = await auditedResendSend(resend, {
         from: "Ride Ready Docs <info@ridereadydocs.com>",
         to: [recipientEmail],
         subject: `Ride Documentation: ${rideInfo}`,
         html: htmlContent,
         attachments: emailAttachments,
+      }, {
+        function_name: 'send-ride-documents',
+        template_name: 'ride-documents',
+        user_id: user.id,
+        metadata: { ride_id: rideId, send_method: 'attachment', doc_count: attachments.length },
       });
 
     } else {
@@ -281,7 +287,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         const htmlContent = buildEmailWrapper(safeRideName, innerContent);
 
-        emailResponse = await resend.emails.send({
+        emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [recipientEmail],
           subject: `Ride Documentation: ${rideInfo}`,
@@ -291,6 +297,11 @@ const handler = async (req: Request): Promise<Response> => {
             content: zipBase64,
             type: 'application/zip',
           }],
+        }, {
+          function_name: 'send-ride-documents',
+          template_name: 'ride-documents',
+          user_id: user.id,
+          metadata: { ride_id: rideId, send_method: 'zip', doc_count: attachments.length },
         });
 
       } else {
@@ -349,17 +360,21 @@ const handler = async (req: Request): Promise<Response> => {
 
         const htmlContent = buildEmailWrapper(`${safeRideName} - Secure Download Link`, innerContent);
 
-        emailResponse = await resend.emails.send({
+        emailResponse = await auditedResendSend(resend, {
           from: "Ride Ready Docs <info@ridereadydocs.com>",
           to: [recipientEmail],
           subject: `Ride Documentation: ${rideInfo}`,
           html: htmlContent,
+        }, {
+          function_name: 'send-ride-documents',
+          template_name: 'ride-documents',
+          user_id: user.id,
+          metadata: { ride_id: rideId, send_method: 'share-link', doc_count: attachments.length },
         });
       }
     }
 
     console.log(`Email sent via ${sendMethod}:`, emailResponse);
-    await logEmailSend({ template_name: 'ride-documents', recipient_email: recipientEmail, subject: `Ride Documentation: ${ride.ride_name}`, status: 'sent', user_id: user.id, metadata: { ride_id: rideId, send_method: sendMethod, doc_count: attachments.length } });
 
     // Audit notification
     const notificationMessage = sendMethod === 'share-link'

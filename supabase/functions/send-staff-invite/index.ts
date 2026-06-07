@@ -12,6 +12,7 @@ import {
 } from "../_shared/rate-limit.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { auditedResendSend } from "../_shared/resend-audit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -392,16 +393,20 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await auditedResendSend(resend, {
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject,
       html,
+    }, {
+      function_name: 'send-staff-invite',
+      template_name: 'staff-invite',
+      user_id: user.id,
+      metadata: { organisation_id: organisation.id, permission_level: permissionLevel },
     });
 
     if ((emailResponse as any)?.error) {
       console.error("Staff invite email send error:", (emailResponse as any).error);
-      await logEmailSend({ template_name: 'staff-invite', recipient_email: email, subject, status: 'failed', error_message: (emailResponse as any).error?.message, user_id: user.id });
 
       if (inviteIdForCleanup) {
         await supabase.from("staff_invites").delete().eq("id", inviteIdForCleanup);
@@ -414,7 +419,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Staff invite email sent:", emailResponse);
-    await logEmailSend({ template_name: 'staff-invite', recipient_email: email, subject, status: 'sent', user_id: user.id, metadata: { organisation_id: organisation.id, permission_level: permissionLevel } });
 
     return new Response(
       JSON.stringify({ 
