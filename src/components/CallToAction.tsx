@@ -31,7 +31,7 @@ const CallToAction = () => {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-primary relative overflow-hidden">
+    <section className="py-20 md:py-28 bg-[hsl(215_55%_16%)] text-white relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div 
