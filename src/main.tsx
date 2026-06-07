@@ -1,9 +1,9 @@
+import "./utils/resetPasswordRouteFallback";
 import React from "react"; // refreshed
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { redirectToCanonicalOriginIfNeeded } from "./config/canonicalOrigin";
-import { installResetPasswordRouteFallback } from "./utils/resetPasswordRouteFallback";
 
 const redirectedToCanonicalOrigin = redirectToCanonicalOriginIfNeeded();
 
@@ -23,11 +23,6 @@ if ('caches' in window) {
   caches.keys().then((keys) => {
     keys.forEach((key) => caches.delete(key));
   });
-}
-
-// Initialize the app with StrictMode disabled in production for performance
-if (!redirectedToCanonicalOrigin) {
-  installResetPasswordRouteFallback();
 }
 
 const root = createRoot(document.getElementById("root")!);

@@ -243,3 +243,8 @@ export const markResetPasswordRouteHealthy = (state: ResetPasswordFallbackState)
   if (!isResetPasswordRoute()) return;
   window.__resetPasswordRouteFallback?.markHealthy(state);
 };
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  installResetPasswordRouteFallback();
+}
+
