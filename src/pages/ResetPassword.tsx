@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
 import appLogo from '@/assets/app-logo.jpg';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { validatePasswordStrength } from '@/utils/emailSuggestion';
+import { RESET_LINK_EXPIRED_MESSAGE, logRecoveryDiagnostic, parseAuthRecoveryParams } from '@/utils/authRecovery';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -21,16 +23,43 @@ const ResetPassword = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Confirm there is a recovery session before showing the form.
   useEffect(() => {
     let cancelled = false;
+    const params = parseAuthRecoveryParams();
+
+    logRecoveryDiagnostic('/auth/reset-password mounted', {
+      sources: params.sources,
+      isRecovery: params.isRecovery,
+      hasHashTokens: params.hasHashTokens,
+      hasCode: !!params.code,
+      hasTokenHash: !!params.tokenHash,
+      hasError: params.hasError,
+      error: params.error,
+      errorCode: params.errorCode,
+    });
+
+    if (params.isRecoveryError) {
+      setError(RESET_LINK_EXPIRED_MESSAGE);
+      setHasSession(false);
+      setChecking(false);
+      return () => { cancelled = true; };
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (session?.user) {
+        logRecoveryDiagnostic('/auth/reset-password received auth session', { event, userIdPresent: true });
+        setHasSession(true);
+        setChecking(false);
+      }
+    });
+
     (async () => {
-      // The recovery session is established by Supabase from the link URL.
-      // Wait briefly for it.
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 16; i++) {
         const { data: { session } } = await supabase.auth.getSession();
         if (cancelled) return;
         if (session?.user) {
+          logRecoveryDiagnostic('/auth/reset-password has valid recovery session', { userIdPresent: true });
           setHasSession(true);
           setChecking(false);
           return;
@@ -38,11 +67,19 @@ const ResetPassword = () => {
         await new Promise((r) => setTimeout(r, 300));
       }
       if (!cancelled) {
+        logRecoveryDiagnostic('/auth/reset-password has no valid recovery session', {
+          hadRecoveryParams: params.sources.length > 0,
+        });
         setHasSession(false);
+        setError(RESET_LINK_EXPIRED_MESSAGE);
         setChecking(false);
       }
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const passwordValidation = password ? validatePasswordStrength(password) : null;
@@ -72,12 +109,9 @@ const ResetPassword = () => {
         setSubmitting(false);
         return;
       }
+      await supabase.auth.signOut();
       setSuccess(true);
-      // Sign out so the user re-authenticates with the new password.
-      setTimeout(async () => {
-        await supabase.auth.signOut();
-        navigate('/auth', { replace: true });
-      }, 1500);
+      setSubmitting(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unexpected error.');
       setSubmitting(false);
@@ -102,27 +136,38 @@ const ResetPassword = () => {
           </div>
         )}
 
-        {!checking && !hasSession && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Reset link is invalid or expired</AlertTitle>
-            <AlertDescription className="mt-2 space-y-3">
-              <p>Please request a new password reset email from the sign-in page.</p>
-              <Button onClick={() => navigate('/auth', { replace: true })} className="w-full">
-                Go to sign in
-              </Button>
-            </AlertDescription>
-          </Alert>
+        {!checking && !hasSession && !success && (
+          <Card>
+            <CardContent className="pt-6">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Reset link is invalid or expired</AlertTitle>
+                <AlertDescription className="mt-2 space-y-3">
+                  <p>{error || RESET_LINK_EXPIRED_MESSAGE}</p>
+                  <Button onClick={() => navigate('/auth?reset=true', { replace: true })} className="w-full">
+                    Request a new reset email
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
         )}
 
-        {!checking && hasSession && success && (
-          <Alert>
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Password updated</AlertTitle>
-            <AlertDescription>
-              Signing you out and returning to the sign-in screen…
-            </AlertDescription>
-          </Alert>
+        {!checking && success && (
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Password reset complete</AlertTitle>
+                <AlertDescription>
+                  Your password has been updated. Please sign in with your new password.
+                </AlertDescription>
+              </Alert>
+              <Button onClick={() => navigate('/auth', { replace: true })} className="w-full">
+                Back to sign in
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         {!checking && hasSession && !success && (

@@ -4,33 +4,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import appLogo from '@/assets/app-logo.jpg';
+import { RESET_LINK_EXPIRED_MESSAGE, logRecoveryDiagnostic, parseAuthRecoveryParams } from '@/utils/authRecovery';
 
 type Status = 'working' | 'error' | 'success';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const initialRecoveryParams = parseAuthRecoveryParams();
+  const initiallyExpiredRecoveryLink = initialRecoveryParams.isRecoveryError;
   const [status, setStatus] = useState<Status>('working');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [resending, setResending] = useState(false);
   const [resendDone, setResendDone] = useState(false);
   const [emailForResend, setEmailForResend] = useState<string>('');
+  const [isResetLinkError, setIsResetLinkError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-
-    const isRecoveryLink = () => {
-      const url = new URL(window.location.href);
-      if ((url.searchParams.get('type') || '').toLowerCase() === 'recovery') return true;
-      const hash = url.hash || '';
-      if (/(^|[#&?])type=recovery(\b|&|$)/i.test(hash)) return true;
-      return false;
-    };
+    const recoveryParams = parseAuthRecoveryParams();
 
     const route = async (userId: string) => {
       try {
         // Password recovery: always send the user to the set-new-password screen.
-        if (isRecoveryLink()) {
+        if (recoveryParams.isRecovery) {
+          logRecoveryDiagnostic('routing to /auth/reset-password', { userIdPresent: !!userId });
           navigate('/auth/reset-password', { replace: true });
           return;
         }
@@ -50,28 +48,66 @@ const AuthCallback = () => {
     const handle = async () => {
       try {
         const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
-        const errorParam =
-          url.searchParams.get('error_description') ||
-          url.searchParams.get('error') ||
-          (url.hash.match(/error_description=([^&]+)/)?.[1] ?? null);
+        const code = recoveryParams.code ?? url.searchParams.get('code');
+        const errorParam = recoveryParams.errorDescription || recoveryParams.error;
+
+        if (recoveryParams.isRecovery || recoveryParams.isRecoveryError) {
+          logRecoveryDiagnostic('/auth/callback received recovery link', {
+            sources: recoveryParams.sources,
+            hasCode: !!recoveryParams.code,
+            hasTokenHash: !!recoveryParams.tokenHash,
+            hasHashTokens: recoveryParams.hasHashTokens,
+            hasError: recoveryParams.hasError,
+            error: recoveryParams.error,
+            errorCode: recoveryParams.errorCode,
+          });
+        }
 
         if (errorParam) {
           setStatus('error');
-          setErrorMessage(decodeURIComponent(errorParam).replace(/\+/g, ' '));
+          setIsResetLinkError(recoveryParams.isRecoveryError);
+          setErrorMessage(recoveryParams.isRecoveryError ? RESET_LINK_EXPIRED_MESSAGE : decodeURIComponent(errorParam).replace(/\+/g, ' '));
           return;
+        }
+
+        if (recoveryParams.isRecovery && recoveryParams.tokenHash) {
+          const { data, error } = await supabase.auth.verifyOtp({
+            type: 'recovery',
+            token_hash: recoveryParams.tokenHash,
+          });
+          if (error) {
+            logRecoveryDiagnostic('Supabase recovery token exchange failed', { message: error.message });
+            setStatus('error');
+            setIsResetLinkError(true);
+            setErrorMessage(RESET_LINK_EXPIRED_MESSAGE);
+            return;
+          }
+          if (data.session?.user) {
+            logRecoveryDiagnostic('Supabase recovery token exchange succeeded', { userIdPresent: true });
+            setStatus('success');
+            setEmailForResend(data.session.user.email ?? '');
+            await route(data.session.user.id);
+            return;
+          }
         }
 
         // PKCE / new flow: exchange ?code= for a session
         if (code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
+            if (recoveryParams.isRecovery) {
+              logRecoveryDiagnostic('Supabase recovery code exchange failed', { message: error.message });
+            }
             console.error('[AuthCallback] exchangeCodeForSession failed:', error);
             setStatus('error');
-            setErrorMessage(error.message || 'Could not confirm your email. The link may have expired.');
+            setIsResetLinkError(recoveryParams.isRecovery);
+            setErrorMessage(recoveryParams.isRecovery ? RESET_LINK_EXPIRED_MESSAGE : error.message || 'Could not confirm your email. The link may have expired.');
             return;
           }
           if (data.session?.user) {
+            if (recoveryParams.isRecovery) {
+              logRecoveryDiagnostic('Supabase recovery code exchange succeeded', { userIdPresent: true });
+            }
             setStatus('success');
             setEmailForResend(data.session.user.email ?? '');
             await route(data.session.user.id);
@@ -83,6 +119,9 @@ const AuthCallback = () => {
         // Wait briefly for onAuthStateChange to fire.
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          if (recoveryParams.isRecovery) {
+            logRecoveryDiagnostic('Supabase recovery hash session detected', { userIdPresent: true });
+          }
           setStatus('success');
           setEmailForResend(session.user.email ?? '');
           await route(session.user.id);
@@ -95,6 +134,9 @@ const AuthCallback = () => {
           if (cancelled) return;
           const { data: { session: s } } = await supabase.auth.getSession();
           if (s?.user) {
+            if (recoveryParams.isRecovery) {
+              logRecoveryDiagnostic('Supabase recovery hash session detected after wait', { userIdPresent: true });
+            }
             setStatus('success');
             setEmailForResend(s.user.email ?? '');
             await route(s.user.id);
@@ -160,33 +202,43 @@ const AuthCallback = () => {
             </>
           )}
 
-          {status === 'error' && (
+          {(status === 'error' || initiallyExpiredRecoveryLink) && (
             <>
               <AlertCircle className="h-8 w-8 text-destructive" aria-hidden />
-              <h1 className="text-xl font-semibold text-foreground">We couldn’t confirm your account</h1>
+              <h1 className="text-xl font-semibold text-foreground">
+                {isResetLinkError || initiallyExpiredRecoveryLink ? 'Reset link expired' : 'We couldn’t confirm your account'}
+              </h1>
               <p
                 className="text-sm text-muted-foreground break-words"
                 style={{ overflowWrap: 'anywhere' }}
               >
-                {errorMessage}
+                {initiallyExpiredRecoveryLink ? RESET_LINK_EXPIRED_MESSAGE : errorMessage}
               </p>
 
               <div className="w-full flex flex-col gap-2 pt-2">
-                <Button onClick={() => navigate('/auth', { replace: true })} className="w-full">
-                  Go to sign in
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleResend}
-                  disabled={resending || resendDone}
-                  className="w-full"
-                >
-                  {resendDone
-                    ? 'Confirmation email sent'
-                    : resending
-                    ? 'Sending…'
-                    : 'Resend confirmation email'}
-                </Button>
+                {isResetLinkError || initiallyExpiredRecoveryLink ? (
+                  <Button onClick={() => navigate('/auth?reset=true', { replace: true })} className="w-full">
+                    Request a new reset email
+                  </Button>
+                ) : (
+                  <>
+                    <Button onClick={() => navigate('/auth', { replace: true })} className="w-full">
+                      Go to sign in
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleResend}
+                      disabled={resending || resendDone}
+                      className="w-full"
+                    >
+                      {resendDone
+                        ? 'Confirmation email sent'
+                        : resending
+                        ? 'Sending…'
+                        : 'Resend confirmation email'}
+                    </Button>
+                  </>
+                )}
                 <Link
                   to="/help"
                   className="text-xs text-muted-foreground underline underline-offset-2 mt-1"

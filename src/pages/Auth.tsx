@@ -85,6 +85,14 @@ const Auth = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('reset') === 'true') {
+      setActiveTab('signin');
+      setShowResetForm(true);
+    }
+  }, [location.search]);
+
   // Update countdown timer when locked
   useEffect(() => {
     if (isLocked) {
