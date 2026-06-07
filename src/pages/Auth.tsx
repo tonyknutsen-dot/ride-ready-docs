@@ -427,8 +427,17 @@ const Auth = () => {
         <MFAVerifyScreen
           onVerified={() => {
             setShowMFA(false);
-            const from = (location.state as any)?.from?.pathname || '/overview';
-            navigate(from, { replace: true });
+            let from = (location.state as any)?.from?.pathname;
+            if (!from) {
+              try {
+                const stored = sessionStorage.getItem('postAuthRedirect');
+                if (stored) {
+                  sessionStorage.removeItem('postAuthRedirect');
+                  from = stored;
+                }
+              } catch {}
+            }
+            navigate(from || '/overview', { replace: true });
           }}
           onCancel={async () => {
             setShowMFA(false);
