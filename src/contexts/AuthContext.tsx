@@ -306,7 +306,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, country?: string) => {
-    const redirectUrl = `${CANONICAL_APP_ORIGIN}/profile-setup`;
+    const redirectUrl = `${CANONICAL_APP_ORIGIN}/auth/callback`;
 
     const { error } = await supabase.auth.signUp({
       email,
