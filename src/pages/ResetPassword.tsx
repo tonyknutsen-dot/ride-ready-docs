@@ -55,7 +55,7 @@ const ResetPassword = () => {
       setError('Password must be at least 8 characters.');
       return;
     }
-    if (passwordValidation && !passwordValidation.isValid) {
+    if (passwordValidation && !passwordValidation.valid) {
       setError('Please choose a stronger password.');
       return;
     }
@@ -149,7 +149,7 @@ const ResetPassword = () => {
                 </button>
               </div>
               {password && (
-                <PasswordStrengthIndicator validation={passwordValidation!} />
+                <PasswordStrengthIndicator password={password} />
               )}
             </div>
 
