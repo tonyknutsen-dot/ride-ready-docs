@@ -115,9 +115,9 @@ export const PublicContactDialog = ({
         ) : (
         <>
         <DialogHeader>
-          <DialogTitle>Get in Touch</DialogTitle>
+          <DialogTitle>Contact us</DialogTitle>
           <DialogDescription>
-            Have questions about Ride Ready? We'd love to hear from you.
+            Send us a message and we'll reply by email.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
