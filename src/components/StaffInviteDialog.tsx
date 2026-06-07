@@ -97,13 +97,23 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
 
       if (response.error) {
         let realMessage = response.error.message || 'Failed to send invite';
+        let code: string | undefined;
         try {
           const ctx: any = (response.error as any).context;
           if (ctx && typeof ctx.json === 'function') {
             const body = await ctx.json();
             if (body?.error) realMessage = body.error;
+            if (body?.code) code = body.code;
           }
         } catch { /* ignore */ }
+        if (code === 'duplicate_pending') {
+          toast({ title: 'Invite already pending', description: realMessage });
+          onOpenChange(false);
+          onSuccess?.();
+          setLoading(false);
+          setShowFullAccessConfirm(false);
+          return;
+        }
         throw new Error(realMessage);
       }
 
