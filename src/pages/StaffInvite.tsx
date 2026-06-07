@@ -384,16 +384,36 @@ export default function StaffInvite() {
               <p className="text-sm text-muted-foreground">Accepting your invite…</p>
             </div>
           ) : user ? (
-            <div className="text-center py-4 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                You're signed in as <strong>{user.email}</strong>
-              </p>
-              {user.email?.toLowerCase() !== inviteEmail.toLowerCase() && (
-                <p className="text-sm text-destructive">
-                  Please sign in with <strong>{inviteEmail}</strong> to accept this invite.
+            user.email?.toLowerCase() !== inviteEmail.toLowerCase() ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30 flex items-start gap-2.5">
+                  <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                  <div className="text-sm text-destructive leading-relaxed">
+                    This invite is for <strong className="break-all">{inviteEmail}</strong>.
+                    You are currently signed in as <strong className="break-all">{user.email}</strong>.
+                    Please switch account to continue.
+                  </div>
+                </div>
+                <Button onClick={handleSignOutAndContinue} className="w-full gap-2">
+                  Sign out and continue
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate('/overview')}
+                >
+                  Back to dashboard
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-4 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  You're signed in as <strong>{user.email}</strong>
                 </p>
-              )}
-            </div>
+              </div>
+            )
+
           ) : isSignUp ? (
             <form onSubmit={handleCreateAccount} className="space-y-4" autoComplete="off">
               <input className="hidden" type="text" name="username" autoComplete="username" tabIndex={-1} />
