@@ -31,7 +31,7 @@ const CallToAction = () => {
   };
 
   return (
-    <section className="py-20 md:py-28 bg-primary relative overflow-hidden">
+    <section className="py-20 md:py-28 bg-[hsl(215_55%_16%)] text-white relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div 
@@ -88,8 +88,8 @@ const CallToAction = () => {
           
           <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70">
             <span>✓ No credit card required</span>
-            <span>✓ Both apps included</span>
-            <span>✓ Install on any device</span>
+            <span>✓ Full access for 14 days</span>
+            <span>✓ Works on mobile, tablet and laptop</span>
           </div>
 
           {/* Install hint */}
