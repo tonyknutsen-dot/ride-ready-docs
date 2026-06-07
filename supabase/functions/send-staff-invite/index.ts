@@ -205,10 +205,15 @@ const handler = async (req: Request): Promise<Response> => {
     let inviteIdForCleanup: string | null = null;
 
     if (existingInvite && (!existingInvite.expires_at || new Date(existingInvite.expires_at) >= new Date())) {
+      // Resend / repeat-send: refresh expiry, reset reminder flag, bump updated_at.
+      const refreshedExpiresAt = new Date(Date.now() + 7 * msPerDay).toISOString();
       await supabase
         .from("staff_invites")
         .update({ 
           permission_level: permissionLevel,
+          expires_at: refreshedExpiresAt,
+          expiry_reminder_sent: false,
+          updated_at: new Date().toISOString(),
           can_access_calendar: permissions.calendar,
           can_access_documents: permissions.documents,
           can_access_checks: permissions.checks,
@@ -221,7 +226,7 @@ const handler = async (req: Request): Promise<Response> => {
       invite = {
         id: existingInvite.id,
         invite_token: existingInvite.invite_token,
-        expires_at: existingInvite.expires_at ?? new Date(Date.now() + 7 * msPerDay).toISOString(),
+        expires_at: refreshedExpiresAt,
       };
     } else {
       const expiresAt = new Date(Date.now() + 7 * msPerDay).toISOString();

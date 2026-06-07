@@ -119,23 +119,66 @@ const Staff = () => {
     try {
       const { data } = await supabase
         .from('staff_invites')
-        .select('id, email, permission_level, created_at, expires_at, status')
+        .select('id, email, permission_level, created_at, updated_at, expires_at, status, accepted_at, invited_by, invite_token')
         .eq('organisation_id', orgId)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'expired', 'cancelled'])
         .order('created_at', { ascending: false });
-      setInvites(data || []);
+
+      const rows = data || [];
+
+      // Auto-flip past-due pendings to 'expired' in DB so accept-staff-invite stays consistent.
+      const nowMs = Date.now();
+      const toExpire = rows.filter(
+        (r: any) => r.status === 'pending' && r.expires_at && new Date(r.expires_at).getTime() < nowMs
+      );
+      if (toExpire.length > 0) {
+        await supabase
+          .from('staff_invites')
+          .update({ status: 'expired' })
+          .in('id', toExpire.map((r: any) => r.id));
+        toExpire.forEach((r: any) => { r.status = 'expired'; });
+      }
+
+      // Look up inviter display names in one shot.
+      const inviterIds = Array.from(new Set(rows.map((r: any) => r.invited_by).filter(Boolean))) as string[];
+      let nameById: Record<string, string> = {};
+      if (inviterIds.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, company_name')
+          .in('user_id', inviterIds);
+        nameById = Object.fromEntries(
+          (profs || []).map((p: any) => [p.user_id, p.full_name || p.company_name || ''])
+        );
+      }
+
+      setInvites(rows.map((r: any) => ({
+        ...r,
+        invited_by_name: r.invited_by ? (nameById[r.invited_by] || null) : null,
+      })));
     } catch (e) {
       console.error(e);
     }
   };
 
-  const cancelInvite = async (inviteId: string) => {
+  const cancelInvite = async (invite: PendingInviteData) => {
     try {
       const { error } = await supabase
         .from('staff_invites')
-        .update({ status: 'cancelled' })
-        .eq('id', inviteId);
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', invite.id);
       if (error) throw error;
+
+      logEvent('update', 'staff_invite', invite.id, {
+        email: invite.email,
+        role: invite.permission_level,
+      }, {
+        before: { status: invite.status },
+        after: { status: 'cancelled' },
+        changedFields: ['status'],
+        contextHint: 'staff invite cancelled',
+      });
+
       toast({ title: 'Invitation cancelled' });
       if (organisationId) fetchInvites(organisationId);
     } catch (e: any) {
@@ -160,9 +203,36 @@ const Staff = () => {
         },
       });
       if (response.error) throw new Error(response.error.message || 'Failed to resend');
+
+      logEvent('update', 'staff_invite', invite.id, {
+        email: invite.email,
+        role: invite.permission_level,
+      }, {
+        before: { status: invite.status, expires_at: invite.expires_at },
+        after: { status: 'pending', resent_at: new Date().toISOString() },
+        changedFields: ['expires_at', 'updated_at'],
+        contextHint: 'staff invite re-sent',
+      });
+
       toast({ title: 'Invitation re-sent', description: `Re-sent to ${invite.email}` });
+      if (organisationId) fetchInvites(organisationId);
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const copyInviteLink = async (invite: PendingInviteData) => {
+    if (!invite.invite_token) {
+      toast({ title: 'No link available', description: 'This invite has no token.', variant: 'destructive' });
+      return;
+    }
+    const url = `${window.location.origin}/staff-invite/${invite.invite_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: 'Link copied', description: 'Invite link is on your clipboard.' });
+    } catch {
+      // Fallback: show the URL so the controller can copy manually.
+      toast({ title: 'Copy failed', description: url });
     }
   };
 
@@ -210,11 +280,17 @@ const Staff = () => {
   };
 
   // Counts
+  // Counts (pending = live pendings only, not expired/cancelled)
+  const livePendingCount = useMemo(
+    () => invites.filter(i => i.status === 'pending' && new Date(i.expires_at).getTime() >= Date.now()).length,
+    [invites]
+  );
   const counts = useMemo(() => ({
     all: staff.length,
     staff: staff.length,
-    pending: invites.length,
-  }), [staff, invites]);
+    pending: livePendingCount,
+  }), [staff, livePendingCount]);
+
 
   // Filtered list
   const filteredStaff = useMemo(() => {
@@ -265,7 +341,7 @@ const Staff = () => {
           <h1 className="text-lg font-bold">Staff & Permissions</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             {staff.length} member{staff.length !== 1 ? 's' : ''}
-            {invites.length > 0 && ` · ${invites.length} pending`}
+            {livePendingCount > 0 && ` · ${livePendingCount} pending`}
           </p>
         </div>
         {canManage && (
@@ -344,20 +420,58 @@ const Staff = () => {
               )}
 
               {/* Pending invites */}
-              {showInvites && invites.length > 0 && (
-                <div className="space-y-2 pt-1">
+              {showInvites && invites.length > 0 && (() => {
+                const isLive = (inv: PendingInviteData) =>
+                  inv.status === 'pending' && new Date(inv.expires_at).getTime() >= Date.now();
+                const live = invites.filter(isLive);
+                const history = invites.filter(inv => !isLive(inv));
+                return (
+                  <>
+                    <div className="space-y-2 pt-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+                        Pending Invitations — {live.length}
+                      </p>
+                      {live.length === 0 ? (
+                        <p className="text-xs text-muted-foreground px-0.5 py-1">No pending staff invitations.</p>
+                      ) : live.map(invite => (
+                        <PendingInviteCard
+                          key={invite.id}
+                          invite={invite}
+                          canManage={canManage}
+                          onResend={() => resendInvite(invite)}
+                          onCancel={() => cancelInvite(invite)}
+                          onCopyLink={() => copyInviteLink(invite)}
+                        />
+                      ))}
+                    </div>
+                    {history.length > 0 && (
+                      <div className="space-y-2 pt-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+                          Expired & cancelled — {history.length}
+                        </p>
+                        {history.map(invite => (
+                          <PendingInviteCard
+                            key={invite.id}
+                            invite={invite}
+                            canManage={canManage}
+                            onResend={() => resendInvite(invite)}
+                            onCancel={() => cancelInvite(invite)}
+                            onCopyLink={() => copyInviteLink(invite)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Empty state for the invites section when there are staff but no invites at all */}
+              {showInvites && invites.length === 0 && staff.length > 0 && (
+                <div className="pt-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
-                    Pending — {invites.length}
+                    Pending Invitations — 0
                   </p>
-                  {invites.map(invite => (
-                    <PendingInviteCard
-                      key={invite.id}
-                      invite={invite}
-                      canManage={canManage}
-                      onResend={() => resendInvite(invite)}
-                      onCancel={() => cancelInvite(invite.id)}
-                    />
-                  ))}
+                  <p className="text-xs text-muted-foreground px-0.5 py-1">No pending staff invitations.</p>
                 </div>
               )}
             </div>
