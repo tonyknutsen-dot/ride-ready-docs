@@ -102,7 +102,19 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
         },
       });
 
-      if (response.error) throw new Error(response.error.message || 'Failed to send invite');
+      if (response.error) {
+        // Extract real error message from edge function response body
+        let realMessage = response.error.message || 'Failed to send invite';
+        try {
+          const ctx: any = (response.error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) realMessage = body.error;
+          }
+        } catch { /* ignore */ }
+        toast({ title: 'Cannot send invite', description: realMessage, variant: 'destructive' });
+        return;
+      }
 
       // Check for application-level errors in response data
       const responseData = response.data;
