@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import appLogo from '@/assets/app-logo.jpg';
 
-type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted';
+type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted' | 'cancelled';
 
 const permissionLabels: Record<string, string> = {
   staff: 'Staff',
@@ -59,25 +59,28 @@ export default function StaffInvite() {
           body: { token },
         });
 
-        if (error) throw error;
+        // Network/transport error only — backend returns 200 for invite-state issues
+        if (error && !data) throw error;
 
-        if (data.valid) {
+        if (data?.valid) {
           setStatus('valid');
           setInviteEmail(data.email);
           setOrganisationName(data.organisationName || 'the organisation');
           setPermissionLevel(data.permissionLevel || 'staff');
-        } else if (data.status === 'accepted') {
+        } else if (data?.status === 'accepted') {
           setStatus('already_accepted');
-        } else if (data.status === 'expired') {
+        } else if (data?.status === 'expired') {
           setStatus('expired');
+        } else if (data?.status === 'cancelled' || data?.status === 'revoked') {
+          setStatus('cancelled');
         } else {
           setStatus('invalid');
-          setErrorMessage(data.error || 'Invalid invite');
+          setErrorMessage('This invite link is no longer valid.');
         }
-      } catch (error: any) {
-        console.error('Error validating invite:', error);
+      } catch (err: any) {
+        console.error('Error validating invite:', err);
         setStatus('invalid');
-        setErrorMessage(error.message || 'Failed to validate invite');
+        setErrorMessage('We could not check this invite right now. Please try again in a moment.');
       }
     };
 
@@ -270,7 +273,22 @@ export default function StaffInvite() {
     );
   }
 
-  if (status === 'invalid' || status === 'expired' || status === 'already_accepted') {
+  if (status === 'invalid' || status === 'expired' || status === 'already_accepted' || status === 'cancelled') {
+    const title =
+      status === 'expired' ? 'Invite expired' :
+      status === 'already_accepted' ? 'Invite already accepted' :
+      status === 'cancelled' ? 'Invite cancelled' :
+      'Invalid invite';
+
+    const message =
+      status === 'expired'
+        ? 'This staff invite has expired. Please ask the account owner to send a new invite.'
+        : status === 'already_accepted'
+        ? 'This staff invite has already been accepted. Please sign in using the invited email address.'
+        : status === 'cancelled'
+        ? 'This staff invite has been cancelled. Please contact the account owner if you still need access.'
+        : (errorMessage || 'This invite link is not valid.');
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -279,22 +297,12 @@ export default function StaffInvite() {
             <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
               <XCircle className="h-7 w-7 text-destructive" />
             </div>
-            <CardTitle>
-              {status === 'expired' ? 'Invite Expired' : 
-               status === 'already_accepted' ? 'Already Accepted' : 
-               'Invalid Invite'}
-            </CardTitle>
-            <CardDescription>
-              {status === 'expired' 
-                ? 'This invite link has expired. Please ask your employer for a new invite.'
-                : status === 'already_accepted'
-                ? 'This invite has already been used. You can sign in to access your account.'
-                : errorMessage || 'This invite link is not valid.'}
-            </CardDescription>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{message}</CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-3">
             <Link to="/auth">
-              <Button>Go to Sign In</Button>
+              <Button>Go to sign in</Button>
             </Link>
           </CardContent>
         </Card>

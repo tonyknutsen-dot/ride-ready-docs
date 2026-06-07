@@ -16,6 +16,7 @@ import { BugReportDialog } from "@/components/BugReportDialog";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTerminology } from "@/hooks/useTerminology";
+import { useStaff } from "@/contexts/StaffContext";
 
 // ── types ────────────────────────────────────────────────────────────────────
 interface HelpTopic {
@@ -153,10 +154,20 @@ const HelpCenter = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { terminology } = useTerminology();
+  const { isStaff } = useStaff();
   const [search, setSearch] = useState("");
   const [selectedTopic, setSelectedTopic] = useState<HelpTopic | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
+
+  // Staff cannot access Documents, Calendar, or Staff management — hide those topics
+  const staffHiddenTitles = new Set(["Documents", "Calendar", "Staff"]);
+  const visibleCoreModules = isStaff
+    ? coreModules.filter((t) => !staffHiddenTitles.has(t.title))
+    : coreModules;
+  const visibleAdvancedFeatures = isStaff
+    ? advancedFeatures.filter((t) => !staffHiddenTitles.has(t.title))
+    : advancedFeatures;
 
   const filterTopics = (topics: HelpTopic[]) => {
     if (!search.trim()) return topics;
@@ -306,29 +317,29 @@ const HelpCenter = () => {
             />
           </div>
 
-          {filterTopics(coreModules).length > 0 && (
+          {filterTopics(visibleCoreModules).length > 0 && (
             <>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2 px-1">Core</p>
               <div className="grid sm:grid-cols-2 gap-2.5">
-                {filterTopics(coreModules).map((t) => (
+                {filterTopics(visibleCoreModules).map((t) => (
                   <TopicRow key={t.title} topic={t} />
                 ))}
               </div>
             </>
           )}
 
-          {filterTopics(advancedFeatures).length > 0 && (
+          {filterTopics(visibleAdvancedFeatures).length > 0 && (
             <>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2 mt-4 px-1">More</p>
               <div className="grid sm:grid-cols-2 gap-2.5">
-                {filterTopics(advancedFeatures).map((t) => (
+                {filterTopics(visibleAdvancedFeatures).map((t) => (
                   <TopicRow key={t.title} topic={t} />
                 ))}
               </div>
             </>
           )}
 
-          {search && filterTopics(coreModules).length === 0 && filterTopics(advancedFeatures).length === 0 && (
+          {search && filterTopics(visibleCoreModules).length === 0 && filterTopics(visibleAdvancedFeatures).length === 0 && (
             <div className="text-center py-10 text-sm text-[#64748B]">
               No topics found for "<span className="font-medium text-[#0F172A]">{search}</span>". Try different keywords.
             </div>
@@ -351,39 +362,49 @@ const HelpCenter = () => {
                 {[
                   {
                     category: "Getting Started",
-                    questions: [
-                      { q: "How do I start using Ride Ready Docs?", a: `Complete your profile with company and ${terminology.isUK ? "showman" : "operator"} details, then add your first item of equipment. Once added, you can upload documents, run checks, and log maintenance.` },
-                      { q: "What's included in the free trial?", a: "Full access to all features for 14 days. No credit card required. After the trial, choose a plan based on your number of registered items." },
-                    ],
+                    questions: isStaff
+                      ? [
+                          { q: "How do I start using Ride Ready Docs?", a: "Open the dashboard to see equipment you have access to, then start checks, log maintenance, or record wind and pressure readings as needed." },
+                        ]
+                      : [
+                          { q: "How do I start using Ride Ready Docs?", a: `Complete your profile with company and ${terminology.isUK ? "showman" : "operator"} details, then add your first item of equipment. Once added, you can upload documents, run checks, and log maintenance.` },
+                          { q: "What's included in the free trial?", a: "Full access to all features for 14 days. No credit card required. After the trial, choose a plan based on your number of registered items." },
+                        ],
                   },
-                  {
-                    category: "Documents",
-                    questions: [
-                      { q: "What types of documents can I upload?", a: "Annual inspection certificates, insurance, test certificates, manuals, risk assessments, electrical certificates, and more." },
-                      { q: "How does document expiry tracking work?", a: "Set an expiry date when uploading. The system sends email reminders before expiry." },
-                      { q: "Who can access documents?", a: "Only the controller (account owner). Staff do not have document access." },
-                    ],
-                  },
-                  {
-                    category: "Account & Billing",
-                    questions: [
-                      { q: "How does pricing work?", a: "Plans are based on the number of registered items. Starter (1–5) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Business (26–50) £44.99/mo. All plans include every feature. Need more than 50? Contact us." },
-                      { q: "Can I cancel my subscription?", a: "Yes, cancel anytime from Settings > Plan & Billing. Access continues until the end of your paid period. Data retained for 90 days." },
-                    ],
-                  },
-                  {
-                    category: "Staff",
-                    questions: [
-                      { q: "How do I invite staff members?", a: "Staff page → Invite Staff → enter email. Staff automatically get access to assigned equipment, checks, maintenance, pressure readings, and wind logs." },
-                      { q: "What can staff access?", a: "Staff can access assigned equipment, checks, maintenance, pressure readings, and wind logs. They cannot access calendar, documents, compliance, billing, or settings." },
-                    ],
-                  },
+                  ...(isStaff ? [] : [
+                    {
+                      category: "Documents",
+                      questions: [
+                        { q: "What types of documents can I upload?", a: "Annual inspection certificates, insurance, test certificates, manuals, risk assessments, electrical certificates, and more." },
+                        { q: "How does document expiry tracking work?", a: "Set an expiry date when uploading. The system sends email reminders before expiry." },
+                        { q: "Who can access documents?", a: "Only the controller (account owner). Staff do not have document access." },
+                      ],
+                    },
+                    {
+                      category: "Account & Billing",
+                      questions: [
+                        { q: "How does pricing work?", a: "Plans are based on the number of registered items. Starter (1–5) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Business (26–50) £44.99/mo. All plans include every feature. Need more than 50? Contact us." },
+                        { q: "Can I cancel my subscription?", a: "Yes, cancel anytime from Settings > Plan & Billing. Access continues until the end of your paid period. Data retained for 90 days." },
+                      ],
+                    },
+                    {
+                      category: "Staff",
+                      questions: [
+                        { q: "How do I invite staff members?", a: "Staff page → Invite Staff → enter email. Staff automatically get access to assigned equipment, checks, maintenance, pressure readings, and wind logs." },
+                        { q: "What can staff access?", a: "Staff can access assigned equipment, checks, maintenance, pressure readings, and wind logs. They cannot access calendar, documents, compliance, billing, or settings." },
+                      ],
+                    },
+                  ]),
                   {
                     category: "Security & Data",
-                    questions: [
-                      { q: "Is my data secure?", a: `Bank-level encryption, row-level security, and regular backups. Data stored in ${terminology.isUK ? "UK/EU" : "secure"} data centres.` },
-                      { q: "What happens to my data if I cancel?", a: "Retained for 90 days to allow reactivation, then permanently deleted. Request immediate deletion via support." },
-                    ],
+                    questions: isStaff
+                      ? [
+                          { q: "Is my data secure?", a: `Bank-level encryption, row-level security, and regular backups. Data stored in ${terminology.isUK ? "UK/EU" : "secure"} data centres.` },
+                        ]
+                      : [
+                          { q: "Is my data secure?", a: `Bank-level encryption, row-level security, and regular backups. Data stored in ${terminology.isUK ? "UK/EU" : "secure"} data centres.` },
+                          { q: "What happens to my data if I cancel?", a: "Retained for 90 days to allow reactivation, then permanently deleted. Request immediate deletion via support." },
+                        ],
                   },
                 ].map((cat, ci) => (
                   <div key={ci} className="mt-4">

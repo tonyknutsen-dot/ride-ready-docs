@@ -36,21 +36,26 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (inviteError || !invite) {
+      // Validation path (no userId) must always return 200 so the client
+      // can render a friendly "Invalid invite" card instead of a raw
+      // edge-function error. Acceptance path keeps a non-2xx status.
+      const status = userId ? 404 : 200;
       return new Response(
-        JSON.stringify({ error: "Invalid or expired invite", valid: false }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Invalid or expired invite", valid: false, status: "invalid" }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check if invite is still valid
+    // Check if invite is still valid (accepted / cancelled / etc.)
     if (invite.status !== "pending") {
+      const httpStatus = userId ? 400 : 200;
       return new Response(
         JSON.stringify({ 
           error: `This invite has already been ${invite.status}`,
           valid: false,
-          status: invite.status
+          status: invite.status,
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: httpStatus, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -61,9 +66,10 @@ const handler = async (req: Request): Promise<Response> => {
         .update({ status: "expired" })
         .eq("id", invite.id);
 
+      const httpStatus = userId ? 400 : 200;
       return new Response(
-        JSON.stringify({ error: "This invite has expired", valid: false }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "This invite has expired", valid: false, status: "expired" }),
+        { status: httpStatus, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
