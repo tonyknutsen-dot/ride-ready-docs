@@ -94,13 +94,16 @@ const NeedsAttentionPanel = () => {
       const result: AttentionItem[] = [];
 
       (defectsRes.data || []).forEach((d: any) => {
+        const critical = isDefectCritical(d.severity);
         result.push({
           id: `defect-${d.id}`,
-          type: 'stop_use',
+          type: critical ? 'stop_use' : 'open_defect',
           label: d.rides?.ride_name || 'Equipment',
           sublabel: d.description?.substring(0, 80),
-          urgency: 'critical',
-          path: d.ride_id ? `/defects?rideId=${d.ride_id}&severity=stop_operation&defectId=${d.id}` : '/defects?severity=stop_operation',
+          urgency: critical ? 'critical' : 'warning',
+          path: d.ride_id
+            ? `/defects?rideId=${d.ride_id}${critical ? '&severity=stop_operation' : ''}&defectId=${d.id}`
+            : `/defects${critical ? '?severity=stop_operation' : ''}`,
         });
       });
 
