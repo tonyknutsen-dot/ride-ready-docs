@@ -39,6 +39,8 @@ export function HelpChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const role = useAppRole();
+  const SUGGESTED_QUESTIONS = role === 'staff' ? STAFF_SUGGESTED_QUESTIONS : CONTROLLER_SUGGESTED_QUESTIONS;
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
