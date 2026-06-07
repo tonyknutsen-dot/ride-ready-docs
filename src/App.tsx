@@ -37,6 +37,7 @@ import ComingSoon from "./pages/ComingSoon";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
 
 // Lazy load non-critical pages for better initial load
 const Overview = lazy(() => import("./pages/Overview"));
@@ -147,6 +148,7 @@ const App = () => (
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
               <Route path="/session-diagnostics" element={<SessionDiagnostics />} />
               <Route path="/source-of-truth" element={<ProtectedRoute><ProfileGuard><AppLayout><SourceOfTruthAudit /></AppLayout></ProfileGuard></ProtectedRoute>} />

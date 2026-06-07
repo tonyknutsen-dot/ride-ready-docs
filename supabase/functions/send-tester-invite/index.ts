@@ -154,54 +154,97 @@ const handler = async (req: Request): Promise<Response> => {
     const inviteUrl = `${baseUrl}/tester-invite/${invite.invite_token}`;
     const subject = "You're invited to be a Tester! 🧪";
 
+    // ---- Email HTML — fully inline, mobile-safe, Gmail-safe ----
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+    const safeInviter = inviterName ? esc(inviterName) : '';
+    const PRIMARY = '#1F3A5F';
+    const ACCENT = '#FCBA04';
+    const TEXT = '#1f2937';
+    const MUTED = '#6b7280';
+    const BORDER = '#e5e7eb';
+    const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+    const wrapWord = 'word-break:break-word;overflow-wrap:anywhere;';
+
+    const benefits = [
+      'Get early access to new features',
+      'See a "Test Mode" banner showing the current app version',
+      'Have special tools to reset your test data',
+      'Help us improve the app for everyone',
+    ];
+    const benefitRows = benefits.map(b => `
+      <tr><td style="padding:4px 0;font-family:${FONT};font-size:14px;color:${TEXT};line-height:1.5;">
+        <span style="color:#22c55e;font-weight:bold;">✓</span> ${esc(b)}
+      </td></tr>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>${esc(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f7f9;font-family:${FONT};color:${TEXT};-webkit-text-size-adjust:100%;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f6f7f9;padding:20px 10px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;background-color:#ffffff;border:1px solid ${BORDER};border-radius:10px;overflow:hidden;">
+      <tr>
+        <td style="background-color:${PRIMARY};padding:24px 24px;text-align:center;border-bottom:3px solid ${ACCENT};">
+          <div style="font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,0.85);">Ride Ready Docs</div>
+          <h1 style="margin:6px 0 8px 0;font-family:${FONT};font-size:20px;font-weight:700;color:#ffffff;line-height:1.3;">🧪 You're Invited to Test!</h1>
+          <span style="display:inline-block;background-color:${ACCENT};color:#000000;padding:4px 10px;border-radius:4px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:0.5px;">TESTER INVITE</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:24px 24px 8px 24px;font-family:${FONT};font-size:15px;color:${TEXT};line-height:1.6;">
+          <p style="margin:0 0 12px 0;">Hi there!</p>
+          <p style="margin:0 0 16px 0;${wrapWord}">${safeInviter ? `<strong style="${wrapWord}">${safeInviter}</strong> has` : 'You have been'} invited you to join <strong>Ride Ready Docs</strong> as a tester.</p>
+
+          <p style="margin:0 0 8px 0;font-family:${FONT};font-size:14px;color:${TEXT};font-weight:600;">As a tester, you'll:</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px 0;">${benefitRows}</table>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:20px 0;">
+            <tr><td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${inviteUrl}" style="height:46px;v-text-anchor:middle;width:240px;" arcsize="14%" strokecolor="${ACCENT}" fillcolor="${ACCENT}">
+              <center style="color:#000000;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Accept Tester Invite</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="${inviteUrl}" style="display:inline-block;background-color:${ACCENT};color:#000000;padding:14px 28px;text-decoration:none;border-radius:8px;font-family:${FONT};font-weight:bold;font-size:15px;line-height:1;mso-padding-alt:14px 28px;">Accept Tester Invite</a>
+              <!--<![endif]-->
+            </td></tr>
+          </table>
+
+          <p style="font-family:${FONT};font-size:12px;color:${MUTED};margin:14px 0 4px 0;line-height:1.5;${wrapWord}">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${inviteUrl}" style="color:${PRIMARY};${wrapWord}">${inviteUrl}</a>
+          </p>
+
+          <p style="font-family:${FONT};font-size:13px;color:${MUTED};margin:14px 0 0 0;">
+            This invite expires in 7 days. If you didn't expect this invite, you can safely ignore this email.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 24px 20px 24px;background-color:#fafbfc;border-top:1px solid ${BORDER};text-align:center;font-family:${FONT};font-size:11px;color:${MUTED};line-height:1.5;">
+          Ride Ready Docs &middot; <a href="https://ridereadydocs.com" style="color:${PRIMARY};text-decoration:none;">ridereadydocs.com</a>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #1F3A5F; background-image: linear-gradient(135deg, #1F3A5F, #2F6FB2); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
-            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; background: #FCBA04; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
-            .badge { display: inline-block; background: #FCBA04; color: #000; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🧪 You're Invited to Test!</h1>
-              <span class="badge">TESTER INVITE</span>
-            </div>
-            <div class="content">
-              <p>Hi there!</p>
-               <p>${inviterName ? `<strong>${inviterName}</strong> has` : 'You have been'} invited you to join <strong>Ride Ready Docs</strong> as a tester.</p>
-              <p>As a tester, you'll:</p>
-              <ul>
-                <li>Get early access to new features</li>
-                <li>See a "Test Mode" banner showing the current app version</li>
-                <li>Have special tools to reset your test data</li>
-                <li>Help us improve the app for everyone</li>
-              </ul>
-              <p style="text-align: center;">
-                <a href="${inviteUrl}" class="button">Accept Tester Invite</a>
-              </p>
-              <p style="font-size: 14px; color: #666;">
-                This invite expires in 7 days. If you didn't expect this invite, you can safely ignore this email.
-              </p>
-            </div>
-            <div class="footer">
-               <p>Ride Ready Docs - Document Management for Fairground Professionals</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html,
     });
 
     if ((emailResponse as any)?.error) {

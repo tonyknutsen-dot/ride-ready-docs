@@ -355,7 +355,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
-    const redirectUrl = `${CANONICAL_APP_ORIGIN}/auth`;
+    // Recovery links must land on /auth/callback so the session is exchanged
+    // before we route the user into the set-new-password screen.
+    const redirectUrl = `${CANONICAL_APP_ORIGIN}/auth/callback?type=recovery`;
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl
