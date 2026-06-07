@@ -72,7 +72,7 @@ const DataProcessingAgreement = () => {
                 <h3 className="text-xl font-semibold mb-2">4.3 Security Measures</h3>
                 <p className="text-muted-foreground mb-4">We implement appropriate technical and organizational measures to ensure a level of security appropriate to the risk, including:</p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li>Encryption of Personal Data in transit (TLS 1.3) and at rest</li>
+                  <li>Encryption of Personal Data in transit (HTTPS) and at rest via the hosting provider</li>
                   <li>Row-level security ensuring data isolation between customers</li>
                   <li>Regular security assessments and penetration testing</li>
                   <li>Access controls and authentication mechanisms</li>
