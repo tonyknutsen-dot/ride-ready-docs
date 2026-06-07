@@ -88,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+    <div style="background-color: ${primary}; background-image: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
       <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">🎡 New ${typeLabel} Request</h1>
       <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 14px;">A user has requested a new equipment type</p>
     </div>
@@ -129,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="https://ridereadydocs.com/admin/ride-requests" style="display: inline-block; background: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">View in Admin Panel</a>
+        <a href="https://ridereadydocs.com/admin/ride-requests" style="display: inline-block; background-color: ${primary}; background-image: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">View in Admin Panel</a>
       </div>
     </div>
     
@@ -164,7 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, ${success} 0%, #15803d 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+    <div style="background-color: ${success}; background-image: linear-gradient(135deg, ${success} 0%, #15803d 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
       <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
         <span style="font-size: 24px;">✓</span>
       </div>

@@ -289,7 +289,7 @@ const handler = async (req: Request): Promise<Response> => {
           <style>
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 560px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #1F3A5F, #2F6FB2); color: white; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header { background-color: #1F3A5F; background-image: linear-gradient(135deg, #1F3A5F, #2F6FB2); color: white; padding: 24px 30px; border-radius: 12px 12px 0 0; text-align: center; }
             .header h1 { margin: 0 0 4px; font-size: 22px; font-weight: 700; }
             .header p { margin: 0; font-size: 13px; opacity: 0.85; }
             .content { background: #f8f9fa; padding: 28px 30px; border-radius: 0 0 12px 12px; }

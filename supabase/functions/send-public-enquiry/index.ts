@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px 40px; text-align: center;">
+                  <td style="background-color: #1e3a5f; background-image: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px 40px; text-align: center;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">New Website Enquiry</h1>
                     <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">${typeLabel}</p>
                   </td>
@@ -199,7 +199,7 @@ const handler = async (req: Request): Promise<Response> => {
             <td align="center" style="padding: 40px 20px;">
               <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px 40px; text-align: center;">
+                  <td style="background-color: #1e3a5f; background-image: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 30px 40px; text-align: center;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Thank You for Getting in Touch</h1>
                   </td>
                 </tr>
