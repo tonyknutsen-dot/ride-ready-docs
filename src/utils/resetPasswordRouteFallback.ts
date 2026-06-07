@@ -184,8 +184,7 @@ const rootHasVisibleContent = () => {
   const root = document.getElementById('root');
   if (!root) return false;
   const text = root.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-  const rect = root.getBoundingClientRect();
-  return root.childElementCount > 0 && rect.width > 0 && rect.height > 0 && text.length > 8;
+  return root.childElementCount > 0 && text.length > 8;
 };
 
 export const installResetPasswordRouteFallback = () => {
