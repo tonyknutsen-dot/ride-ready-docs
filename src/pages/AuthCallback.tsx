@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import appLogo from '@/assets/app-logo.jpg';
+import { RESET_LINK_EXPIRED_MESSAGE, logRecoveryDiagnostic, parseAuthRecoveryParams } from '@/utils/authRecovery';
 
 type Status = 'working' | 'error' | 'success';
 
@@ -18,19 +19,13 @@ const AuthCallback = () => {
 
   useEffect(() => {
     let cancelled = false;
-
-    const isRecoveryLink = () => {
-      const url = new URL(window.location.href);
-      if ((url.searchParams.get('type') || '').toLowerCase() === 'recovery') return true;
-      const hash = url.hash || '';
-      if (/(^|[#&?])type=recovery(\b|&|$)/i.test(hash)) return true;
-      return false;
-    };
+    const recoveryParams = parseAuthRecoveryParams();
 
     const route = async (userId: string) => {
       try {
         // Password recovery: always send the user to the set-new-password screen.
-        if (isRecoveryLink()) {
+        if (recoveryParams.isRecovery) {
+          logRecoveryDiagnostic('routing to /auth/reset-password', { userIdPresent: !!userId });
           navigate('/auth/reset-password', { replace: true });
           return;
         }
@@ -51,27 +46,62 @@ const AuthCallback = () => {
       try {
         const url = new URL(window.location.href);
         const code = url.searchParams.get('code');
-        const errorParam =
-          url.searchParams.get('error_description') ||
-          url.searchParams.get('error') ||
-          (url.hash.match(/error_description=([^&]+)/)?.[1] ?? null);
+        const errorParam = recoveryParams.errorDescription || recoveryParams.error;
+
+        if (recoveryParams.isRecovery || recoveryParams.isRecoveryError) {
+          logRecoveryDiagnostic('/auth/callback received recovery link', {
+            sources: recoveryParams.sources,
+            hasCode: !!recoveryParams.code,
+            hasTokenHash: !!recoveryParams.tokenHash,
+            hasHashTokens: recoveryParams.hasHashTokens,
+            hasError: recoveryParams.hasError,
+            error: recoveryParams.error,
+            errorCode: recoveryParams.errorCode,
+          });
+        }
 
         if (errorParam) {
           setStatus('error');
-          setErrorMessage(decodeURIComponent(errorParam).replace(/\+/g, ' '));
+          setErrorMessage(recoveryParams.isRecoveryError ? RESET_LINK_EXPIRED_MESSAGE : decodeURIComponent(errorParam).replace(/\+/g, ' '));
           return;
+        }
+
+        if (recoveryParams.isRecovery && recoveryParams.tokenHash) {
+          const { data, error } = await supabase.auth.verifyOtp({
+            type: 'recovery',
+            token_hash: recoveryParams.tokenHash,
+          });
+          if (error) {
+            logRecoveryDiagnostic('Supabase recovery token exchange failed', { message: error.message });
+            setStatus('error');
+            setErrorMessage(RESET_LINK_EXPIRED_MESSAGE);
+            return;
+          }
+          if (data.session?.user) {
+            logRecoveryDiagnostic('Supabase recovery token exchange succeeded', { userIdPresent: true });
+            setStatus('success');
+            setEmailForResend(data.session.user.email ?? '');
+            await route(data.session.user.id);
+            return;
+          }
         }
 
         // PKCE / new flow: exchange ?code= for a session
         if (code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
+            if (recoveryParams.isRecovery) {
+              logRecoveryDiagnostic('Supabase recovery code exchange failed', { message: error.message });
+            }
             console.error('[AuthCallback] exchangeCodeForSession failed:', error);
             setStatus('error');
-            setErrorMessage(error.message || 'Could not confirm your email. The link may have expired.');
+            setErrorMessage(recoveryParams.isRecovery ? RESET_LINK_EXPIRED_MESSAGE : error.message || 'Could not confirm your email. The link may have expired.');
             return;
           }
           if (data.session?.user) {
+            if (recoveryParams.isRecovery) {
+              logRecoveryDiagnostic('Supabase recovery code exchange succeeded', { userIdPresent: true });
+            }
             setStatus('success');
             setEmailForResend(data.session.user.email ?? '');
             await route(data.session.user.id);
