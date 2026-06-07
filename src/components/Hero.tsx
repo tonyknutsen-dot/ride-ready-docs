@@ -55,16 +55,16 @@ const Hero = () => {
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
-            Complete Operations
-            <span className="text-[hsl(210_55%_80%)]">Management</span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-up animate-delay-100" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)' }}>
+            Complete Operations{' '}
+            <span className="text-[hsl(210_55%_82%)]">Management</span>
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-white/80 mb-6 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-white mb-6 max-w-2xl mx-auto" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.7)' }}>
             for ride, amusement and event operators
           </p>
 
           {/* Subheadline - LCP element */}
-          <p className="text-base md:text-lg text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-lg text-white/95 mb-10 max-w-2xl mx-auto leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.7)' }}>
             Manage equipment records, documents, safety checks, defects, maintenance,
             wind and pressure logs, and compliance records in one secure system.
           </p>
