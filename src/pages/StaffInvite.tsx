@@ -273,7 +273,22 @@ export default function StaffInvite() {
     );
   }
 
-  if (status === 'invalid' || status === 'expired' || status === 'already_accepted') {
+  if (status === 'invalid' || status === 'expired' || status === 'already_accepted' || status === 'cancelled') {
+    const title =
+      status === 'expired' ? 'Invite expired' :
+      status === 'already_accepted' ? 'Invite already accepted' :
+      status === 'cancelled' ? 'Invite cancelled' :
+      'Invalid invite';
+
+    const message =
+      status === 'expired'
+        ? 'This staff invite has expired. Please ask the account owner to send a new invite.'
+        : status === 'already_accepted'
+        ? 'This staff invite has already been accepted. Please sign in using the invited email address.'
+        : status === 'cancelled'
+        ? 'This staff invite has been cancelled. Please contact the account owner if you still need access.'
+        : (errorMessage || 'This invite link is not valid.');
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -282,22 +297,12 @@ export default function StaffInvite() {
             <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
               <XCircle className="h-7 w-7 text-destructive" />
             </div>
-            <CardTitle>
-              {status === 'expired' ? 'Invite Expired' : 
-               status === 'already_accepted' ? 'Already Accepted' : 
-               'Invalid Invite'}
-            </CardTitle>
-            <CardDescription>
-              {status === 'expired' 
-                ? 'This invite link has expired. Please ask your employer for a new invite.'
-                : status === 'already_accepted'
-                ? 'This invite has already been used. You can sign in to access your account.'
-                : errorMessage || 'This invite link is not valid.'}
-            </CardDescription>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{message}</CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-3">
             <Link to="/auth">
-              <Button>Go to Sign In</Button>
+              <Button>Go to sign in</Button>
             </Link>
           </CardContent>
         </Card>
