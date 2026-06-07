@@ -56,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
       return createBlockedIpResponse(blockResult, corsHeaders);
     }
 
-    const { name, email, company, enquiryType, message, honeypot }: PublicEnquiryRequest = await req.json();
+    const { name, email, phone, company, enquiryType, message, source, timestamp, honeypot }: PublicEnquiryRequest = await req.json();
     
     // Honeypot check - bots will fill this hidden field
     if (honeypot) {
