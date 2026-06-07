@@ -362,39 +362,49 @@ const HelpCenter = () => {
                 {[
                   {
                     category: "Getting Started",
-                    questions: [
-                      { q: "How do I start using Ride Ready Docs?", a: `Complete your profile with company and ${terminology.isUK ? "showman" : "operator"} details, then add your first item of equipment. Once added, you can upload documents, run checks, and log maintenance.` },
-                      { q: "What's included in the free trial?", a: "Full access to all features for 14 days. No credit card required. After the trial, choose a plan based on your number of registered items." },
-                    ],
+                    questions: isStaff
+                      ? [
+                          { q: "How do I start using Ride Ready Docs?", a: "Open the dashboard to see equipment you have access to, then start checks, log maintenance, or record wind and pressure readings as needed." },
+                        ]
+                      : [
+                          { q: "How do I start using Ride Ready Docs?", a: `Complete your profile with company and ${terminology.isUK ? "showman" : "operator"} details, then add your first item of equipment. Once added, you can upload documents, run checks, and log maintenance.` },
+                          { q: "What's included in the free trial?", a: "Full access to all features for 14 days. No credit card required. After the trial, choose a plan based on your number of registered items." },
+                        ],
                   },
-                  {
-                    category: "Documents",
-                    questions: [
-                      { q: "What types of documents can I upload?", a: "Annual inspection certificates, insurance, test certificates, manuals, risk assessments, electrical certificates, and more." },
-                      { q: "How does document expiry tracking work?", a: "Set an expiry date when uploading. The system sends email reminders before expiry." },
-                      { q: "Who can access documents?", a: "Only the controller (account owner). Staff do not have document access." },
-                    ],
-                  },
-                  {
-                    category: "Account & Billing",
-                    questions: [
-                      { q: "How does pricing work?", a: "Plans are based on the number of registered items. Starter (1–5) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Business (26–50) £44.99/mo. All plans include every feature. Need more than 50? Contact us." },
-                      { q: "Can I cancel my subscription?", a: "Yes, cancel anytime from Settings > Plan & Billing. Access continues until the end of your paid period. Data retained for 90 days." },
-                    ],
-                  },
-                  {
-                    category: "Staff",
-                    questions: [
-                      { q: "How do I invite staff members?", a: "Staff page → Invite Staff → enter email. Staff automatically get access to assigned equipment, checks, maintenance, pressure readings, and wind logs." },
-                      { q: "What can staff access?", a: "Staff can access assigned equipment, checks, maintenance, pressure readings, and wind logs. They cannot access calendar, documents, compliance, billing, or settings." },
-                    ],
-                  },
+                  ...(isStaff ? [] : [
+                    {
+                      category: "Documents",
+                      questions: [
+                        { q: "What types of documents can I upload?", a: "Annual inspection certificates, insurance, test certificates, manuals, risk assessments, electrical certificates, and more." },
+                        { q: "How does document expiry tracking work?", a: "Set an expiry date when uploading. The system sends email reminders before expiry." },
+                        { q: "Who can access documents?", a: "Only the controller (account owner). Staff do not have document access." },
+                      ],
+                    },
+                    {
+                      category: "Account & Billing",
+                      questions: [
+                        { q: "How does pricing work?", a: "Plans are based on the number of registered items. Starter (1–5) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Business (26–50) £44.99/mo. All plans include every feature. Need more than 50? Contact us." },
+                        { q: "Can I cancel my subscription?", a: "Yes, cancel anytime from Settings > Plan & Billing. Access continues until the end of your paid period. Data retained for 90 days." },
+                      ],
+                    },
+                    {
+                      category: "Staff",
+                      questions: [
+                        { q: "How do I invite staff members?", a: "Staff page → Invite Staff → enter email. Staff automatically get access to assigned equipment, checks, maintenance, pressure readings, and wind logs." },
+                        { q: "What can staff access?", a: "Staff can access assigned equipment, checks, maintenance, pressure readings, and wind logs. They cannot access calendar, documents, compliance, billing, or settings." },
+                      ],
+                    },
+                  ]),
                   {
                     category: "Security & Data",
-                    questions: [
-                      { q: "Is my data secure?", a: `Bank-level encryption, row-level security, and regular backups. Data stored in ${terminology.isUK ? "UK/EU" : "secure"} data centres.` },
-                      { q: "What happens to my data if I cancel?", a: "Retained for 90 days to allow reactivation, then permanently deleted. Request immediate deletion via support." },
-                    ],
+                    questions: isStaff
+                      ? [
+                          { q: "Is my data secure?", a: `Bank-level encryption, row-level security, and regular backups. Data stored in ${terminology.isUK ? "UK/EU" : "secure"} data centres.` },
+                        ]
+                      : [
+                          { q: "Is my data secure?", a: `Bank-level encryption, row-level security, and regular backups. Data stored in ${terminology.isUK ? "UK/EU" : "secure"} data centres.` },
+                          { q: "What happens to my data if I cancel?", a: "Retained for 90 days to allow reactivation, then permanently deleted. Request immediate deletion via support." },
+                        ],
                   },
                 ].map((cat, ci) => (
                   <div key={ci} className="mt-4">
