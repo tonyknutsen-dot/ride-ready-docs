@@ -17,18 +17,27 @@ const CallToAction = () => {
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    const shareUrl = typeof window !== 'undefined' ? window.location.origin : CANONICAL_APP_ORIGIN;
+    const shareData = {
+      title: 'Ride Ready Docs',
+      text: 'Ride Ready Docs helps ride, amusement and event operators manage documents, checks, defects, maintenance, wind and pressure records in one system.',
+      url: shareUrl,
+    };
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({
-          title: 'Ride Ready Docs',
-          text: 'Complete operations management for fairground and amusement operators. Manage documents, safety checks, and stay compliant.',
-          url: window.location.origin,
-        });
-      } catch (err) {
-        console.log('Share cancelled');
+        await navigator.share(shareData);
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
       }
-    } else {
-      await navigator.clipboard.writeText(window.location.origin);
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Share link copied');
+    } catch {
+      toast.error('Could not copy link — please copy the page address from your browser.');
     }
   };
 
