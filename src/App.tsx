@@ -34,7 +34,7 @@ function LocationAwareOfflineSuspense({ children }: { children: React.ReactNode 
 }
 
 // Eager load critical pages
-import ComingSoon from "./pages/ComingSoon";
+import IndexRoute from "./components/IndexRoute";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
@@ -166,7 +166,7 @@ const App = () => (
               <LocationAwareOfflineSuspense>
               <MaintenanceGuard>
               <Routes>
-              <Route path="/" element={<ComingSoon />} />
+              <Route path="/" element={<IndexRoute />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
