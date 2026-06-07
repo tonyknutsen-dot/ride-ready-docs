@@ -11,6 +11,7 @@ import appLogo from '@/assets/app-logo.jpg';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { validatePasswordStrength } from '@/utils/emailSuggestion';
 import { RESET_LINK_EXPIRED_MESSAGE, logRecoveryDiagnostic, parseAuthRecoveryParams } from '@/utils/authRecovery';
+import { markResetPasswordRouteHealthy } from '@/utils/resetPasswordRouteFallback';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -22,6 +23,18 @@ const ResetPassword = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (checking) {
+      markResetPasswordRouteHealthy('checking');
+      return;
+    }
+    if (success) {
+      markResetPasswordRouteHealthy('success');
+      return;
+    }
+    markResetPasswordRouteHealthy(hasSession ? 'form' : 'expired');
+  }, [checking, hasSession, success]);
 
   useEffect(() => {
     let cancelled = false;

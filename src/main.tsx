@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { redirectToCanonicalOriginIfNeeded } from "./config/canonicalOrigin";
+import { installResetPasswordRouteFallback } from "./utils/resetPasswordRouteFallback";
 
 const redirectedToCanonicalOrigin = redirectToCanonicalOriginIfNeeded();
 
@@ -25,6 +26,10 @@ if ('caches' in window) {
 }
 
 // Initialize the app with StrictMode disabled in production for performance
+if (!redirectedToCanonicalOrigin) {
+  installResetPasswordRouteFallback();
+}
+
 const root = createRoot(document.getElementById("root")!);
 if (!redirectedToCanonicalOrigin) {
   root.render(<App />);

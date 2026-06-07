@@ -134,12 +134,10 @@ function StandaloneAuthRouteGate({ children }: { children: React.ReactNode }) {
   if (STANDALONE_AUTH_ROUTES.has(pathname)) {
     return (
       <AuthRouteErrorBoundary resetKey={pathname}>
-        <LocationAwareOfflineSuspense>
-          <Routes>
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
-          </Routes>
-        </LocationAwareOfflineSuspense>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+        </Routes>
       </AuthRouteErrorBoundary>
     );
   }
