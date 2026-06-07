@@ -10,9 +10,12 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 interface PublicEnquiryRequest {
   name: string;
   email: string;
+  phone?: string;
   company: string;
   enquiryType: string;
   message: string;
+  source?: string;
+  timestamp?: string;
   honeypot?: string; // Hidden field for bot detection
 }
 
