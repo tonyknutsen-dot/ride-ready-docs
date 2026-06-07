@@ -90,7 +90,18 @@ export function HelpChatWidget() {
           "Authorization": `Bearer ${session.access_token}`,
           "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNidGxkdWRnaXNrcWZxcWtybWFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MzA1NzMsImV4cCI6MjA3NDMwNjU3M30.I0WeylvH8HQzNROhpqsfvd5HCKxX21DbC0g6AN0dwb8",
         },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: role === 'staff'
+                ? "(Context: I am signed in as a Staff user. I do NOT have access to documents, calendar, compliance, billing, risk assessments, staff management, inspection scheduling, or settings. Only answer using features available to Staff: assigned equipment, checks, maintenance, defect reporting, wind log, and pressure readings. Do NOT direct me to controller-only pages.)"
+                : "(Context: I am signed in as a Controller — full account access.)",
+            },
+            ...messages,
+            userMessage,
+          ],
+        }),
       });
 
       if (!resp.ok) {
