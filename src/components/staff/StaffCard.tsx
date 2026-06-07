@@ -30,9 +30,15 @@ export interface PendingInviteData {
   email: string;
   permission_level: StaffRole;
   created_at: string;
+  updated_at?: string | null;
   expires_at: string;
-  status: string;
+  status: string; // 'pending' | 'expired' | 'cancelled' | 'accepted'
+  accepted_at?: string | null;
+  invited_by?: string | null;
+  invited_by_name?: string | null;
+  invite_token?: string | null;
 }
+
 
 interface StaffCardProps {
   member: StaffMemberData;
