@@ -169,6 +169,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Invite marked as accepted");
 
+    // Send staff-specific welcome email (no trial/billing wording).
+    // Only for newly created users — existing users already have a login.
+    if (!existingUser) {
+      try {
+        await supabaseAdmin.functions.invoke("send-welcome-email", {
+          body: {
+            email,
+            asStaff: true,
+            organisationName: invite.organisations?.name || "",
+          },
+        });
+      } catch (welcomeErr) {
+        console.error("Failed to send staff welcome email:", welcomeErr);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
