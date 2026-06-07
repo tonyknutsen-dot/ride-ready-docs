@@ -317,29 +317,29 @@ const HelpCenter = () => {
             />
           </div>
 
-          {filterTopics(coreModules).length > 0 && (
+          {filterTopics(visibleCoreModules).length > 0 && (
             <>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2 px-1">Core</p>
               <div className="grid sm:grid-cols-2 gap-2.5">
-                {filterTopics(coreModules).map((t) => (
+                {filterTopics(visibleCoreModules).map((t) => (
                   <TopicRow key={t.title} topic={t} />
                 ))}
               </div>
             </>
           )}
 
-          {filterTopics(advancedFeatures).length > 0 && (
+          {filterTopics(visibleAdvancedFeatures).length > 0 && (
             <>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#94A3B8] mb-2 mt-4 px-1">More</p>
               <div className="grid sm:grid-cols-2 gap-2.5">
-                {filterTopics(advancedFeatures).map((t) => (
+                {filterTopics(visibleAdvancedFeatures).map((t) => (
                   <TopicRow key={t.title} topic={t} />
                 ))}
               </div>
             </>
           )}
 
-          {search && filterTopics(coreModules).length === 0 && filterTopics(advancedFeatures).length === 0 && (
+          {search && filterTopics(visibleCoreModules).length === 0 && filterTopics(visibleAdvancedFeatures).length === 0 && (
             <div className="text-center py-10 text-sm text-[#64748B]">
               No topics found for "<span className="font-medium text-[#0F172A]">{search}</span>". Try different keywords.
             </div>
