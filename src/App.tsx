@@ -188,7 +188,7 @@ const App = () => (
                 } 
               />
               <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/install" element={<Install />} />
+              <Route path="/install" element={<ProtectedRoute><Install /></ProtectedRoute>} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/help" element={<HelpCenter />} />
