@@ -103,15 +103,22 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
       });
 
       if (response.error) {
-        // Extract real error message from edge function response body
         let realMessage = response.error.message || 'Failed to send invite';
+        let code: string | undefined;
         try {
           const ctx: any = (response.error as any).context;
           if (ctx && typeof ctx.json === 'function') {
             const body = await ctx.json();
             if (body?.error) realMessage = body.error;
+            if (body?.code) code = body.code;
           }
         } catch { /* ignore */ }
+        if (code === 'duplicate_pending') {
+          toast({ title: 'Invite already pending', description: realMessage });
+          onOpenChange(false);
+          onSuccess?.();
+          return;
+        }
         toast({ title: 'Cannot send invite', description: realMessage, variant: 'destructive' });
         return;
       }
