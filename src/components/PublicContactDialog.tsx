@@ -147,34 +147,28 @@ export const PublicContactDialog = ({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="company">Company / Business Name</Label>
-            <Input
-              id="company"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              placeholder="Your company name (optional)"
-              maxLength={200}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="enquiryType">Enquiry Type</Label>
-            <Select
-              value={formData.enquiryType}
-              onValueChange={(value) => setFormData({ ...formData, enquiryType: value })}
-            >
-              <SelectTrigger id="enquiryType">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="general">General Enquiry</SelectItem>
-                <SelectItem value="sales">Sales / Pricing</SelectItem>
-                <SelectItem value="demo">Request a Demo</SelectItem>
-                <SelectItem value="partnership">Partnership</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phone">Phone (optional)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="Your phone number"
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <Label htmlFor="company">Business / Organisation (optional)</Label>
+              <Input
+                id="company"
+                value={formData.company}
+                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                placeholder="Your business name"
+                maxLength={200}
+              />
+            </div>
           </div>
 
           <div>
