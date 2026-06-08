@@ -124,6 +124,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   // Back-compat shim for handlers that previously called loadDocuments() to refresh.
   const loadDocuments = useCallback(() => { void refetch(); }, [refetch]);
 
+  // Track in-flight "Generate preview" requests per document
+  const [previewRetrying, setPreviewRetrying] = useState<Record<string, boolean>>({});
+  const handleRetryPreview = useCallback(async (doc: Document) => {
+    setPreviewRetrying((m) => ({ ...m, [doc.id]: true }));
+    const res = await retryDocumentPreview(doc.id);
+    setPreviewRetrying((m) => ({ ...m, [doc.id]: false }));
+    if (res.ok && res.status === 'ready') {
+      toast({ title: 'Preview ready' });
+    } else if (res.status === 'not_required') {
+      toast({ title: 'No preview needed' });
+    } else {
+      toast({ title: 'Preview unavailable', description: PREVIEW_RETRY_FRIENDLY_ERROR, variant: 'destructive' });
+    }
+    void refetch();
+  }, [refetch, toast]);
+
   // Slow-network hint: after 4s of loading, switch from spinner to a clearer message
   const [showSlowHint, setShowSlowHint] = useState(false);
   useEffect(() => {
