@@ -5,6 +5,7 @@ import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import { useToast } from "@/hooks/use-toast";
 import type { CheckItemResult } from '@/lib/offlineDb';
 import { invalidateCheckRecordQueries } from '@/utils/queryInvalidation';
+import { validateClientFile, sanitizeFilename } from '@/lib/uploadValidation';
 
 // Types for optimistic document
 interface OptimisticDocument {
@@ -52,11 +53,22 @@ export function useOptimisticDocumentUpload() {
       
       if (!user || !effectiveUserId) throw new Error("Not authenticated");
 
+      // Client-side allowlist + magic-extension check (server re-validates)
+      const validation = validateClientFile(file, { mode: 'document' });
+      if (!validation.ok) {
+        throw new Error(validation.reason || 'This file type is not currently supported.');
+      }
+      const originalFilename = validation.sanitizedName || sanitizeFilename(file.name);
+
       // Use effectiveUserId (operator's ID) for data storage so staff data syncs with operator
       const storageUserId = effectiveUserId;
 
-      // Create file path using effective user ID (operator's folder)
-      const fileName = `${Date.now()}-${file.name}`;
+      // Use app-generated UUID for the stored object — never trust user filename
+      const ext = (originalFilename.split('.').pop() || 'bin').toLowerCase();
+      const storedId = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const fileName = `${storedId}.${ext}`;
       const filePath = isGlobal 
         ? `${storageUserId}/global/${fileName}`
         : `${storageUserId}/${rideId}/${fileName}`;
@@ -64,11 +76,11 @@ export function useOptimisticDocumentUpload() {
       // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('ride-documents')
-        .upload(filePath, file);
+        .upload(filePath, file, { contentType: file.type || undefined });
 
       if (uploadError) throw uploadError;
 
-      // Save document metadata - use effectiveUserId so staff data syncs with operator
+      // Save document metadata - quarantined as pending_scan until scanner clears it
       const documentData: Record<string, any> = {
         user_id: storageUserId,
         ride_id: isGlobal ? null : rideId,
@@ -85,6 +97,9 @@ export function useOptimisticDocumentUpload() {
         version_notes: versionNotes || null,
         replaced_document_id: replacingDocumentId || null,
         repeat_annually: repeatAnnually || false,
+        upload_status: 'pending_scan',
+        original_filename: originalFilename,
+        stored_path: filePath,
       };
 
       const { data, error: dbError } = await supabase
@@ -95,6 +110,18 @@ export function useOptimisticDocumentUpload() {
 
       if (dbError) throw dbError;
 
+      // Audit: upload received (best effort)
+      try {
+        await (supabase as any).rpc('log_audit_event', {
+          p_action: 'document_uploaded',
+          p_resource_type: 'document',
+          p_resource_id: data.id,
+          p_details: { file_size: file.size, original_filename: originalFilename, mime_type: file.type },
+        });
+      } catch (e) {
+        console.warn('audit upload failed', e);
+      }
+
       // Mark old document as not latest if replacing
       if (replacingDocumentId) {
         await supabase
@@ -102,6 +129,27 @@ export function useOptimisticDocumentUpload() {
           .update({ is_latest_version: false })
           .eq('id', replacingDocumentId);
       }
+
+      // Kick off server-side validation + virus scan. Don't block the UI
+      // forever — fire and refresh queries when it returns.
+      void (async () => {
+        try {
+          const { data: scanRes } = await supabase.functions.invoke('validate-and-scan-document', {
+            body: { documentId: data.id },
+          });
+          if (scanRes?.status === 'rejected') {
+            // Refresh so the UI shows the blocked state and removes optimistic row
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['overview'] });
+          } else {
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['overview'] });
+          }
+        } catch (e) {
+          console.warn('scan invoke failed', e);
+          queryClient.invalidateQueries({ queryKey: ['documents'] });
+        }
+      })();
 
       return data;
     },
@@ -149,8 +197,8 @@ export function useOptimisticDocumentUpload() {
     },
     onSuccess: (data, params) => {
       toast({
-        title: params.isGlobal ? "Global document saved" : `Saved to ${params.rideName || 'ride'}`,
-        description: "Document uploaded successfully",
+        title: params.isGlobal ? "Global document uploaded" : `Uploaded to ${params.rideName || 'equipment'}`,
+        description: "This document is being checked before it can be used.",
       });
     },
     onSettled: () => {

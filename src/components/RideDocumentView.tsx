@@ -156,7 +156,16 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     });
   };
 
+  const isBlocked = (doc: Document): string | null => {
+    const status = (doc as any).upload_status as string | null;
+    if (status === 'pending_scan') return 'This document is being checked before it can be used.';
+    if (status === 'rejected') return (doc as any).rejection_reason || 'This document could not be verified and has been blocked.';
+    return null;
+  };
+
   const handleDownload = async (doc: Document) => {
+    const blocked = isBlocked(doc);
+    if (blocked) { toast({ title: 'Not available', description: blocked, variant: 'destructive' }); return; }
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
@@ -176,6 +185,8 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
 
 
   const handleCopyLink = async (doc: Document) => {
+    const blocked = isBlocked(doc);
+    if (blocked) { toast({ title: 'Not available', description: blocked, variant: 'destructive' }); return; }
     try {
       const signedUrl = await getSignedStorageUrl(doc.file_path);
       if (!signedUrl) throw new Error('No signed URL');

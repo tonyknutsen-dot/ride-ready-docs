@@ -98,7 +98,7 @@ export async function openDocumentById({
 
     const { data: doc, error: docError } = await supabase
       .from('documents')
-      .select('id, file_path, mime_type, document_name')
+      .select('id, file_path, mime_type, document_name, upload_status, rejection_reason')
       .eq('id', documentId)
       .maybeSingle();
 
@@ -108,6 +108,15 @@ export async function openDocumentById({
 
     if (!doc) {
       throw new Error('Document record not found.');
+    }
+
+    // Quarantine gate: block pending and rejected files from being opened/downloaded
+    const status = (doc as any).upload_status as string | null;
+    if (status === 'pending_scan') {
+      throw new Error('This document is being checked before it can be used.');
+    }
+    if (status === 'rejected') {
+      throw new Error((doc as any).rejection_reason || 'This document could not be verified and has been blocked.');
     }
 
     const isPdf = isPdfByMeta(doc.document_name, doc.mime_type);

@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useDocumentTypes, AUTO_REPEAT_TYPE_KEYS, SUGGEST_GLOBAL_TYPE_KEYS } from '@/hooks/useDocumentTypes';
+import { validateClientFile, DOC_ACCEPT_ATTR, IMAGE_ACCEPT_ATTR } from '@/lib/uploadValidation';
 
 interface DocumentUploadProps {
   rideId?: string;
@@ -85,6 +86,17 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const validation = validateClientFile(file, { mode: 'document' });
+      if (!validation.ok) {
+        toast({
+          title: 'File not accepted',
+          description: validation.reason || 'This file type is not currently supported.',
+          variant: 'destructive',
+        });
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (cameraInputRef.current) cameraInputRef.current.value = '';
+        return;
+      }
       let processedFile = file;
       if (file.type.startsWith('image/') && file.size > 500000) {
         try {
@@ -191,7 +203,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
         id="file"
         type="file"
         onChange={handleFileSelect}
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf"
+        accept={DOC_ACCEPT_ATTR}
         disabled={uploading}
         className="hidden"
       />
@@ -200,7 +212,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
         id="camera"
         type="file"
         onChange={handleFileSelect}
-        accept="image/*"
+        accept={IMAGE_ACCEPT_ATTR}
         capture="environment"
         disabled={uploading}
         className="hidden"
