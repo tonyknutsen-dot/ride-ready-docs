@@ -152,7 +152,12 @@ serve(async (req: Request): Promise<Response> => {
     if (docErr || !doc) {
       return json({ error: 'not_found' }, 404);
     }
-    if (doc.upload_status !== 'clean') {
+    // Allow generation for:
+    //  - uploaded files that passed scanning (upload_status='clean'), and
+    //  - generated / legacy documents that never went through the scanner
+    //    (upload_status IS NULL — these are produced by the app itself).
+    // Block only quarantined / rejected / in-flight uploads.
+    if (doc.upload_status && doc.upload_status !== 'clean') {
       return json({ error: 'not_clean' }, 409);
     }
     if (doc.preview_status === 'ready') {
