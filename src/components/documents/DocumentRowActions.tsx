@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, Download, Link2, RefreshCw, Archive, MoreVertical, Globe, MapPin } from 'lucide-react';
+import { Eye, Download, Link2, RefreshCw, Archive, MoreVertical, Globe, MapPin, FileWarning } from 'lucide-react';
 
 interface DocumentRowActionsProps {
   onView: () => void;
@@ -19,6 +19,10 @@ interface DocumentRowActionsProps {
   onToggleGlobal?: () => void;
   /** When false, in-app preview isn't available (e.g. DOCX/XLSX) — Download becomes the primary action. Defaults to true. */
   previewable?: boolean;
+  /** When provided, shows a "Generate / Retry preview" item in the overflow menu (for DOC/DOCX/XLS/XLSX whose preview hasn't been built or has failed). */
+  onRetryPreview?: () => void;
+  /** Status of any pending retry — used to label the menu item. */
+  previewRetryState?: 'idle' | 'pending';
 }
 
 /**
@@ -36,8 +40,10 @@ const DocumentRowActions = ({
   isGlobal,
   onToggleGlobal,
   previewable = true,
+  onRetryPreview,
+  previewRetryState = 'idle',
 }: DocumentRowActionsProps) => {
-  const hasOverflow = !!(onCopyLink || onReplace || onDelete || onToggleGlobal);
+  const hasOverflow = !!(onCopyLink || onReplace || onDelete || onToggleGlobal || onRetryPreview);
 
   return (
     <div className="flex items-center gap-1 shrink-0">
@@ -104,6 +110,15 @@ const DocumentRowActions = ({
             {onReplace && (
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onReplace(); }}>
                 <RefreshCw className="h-4 w-4 mr-2" /> Replace
+              </DropdownMenuItem>
+            )}
+            {onRetryPreview && (
+              <DropdownMenuItem
+                disabled={previewRetryState === 'pending'}
+                onClick={(e) => { e.stopPropagation(); onRetryPreview(); }}
+              >
+                <FileWarning className="h-4 w-4 mr-2" />
+                {previewRetryState === 'pending' ? 'Preparing preview…' : 'Generate preview'}
               </DropdownMenuItem>
             )}
             {onDelete && (

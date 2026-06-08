@@ -40,6 +40,7 @@ import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import { openDocumentById } from '@/utils/documentOpen';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { canRetryPreview, retryDocumentPreview, previewStatusLabel, PREVIEW_RETRY_FRIENDLY_ERROR } from '@/utils/documentPreview';
 
 type Document = Tables<'documents'>;
 
@@ -78,6 +79,23 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const [filter, setFilter] = useState<FilterType>('all');
   const [rideOpen, setRideOpen] = useState(true);
   const [globalOpen, setGlobalOpen] = useState(true);
+  const [retrying, setRetrying] = useState<Record<string, boolean>>({});
+
+  const handleRetryPreview = async (doc: Document) => {
+    setRetrying((m) => ({ ...m, [doc.id]: true }));
+    // Optimistic: show "Preparing preview…" immediately
+    setDocuments((prev) => prev.map((d) => d.id === doc.id ? { ...d, preview_status: 'pending' } : d));
+    const res = await retryDocumentPreview(doc.id);
+    setRetrying((m) => ({ ...m, [doc.id]: false }));
+    if (res.ok && res.status === 'ready') {
+      toast({ title: 'Preview ready', description: 'Preview generated successfully.' });
+    } else if (res.status === 'not_required') {
+      toast({ title: 'No preview needed', description: 'This file can be opened directly.' });
+    } else {
+      toast({ title: 'Preview unavailable', description: PREVIEW_RETRY_FRIENDLY_ERROR, variant: 'destructive' });
+    }
+    await loadDocuments();
+  };
 
   /* ─── Fetch ─── */
   useEffect(() => {
@@ -287,7 +305,16 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     const gen = isGenerated(doc);
     const typeLabel = TYPE_LABELS[doc.document_type] || doc.document_type;
     const ext = fileExt(doc.file_path || '');
-    const previewable = isPreviewableFile(doc.file_path, doc.mime_type);
+    const nativePreviewable = isPreviewableFile(doc.file_path, doc.mime_type);
+    const hasConvertedPreview = doc.preview_status === 'ready' && !!doc.preview_file_path;
+    const previewable = nativePreviewable || hasConvertedPreview;
+    const previewLabel = previewStatusLabel(doc.preview_status as any);
+    const retryable = canRetryPreview({
+      upload_status: doc.upload_status,
+      preview_status: doc.preview_status as any,
+      file_path: doc.file_path,
+      original_filename: doc.original_filename,
+    });
 
     return (
       <div
@@ -321,6 +348,9 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
             <span className="text-[10px] text-muted-foreground">
               {formatDateUK(new Date(doc.uploaded_at))}
             </span>
+            {previewLabel && (
+              <span className="text-[10px] text-muted-foreground italic">{previewLabel}</span>
+            )}
           </div>
 
           {doc.expires_at && (
@@ -344,10 +374,13 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           onDelete={!showGlobalBadge ? () => handleDelete(doc) : undefined}
           isGlobal={doc.is_global ?? false}
           onToggleGlobal={!isStaff ? () => handleToggleScope(doc) : undefined}
+          onRetryPreview={retryable ? () => handleRetryPreview(doc) : undefined}
+          previewRetryState={retrying[doc.id] || doc.preview_status === 'pending' ? 'pending' : 'idle'}
         />
       </div>
     );
   };
+
 
   const SubSection = ({ label, docs, showGlobalBadge = false }: { label: string; docs: Document[]; showGlobalBadge?: boolean }) => {
     if (docs.length === 0) return null;

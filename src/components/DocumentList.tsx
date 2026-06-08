@@ -25,6 +25,7 @@ import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import { canRetryPreview, retryDocumentPreview, previewStatusLabel, PREVIEW_RETRY_FRIENDLY_ERROR } from '@/utils/documentPreview';
 import {
   isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
   getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile, isPreviewableFile,
@@ -122,6 +123,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const loadError = queryError ? ((queryError as Error).message || 'Failed to load documents.') : null;
   // Back-compat shim for handlers that previously called loadDocuments() to refresh.
   const loadDocuments = useCallback(() => { void refetch(); }, [refetch]);
+
+  // Track in-flight "Generate preview" requests per document
+  const [previewRetrying, setPreviewRetrying] = useState<Record<string, boolean>>({});
+  const handleRetryPreview = useCallback(async (doc: Document) => {
+    setPreviewRetrying((m) => ({ ...m, [doc.id]: true }));
+    const res = await retryDocumentPreview(doc.id);
+    setPreviewRetrying((m) => ({ ...m, [doc.id]: false }));
+    if (res.ok && res.status === 'ready') {
+      toast({ title: 'Preview ready' });
+    } else if (res.status === 'not_required') {
+      toast({ title: 'No preview needed' });
+    } else {
+      toast({ title: 'Preview unavailable', description: PREVIEW_RETRY_FRIENDLY_ERROR, variant: 'destructive' });
+    }
+    void refetch();
+  }, [refetch, toast]);
 
   // Slow-network hint: after 4s of loading, switch from spinner to a clearer message
   const [showSlowHint, setShowSlowHint] = useState(false);
@@ -818,11 +835,18 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 {/* Row 2: Actions — canonical pattern */}
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
                   <DocumentRowActions
-                    previewable={isPreviewableFile(doc.file_path, doc.mime_type)}
+                    previewable={isPreviewableFile(doc.file_path, doc.mime_type) || (doc.preview_status === 'ready' && !!doc.preview_file_path)}
                     onView={() => handleViewDoc(doc)}
                     onDownload={() => handleDownload(doc)}
                     onCopyLink={() => handleCopyLink(doc)}
                     onDelete={() => handleDelete(doc)}
+                    onRetryPreview={canRetryPreview({
+                      upload_status: doc.upload_status,
+                      preview_status: doc.preview_status as any,
+                      file_path: doc.file_path,
+                      original_filename: doc.original_filename,
+                    }) ? () => handleRetryPreview(doc) : undefined}
+                    previewRetryState={previewRetrying[doc.id] || doc.preview_status === 'pending' ? 'pending' : 'idle'}
                   />
                 </div>
                 

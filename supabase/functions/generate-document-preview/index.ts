@@ -1,10 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// This function is invoked server-to-server with the service-role key by
-// validate-and-scan-document AFTER the original file has passed malware
-// scanning (upload_status = 'clean'). It converts Office documents to PDF
-// via the Cloudmersive Convert API and stores the result in the private
+// This function is invoked either server-to-server with the service-role key
+// by validate-and-scan-document AFTER the original file has passed malware
+// scanning (upload_status = 'clean'), OR by an authenticated owner from the
+// UI ("Retry preview"). It converts Office documents to PDF via the
+// Cloudmersive Convert API and stores the result in the private
 // 'document-previews' bucket.
 //
 // Originals are NEVER modified. If conversion fails or isn't supported,
@@ -89,27 +91,57 @@ async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, file
 }
 
 serve(async (req: Request): Promise<Response> => {
+  const corsPreflight = handleCorsPreflightRequest(req);
+  if (corsPreflight) return corsPreflight;
+  const cors = getCorsHeaders(req.headers.get('origin'));
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const cloudmersiveKey = Deno.env.get('CLOUDMERSIVE_API_KEY');
 
-    // Service-role only: require the caller to present the service key.
+    // Accept either (a) a server-to-server call presenting the service key,
+    // or (b) a logged-in user who owns the document (used by the UI "Retry
+    // preview" action). Anonymous callers are rejected.
     const auth = req.headers.get('Authorization') || '';
-    if (!auth.endsWith(serviceKey)) {
-      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
-    }
+    const bearer = auth.replace(/^Bearer\s+/i, '');
+    const isServiceCall = bearer === serviceKey;
 
     const { documentId } = (await req.json()) as Body;
     if (!documentId || typeof documentId !== 'string') {
-      return new Response(JSON.stringify({ error: 'invalid_request' }), { status: 400 });
+      return json({ error: 'invalid_request' }, 400);
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    if (!isServiceCall) {
+      // Validate the caller's JWT and ownership of the document.
+      if (!bearer) {
+        return json({ error: 'unauthorised' }, 401);
+      }
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      const { data: userRes, error: userErr } = await userClient.auth.getUser();
+      if (userErr || !userRes?.user) {
+        return json({ error: 'unauthorised' }, 401);
+      }
+      const { data: ownDoc } = await supabase
+        .from('documents')
+        .select('id, user_id')
+        .eq('id', documentId)
+        .maybeSingle();
+      if (!ownDoc || ownDoc.user_id !== userRes.user.id) {
+        return json({ error: 'forbidden' }, 403);
+      }
+    }
 
     const { data: doc, error: docErr } = await supabase
       .from('documents')
@@ -118,13 +150,13 @@ serve(async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (docErr || !doc) {
-      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+      return json({ error: 'not_found' }, 404);
     }
     if (doc.upload_status !== 'clean') {
-      return new Response(JSON.stringify({ error: 'not_clean' }), { status: 409 });
+      return json({ error: 'not_clean' }, 409);
     }
     if (doc.preview_status === 'ready') {
-      return new Response(JSON.stringify({ ok: true, status: 'ready' }));
+      return json({ ok: true, status: 'ready' });
     }
 
     const ext = fileExt(doc.original_filename || doc.file_path || '');
@@ -133,7 +165,7 @@ serve(async (req: Request): Promise<Response> => {
         .from('documents')
         .update({ preview_status: 'not_required', preview_failure_reason: null })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ ok: true, status: 'not_required' }));
+      return json({ ok: true, status: 'not_required' });
     }
 
     if (!cloudmersiveKey) {
@@ -141,8 +173,14 @@ serve(async (req: Request): Promise<Response> => {
         .from('documents')
         .update({ preview_status: 'failed', preview_failure_reason: 'no_api_key' })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ error: 'missing_key' }), { status: 500 });
+      return json({ error: 'missing_key' }, 500);
     }
+
+    // Mark as pending so the UI shows "Preparing preview…" during conversion.
+    await supabase
+      .from('documents')
+      .update({ preview_status: 'pending', preview_failure_reason: null })
+      .eq('id', doc.id);
 
     const { data: blob, error: dlErr } = await supabase.storage
       .from('ride-documents')
@@ -153,7 +191,7 @@ serve(async (req: Request): Promise<Response> => {
         .from('documents')
         .update({ preview_status: 'failed', preview_failure_reason: 'download_failed' })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ error: 'download_failed' }), { status: 500 });
+      return json({ error: 'download_failed' }, 500);
     }
 
     const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -179,10 +217,9 @@ serve(async (req: Request): Promise<Response> => {
         });
       } catch {}
 
-      return new Response(JSON.stringify({ ok: false, status: result.status, reason: result.reason }), { status: 200 });
+      return json({ ok: false, status: result.status });
     }
 
-    // Store preview file under the user's folder so RLS policies can scope it
     const previewPath = `${doc.user_id}/previews/${doc.id}.pdf`;
     const { error: upErr } = await supabase.storage
       .from('document-previews')
@@ -197,7 +234,7 @@ serve(async (req: Request): Promise<Response> => {
           preview_generated_at: new Date().toISOString(),
         })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ error: 'preview_upload_failed' }), { status: 500 });
+      return json({ error: 'preview_upload_failed' }, 500);
     }
 
     await supabase
@@ -221,9 +258,9 @@ serve(async (req: Request): Promise<Response> => {
       });
     } catch {}
 
-    return new Response(JSON.stringify({ ok: true, status: 'ready' }));
+    return json({ ok: true, status: 'ready' });
   } catch (e: any) {
     console.error('generate-document-preview error', e);
-    return new Response(JSON.stringify({ error: 'internal' }), { status: 500 });
+    return json({ error: 'internal' }, 500);
   }
 });

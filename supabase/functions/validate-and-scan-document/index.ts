@@ -369,20 +369,27 @@ const handler = async (req: Request): Promise<Response> => {
       });
     } catch {}
 
-    // Fire-and-forget preview generation (do not block response).
+    // Fire-and-forget preview generation. Use EdgeRuntime.waitUntil when
+    // available so Deno Deploy doesn't terminate the worker before the
+    // fetch completes; otherwise fall back to a best-effort awaited call.
     if (needsConversion) {
-      try {
-        // Async invocation — no need to await
-        fetch(`${supabaseUrl}/functions/v1/generate-document-preview`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${serviceKey}`,
-          },
-          body: JSON.stringify({ documentId: doc.id }),
-        }).catch((e) => console.error('preview invoke failed', e));
-      } catch (e) {
-        console.error('preview invoke threw', e);
+      const previewCall = fetch(`${supabaseUrl}/functions/v1/generate-document-preview`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ documentId: doc.id }),
+      })
+        .then((r) => r.text().then((t) => console.log('preview invoke status', r.status, t.slice(0, 200))))
+        .catch((e) => console.error('preview invoke failed', e));
+
+      // @ts-ignore — EdgeRuntime is available on Supabase Edge Functions runtime
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+        // @ts-ignore
+        EdgeRuntime.waitUntil(previewCall);
+      } else {
+        await previewCall;
       }
     }
 
