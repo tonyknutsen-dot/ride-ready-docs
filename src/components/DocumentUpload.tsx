@@ -265,6 +265,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
             </div>
             <span className="text-sm font-bold tracking-tight text-foreground">Choose File</span>
           </button>
+          <p className="col-span-2 text-[11px] text-muted-foreground text-center leading-snug px-2">
+            {BETA_UPLOAD_SIZE_NOTICE}
+          </p>
         </div>
       ) : (
         <div 
