@@ -305,7 +305,16 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     const gen = isGenerated(doc);
     const typeLabel = TYPE_LABELS[doc.document_type] || doc.document_type;
     const ext = fileExt(doc.file_path || '');
-    const previewable = isPreviewableFile(doc.file_path, doc.mime_type);
+    const nativePreviewable = isPreviewableFile(doc.file_path, doc.mime_type);
+    const hasConvertedPreview = doc.preview_status === 'ready' && !!doc.preview_file_path;
+    const previewable = nativePreviewable || hasConvertedPreview;
+    const previewLabel = previewStatusLabel(doc.preview_status as any);
+    const retryable = canRetryPreview({
+      upload_status: doc.upload_status,
+      preview_status: doc.preview_status as any,
+      file_path: doc.file_path,
+      original_filename: doc.original_filename,
+    });
 
     return (
       <div
@@ -339,6 +348,9 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
             <span className="text-[10px] text-muted-foreground">
               {formatDateUK(new Date(doc.uploaded_at))}
             </span>
+            {previewLabel && (
+              <span className="text-[10px] text-muted-foreground italic">{previewLabel}</span>
+            )}
           </div>
 
           {doc.expires_at && (
@@ -362,10 +374,13 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           onDelete={!showGlobalBadge ? () => handleDelete(doc) : undefined}
           isGlobal={doc.is_global ?? false}
           onToggleGlobal={!isStaff ? () => handleToggleScope(doc) : undefined}
+          onRetryPreview={retryable ? () => handleRetryPreview(doc) : undefined}
+          previewRetryState={retrying[doc.id] || doc.preview_status === 'pending' ? 'pending' : 'idle'}
         />
       </div>
     );
   };
+
 
   const SubSection = ({ label, docs, showGlobalBadge = false }: { label: string; docs: Document[]; showGlobalBadge?: boolean }) => {
     if (docs.length === 0) return null;
