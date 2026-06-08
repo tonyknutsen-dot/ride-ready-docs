@@ -294,10 +294,19 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate text-foreground">{selectedFile.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-              <p className="text-xs font-semibold mt-1 text-success">✓ Ready · Tap to change</p>
+              <p className="text-xs font-semibold mt-1 text-success">
+                File selected — complete the details below, then press Upload Document.
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Tap this card to choose a different file.</p>
             </div>
           </div>
         </div>
+      )}
+
+      {selectedFile && (
+        <p className="text-[11px] text-muted-foreground -mt-2 px-1 leading-snug">
+          Your file will be checked before it can be viewed, downloaded, sent, or shared.
+        </p>
       )}
 
       {/* Divider */}
