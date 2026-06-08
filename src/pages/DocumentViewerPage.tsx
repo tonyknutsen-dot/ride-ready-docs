@@ -23,7 +23,7 @@ import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
   MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
-  Image as ImageIcon, File, Trash2, Pencil,
+  Image as ImageIcon, File, Trash2, Pencil, ExternalLink,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -83,6 +83,7 @@ const DocumentViewerPage = () => {
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
   const [fileType, setFileType] = useState<'pdf' | 'image' | 'other'>('pdf');
   const [viewerError, setViewerError] = useState<string | null>(null);
+  const [previewSignedUrl, setPreviewSignedUrl] = useState<string | null>(null);
 
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
@@ -123,6 +124,7 @@ const DocumentViewerPage = () => {
       setMeta(null);
       setPdfUrl(viewerState.fileUrl);
       setPdfSource(null);
+      setPreviewSignedUrl(null);
       setDocTitle(viewerState.fileName || 'Document');
       setDocDisplayId('');
       setIsCachedLocally(false);
@@ -187,6 +189,19 @@ const DocumentViewerPage = () => {
     return 'The file could not be resolved for viewing.';
   }, []);
 
+  const previewOpenError = 'Preview could not be opened. You can still download the original document.';
+  const friendlyViewerError = (message: string | null) => {
+    if (!message || message.trim() === '0') {
+      return 'The document could not be loaded. It may have been removed or you may not have access.';
+    }
+    return message;
+  };
+
+  const backToDocuments = useCallback(() => {
+    const rideId = fallbackDoc?.ride_id || meta?.rideId;
+    navigate(rideId ? `/rides/${rideId}?tab=documents` : '/documents', { replace: true });
+  }, [fallbackDoc?.ride_id, meta?.rideId, navigate]);
+
   // removed: appendPdfViewerParams — no longer needed with blob URLs
 
   const primePdfCache = useCallback(async (filePath: string, cacheKey: string, version: number, title: string) => {
@@ -217,6 +232,7 @@ const DocumentViewerPage = () => {
     revokeObjectUrl(pdfUrl);
     setPdfUrl(null);
     setPdfSource(null);
+    setPreviewSignedUrl(null);
     debugViewer('load-start', { documentId: id });
     try {
       // Try ride_documents first
@@ -308,6 +324,7 @@ const DocumentViewerPage = () => {
   const loadFromRideDocument = async (rd: RideDocument, isOld: boolean) => {
     setRideDoc(rd);
     setFallbackDocId(null);
+    setPreviewSignedUrl(null);
     setDocTitle(rd.title);
     setDocDisplayId(rd.document_id);
     setFileType('pdf');
@@ -479,8 +496,12 @@ const DocumentViewerPage = () => {
       console.info('[DocumentPreviewOpen]', {
         event,
         documentId: doc.id,
+        document_origin: doc.upload_status ? 'uploaded' : 'generated_or_legacy',
+        file_type: doc.mime_type ?? null,
+        file_path: doc.file_path ?? null,
         preview_status: doc.preview_status ?? null,
         preview_file_path_present: Boolean(previewPath),
+        preview_mime_type: doc.preview_mime_type ?? null,
         bucket,
         ...payload,
       });
@@ -490,22 +511,24 @@ const DocumentViewerPage = () => {
 
     if (doc.preview_status !== 'ready' || !previewPath) {
       logPreviewOpen('missing-ready-preview');
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(previewPath, 3600);
+    const { data, error } = await supabase.functions.invoke('generate-document-preview', {
+      body: { documentId: doc.id, action: 'signed-preview-url' },
+    });
 
     logPreviewOpen('signed-url-result', {
       signed_url_created: Boolean(data?.signedUrl && !error),
-      storage_error_message: error?.message ?? null,
+      preview_bucket_object_exists: data?.objectExists ?? null,
+      storage_error_message: error?.message ?? data?.error ?? null,
     });
 
     if (error || !data?.signedUrl) {
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
+    setPreviewSignedUrl(data.signedUrl);
     const response = await fetch(data.signedUrl);
     logPreviewOpen('signed-url-fetch-result', {
       fetch_ok: response.ok,
@@ -513,7 +536,7 @@ const DocumentViewerPage = () => {
     });
 
     if (!response.ok) {
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
     const blob = await response.blob();
@@ -526,7 +549,7 @@ const DocumentViewerPage = () => {
 
     if (!prepared.validPdf) {
       revokeObjectUrl(prepared.url);
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
     return { url: prepared.url, source: 'network' };
@@ -536,6 +559,7 @@ const DocumentViewerPage = () => {
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
     setFallbackDoc(doc);
+    setPreviewSignedUrl(null);
     setAllVersions([]);
     setLatestVersion(null);
     setRideDoc(null);
@@ -596,7 +620,7 @@ const DocumentViewerPage = () => {
         setPdfUrl(null);
         setPdfSource(null);
         setViewerError(useConvertedPreview
-          ? 'Preview could not be opened. You can still download the original document.'
+          ? previewOpenError
           : formatViewerError(error)
         );
         debugViewer('viewer-source-failed', {
@@ -848,7 +872,7 @@ const DocumentViewerPage = () => {
   // ── Offline / no PDF available ──
   if (!pdfUrl && !loading) {
     const isOffline = !navigator.onLine;
-    const isPreviewOpenFailure = viewerError === 'Preview could not be opened. You can still download the original document.';
+    const isPreviewOpenFailure = viewerError === previewOpenError;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-3 max-w-xs px-4">
@@ -865,17 +889,24 @@ const DocumentViewerPage = () => {
               <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="text-sm font-semibold text-foreground">Document unavailable</p>
               <p className="text-xs text-muted-foreground">
-                {viewerError || 'The PDF could not be loaded. It may have been removed or you may not have access.'}
+                {friendlyViewerError(viewerError)}
               </p>
             </>
           )}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
             {isPreviewOpenFailure && (
-              <Button variant="default" size="sm" onClick={handleDownload}>
-                <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
-              </Button>
+              <>
+                {previewSignedUrl && (
+                  <Button variant="default" size="sm" onClick={() => window.open(previewSignedUrl, '_blank', 'noopener,noreferrer')}>
+                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open preview PDF
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+                </Button>
+              </>
             )}
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <Button variant="outline" size="sm" onClick={isPreviewOpenFailure ? backToDocuments : () => navigate(-1)}>
               <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> {isPreviewOpenFailure ? 'Back to documents' : 'Back'}
             </Button>
           </div>
@@ -1104,27 +1135,49 @@ const DocumentViewerPage = () => {
         {/* Document Viewer — routed, full-page, native-first */}
         <div className="flex-1">
           {fileType === 'pdf' && pdfUrl && (
-            <PdfJsViewer
-              url={pdfUrl}
-              title={docTitle}
-              className="h-full w-full"
-              onLoad={() => {
-                debugViewer('viewer-mount-success', {
-                  documentId: documentId ?? fallbackDocId ?? null,
-                  fileType,
-                  resolvedUrl: pdfUrl,
-                });
-              }}
-              onError={(message) => {
-                setViewerError(message);
-                debugViewer('viewer-mount-failed', {
-                  documentId: documentId ?? fallbackDocId ?? null,
-                  fileType,
-                  resolvedUrl: pdfUrl,
-                  error: message,
-                });
-              }}
-            />
+            previewSignedUrl && viewerError === previewOpenError ? (
+              <div className="w-full h-full flex items-center justify-center bg-background">
+                <div className="text-center space-y-3 max-w-xs px-4">
+                  <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">Document unavailable</p>
+                  <p className="text-xs text-muted-foreground">{previewOpenError}</p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                    <Button variant="default" size="sm" onClick={() => window.open(previewSignedUrl, '_blank', 'noopener,noreferrer')}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open preview PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleDownload}>
+                      <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={backToDocuments}>
+                      <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to documents
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <PdfJsViewer
+                url={pdfUrl}
+                title={docTitle}
+                className="h-full w-full"
+                onLoad={() => {
+                  debugViewer('viewer-mount-success', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                  });
+                }}
+                onError={(message) => {
+                  setViewerError(previewSignedUrl ? previewOpenError : message);
+                  debugViewer('viewer-mount-failed', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                    error: message,
+                    usingConvertedPreview: Boolean(previewSignedUrl),
+                  });
+                }}
+              />
+            )
           )}
           {fileType === 'image' && pdfUrl && (
             <div className="w-full h-full overflow-auto bg-background">
