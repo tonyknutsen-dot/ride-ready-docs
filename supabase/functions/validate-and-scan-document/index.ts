@@ -12,7 +12,7 @@ const ALLOWED_MIMES = new Set([
   'image/jpeg',
   'image/webp',
 ]);
-const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_BYTES = Math.floor(3.4 * 1024 * 1024); // 3.4 MB — must match src/lib/uploadValidation.ts
 
 interface ScanRequest {
   documentId: string;

@@ -21,8 +21,9 @@ export const ALLOWED_IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/we
 export const DOC_ACCEPT_ATTR = '.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.webp';
 export const IMAGE_ACCEPT_ATTR = '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp';
 
-export const MAX_DOC_BYTES = 25 * 1024 * 1024; // 25 MB
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+// Hard cap shared with server-side validator (validate-and-scan-document)
+export const MAX_DOC_BYTES = Math.floor(3.4 * 1024 * 1024); // 3.4 MB
+export const MAX_IMAGE_BYTES = Math.floor(3.4 * 1024 * 1024); // 3.4 MB
 
 export interface ValidationResult {
   ok: boolean;
@@ -81,8 +82,7 @@ export function validateClientFile(file: File, opts: ValidateOptions): Validatio
 
   const maxBytes = opts.mode === 'image' ? MAX_IMAGE_BYTES : MAX_DOC_BYTES;
   if (file.size > maxBytes) {
-    const mb = (maxBytes / 1024 / 1024).toFixed(0);
-    return { ok: false, reason: `File is too large. Maximum is ${mb} MB.` };
+    return { ok: false, reason: `File is too large. Maximum is 3.4 MB.` };
   }
 
   if (file.size === 0) {
