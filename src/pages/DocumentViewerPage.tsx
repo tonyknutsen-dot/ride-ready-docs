@@ -866,7 +866,7 @@ const DocumentViewerPage = () => {
   // ── Offline / no PDF available ──
   if (!pdfUrl && !loading) {
     const isOffline = !navigator.onLine;
-    const isPreviewOpenFailure = viewerError === 'Preview could not be opened. You can still download the original document.';
+    const isPreviewOpenFailure = viewerError === previewOpenError;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-3 max-w-xs px-4">
@@ -889,11 +889,18 @@ const DocumentViewerPage = () => {
           )}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
             {isPreviewOpenFailure && (
-              <Button variant="default" size="sm" onClick={handleDownload}>
-                <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
-              </Button>
+              <>
+                {previewSignedUrl && (
+                  <Button variant="default" size="sm" onClick={() => window.open(previewSignedUrl, '_blank', 'noopener,noreferrer')}>
+                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open preview PDF
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+                </Button>
+              </>
             )}
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <Button variant="outline" size="sm" onClick={isPreviewOpenFailure ? backToDocuments : () => navigate(-1)}>
               <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> {isPreviewOpenFailure ? 'Back to documents' : 'Back'}
             </Button>
           </div>
