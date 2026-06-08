@@ -78,12 +78,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     const operatorLabel = profile?.operator_type === 'showman' ? 'Showmen' : 'Operator';
 
-    // Get all selected documents with ride info
+    // Get all selected documents with ride info (exclude quarantined/rejected)
     const { data: documents, error: docsError } = await supabase
       .from("documents")
       .select(`*, rides:ride_id (ride_name, manufacturer)`)
       .eq("user_id", user.id)
-      .in("id", documentIds);
+      .in("id", documentIds)
+      .not("upload_status", "in", "(pending_scan,rejected)");
 
     if (docsError) {
       console.error("Error fetching documents:", docsError);

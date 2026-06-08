@@ -95,13 +95,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     const operatorLabel = profile?.operator_type === 'showman' ? 'Showmen' : 'Operator';
 
-    // Get ride-specific documents
+    // Get ride-specific documents (exclude quarantined/rejected)
     const { data: rideDocuments, error: rideDocsError } = await supabase
       .from("documents")
       .select("*")
       .eq("user_id", user.id)
       .eq("ride_id", rideId)
-      .in("id", documentIds);
+      .in("id", documentIds)
+      .not("upload_status", "in", "(pending_scan,rejected)");
     if (rideDocsError) throw new Error("Failed to fetch ride documents");
 
     // Get insurance documents if requested
@@ -112,7 +113,8 @@ const handler = async (req: Request): Promise<Response> => {
         .select("*")
         .eq("user_id", user.id)
         .eq("is_global", true)
-        .ilike("document_type", "%insurance%");
+        .ilike("document_type", "%insurance%")
+        .not("upload_status", "in", "(pending_scan,rejected)");
       insuranceDocuments = insurance || [];
     }
 
