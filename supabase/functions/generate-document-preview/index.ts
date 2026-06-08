@@ -13,7 +13,7 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 // the document remains usable for download — only the preview is marked
 // failed/not_supported.
 
-interface Body { documentId: string }
+interface Body { documentId: string; action?: 'generate' | 'signed-preview-url' }
 
 const OFFICE_PREVIEW_EXTS = new Set(['docx', 'doc', 'rtf', 'odt', 'xlsx', 'xls', 'csv', 'ods']);
 const CONVERT_TIMEOUT_MS = 60_000;
@@ -140,7 +140,7 @@ serve(async (req: Request): Promise<Response> => {
     const bearer = auth.replace(/^Bearer\s+/i, '');
     const isServiceCall = bearer === serviceKey;
 
-    const { documentId } = (await req.json()) as Body;
+    const { documentId, action = 'generate' } = (await req.json()) as Body;
     if (!documentId || typeof documentId !== 'string') {
       return json({ error: 'invalid_request' }, 400);
     }
@@ -171,7 +171,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: doc, error: docErr } = await supabase
       .from('documents')
-      .select('id, user_id, file_path, original_filename, upload_status, preview_status')
+      .select('id, user_id, file_path, original_filename, document_name, mime_type, upload_status, preview_status, preview_file_path, preview_mime_type')
       .eq('id', documentId)
       .maybeSingle();
 
@@ -193,6 +193,56 @@ serve(async (req: Request): Promise<Response> => {
     // Block only quarantined / rejected / in-flight uploads.
     if (doc.upload_status && doc.upload_status !== 'clean') {
       return json({ error: 'not_clean' }, 409);
+    }
+    if (action === 'signed-preview-url') {
+      if (doc.preview_status !== 'ready' || !doc.preview_file_path) {
+        console.log('Preview signed URL unavailable', {
+          documentId: doc.id,
+          bucket: PREVIEW_BUCKET,
+          previewStatus: doc.preview_status,
+          previewFilePathPresent: Boolean(doc.preview_file_path),
+        });
+        return json({ ok: false, error: 'preview_not_ready' }, 409);
+      }
+
+      const previewParts = doc.preview_file_path.split('/');
+      const previewName = previewParts.pop() || '';
+      const previewPrefix = previewParts.join('/');
+      const { data: objects, error: listObjectErr } = await supabase.storage
+        .from(PREVIEW_BUCKET)
+        .list(previewPrefix, { limit: 100, search: previewName });
+      const objectExists = !listObjectErr && !!objects?.some((object: { name?: string }) => object.name === previewName);
+      const { data: signed, error: signedErr } = await supabase.storage
+        .from(PREVIEW_BUCKET)
+        .createSignedUrl(doc.preview_file_path, 3600);
+
+      console.log('Preview signed URL result', {
+        documentId: doc.id,
+        documentOrigin: doc.upload_status ? 'uploaded' : 'generated_or_legacy',
+        fileType: doc.mime_type,
+        filePath: doc.file_path,
+        previewStatus: doc.preview_status,
+        previewFilePathPresent: Boolean(doc.preview_file_path),
+        previewMimeType: doc.preview_mime_type,
+        bucket: PREVIEW_BUCKET,
+        objectExists,
+        signedUrlCreated: Boolean(signed?.signedUrl && !signedErr),
+        storageErrorMessage: signedErr?.message ?? listObjectErr?.message ?? null,
+      });
+
+      if (signedErr || !signed?.signedUrl) {
+        return json({ ok: false, error: 'signed_url_failed', objectExists }, 500);
+      }
+
+      return json({
+        ok: true,
+        status: 'ready',
+        signedUrl: signed.signedUrl,
+        bucket: PREVIEW_BUCKET,
+        previewFilePath: doc.preview_file_path,
+        previewMimeType: 'application/pdf',
+        objectExists,
+      });
     }
     if (doc.preview_status === 'ready') {
       return json({ ok: true, status: 'ready' });
