@@ -17,6 +17,7 @@ interface Body { documentId: string }
 
 const OFFICE_PREVIEW_EXTS = new Set(['docx', 'doc', 'rtf', 'odt', 'xlsx', 'xls', 'csv', 'ods']);
 const CONVERT_TIMEOUT_MS = 60_000;
+const PREVIEW_BUCKET = 'document-previews';
 
 function fileExt(name: string): string {
   const parts = (name || '').toLowerCase().split('.');
@@ -43,8 +44,27 @@ function cloudmersiveEndpointFor(ext: string): string | null {
   }
 }
 
+async function ensurePreviewBucket(supabase: any): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  if (listError) {
+    console.error('Preview bucket list failed', { bucket: PREVIEW_BUCKET, message: listError.message });
+  } else if (buckets?.some((bucket: { id?: string; name?: string }) => bucket.id === PREVIEW_BUCKET || bucket.name === PREVIEW_BUCKET)) {
+    console.log('Preview bucket exists', { bucket: PREVIEW_BUCKET });
+    return { ok: true };
+  }
+
+  const { error: createError } = await supabase.storage.createBucket(PREVIEW_BUCKET, { public: false });
+  if (createError && !/already exists/i.test(createError.message || '')) {
+    console.error('Preview bucket create failed', { bucket: PREVIEW_BUCKET, message: createError.message });
+    return { ok: false, reason: createError.message || 'bucket_create_failed' };
+  }
+  console.log('Preview bucket ready', { bucket: PREVIEW_BUCKET, created: !createError });
+  return { ok: true };
+}
+
 async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, filename: string): Promise<
-  { ok: true; pdf: Uint8Array } | { ok: false; status: 'failed' | 'not_supported'; reason: string }
+  { ok: true; pdf: Uint8Array; contentType: string | null; byteLength: number; startsWithPdf: boolean }
+  | { ok: false; status: 'failed' | 'not_supported'; reason: string; cloudmersiveStatus?: number; contentType?: string | null; byteLength?: number; startsWithPdf?: boolean }
 > {
   const endpoint = cloudmersiveEndpointFor(ext);
   if (!endpoint) return { ok: false, status: 'not_supported', reason: 'extension_not_supported' };
@@ -61,24 +81,30 @@ async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, file
       body: form,
       signal: controller.signal,
     });
+    const contentType = resp.headers.get('content-type');
+    const headerLog = Object.fromEntries(resp.headers.entries());
+    console.log('Cloudmersive convert response', { ext, filename, status: resp.status, headers: headerLog });
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
+      console.error('Cloudmersive convert failed', { ext, status: resp.status, message: text.slice(0, 200) });
       // Cloudmersive returns 401 / "Subscription not active" if the Convert API
       // is not enabled on the key. Treat as not_supported (no retry storm).
       if (resp.status === 401 || resp.status === 403) {
-        return { ok: false, status: 'not_supported', reason: `convert_unauthorised_${resp.status}` };
+        return { ok: false, status: 'not_supported', reason: `convert_unauthorised_${resp.status}`, cloudmersiveStatus: resp.status, contentType };
       }
-      return { ok: false, status: 'failed', reason: `convert_http_${resp.status}:${text.slice(0, 200)}` };
+      return { ok: false, status: 'failed', reason: `convert_http_${resp.status}`, cloudmersiveStatus: resp.status, contentType };
     }
     const buf = new Uint8Array(await resp.arrayBuffer());
-    if (buf.byteLength < 100) {
-      return { ok: false, status: 'failed', reason: 'convert_empty_response' };
+    const startsWithPdf = buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46;
+    console.log('Cloudmersive convert bytes', { ext, status: resp.status, contentType, byteLength: buf.byteLength, startsWithPdf });
+    if (buf.byteLength <= 0) {
+      return { ok: false, status: 'failed', reason: 'convert_empty_response', cloudmersiveStatus: resp.status, contentType, byteLength: buf.byteLength, startsWithPdf };
     }
-    // Sanity check: must start with %PDF
-    if (!(buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46)) {
-      return { ok: false, status: 'failed', reason: 'convert_not_pdf' };
+    // Cloudmersive can return application/octet-stream for a valid PDF; trust the bytes, not only the header.
+    if (!startsWithPdf) {
+      return { ok: false, status: 'failed', reason: 'convert_not_pdf', cloudmersiveStatus: resp.status, contentType, byteLength: buf.byteLength, startsWithPdf };
     }
-    return { ok: true, pdf: buf };
+    return { ok: true, pdf: buf, contentType, byteLength: buf.byteLength, startsWithPdf };
   } catch (e: any) {
     return {
       ok: false,
@@ -152,6 +178,14 @@ serve(async (req: Request): Promise<Response> => {
     if (docErr || !doc) {
       return json({ error: 'not_found' }, 404);
     }
+    console.log('Preview source document', {
+      documentId: doc.id,
+      bucket: 'ride-documents',
+      filePath: doc.file_path,
+      originalFilename: doc.original_filename,
+      uploadStatus: doc.upload_status,
+      previewStatus: doc.preview_status,
+    });
     // Allow generation for:
     //  - uploaded files that passed scanning (upload_status='clean'), and
     //  - generated / legacy documents that never went through the scanner
@@ -192,6 +226,7 @@ serve(async (req: Request): Promise<Response> => {
       .download(doc.file_path);
 
     if (dlErr || !blob) {
+      console.error('Preview source download failed', { documentId: doc.id, bucket: 'ride-documents', filePath: doc.file_path, message: dlErr?.message });
       await supabase
         .from('documents')
         .update({ preview_status: 'failed', preview_failure_reason: 'download_failed' })
@@ -200,6 +235,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const bytes = new Uint8Array(await blob.arrayBuffer());
+    console.log('Preview source download succeeded', { documentId: doc.id, bucket: 'ride-documents', filePath: doc.file_path, byteLength: bytes.byteLength });
     const result = await convertToPdf(bytes, ext, cloudmersiveKey, doc.original_filename || `file.${ext}`);
 
     if (!result.ok) {
@@ -217,7 +253,7 @@ serve(async (req: Request): Promise<Response> => {
           p_action: 'document_preview_failed',
           p_resource_type: 'document',
           p_resource_id: doc.id,
-          p_details: { ext, reason: result.reason, status: result.status },
+          p_details: { ext, reason: result.reason, status: result.status, cloudmersive_status: result.cloudmersiveStatus, content_type: result.contentType, byte_length: result.byteLength, starts_with_pdf: result.startsWithPdf },
           p_result: 'failure',
         });
       } catch {}
@@ -225,12 +261,26 @@ serve(async (req: Request): Promise<Response> => {
       return json({ ok: false, status: result.status });
     }
 
+    const bucketReady = await ensurePreviewBucket(supabase);
+    if (!bucketReady.ok) {
+      await supabase
+        .from('documents')
+        .update({
+          preview_status: 'failed',
+          preview_failure_reason: `bucket_failed:${bucketReady.reason}`,
+          preview_generated_at: new Date().toISOString(),
+        })
+        .eq('id', doc.id);
+      return json({ error: 'preview_bucket_failed' }, 500);
+    }
+
     const previewPath = `${doc.user_id}/previews/${doc.id}.pdf`;
     const { error: upErr } = await supabase.storage
-      .from('document-previews')
+      .from(PREVIEW_BUCKET)
       .upload(previewPath, result.pdf, { contentType: 'application/pdf', upsert: true });
 
     if (upErr) {
+      console.error('Preview upload failed', { documentId: doc.id, bucket: PREVIEW_BUCKET, previewPath, message: upErr.message });
       await supabase
         .from('documents')
         .update({
@@ -241,8 +291,9 @@ serve(async (req: Request): Promise<Response> => {
         .eq('id', doc.id);
       return json({ error: 'preview_upload_failed' }, 500);
     }
+    console.log('Preview upload succeeded', { documentId: doc.id, bucket: PREVIEW_BUCKET, previewPath, byteLength: result.pdf.byteLength });
 
-    await supabase
+    const { error: updateErr } = await supabase
       .from('documents')
       .update({
         preview_status: 'ready',
@@ -252,13 +303,18 @@ serve(async (req: Request): Promise<Response> => {
         preview_failure_reason: null,
       })
       .eq('id', doc.id);
+    if (updateErr) {
+      console.error('Preview row update failed', { documentId: doc.id, previewPath, message: updateErr.message });
+      return json({ error: 'preview_update_failed' }, 500);
+    }
+    console.log('Preview row updated', { documentId: doc.id, previewStatus: 'ready', previewPath, previewMimeType: 'application/pdf' });
 
     try {
       await supabase.rpc('log_audit_event', {
         p_action: 'document_preview_generated',
         p_resource_type: 'document',
         p_resource_id: doc.id,
-        p_details: { ext, preview_size: result.pdf.byteLength },
+        p_details: { ext, preview_size: result.pdf.byteLength, cloudmersive_content_type: result.contentType, starts_with_pdf: result.startsWithPdf },
         p_result: 'success',
       });
     } catch {}
