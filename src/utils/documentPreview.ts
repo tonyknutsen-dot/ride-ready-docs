@@ -60,7 +60,7 @@ export function previewStatusLabel(status: PreviewStatus): string | null {
 }
 
 export const PREVIEW_RETRY_FRIENDLY_ERROR =
-  'Preview could not be created for this file. You can still download the original document.';
+  'Preview could not be created. You can still download the original document.';
 
 /** Invoke the edge function as the current authenticated user. */
 export async function retryDocumentPreview(documentId: string): Promise<{ ok: boolean; status?: string }> {
