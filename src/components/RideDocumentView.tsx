@@ -40,6 +40,7 @@ import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import { openDocumentById } from '@/utils/documentOpen';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { canRetryPreview, retryDocumentPreview, previewStatusLabel, PREVIEW_RETRY_FRIENDLY_ERROR } from '@/utils/documentPreview';
 
 type Document = Tables<'documents'>;
 
