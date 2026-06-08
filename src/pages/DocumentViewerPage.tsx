@@ -553,6 +553,7 @@ const DocumentViewerPage = () => {
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
     setFallbackDoc(doc);
+    setPreviewSignedUrl(null);
     setAllVersions([]);
     setLatestVersion(null);
     setRideDoc(null);
@@ -613,7 +614,7 @@ const DocumentViewerPage = () => {
         setPdfUrl(null);
         setPdfSource(null);
         setViewerError(useConvertedPreview
-          ? 'Preview could not be opened. You can still download the original document.'
+          ? previewOpenError
           : formatViewerError(error)
         );
         debugViewer('viewer-source-failed', {
