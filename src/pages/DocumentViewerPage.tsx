@@ -23,7 +23,7 @@ import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
   MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
-  Image as ImageIcon, File, Trash2, Pencil,
+  Image as ImageIcon, File, Trash2, Pencil, ExternalLink,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -83,6 +83,7 @@ const DocumentViewerPage = () => {
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
   const [fileType, setFileType] = useState<'pdf' | 'image' | 'other'>('pdf');
   const [viewerError, setViewerError] = useState<string | null>(null);
+  const [previewSignedUrl, setPreviewSignedUrl] = useState<string | null>(null);
 
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
@@ -123,6 +124,7 @@ const DocumentViewerPage = () => {
       setMeta(null);
       setPdfUrl(viewerState.fileUrl);
       setPdfSource(null);
+      setPreviewSignedUrl(null);
       setDocTitle(viewerState.fileName || 'Document');
       setDocDisplayId('');
       setIsCachedLocally(false);
@@ -187,6 +189,13 @@ const DocumentViewerPage = () => {
     return 'The file could not be resolved for viewing.';
   }, []);
 
+  const previewOpenError = 'Preview could not be opened. You can still download the original document.';
+
+  const backToDocuments = useCallback(() => {
+    const rideId = fallbackDoc?.ride_id || meta?.rideId;
+    navigate(rideId ? `/rides/${rideId}?tab=documents` : '/documents', { replace: true });
+  }, [fallbackDoc?.ride_id, meta?.rideId, navigate]);
+
   // removed: appendPdfViewerParams — no longer needed with blob URLs
 
   const primePdfCache = useCallback(async (filePath: string, cacheKey: string, version: number, title: string) => {
@@ -217,6 +226,7 @@ const DocumentViewerPage = () => {
     revokeObjectUrl(pdfUrl);
     setPdfUrl(null);
     setPdfSource(null);
+    setPreviewSignedUrl(null);
     debugViewer('load-start', { documentId: id });
     try {
       // Try ride_documents first
@@ -308,6 +318,7 @@ const DocumentViewerPage = () => {
   const loadFromRideDocument = async (rd: RideDocument, isOld: boolean) => {
     setRideDoc(rd);
     setFallbackDocId(null);
+    setPreviewSignedUrl(null);
     setDocTitle(rd.title);
     setDocDisplayId(rd.document_id);
     setFileType('pdf');
