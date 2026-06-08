@@ -835,11 +835,18 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 {/* Row 2: Actions — canonical pattern */}
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
                   <DocumentRowActions
-                    previewable={isPreviewableFile(doc.file_path, doc.mime_type)}
+                    previewable={isPreviewableFile(doc.file_path, doc.mime_type) || (doc.preview_status === 'ready' && !!doc.preview_file_path)}
                     onView={() => handleViewDoc(doc)}
                     onDownload={() => handleDownload(doc)}
                     onCopyLink={() => handleCopyLink(doc)}
                     onDelete={() => handleDelete(doc)}
+                    onRetryPreview={canRetryPreview({
+                      upload_status: doc.upload_status,
+                      preview_status: doc.preview_status as any,
+                      file_path: doc.file_path,
+                      original_filename: doc.original_filename,
+                    }) ? () => handleRetryPreview(doc) : undefined}
+                    previewRetryState={previewRetrying[doc.id] || doc.preview_status === 'pending' ? 'pending' : 'idle'}
                   />
                 </div>
                 
