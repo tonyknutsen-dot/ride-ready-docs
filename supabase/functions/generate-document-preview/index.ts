@@ -96,13 +96,15 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const cloudmersiveKey = Deno.env.get('CLOUDMERSIVE_API_KEY');
 
-    // Service-role only: require the caller to present the service key.
+    // Accept either (a) a server-to-server call presenting the service key,
+    // or (b) a logged-in user who owns the document (used by the UI "Retry
+    // preview" action). Anonymous callers are rejected.
     const auth = req.headers.get('Authorization') || '';
-    if (!auth.endsWith(serviceKey)) {
-      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
-    }
+    const bearer = auth.replace(/^Bearer\s+/i, '');
+    const isServiceCall = bearer === serviceKey;
 
     const { documentId } = (await req.json()) as Body;
     if (!documentId || typeof documentId !== 'string') {
@@ -110,6 +112,29 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
+
+    if (!isServiceCall) {
+      // Validate the caller's JWT and ownership of the document.
+      if (!bearer) {
+        return new Response(JSON.stringify({ error: 'unauthorised' }), { status: 401 });
+      }
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      const { data: userRes, error: userErr } = await userClient.auth.getUser();
+      if (userErr || !userRes?.user) {
+        return new Response(JSON.stringify({ error: 'unauthorised' }), { status: 401 });
+      }
+      const { data: ownDoc } = await supabase
+        .from('documents')
+        .select('id, user_id')
+        .eq('id', documentId)
+        .maybeSingle();
+      if (!ownDoc || ownDoc.user_id !== userRes.user.id) {
+        // Owner-only retry. Staff/admin retry could be added later.
+        return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+      }
+    }
 
     const { data: doc, error: docErr } = await supabase
       .from('documents')
