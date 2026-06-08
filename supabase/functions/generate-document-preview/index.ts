@@ -44,7 +44,8 @@ function cloudmersiveEndpointFor(ext: string): string | null {
 }
 
 async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, filename: string): Promise<
-  { ok: true; pdf: Uint8Array } | { ok: false; status: 'failed' | 'not_supported'; reason: string }
+  { ok: true; pdf: Uint8Array; contentType: string | null; byteLength: number; startsWithPdf: boolean }
+  | { ok: false; status: 'failed' | 'not_supported'; reason: string; cloudmersiveStatus?: number; contentType?: string | null; byteLength?: number; startsWithPdf?: boolean }
 > {
   const endpoint = cloudmersiveEndpointFor(ext);
   if (!endpoint) return { ok: false, status: 'not_supported', reason: 'extension_not_supported' };
@@ -61,24 +62,34 @@ async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, file
       body: form,
       signal: controller.signal,
     });
+    const contentType = resp.headers.get('content-type');
+    const headerLog = {
+      contentType,
+      contentLength: resp.headers.get('content-length'),
+      contentDisposition: resp.headers.get('content-disposition'),
+    };
+    console.log('Cloudmersive convert response', { ext, filename, status: resp.status, headers: headerLog });
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
+      console.error('Cloudmersive convert failed', { ext, status: resp.status, message: text.slice(0, 200) });
       // Cloudmersive returns 401 / "Subscription not active" if the Convert API
       // is not enabled on the key. Treat as not_supported (no retry storm).
       if (resp.status === 401 || resp.status === 403) {
-        return { ok: false, status: 'not_supported', reason: `convert_unauthorised_${resp.status}` };
+        return { ok: false, status: 'not_supported', reason: `convert_unauthorised_${resp.status}`, cloudmersiveStatus: resp.status, contentType };
       }
-      return { ok: false, status: 'failed', reason: `convert_http_${resp.status}:${text.slice(0, 200)}` };
+      return { ok: false, status: 'failed', reason: `convert_http_${resp.status}`, cloudmersiveStatus: resp.status, contentType };
     }
     const buf = new Uint8Array(await resp.arrayBuffer());
-    if (buf.byteLength < 100) {
-      return { ok: false, status: 'failed', reason: 'convert_empty_response' };
+    const startsWithPdf = buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46;
+    console.log('Cloudmersive convert bytes', { ext, status: resp.status, contentType, byteLength: buf.byteLength, startsWithPdf });
+    if (buf.byteLength <= 0) {
+      return { ok: false, status: 'failed', reason: 'convert_empty_response', cloudmersiveStatus: resp.status, contentType, byteLength: buf.byteLength, startsWithPdf };
     }
-    // Sanity check: must start with %PDF
-    if (!(buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46)) {
-      return { ok: false, status: 'failed', reason: 'convert_not_pdf' };
+    // Cloudmersive can return application/octet-stream for a valid PDF; trust the bytes, not only the header.
+    if (!startsWithPdf) {
+      return { ok: false, status: 'failed', reason: 'convert_not_pdf', cloudmersiveStatus: resp.status, contentType, byteLength: buf.byteLength, startsWithPdf };
     }
-    return { ok: true, pdf: buf };
+    return { ok: true, pdf: buf, contentType, byteLength: buf.byteLength, startsWithPdf };
   } catch (e: any) {
     return {
       ok: false,
