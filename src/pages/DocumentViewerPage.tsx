@@ -848,6 +848,7 @@ const DocumentViewerPage = () => {
   // ── Offline / no PDF available ──
   if (!pdfUrl && !loading) {
     const isOffline = !navigator.onLine;
+    const isPreviewOpenFailure = viewerError === 'Preview could not be opened. You can still download the original document.';
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-3 max-w-xs px-4">
@@ -868,9 +869,16 @@ const DocumentViewerPage = () => {
               </p>
             </>
           )}
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> OK
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+            {isPreviewOpenFailure && (
+              <Button variant="default" size="sm" onClick={handleDownload}>
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> {isPreviewOpenFailure ? 'Back to documents' : 'Back'}
+            </Button>
+          </div>
         </div>
       </div>
     );
