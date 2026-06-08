@@ -152,6 +152,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     return () => window.clearTimeout(t);
   }, [loading, queryKey]);
 
+  // Auto-poll while any document preview is still being generated.
+  // Stops when no rows are 'pending' or after ~90s as a safety cap.
+  useEffect(() => {
+    const hasPending = documents.some((d: any) => d?.preview_status === 'pending');
+    if (!hasPending) return;
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      if (Date.now() - startedAt > 90_000) {
+        window.clearInterval(interval);
+        return;
+      }
+      void refetch();
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, [documents, refetch]);
+
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
@@ -836,6 +852,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
                   <DocumentRowActions
                     previewable={isPreviewableFile(doc.file_path, doc.mime_type) || (doc.preview_status === 'ready' && !!doc.preview_file_path)}
+                    previewPending={doc.preview_status === 'pending'}
                     onView={() => handleViewDoc(doc)}
                     onDownload={() => handleDownload(doc)}
                     onCopyLink={() => handleCopyLink(doc)}

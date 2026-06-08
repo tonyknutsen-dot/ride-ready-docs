@@ -869,10 +869,9 @@ const DocumentViewerPage = () => {
     );
   }
 
-  // ── Offline / no PDF available ──
+  // ── Offline / no PDF available — unified friendly fallback ──
   if (!pdfUrl && !loading) {
     const isOffline = !navigator.onLine;
-    const isPreviewOpenFailure = viewerError === previewOpenError;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-3 max-w-xs px-4">
@@ -889,25 +888,23 @@ const DocumentViewerPage = () => {
               <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="text-sm font-semibold text-foreground">Document unavailable</p>
               <p className="text-xs text-muted-foreground">
-                {friendlyViewerError(viewerError)}
+                Preview could not be opened. You can still download the original document.
               </p>
             </>
           )}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-            {isPreviewOpenFailure && (
-              <>
-                {previewSignedUrl && (
-                  <Button variant="default" size="sm" onClick={() => window.open(previewSignedUrl, '_blank', 'noopener,noreferrer')}>
-                    <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open preview PDF
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
-                </Button>
-              </>
+            {!isOffline && previewSignedUrl && (
+              <Button variant="default" size="sm" onClick={() => window.open(previewSignedUrl, '_blank', 'noopener,noreferrer')}>
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open preview PDF
+              </Button>
             )}
-            <Button variant="outline" size="sm" onClick={isPreviewOpenFailure ? backToDocuments : () => navigate(-1)}>
-              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> {isPreviewOpenFailure ? 'Back to documents' : 'Back'}
+            {!isOffline && (
+              <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={backToDocuments}>
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to documents
             </Button>
           </div>
         </div>
@@ -1046,7 +1043,7 @@ const DocumentViewerPage = () => {
           variant="ghost"
           size="sm"
           className="gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={() => navigate(-1)}
+          onClick={backToDocuments}
         >
           <ArrowLeft className="h-4 w-4" />
           Back
