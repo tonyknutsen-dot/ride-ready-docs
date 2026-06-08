@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useDocumentTypes, AUTO_REPEAT_TYPE_KEYS, SUGGEST_GLOBAL_TYPE_KEYS } from '@/hooks/useDocumentTypes';
-import { validateClientFile, DOC_ACCEPT_ATTR, IMAGE_ACCEPT_ATTR, BETA_UPLOAD_SIZE_NOTICE } from '@/lib/uploadValidation';
+import { validateClientFile, DOC_ACCEPT_ATTR, IMAGE_ACCEPT_ATTR, BETA_UPLOAD_SIZE_NOTICE, UPLOAD_PREVIEW_NOTICE } from '@/lib/uploadValidation';
 
 interface DocumentUploadProps {
   rideId?: string;
@@ -267,6 +267,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
           </button>
           <p className="col-span-2 text-[11px] text-muted-foreground text-center leading-snug px-2">
             {BETA_UPLOAD_SIZE_NOTICE}
+          </p>
+          <p className="col-span-2 text-[11px] text-muted-foreground text-center leading-snug px-2 -mt-1">
+            {UPLOAD_PREVIEW_NOTICE}
           </p>
         </div>
       ) : (

@@ -205,6 +205,9 @@ verify_jwt = false
 [functions.send-trial-extension]
 verify_jwt = false
 
+[functions.generate-document-preview]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327

@@ -30,14 +30,14 @@ export function revokeObjectUrl(url?: string | null) {
   }
 }
 
-export async function getStorageFileBlob(filePath: string): Promise<Blob> {
+export async function getStorageFileBlob(filePath: string, bucket: string = STORAGE_BUCKET): Promise<Blob> {
   if (/^https?:\/\//i.test(filePath)) {
     const response = await fetch(filePath);
     if (!response.ok) throw new Error(`Failed to fetch file (${response.status})`);
     return response.blob();
   }
 
-  const { data, error } = await supabase.storage.from(STORAGE_BUCKET).download(filePath);
+  const { data, error } = await supabase.storage.from(bucket).download(filePath);
   if (error || !data) throw error || new Error('Could not download file from storage');
   return data;
 }

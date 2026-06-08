@@ -42,7 +42,12 @@ export const isImageFile = (fp: string): boolean =>
 export const isPDFFile = (fp: string): boolean =>
   /\.pdf$/i.test(fp);
 
-/** Files we can preview in-app. DOCX/XLSX are NOT previewable — download only. */
+/**
+ * Files we can preview directly in-app.
+ * PDFs and images preview natively.
+ * Office files (DOCX/XLSX/DOC/XLS/RTF/ODT/ODS/CSV) become previewable
+ * only after a server-side PDF preview has been generated.
+ */
 export const isPreviewableFile = (fp: string | null | undefined, mime?: string | null): boolean => {
   const m = (mime || '').toLowerCase();
   if (m === 'application/pdf') return true;
@@ -50,6 +55,28 @@ export const isPreviewableFile = (fp: string | null | undefined, mime?: string |
   const f = fp || '';
   return isPDFFile(f) || isImageFile(f);
 };
+
+/**
+ * Decide what to show for a document row given upload + preview status.
+ * Use this in lists/cards to decide whether View opens a viewer or just downloads.
+ */
+export const getDocumentPreviewMode = (doc: {
+  file_path?: string | null;
+  mime_type?: string | null;
+  upload_status?: string | null;
+  preview_status?: string | null;
+  preview_file_path?: string | null;
+}): 'native' | 'converted' | 'unavailable' => {
+  if (doc.upload_status && doc.upload_status !== 'clean') return 'unavailable';
+  if (isPreviewableFile(doc.file_path, doc.mime_type)) return 'native';
+  if (doc.preview_status === 'ready' && doc.preview_file_path) return 'converted';
+  return 'unavailable';
+};
+
+/** User-facing message when a preview can't be created. */
+export const PREVIEW_UNAVAILABLE_MESSAGE =
+  'Preview could not be created for this file. You can still download the original file and open it in Word, Excel, or another compatible app.';
+
 
 export const fileExtension = (fp: string): string => {
   const m = fp.match(/\.(\w+)$/);
