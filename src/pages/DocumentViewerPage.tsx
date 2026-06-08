@@ -437,15 +437,16 @@ const DocumentViewerPage = () => {
   const resolveStoredViewerUrl = async (
     filePath: string,
     nextFileType: 'pdf' | 'image' | 'other',
+    bucket: string = 'ride-documents',
   ): Promise<{ url: string; source: 'network' }> => {
     debugViewer('resolve-file-start', {
       documentId: documentId ?? null,
       filePath,
       fileType: nextFileType,
+      bucket,
     });
 
-    // Download blob directly — more reliable than signed URLs on mobile
-    const blob = await getStorageFileBlob(filePath);
+    const blob = await getStorageFileBlob(filePath, bucket);
 
     debugViewer('resolve-file-blob', {
       documentId: documentId ?? null,
@@ -470,6 +471,7 @@ const DocumentViewerPage = () => {
     const blobUrl = URL.createObjectURL(blob);
     return { url: blobUrl, source: 'network' };
   };
+
 
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
