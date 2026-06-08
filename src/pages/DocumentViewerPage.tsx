@@ -190,6 +190,12 @@ const DocumentViewerPage = () => {
   }, []);
 
   const previewOpenError = 'Preview could not be opened. You can still download the original document.';
+  const friendlyViewerError = (message: string | null) => {
+    if (!message || message.trim() === '0') {
+      return 'The document could not be loaded. It may have been removed or you may not have access.';
+    }
+    return message;
+  };
 
   const backToDocuments = useCallback(() => {
     const rideId = fallbackDoc?.ride_id || meta?.rideId;
@@ -883,7 +889,7 @@ const DocumentViewerPage = () => {
               <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="text-sm font-semibold text-foreground">Document unavailable</p>
               <p className="text-xs text-muted-foreground">
-                {viewerError || 'The PDF could not be loaded. It may have been removed or you may not have access.'}
+                {friendlyViewerError(viewerError)}
               </p>
             </>
           )}
