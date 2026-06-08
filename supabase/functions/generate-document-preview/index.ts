@@ -1,10 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// This function is invoked server-to-server with the service-role key by
-// validate-and-scan-document AFTER the original file has passed malware
-// scanning (upload_status = 'clean'). It converts Office documents to PDF
-// via the Cloudmersive Convert API and stores the result in the private
+// This function is invoked either server-to-server with the service-role key
+// by validate-and-scan-document AFTER the original file has passed malware
+// scanning (upload_status = 'clean'), OR by an authenticated owner from the
+// UI ("Retry preview"). It converts Office documents to PDF via the
+// Cloudmersive Convert API and stores the result in the private
 // 'document-previews' bucket.
 //
 // Originals are NEVER modified. If conversion fails or isn't supported,
