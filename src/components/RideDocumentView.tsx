@@ -48,6 +48,7 @@ import {
   isGeneratedDoc as isGenerated,
   isImageFile,
   isPDFFile,
+  isPreviewableFile,
   fileExtension as fileExt,
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
