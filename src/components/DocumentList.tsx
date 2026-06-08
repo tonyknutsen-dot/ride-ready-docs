@@ -25,6 +25,7 @@ import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import { canRetryPreview, retryDocumentPreview, previewStatusLabel, PREVIEW_RETRY_FRIENDLY_ERROR } from '@/utils/documentPreview';
 import {
   isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
   getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile, isPreviewableFile,
