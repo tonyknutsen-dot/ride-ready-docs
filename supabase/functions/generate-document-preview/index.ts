@@ -116,7 +116,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { documentId } = (await req.json()) as Body;
     if (!documentId || typeof documentId !== 'string') {
-      return new Response(JSON.stringify({ error: 'invalid_request' }), { status: 400 });
+      return json({ error: 'invalid_request' }, 400);
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -124,14 +124,14 @@ serve(async (req: Request): Promise<Response> => {
     if (!isServiceCall) {
       // Validate the caller's JWT and ownership of the document.
       if (!bearer) {
-        return new Response(JSON.stringify({ error: 'unauthorised' }), { status: 401 });
+        return json({ error: 'unauthorised' }, 401);
       }
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: `Bearer ${bearer}` } },
       });
       const { data: userRes, error: userErr } = await userClient.auth.getUser();
       if (userErr || !userRes?.user) {
-        return new Response(JSON.stringify({ error: 'unauthorised' }), { status: 401 });
+        return json({ error: 'unauthorised' }, 401);
       }
       const { data: ownDoc } = await supabase
         .from('documents')
@@ -139,8 +139,7 @@ serve(async (req: Request): Promise<Response> => {
         .eq('id', documentId)
         .maybeSingle();
       if (!ownDoc || ownDoc.user_id !== userRes.user.id) {
-        // Owner-only retry. Staff/admin retry could be added later.
-        return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+        return json({ error: 'forbidden' }, 403);
       }
     }
 
@@ -151,13 +150,13 @@ serve(async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (docErr || !doc) {
-      return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 });
+      return json({ error: 'not_found' }, 404);
     }
     if (doc.upload_status !== 'clean') {
-      return new Response(JSON.stringify({ error: 'not_clean' }), { status: 409 });
+      return json({ error: 'not_clean' }, 409);
     }
     if (doc.preview_status === 'ready') {
-      return new Response(JSON.stringify({ ok: true, status: 'ready' }));
+      return json({ ok: true, status: 'ready' });
     }
 
     const ext = fileExt(doc.original_filename || doc.file_path || '');
@@ -166,7 +165,7 @@ serve(async (req: Request): Promise<Response> => {
         .from('documents')
         .update({ preview_status: 'not_required', preview_failure_reason: null })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ ok: true, status: 'not_required' }));
+      return json({ ok: true, status: 'not_required' });
     }
 
     if (!cloudmersiveKey) {
@@ -174,8 +173,14 @@ serve(async (req: Request): Promise<Response> => {
         .from('documents')
         .update({ preview_status: 'failed', preview_failure_reason: 'no_api_key' })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ error: 'missing_key' }), { status: 500 });
+      return json({ error: 'missing_key' }, 500);
     }
+
+    // Mark as pending so the UI shows "Preparing preview…" during conversion.
+    await supabase
+      .from('documents')
+      .update({ preview_status: 'pending', preview_failure_reason: null })
+      .eq('id', doc.id);
 
     const { data: blob, error: dlErr } = await supabase.storage
       .from('ride-documents')
@@ -186,7 +191,7 @@ serve(async (req: Request): Promise<Response> => {
         .from('documents')
         .update({ preview_status: 'failed', preview_failure_reason: 'download_failed' })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ error: 'download_failed' }), { status: 500 });
+      return json({ error: 'download_failed' }, 500);
     }
 
     const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -212,10 +217,9 @@ serve(async (req: Request): Promise<Response> => {
         });
       } catch {}
 
-      return new Response(JSON.stringify({ ok: false, status: result.status, reason: result.reason }), { status: 200 });
+      return json({ ok: false, status: result.status });
     }
 
-    // Store preview file under the user's folder so RLS policies can scope it
     const previewPath = `${doc.user_id}/previews/${doc.id}.pdf`;
     const { error: upErr } = await supabase.storage
       .from('document-previews')
@@ -230,7 +234,7 @@ serve(async (req: Request): Promise<Response> => {
           preview_generated_at: new Date().toISOString(),
         })
         .eq('id', doc.id);
-      return new Response(JSON.stringify({ error: 'preview_upload_failed' }), { status: 500 });
+      return json({ error: 'preview_upload_failed' }, 500);
     }
 
     await supabase
@@ -254,9 +258,9 @@ serve(async (req: Request): Promise<Response> => {
       });
     } catch {}
 
-    return new Response(JSON.stringify({ ok: true, status: 'ready' }));
+    return json({ ok: true, status: 'ready' });
   } catch (e: any) {
     console.error('generate-document-preview error', e);
-    return new Response(JSON.stringify({ error: 'internal' }), { status: 500 });
+    return json({ error: 'internal' }, 500);
   }
 });
