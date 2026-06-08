@@ -79,6 +79,23 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const [filter, setFilter] = useState<FilterType>('all');
   const [rideOpen, setRideOpen] = useState(true);
   const [globalOpen, setGlobalOpen] = useState(true);
+  const [retrying, setRetrying] = useState<Record<string, boolean>>({});
+
+  const handleRetryPreview = async (doc: Document) => {
+    setRetrying((m) => ({ ...m, [doc.id]: true }));
+    // Optimistic: show "Preparing preview…" immediately
+    setDocuments((prev) => prev.map((d) => d.id === doc.id ? { ...d, preview_status: 'pending' } : d));
+    const res = await retryDocumentPreview(doc.id);
+    setRetrying((m) => ({ ...m, [doc.id]: false }));
+    if (res.ok && res.status === 'ready') {
+      toast({ title: 'Preview ready', description: 'Preview generated successfully.' });
+    } else if (res.status === 'not_required') {
+      toast({ title: 'No preview needed', description: 'This file can be opened directly.' });
+    } else {
+      toast({ title: 'Preview unavailable', description: PREVIEW_RETRY_FRIENDLY_ERROR, variant: 'destructive' });
+    }
+    await loadDocuments();
+  };
 
   /* ─── Fetch ─── */
   useEffect(() => {
