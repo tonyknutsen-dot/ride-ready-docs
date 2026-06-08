@@ -197,8 +197,8 @@ export function useOptimisticDocumentUpload() {
     },
     onSuccess: (data, params) => {
       toast({
-        title: params.isGlobal ? "Global document saved" : `Saved to ${params.rideName || 'ride'}`,
-        description: "Document uploaded successfully",
+        title: params.isGlobal ? "Global document uploaded" : `Uploaded to ${params.rideName || 'equipment'}`,
+        description: "This document is being checked before it can be used.",
       });
     },
     onSettled: () => {
