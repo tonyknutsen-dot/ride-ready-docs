@@ -91,8 +91,14 @@ async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, file
 }
 
 serve(async (req: Request): Promise<Response> => {
+  const corsPreflight = handleCorsPreflightRequest(req);
+  if (corsPreflight) return corsPreflight;
+  const cors = getCorsHeaders(req.headers.get('origin'));
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
