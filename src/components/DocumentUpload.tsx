@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useDocumentTypes, AUTO_REPEAT_TYPE_KEYS, SUGGEST_GLOBAL_TYPE_KEYS } from '@/hooks/useDocumentTypes';
-import { validateClientFile, DOC_ACCEPT_ATTR, IMAGE_ACCEPT_ATTR } from '@/lib/uploadValidation';
+import { validateClientFile, DOC_ACCEPT_ATTR, IMAGE_ACCEPT_ATTR, BETA_UPLOAD_SIZE_NOTICE } from '@/lib/uploadValidation';
 
 interface DocumentUploadProps {
   rideId?: string;
