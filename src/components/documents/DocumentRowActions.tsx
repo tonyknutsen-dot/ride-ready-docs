@@ -40,8 +40,10 @@ const DocumentRowActions = ({
   isGlobal,
   onToggleGlobal,
   previewable = true,
+  onRetryPreview,
+  previewRetryState = 'idle',
 }: DocumentRowActionsProps) => {
-  const hasOverflow = !!(onCopyLink || onReplace || onDelete || onToggleGlobal);
+  const hasOverflow = !!(onCopyLink || onReplace || onDelete || onToggleGlobal || onRetryPreview);
 
   return (
     <div className="flex items-center gap-1 shrink-0">
