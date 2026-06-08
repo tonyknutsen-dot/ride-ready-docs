@@ -42,6 +42,15 @@ export const isImageFile = (fp: string): boolean =>
 export const isPDFFile = (fp: string): boolean =>
   /\.pdf$/i.test(fp);
 
+/** Files we can preview in-app. DOCX/XLSX are NOT previewable — download only. */
+export const isPreviewableFile = (fp: string | null | undefined, mime?: string | null): boolean => {
+  const m = (mime || '').toLowerCase();
+  if (m === 'application/pdf') return true;
+  if (m.startsWith('image/')) return true;
+  const f = fp || '';
+  return isPDFFile(f) || isImageFile(f);
+};
+
 export const fileExtension = (fp: string): string => {
   const m = fp.match(/\.(\w+)$/);
   return m ? m[1].toUpperCase() : 'FILE';
