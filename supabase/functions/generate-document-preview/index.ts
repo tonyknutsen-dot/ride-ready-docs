@@ -17,6 +17,7 @@ interface Body { documentId: string }
 
 const OFFICE_PREVIEW_EXTS = new Set(['docx', 'doc', 'rtf', 'odt', 'xlsx', 'xls', 'csv', 'ods']);
 const CONVERT_TIMEOUT_MS = 60_000;
+const PREVIEW_BUCKET = 'document-previews';
 
 function fileExt(name: string): string {
   const parts = (name || '').toLowerCase().split('.');
@@ -43,6 +44,24 @@ function cloudmersiveEndpointFor(ext: string): string | null {
   }
 }
 
+async function ensurePreviewBucket(supabase: any): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  if (listError) {
+    console.error('Preview bucket list failed', { bucket: PREVIEW_BUCKET, message: listError.message });
+  } else if (buckets?.some((bucket: { id?: string; name?: string }) => bucket.id === PREVIEW_BUCKET || bucket.name === PREVIEW_BUCKET)) {
+    console.log('Preview bucket exists', { bucket: PREVIEW_BUCKET });
+    return { ok: true };
+  }
+
+  const { error: createError } = await supabase.storage.createBucket(PREVIEW_BUCKET, { public: false });
+  if (createError && !/already exists/i.test(createError.message || '')) {
+    console.error('Preview bucket create failed', { bucket: PREVIEW_BUCKET, message: createError.message });
+    return { ok: false, reason: createError.message || 'bucket_create_failed' };
+  }
+  console.log('Preview bucket ready', { bucket: PREVIEW_BUCKET, created: !createError });
+  return { ok: true };
+}
+
 async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, filename: string): Promise<
   { ok: true; pdf: Uint8Array; contentType: string | null; byteLength: number; startsWithPdf: boolean }
   | { ok: false; status: 'failed' | 'not_supported'; reason: string; cloudmersiveStatus?: number; contentType?: string | null; byteLength?: number; startsWithPdf?: boolean }
@@ -63,11 +82,7 @@ async function convertToPdf(bytes: Uint8Array, ext: string, apiKey: string, file
       signal: controller.signal,
     });
     const contentType = resp.headers.get('content-type');
-    const headerLog = {
-      contentType,
-      contentLength: resp.headers.get('content-length'),
-      contentDisposition: resp.headers.get('content-disposition'),
-    };
+    const headerLog = Object.fromEntries(resp.headers.entries());
     console.log('Cloudmersive convert response', { ext, filename, status: resp.status, headers: headerLog });
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
