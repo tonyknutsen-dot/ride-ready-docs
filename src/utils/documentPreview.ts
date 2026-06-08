@@ -32,6 +32,9 @@ export function canRetryPreview(doc: {
   file_path?: string | null;
   original_filename?: string | null;
 }): boolean {
+  // Allow retry for clean uploads AND for legacy/generated docs that never
+  // went through the scanner (upload_status null). Block only quarantined
+  // or rejected uploads.
   if (doc.upload_status && doc.upload_status !== 'clean') return false;
   const e = extOf(doc.original_filename) || extOf(doc.file_path);
   if (!RETRYABLE_EXTS.has(e)) return false;
