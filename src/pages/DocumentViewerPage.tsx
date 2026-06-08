@@ -482,40 +482,64 @@ const DocumentViewerPage = () => {
     setAcknowledgedAt(doc.expiry_acknowledged_at || null);
     setAcknowledgedBy(doc.expiry_acknowledged_by || null);
 
-    const ft = detectFileType(doc.file_path || '', doc.mime_type);
+    const nativeFt = detectFileType(doc.file_path || '', doc.mime_type);
+    // If the original isn't natively previewable, try the server-generated PDF preview.
+    const useConvertedPreview =
+      nativeFt === 'other' && doc.preview_status === 'ready' && doc.preview_file_path;
+    const ft: 'pdf' | 'image' | 'other' = useConvertedPreview ? 'pdf' : nativeFt;
+    const viewerPath: string | null = useConvertedPreview ? doc.preview_file_path : doc.file_path;
+    const viewerBucket = useConvertedPreview ? 'document-previews' : 'ride-documents';
+
     setFileType(ft);
     debugViewer('documents-table-file-detected', {
       documentId: doc.id,
       filePath: doc.file_path,
+      previewPath: doc.preview_file_path || null,
+      previewStatus: doc.preview_status || null,
       fileType: ft,
       mimeType: doc.mime_type,
+      usingConvertedPreview: useConvertedPreview,
     });
 
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
     setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
 
-    try {
-      const resolvedViewer = await resolveStoredViewerUrl(doc.file_path, ft);
-      setPdfUrl(resolvedViewer.url);
-      setPdfSource(resolvedViewer.source);
-      setViewerError(null);
-      debugViewer('viewer-source-ready', {
-        documentId: doc.id,
-        source: resolvedViewer.source,
-        filePath: doc.file_path,
-        resolvedUrl: resolvedViewer.url,
-      });
-    } catch (error) {
+    // Surface friendly states for non-native originals with no usable preview yet
+    if (ft === 'other' && !useConvertedPreview) {
       setPdfUrl(null);
       setPdfSource(null);
-      setViewerError(formatViewerError(error));
-      debugViewer('viewer-source-failed', {
-        documentId: doc.id,
-        filePath: doc.file_path,
-        error: formatViewerError(error),
-      });
-      throw error;
+      const ps = doc.preview_status as string | null;
+      if (ps === 'pending') {
+        setViewerError('Preparing preview… this can take a few seconds for Word and Excel files. You can download the original now.');
+      } else if (ps === 'failed' || ps === 'not_supported') {
+        setViewerError('Preview could not be created for this file. You can still download the original file and open it in Word, Excel, or another compatible app.');
+      } else {
+        setViewerError('Preview is not available for this file type. You can download the original instead.');
+      }
+    } else {
+      try {
+        const resolvedViewer = await resolveStoredViewerUrl(viewerPath!, ft, viewerBucket);
+        setPdfUrl(resolvedViewer.url);
+        setPdfSource(resolvedViewer.source);
+        setViewerError(null);
+        debugViewer('viewer-source-ready', {
+          documentId: doc.id,
+          source: resolvedViewer.source,
+          filePath: viewerPath,
+          resolvedUrl: resolvedViewer.url,
+        });
+      } catch (error) {
+        setPdfUrl(null);
+        setPdfSource(null);
+        setViewerError(formatViewerError(error));
+        debugViewer('viewer-source-failed', {
+          documentId: doc.id,
+          filePath: viewerPath,
+          error: formatViewerError(error),
+        });
+      }
     }
+
 
     const rideName = doc.ride_id ? await getRideName(doc.ride_id) : 'Global';
 
