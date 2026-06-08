@@ -1336,6 +1336,11 @@ export type Database = {
           mime_type: string | null
           notes: string | null
           original_filename: string | null
+          preview_failure_reason: string | null
+          preview_file_path: string | null
+          preview_generated_at: string | null
+          preview_mime_type: string | null
+          preview_status: string | null
           rejection_reason: string | null
           repeat_annually: boolean
           replaced_document_id: string | null
@@ -1366,6 +1371,11 @@ export type Database = {
           mime_type?: string | null
           notes?: string | null
           original_filename?: string | null
+          preview_failure_reason?: string | null
+          preview_file_path?: string | null
+          preview_generated_at?: string | null
+          preview_mime_type?: string | null
+          preview_status?: string | null
           rejection_reason?: string | null
           repeat_annually?: boolean
           replaced_document_id?: string | null
@@ -1396,6 +1406,11 @@ export type Database = {
           mime_type?: string | null
           notes?: string | null
           original_filename?: string | null
+          preview_failure_reason?: string | null
+          preview_file_path?: string | null
+          preview_generated_at?: string | null
+          preview_mime_type?: string | null
+          preview_status?: string | null
           rejection_reason?: string | null
           repeat_annually?: boolean
           replaced_document_id?: string | null
