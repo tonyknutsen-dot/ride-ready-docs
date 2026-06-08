@@ -22,8 +22,13 @@ export const DOC_ACCEPT_ATTR = '.pdf,.docx,.xlsx,.png,.jpg,.jpeg,.webp';
 export const IMAGE_ACCEPT_ATTR = '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp';
 
 // Hard cap shared with server-side validator (validate-and-scan-document)
+// Beta limit — matches current Cloudmersive free-tier constraint.
 export const MAX_DOC_BYTES = Math.floor(3.4 * 1024 * 1024); // 3.4 MB
 export const MAX_IMAGE_BYTES = Math.floor(3.4 * 1024 * 1024); // 3.4 MB
+
+/** User-facing copy for the beta upload size limit. */
+export const BETA_UPLOAD_SIZE_NOTICE =
+  'Maximum file size is 3.4 MB during beta. Larger file support will be added before wider release.';
 
 export interface ValidationResult {
   ok: boolean;
