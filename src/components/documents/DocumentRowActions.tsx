@@ -112,6 +112,15 @@ const DocumentRowActions = ({
                 <RefreshCw className="h-4 w-4 mr-2" /> Replace
               </DropdownMenuItem>
             )}
+            {onRetryPreview && (
+              <DropdownMenuItem
+                disabled={previewRetryState === 'pending'}
+                onClick={(e) => { e.stopPropagation(); onRetryPreview(); }}
+              >
+                <FileWarning className="h-4 w-4 mr-2" />
+                {previewRetryState === 'pending' ? 'Preparing preview…' : 'Generate preview'}
+              </DropdownMenuItem>
+            )}
             {onDelete && (
               <DropdownMenuItem
                 className="text-destructive"
