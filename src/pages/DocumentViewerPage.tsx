@@ -1036,20 +1036,27 @@ const DocumentViewerPage = () => {
               />
             </div>
           )}
-          {fileType === 'other' && (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center space-y-3 max-w-xs px-4">
-                <File className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">Preview not available</p>
-                <p className="text-xs text-muted-foreground">
-                  This file type cannot be previewed in the app. Use the download button to open it on your device.
-                </p>
-                <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download
-                </Button>
+          {fileType === 'other' && (() => {
+            const lowerName = (docTitle || '').toLowerCase();
+            const isWord = /\.docx?$/.test(lowerName) || (viewerState?.mimeType || '').includes('word');
+            const isExcel = /\.xlsx?$/.test(lowerName) || (viewerState?.mimeType || '').includes('sheet') || (viewerState?.mimeType || '').includes('excel');
+            const label = isWord ? 'Word' : isExcel ? 'Excel' : 'this file type';
+            const kind = isWord ? 'DOCX' : isExcel ? 'XLSX' : 'This';
+            return (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center space-y-3 max-w-sm px-4">
+                  <File className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">Preview not available in-app</p>
+                  <p className="text-xs text-muted-foreground">
+                    {kind} files can't be previewed in Ride Ready Docs yet. Download the file to open it in {label} or another compatible app.
+                  </p>
+                  <Button variant="default" size="sm" onClick={handleDownload}>
+                    <Download className="h-3.5 w-3.5 mr-1.5" /> Download to open
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Metadata Sidebar */}

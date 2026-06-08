@@ -41,6 +41,7 @@ import {
   isGeneratedDoc as isGenerated,
   isImageFile,
   isPDFFile,
+  isPreviewableFile,
   fileExtension as fileExt,
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
@@ -280,11 +281,12 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
     const gen = isGenerated(doc);
     const typeLabel = TYPE_LABELS[doc.document_type] || doc.document_type;
     const ext = fileExt(doc.file_path || '');
+    const previewable = isPreviewableFile(doc.file_path, doc.mime_type);
 
     return (
       <div
         className="flex items-start gap-2.5 px-3 py-2.5 rounded-lg border border-border/50 bg-card cursor-pointer hover:bg-accent/40 transition-colors"
-        onClick={() => handleView(doc)}
+        onClick={() => previewable ? handleView(doc) : handleDownload(doc)}
       >
         <div className="w-9 h-9 rounded-md bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
           <FileIcon doc={doc} />
@@ -309,8 +311,15 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         </div>
 
         <div className="flex items-center gap-0.5 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(doc)} title="Download">
+          <Button
+            variant={previewable ? 'ghost' : 'outline'}
+            size={previewable ? 'icon' : 'sm'}
+            className={previewable ? 'h-8 w-8' : 'h-8 gap-1.5 text-xs font-medium rounded-lg'}
+            onClick={() => handleDownload(doc)}
+            title={previewable ? 'Download' : 'Preview not supported — download to open'}
+          >
             <Download className="h-4 w-4" />
+            {!previewable && <span className="hidden sm:inline">Download</span>}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -319,9 +328,11 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleView(doc)}>
-                <Eye className="h-4 w-4 mr-2" /> View
-              </DropdownMenuItem>
+              {previewable && (
+                <DropdownMenuItem onClick={() => handleView(doc)}>
+                  <Eye className="h-4 w-4 mr-2" /> View
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => handleCopyLink(doc)}>
                 <Link2 className="h-4 w-4 mr-2" /> Copy Link
               </DropdownMenuItem>

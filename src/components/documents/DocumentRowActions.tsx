@@ -17,16 +17,15 @@ interface DocumentRowActionsProps {
   /** Pass to enable scope toggle in overflow menu */
   isGlobal?: boolean;
   onToggleGlobal?: () => void;
+  /** When false, in-app preview isn't available (e.g. DOCX/XLSX) — Download becomes the primary action. Defaults to true. */
+  previewable?: boolean;
 }
 
 /**
  * Canonical document action pattern used across ALL document lists.
  *
- * Layout:  [View]  [Download]  [⋯ overflow]
- *
- * Scope (Global / Ride-only) is NOT shown here — it belongs in the
- * metadata area of the document row. The scope toggle lives inside
- * the overflow menu.
+ * Layout (previewable):     [View]  [Download icon]  [⋯ overflow]
+ * Layout (not previewable): [Download]              [⋯ overflow]
  */
 const DocumentRowActions = ({
   onView,
@@ -36,32 +35,45 @@ const DocumentRowActions = ({
   onDelete,
   isGlobal,
   onToggleGlobal,
+  previewable = true,
 }: DocumentRowActionsProps) => {
   const hasOverflow = !!(onCopyLink || onReplace || onDelete || onToggleGlobal);
 
   return (
     <div className="flex items-center gap-1 shrink-0">
-      {/* 1. View — compact secondary utility button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="shrink-0 gap-1.5 h-8 text-xs font-medium rounded-lg"
-        onClick={(e) => { e.stopPropagation(); onView(); }}
-      >
-        <Eye className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">View</span>
-      </Button>
-
-      {/* 2. Download — visible icon button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 shrink-0"
-        onClick={(e) => { e.stopPropagation(); onDownload(); }}
-        title="Save to device"
-      >
-        <Download className="h-4 w-4" />
-      </Button>
+      {previewable ? (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 gap-1.5 h-8 text-xs font-medium rounded-lg"
+            onClick={(e) => { e.stopPropagation(); onView(); }}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">View</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={(e) => { e.stopPropagation(); onDownload(); }}
+            title="Save to device"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-1.5 h-8 text-xs font-medium rounded-lg"
+          onClick={(e) => { e.stopPropagation(); onDownload(); }}
+          title="Preview not supported — download to open"
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Download</span>
+        </Button>
+      )}
 
       {/* 3. Overflow — secondary actions */}
       {hasOverflow && (
