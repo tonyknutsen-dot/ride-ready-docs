@@ -27,7 +27,7 @@ import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters,
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import {
   isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
-  getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile,
+  getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile, isPreviewableFile,
 } from '@/utils/documentHelpers';
 import { useDocumentTypes } from '@/hooks/useDocumentTypes';
 
