@@ -163,6 +163,14 @@ serve(async (req: Request): Promise<Response> => {
     if (docErr || !doc) {
       return json({ error: 'not_found' }, 404);
     }
+    console.log('Preview source document', {
+      documentId: doc.id,
+      bucket: 'ride-documents',
+      filePath: doc.file_path,
+      originalFilename: doc.original_filename,
+      uploadStatus: doc.upload_status,
+      previewStatus: doc.preview_status,
+    });
     // Allow generation for:
     //  - uploaded files that passed scanning (upload_status='clean'), and
     //  - generated / legacy documents that never went through the scanner
@@ -203,6 +211,7 @@ serve(async (req: Request): Promise<Response> => {
       .download(doc.file_path);
 
     if (dlErr || !blob) {
+      console.error('Preview source download failed', { documentId: doc.id, bucket: 'ride-documents', filePath: doc.file_path, message: dlErr?.message });
       await supabase
         .from('documents')
         .update({ preview_status: 'failed', preview_failure_reason: 'download_failed' })
@@ -211,6 +220,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const bytes = new Uint8Array(await blob.arrayBuffer());
+    console.log('Preview source download succeeded', { documentId: doc.id, bucket: 'ride-documents', filePath: doc.file_path, byteLength: bytes.byteLength });
     const result = await convertToPdf(bytes, ext, cloudmersiveKey, doc.original_filename || `file.${ext}`);
 
     if (!result.ok) {
@@ -228,7 +238,7 @@ serve(async (req: Request): Promise<Response> => {
           p_action: 'document_preview_failed',
           p_resource_type: 'document',
           p_resource_id: doc.id,
-          p_details: { ext, reason: result.reason, status: result.status },
+          p_details: { ext, reason: result.reason, status: result.status, cloudmersive_status: result.cloudmersiveStatus, content_type: result.contentType, byte_length: result.byteLength, starts_with_pdf: result.startsWithPdf },
           p_result: 'failure',
         });
       } catch {}
@@ -242,6 +252,7 @@ serve(async (req: Request): Promise<Response> => {
       .upload(previewPath, result.pdf, { contentType: 'application/pdf', upsert: true });
 
     if (upErr) {
+      console.error('Preview upload failed', { documentId: doc.id, bucket: 'document-previews', previewPath, message: upErr.message });
       await supabase
         .from('documents')
         .update({
@@ -252,8 +263,9 @@ serve(async (req: Request): Promise<Response> => {
         .eq('id', doc.id);
       return json({ error: 'preview_upload_failed' }, 500);
     }
+    console.log('Preview upload succeeded', { documentId: doc.id, bucket: 'document-previews', previewPath, byteLength: result.pdf.byteLength });
 
-    await supabase
+    const { error: updateErr } = await supabase
       .from('documents')
       .update({
         preview_status: 'ready',
@@ -263,13 +275,18 @@ serve(async (req: Request): Promise<Response> => {
         preview_failure_reason: null,
       })
       .eq('id', doc.id);
+    if (updateErr) {
+      console.error('Preview row update failed', { documentId: doc.id, previewPath, message: updateErr.message });
+      return json({ error: 'preview_update_failed' }, 500);
+    }
+    console.log('Preview row updated', { documentId: doc.id, previewStatus: 'ready', previewPath, previewMimeType: 'application/pdf' });
 
     try {
       await supabase.rpc('log_audit_event', {
         p_action: 'document_preview_generated',
         p_resource_type: 'document',
         p_resource_id: doc.id,
-        p_details: { ext, preview_size: result.pdf.byteLength },
+        p_details: { ext, preview_size: result.pdf.byteLength, cloudmersive_content_type: result.contentType, starts_with_pdf: result.startsWithPdf },
         p_result: 'success',
       });
     } catch {}
