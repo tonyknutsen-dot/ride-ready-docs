@@ -441,6 +441,15 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
         <FileText className="h-4 w-4" />
         {uploading ? 'Uploading...' : replacingDocumentId ? 'Upload Replacement' : 'Upload Document'}
       </Button>
+      {!uploading && (!selectedFile || !documentType || !documentName) && (
+        <p className="text-[11px] text-muted-foreground text-center -mt-2">
+          {!selectedFile
+            ? 'Choose a file to continue.'
+            : !documentType
+              ? 'Select a document type to continue.'
+              : 'Add a document name to continue.'}
+        </p>
+      )}
     </div>
   );
 };
