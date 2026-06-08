@@ -490,8 +490,12 @@ const DocumentViewerPage = () => {
       console.info('[DocumentPreviewOpen]', {
         event,
         documentId: doc.id,
+        document_origin: doc.upload_status ? 'uploaded' : 'generated_or_legacy',
+        file_type: doc.mime_type ?? null,
+        file_path: doc.file_path ?? null,
         preview_status: doc.preview_status ?? null,
         preview_file_path_present: Boolean(previewPath),
+        preview_mime_type: doc.preview_mime_type ?? null,
         bucket,
         ...payload,
       });
@@ -501,22 +505,24 @@ const DocumentViewerPage = () => {
 
     if (doc.preview_status !== 'ready' || !previewPath) {
       logPreviewOpen('missing-ready-preview');
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(previewPath, 3600);
+    const { data, error } = await supabase.functions.invoke('generate-document-preview', {
+      body: { documentId: doc.id, action: 'signed-preview-url' },
+    });
 
     logPreviewOpen('signed-url-result', {
       signed_url_created: Boolean(data?.signedUrl && !error),
-      storage_error_message: error?.message ?? null,
+      preview_bucket_object_exists: data?.objectExists ?? null,
+      storage_error_message: error?.message ?? data?.error ?? null,
     });
 
     if (error || !data?.signedUrl) {
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
+    setPreviewSignedUrl(data.signedUrl);
     const response = await fetch(data.signedUrl);
     logPreviewOpen('signed-url-fetch-result', {
       fetch_ok: response.ok,
@@ -524,7 +530,7 @@ const DocumentViewerPage = () => {
     });
 
     if (!response.ok) {
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
     const blob = await response.blob();
@@ -537,7 +543,7 @@ const DocumentViewerPage = () => {
 
     if (!prepared.validPdf) {
       revokeObjectUrl(prepared.url);
-      throw new Error('Preview could not be opened. You can still download the original document.');
+      throw new Error(previewOpenError);
     }
 
     return { url: prepared.url, source: 'network' };
