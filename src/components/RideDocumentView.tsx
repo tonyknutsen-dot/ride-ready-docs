@@ -287,11 +287,12 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     const gen = isGenerated(doc);
     const typeLabel = TYPE_LABELS[doc.document_type] || doc.document_type;
     const ext = fileExt(doc.file_path || '');
+    const previewable = isPreviewableFile(doc.file_path, doc.mime_type);
 
     return (
       <div
         className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card cursor-pointer hover:bg-accent/50 transition-colors"
-        onClick={() => handleView(doc)}
+        onClick={() => previewable ? handleView(doc) : handleDownload(doc)}
       >
         {/* File type icon */}
         <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
@@ -331,6 +332,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
 
         {/* Canonical actions */}
         <DocumentRowActions
+          previewable={previewable}
           onView={() => handleView(doc)}
           onDownload={() => handleDownload(doc)}
           onCopyLink={() => handleCopyLink(doc)}
