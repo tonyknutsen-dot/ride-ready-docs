@@ -87,7 +87,7 @@ export function validateClientFile(file: File, opts: ValidateOptions): Validatio
 
   const maxBytes = opts.mode === 'image' ? MAX_IMAGE_BYTES : MAX_DOC_BYTES;
   if (file.size > maxBytes) {
-    return { ok: false, reason: `File is too large. Maximum is 3.4 MB.` };
+    return { ok: false, reason: BETA_UPLOAD_SIZE_NOTICE };
   }
 
   if (file.size === 0) {
