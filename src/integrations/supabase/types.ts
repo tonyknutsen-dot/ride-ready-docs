@@ -1319,6 +1319,8 @@ export type Database = {
       }
       documents: {
         Row: {
+          checksum: string | null
+          detected_mime_type: string | null
           document_name: string
           document_type: string
           expires_at: string | null
@@ -1333,15 +1335,22 @@ export type Database = {
           is_test_data: boolean
           mime_type: string | null
           notes: string | null
+          original_filename: string | null
+          rejection_reason: string | null
           repeat_annually: boolean
           replaced_document_id: string | null
           ride_id: string | null
+          scanned_at: string | null
+          stored_path: string | null
+          upload_status: string | null
           uploaded_at: string
           user_id: string
           version_notes: string | null
           version_number: string | null
         }
         Insert: {
+          checksum?: string | null
+          detected_mime_type?: string | null
           document_name: string
           document_type: string
           expires_at?: string | null
@@ -1356,15 +1365,22 @@ export type Database = {
           is_test_data?: boolean
           mime_type?: string | null
           notes?: string | null
+          original_filename?: string | null
+          rejection_reason?: string | null
           repeat_annually?: boolean
           replaced_document_id?: string | null
           ride_id?: string | null
+          scanned_at?: string | null
+          stored_path?: string | null
+          upload_status?: string | null
           uploaded_at?: string
           user_id: string
           version_notes?: string | null
           version_number?: string | null
         }
         Update: {
+          checksum?: string | null
+          detected_mime_type?: string | null
           document_name?: string
           document_type?: string
           expires_at?: string | null
@@ -1379,9 +1395,14 @@ export type Database = {
           is_test_data?: boolean
           mime_type?: string | null
           notes?: string | null
+          original_filename?: string | null
+          rejection_reason?: string | null
           repeat_annually?: boolean
           replaced_document_id?: string | null
           ride_id?: string | null
+          scanned_at?: string | null
+          stored_path?: string | null
+          upload_status?: string | null
           uploaded_at?: string
           user_id?: string
           version_notes?: string | null
