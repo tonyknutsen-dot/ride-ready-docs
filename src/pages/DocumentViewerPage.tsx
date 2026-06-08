@@ -472,6 +472,66 @@ const DocumentViewerPage = () => {
     return { url: blobUrl, source: 'network' };
   };
 
+  const resolvePreviewPdfViewerUrl = async (doc: any): Promise<{ url: string; source: 'network' }> => {
+    const bucket = 'document-previews';
+    const previewPath = doc.preview_file_path as string | null;
+    const logPreviewOpen = (event: string, payload?: Record<string, unknown>) => {
+      console.info('[DocumentPreviewOpen]', {
+        event,
+        documentId: doc.id,
+        preview_status: doc.preview_status ?? null,
+        preview_file_path_present: Boolean(previewPath),
+        bucket,
+        ...payload,
+      });
+    };
+
+    logPreviewOpen('start');
+
+    if (doc.preview_status !== 'ready' || !previewPath) {
+      logPreviewOpen('missing-ready-preview');
+      throw new Error('Preview could not be opened. You can still download the original document.');
+    }
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(previewPath, 3600);
+
+    logPreviewOpen('signed-url-result', {
+      signed_url_created: Boolean(data?.signedUrl && !error),
+      storage_error_message: error?.message ?? null,
+    });
+
+    if (error || !data?.signedUrl) {
+      throw new Error('Preview could not be opened. You can still download the original document.');
+    }
+
+    const response = await fetch(data.signedUrl);
+    logPreviewOpen('signed-url-fetch-result', {
+      fetch_ok: response.ok,
+      fetch_status: response.status,
+    });
+
+    if (!response.ok) {
+      throw new Error('Preview could not be opened. You can still download the original document.');
+    }
+
+    const blob = await response.blob();
+    const prepared = await createPdfViewerUrlFromBlob(blob);
+    logPreviewOpen('preview-blob-prepared', {
+      blob_size: blob.size,
+      blob_type: blob.type || '(empty)',
+      valid_pdf: prepared.validPdf,
+    });
+
+    if (!prepared.validPdf) {
+      revokeObjectUrl(prepared.url);
+      throw new Error('Preview could not be opened. You can still download the original document.');
+    }
+
+    return { url: prepared.url, source: 'network' };
+  };
+
 
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
@@ -520,7 +580,9 @@ const DocumentViewerPage = () => {
       }
     } else {
       try {
-        const resolvedViewer = await resolveStoredViewerUrl(viewerPath!, ft, viewerBucket);
+        const resolvedViewer = useConvertedPreview
+          ? await resolvePreviewPdfViewerUrl(doc)
+          : await resolveStoredViewerUrl(viewerPath!, ft, viewerBucket);
         setPdfUrl(resolvedViewer.url);
         setPdfSource(resolvedViewer.source);
         setViewerError(null);
@@ -533,7 +595,10 @@ const DocumentViewerPage = () => {
       } catch (error) {
         setPdfUrl(null);
         setPdfSource(null);
-        setViewerError(formatViewerError(error));
+        setViewerError(useConvertedPreview
+          ? 'Preview could not be opened. You can still download the original document.'
+          : formatViewerError(error)
+        );
         debugViewer('viewer-source-failed', {
           documentId: doc.id,
           filePath: viewerPath,
@@ -783,6 +848,7 @@ const DocumentViewerPage = () => {
   // ── Offline / no PDF available ──
   if (!pdfUrl && !loading) {
     const isOffline = !navigator.onLine;
+    const isPreviewOpenFailure = viewerError === 'Preview could not be opened. You can still download the original document.';
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-3 max-w-xs px-4">
@@ -803,9 +869,16 @@ const DocumentViewerPage = () => {
               </p>
             </>
           )}
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> OK
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+            {isPreviewOpenFailure && (
+              <Button variant="default" size="sm" onClick={handleDownload}>
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> {isPreviewOpenFailure ? 'Back to documents' : 'Back'}
+            </Button>
+          </div>
         </div>
       </div>
     );
