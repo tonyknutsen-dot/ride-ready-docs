@@ -261,13 +261,26 @@ serve(async (req: Request): Promise<Response> => {
       return json({ ok: false, status: result.status });
     }
 
+    const bucketReady = await ensurePreviewBucket(supabase);
+    if (!bucketReady.ok) {
+      await supabase
+        .from('documents')
+        .update({
+          preview_status: 'failed',
+          preview_failure_reason: `bucket_failed:${bucketReady.reason}`,
+          preview_generated_at: new Date().toISOString(),
+        })
+        .eq('id', doc.id);
+      return json({ error: 'preview_bucket_failed' }, 500);
+    }
+
     const previewPath = `${doc.user_id}/previews/${doc.id}.pdf`;
     const { error: upErr } = await supabase.storage
-      .from('document-previews')
+      .from(PREVIEW_BUCKET)
       .upload(previewPath, result.pdf, { contentType: 'application/pdf', upsert: true });
 
     if (upErr) {
-      console.error('Preview upload failed', { documentId: doc.id, bucket: 'document-previews', previewPath, message: upErr.message });
+      console.error('Preview upload failed', { documentId: doc.id, bucket: PREVIEW_BUCKET, previewPath, message: upErr.message });
       await supabase
         .from('documents')
         .update({
@@ -278,7 +291,7 @@ serve(async (req: Request): Promise<Response> => {
         .eq('id', doc.id);
       return json({ error: 'preview_upload_failed' }, 500);
     }
-    console.log('Preview upload succeeded', { documentId: doc.id, bucket: 'document-previews', previewPath, byteLength: result.pdf.byteLength });
+    console.log('Preview upload succeeded', { documentId: doc.id, bucket: PREVIEW_BUCKET, previewPath, byteLength: result.pdf.byteLength });
 
     const { error: updateErr } = await supabase
       .from('documents')
