@@ -852,6 +852,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
                   <DocumentRowActions
                     previewable={isPreviewableFile(doc.file_path, doc.mime_type) || (doc.preview_status === 'ready' && !!doc.preview_file_path)}
+                    previewPending={doc.preview_status === 'pending'}
                     onView={() => handleViewDoc(doc)}
                     onDownload={() => handleDownload(doc)}
                     onCopyLink={() => handleCopyLink(doc)}
