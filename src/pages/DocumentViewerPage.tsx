@@ -1129,27 +1129,49 @@ const DocumentViewerPage = () => {
         {/* Document Viewer — routed, full-page, native-first */}
         <div className="flex-1">
           {fileType === 'pdf' && pdfUrl && (
-            <PdfJsViewer
-              url={pdfUrl}
-              title={docTitle}
-              className="h-full w-full"
-              onLoad={() => {
-                debugViewer('viewer-mount-success', {
-                  documentId: documentId ?? fallbackDocId ?? null,
-                  fileType,
-                  resolvedUrl: pdfUrl,
-                });
-              }}
-              onError={(message) => {
-                setViewerError(message);
-                debugViewer('viewer-mount-failed', {
-                  documentId: documentId ?? fallbackDocId ?? null,
-                  fileType,
-                  resolvedUrl: pdfUrl,
-                  error: message,
-                });
-              }}
-            />
+            previewSignedUrl && viewerError === previewOpenError ? (
+              <div className="w-full h-full flex items-center justify-center bg-background">
+                <div className="text-center space-y-3 max-w-xs px-4">
+                  <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <p className="text-sm font-semibold text-foreground">Document unavailable</p>
+                  <p className="text-xs text-muted-foreground">{previewOpenError}</p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                    <Button variant="default" size="sm" onClick={() => window.open(previewSignedUrl, '_blank', 'noopener,noreferrer')}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Open preview PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleDownload}>
+                      <Download className="h-3.5 w-3.5 mr-1.5" /> Download original
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={backToDocuments}>
+                      <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to documents
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <PdfJsViewer
+                url={pdfUrl}
+                title={docTitle}
+                className="h-full w-full"
+                onLoad={() => {
+                  debugViewer('viewer-mount-success', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                  });
+                }}
+                onError={(message) => {
+                  setViewerError(previewSignedUrl ? previewOpenError : message);
+                  debugViewer('viewer-mount-failed', {
+                    documentId: documentId ?? fallbackDocId ?? null,
+                    fileType,
+                    resolvedUrl: pdfUrl,
+                    error: message,
+                    usingConvertedPreview: Boolean(previewSignedUrl),
+                  });
+                }}
+              />
+            )
           )}
           {fileType === 'image' && pdfUrl && (
             <div className="w-full h-full overflow-auto bg-background">
