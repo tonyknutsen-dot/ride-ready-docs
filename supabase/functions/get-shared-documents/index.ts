@@ -118,6 +118,17 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("user_id", share.user_id)
       .single();
 
+    // Look up sender email via auth admin (for display only)
+    let senderEmail: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(share.user_id);
+      senderEmail = userData?.user?.email ?? null;
+    } catch {
+      console.warn("[get-shared-documents] could not resolve sender email");
+    }
+
+
+
     // Generate signed URLs for each document (valid for 1 hour)
     const documents: any[] = [];
     let totalSize = 0;
