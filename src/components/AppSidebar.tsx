@@ -23,6 +23,7 @@ import {
   Wind,
   AlertOctagon,
   Gauge,
+  AlertCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -80,6 +81,7 @@ const accountNavItems: NavItemDef[] = [
   { title: 'Notifications', url: '/notifications', icon: Bell, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
   { title: 'Settings', url: '/settings', icon: Settings, ownerOnly: true },
+  { title: 'Report a problem', url: '/report-problem', icon: AlertCircle },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];
 

@@ -296,8 +296,8 @@ const HelpCenter = () => {
                     <AlertCircle className="h-5 w-5 text-[#475569] group-hover:text-[#1E3A5F] transition-colors" strokeWidth={2} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#0F172A]">Report Issue</p>
-                    <p className="text-xs text-[#64748B] mt-0.5">Log a bug or problem.</p>
+                    <p className="text-sm font-semibold text-[#0F172A]">Report a problem</p>
+                    <p className="text-xs text-[#64748B] mt-0.5">Tell us what happened.</p>
                   </div>
                 </button>
               }

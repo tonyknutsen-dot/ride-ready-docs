@@ -33,6 +33,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BugReportDialogProps {
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  onAfterClose?: () => void;
 }
 
 interface AutoCapturedContext {
@@ -69,13 +71,13 @@ const STEPS_PLACEHOLDER = `1) What were you trying to do?
 2) What did you tap/click?
 3) What happened?`;
 
-export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
+export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: BugReportDialogProps) => {
   const { user } = useAuth();
   const { isTester } = useTester();
   const location = useLocation();
   const { toast } = useToast();
-  
-  const [open, setOpen] = useState(false);
+
+  const [open, setOpen] = useState(defaultOpen);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [referenceId, setReferenceId] = useState<string | null>(null);
@@ -350,7 +352,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
       }
 
       toast({
-        title: 'Bug report submitted',
+        title: isTester ? 'Bug report submitted' : 'Report sent',
         description: `Reference: ${refId}`,
       });
     } catch (error: any) {
@@ -383,7 +385,10 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
 
   const handleClose = () => {
     setOpen(false);
-    setTimeout(resetForm, 300);
+    setTimeout(() => {
+      resetForm();
+      onAfterClose?.();
+    }, 300);
   };
 
   // Drag handlers for the panel
@@ -421,12 +426,12 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setTimeout(() => { resetForm(); onAfterClose?.(); }, 300); }}>
       <SheetTrigger asChild onClick={(e) => e.stopPropagation()}>
         {trigger || (
           <Button variant="outline" size="sm" className="gap-2">
             <Bug className="h-4 w-4" />
-            Report a Bug
+            {isTester ? 'Report a Bug' : 'Report a problem'}
           </Button>
         )}
       </SheetTrigger>
@@ -445,9 +450,9 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
               <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Bug Report Submitted</h3>
+              <h3 className="text-lg font-semibold">{isTester ? 'Bug Report Submitted' : 'Report sent'}</h3>
               <p className="text-muted-foreground mt-1">
-                Thank you for helping improve the app!
+                {isTester ? 'Thank you for helping improve the app!' : 'Thanks — our team will take a look.'}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-secondary border">
@@ -473,14 +478,17 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <Bug className="h-5 w-5 text-destructive" />
-                  Report an Issue
-                  <span className="text-xs text-muted-foreground font-normal ml-auto">(drag to move)</span>
+                  {isTester ? 'Report an Issue' : 'Report a problem'}
+                  {isTester && <span className="text-xs text-muted-foreground font-normal ml-auto">(drag to move)</span>}
                 </SheetTitle>
                 <SheetDescription>
-                  You don't need to be technical - just tell us what happened!
+                  {isTester
+                    ? "You don't need to be technical - just tell us what happened!"
+                    : "Tell us what happened and we'll look into it."}
                 </SheetDescription>
               </SheetHeader>
             </div>
+            
             
             <ScrollArea className="flex-1 min-h-0">
               <form onSubmit={handleSubmit} className="p-6 pt-4 space-y-4">
@@ -693,7 +701,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
                   ) : (
                     <>
                       <Bug className="h-4 w-4" />
-                      Submit Bug Report
+                      {isTester ? 'Submit Bug Report' : 'Send report'}
                     </>
                   )}
                 </Button>
