@@ -71,13 +71,13 @@ const STEPS_PLACEHOLDER = `1) What were you trying to do?
 2) What did you tap/click?
 3) What happened?`;
 
-export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
+export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: BugReportDialogProps) => {
   const { user } = useAuth();
   const { isTester } = useTester();
   const location = useLocation();
   const { toast } = useToast();
-  
-  const [open, setOpen] = useState(false);
+
+  const [open, setOpen] = useState(defaultOpen);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [referenceId, setReferenceId] = useState<string | null>(null);
