@@ -247,13 +247,14 @@ const handler = async (req: Request): Promise<Response> => {
       ),
     );
 
-    const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    const parts = [sanitizeZipName(senderLabel)];
-    if (uniqueRides.length === 1) {
-      parts.push(sanitizeZipName(uniqueRides[0]));
-    }
-    parts.push("Documentation-Pack", dateStr);
-    const zipFilename = `${parts.join("-")}.zip`;
+    const companyName = sanitizeZipName(profile?.company_name || profile?.controller_name || "");
+    const assetName = uniqueRides.length === 1 ? sanitizeZipName(uniqueRides[0]) : "";
+
+    const segments: string[] = [];
+    segments.push(companyName || "Ride Ready Docs");
+    if (assetName) segments.push(assetName);
+    segments.push("Documents");
+    const zipFilename = `${segments.join(" - ")}.zip`;
 
     console.log(`[zip] token=${tokenPreview} success files=${added} bytes=${zipBytes.byteLength} filename=${zipFilename}`);
 
