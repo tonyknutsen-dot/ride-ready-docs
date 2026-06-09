@@ -560,6 +560,85 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
     toast({ title: 'Prompt exported!' });
   };
 
+  // --- Single-report Lovable export helpers ---
+  const buildSingleReportPrompt = (bug: BugReport): string => {
+    const admin = adminDataCache[bug.id];
+    const email = emailCache[bug.user_id];
+    const source = bug.user_role === 'tester' ? 'Tester' : 'Normal user';
+    return `## Bug Fix Request — ${bug.reference_id}
+
+**Reference:** ${bug.reference_id}
+**Source:** ${source}
+**Severity:** ${bug.severity}
+**Issue type:** ${bug.issue_type}
+**Title:** ${bug.title}
+**Reported page/route:** ${bug.current_route || 'Unknown'}
+**Device / Browser:** ${bug.device_type || 'Unknown'} • ${bug.browser_info || 'Unknown'}
+**App version:** ${bug.app_version || 'Unknown'}
+**Reporter (admin-only):** ${email || bug.user_id}
+**Reported at:** ${format(new Date(bug.created_at), 'PPpp')}
+
+### Problem
+${bug.description || '(no description)'}
+
+### Evidence
+- Steps to reproduce:
+${bug.steps_to_reproduce ? bug.steps_to_reproduce.split('\n').map(l => '  ' + l).join('\n') : '  (not provided)'}
+${bug.screenshot_url ? `- Screenshot: ${bug.screenshot_url}` : '- Screenshot: (none)'}
+${admin?.internal_notes ? `- Admin notes: ${admin.internal_notes}` : ''}
+
+### Expected behaviour
+${bug.expected_result || '(not specified)'}
+
+### Actual behaviour
+${bug.actual_result || '(not specified)'}
+
+### Required fix
+- Investigate the route \`${bug.current_route || 'unknown'}\` and resolve the reported issue.
+- Keep wording, layout, and behaviour consistent with the rest of the app.
+
+### Do not change
+- Authentication, billing/Stripe, RLS
+- Document upload/preview/scanning, send-documents/ZIP/email
+- Checks, maintenance, wind log, pressure readings, risk assessments
+- Unrelated UI, data models, or reports
+
+### Regression checks
+- Verify the original repro no longer reproduces.
+- Confirm related flows on the same page still work on desktop and mobile.
+- After fix, mark this report as "Needs Retest".
+`;
+  };
+
+  const buildSingleReportSummary = (bug: BugReport): string => {
+    return `${bug.reference_id} • ${bug.severity.toUpperCase()} • ${bug.user_role === 'tester' ? 'Tester' : 'User'}
+${bug.title}
+Route: ${bug.current_route || 'Unknown'} | Version: ${bug.app_version || 'Unknown'}
+${bug.description || ''}`.trim();
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: `${label} copied` });
+    } catch {
+      toast({ title: 'Copy failed', variant: 'destructive' });
+    }
+  };
+
+  const exportSingleReport = (bug: BugReport) => {
+    const blob = new Blob([buildSingleReportPrompt(bug)], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${bug.reference_id}-lovable-prompt.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Markdown exported' });
+  };
+
   const getSeverityBadge = (severity: string) => (
     <Badge className={`${SEVERITY_COLORS[severity] || 'bg-gray-500'} text-white`}>
       {severity}
