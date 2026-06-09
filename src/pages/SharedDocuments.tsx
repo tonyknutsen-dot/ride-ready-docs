@@ -90,6 +90,14 @@ const SharedDocuments = () => {
 
       setShareInfo(data.share);
       setDocuments(data.documents);
+      console.log('[SharedDocuments] loaded', {
+        message_present: !!data?.share?.message,
+        equipment_present: !!data?.share?.equipment && data.share.equipment.count > 0,
+        equipment_label: data?.share?.equipment?.label ?? null,
+        doc_count: data?.documents?.length ?? 0,
+        total_size: data?.share?.totalSize ?? 0,
+      });
+
     } catch (err: any) {
       console.error('Error loading shared documents:', err);
       setError(err.message || 'Failed to load documents');
