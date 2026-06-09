@@ -351,7 +351,9 @@ const SharedDocuments = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-sm truncate">{doc.document_name}</p>
-                          <p className="text-xs text-muted-foreground">{doc.document_type}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {doc.document_type}{doc.file_size ? ` · ${formatBytes(doc.file_size)}` : ''}
+                          </p>
                         </div>
                       </div>
                       <Button
