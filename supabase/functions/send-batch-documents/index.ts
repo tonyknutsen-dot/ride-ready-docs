@@ -135,6 +135,23 @@ const handler = async (req: Request): Promise<Response> => {
     const senderName = safeCompanyName || safeControllerName || "Ride Operator";
     const currentYear = new Date().getFullYear();
 
+    // Group by ride for display
+    const docsByRide = attachments.reduce((acc, att) => {
+      const key = att.rideName;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(att);
+      return acc;
+    }, {} as Record<string, typeof attachments>);
+
+    // Compute equipment label (matches secure download link email logic)
+    const assetNames = Object.keys(docsByRide).filter(n => n && n !== 'Global');
+    const equipmentLabel = assetNames.length === 0
+      ? 'General documents'
+      : assetNames.length === 1
+        ? assetNames[0]
+        : `Multiple items (${assetNames.length})`;
+    const safeEquipmentLabel = escapeHtml(equipmentLabel);
+
     const buildSenderBlock = () => `
       <div style="${emailStyles.infoBox}">
         <p style="${emailStyles.label}">FROM</p>
@@ -143,15 +160,8 @@ const handler = async (req: Request): Promise<Response> => {
         ${safeShowmenName ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>${operatorLabel}:</strong> ${safeShowmenName}</p>` : ''}
         ${safeAddress ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Address:</strong> ${safeAddress}</p>` : ''}
         <p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Email:</strong> ${safeUserEmail}</p>
+        <p style="${emailStyles.value};"><strong>Equipment:</strong> ${safeEquipmentLabel}</p>
       </div>`;
-
-    // Group by ride for display
-    const docsByRide = attachments.reduce((acc, att) => {
-      const key = att.rideName;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(att);
-      return acc;
-    }, {} as Record<string, typeof attachments>);
 
     const buildGroupedDocList = (docs: typeof attachments, label: string) =>
       buildDocumentTable(
