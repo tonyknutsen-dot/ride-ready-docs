@@ -152,19 +152,23 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     return () => window.clearTimeout(t);
   }, [loading, queryKey]);
 
-  // Auto-poll while any document preview is still being generated.
-  // Stops when no rows are 'pending' or after ~90s as a safety cap.
+  // Auto-poll while any document is still being scanned or has a preview being generated.
+  // Stops when nothing is pending or after ~120s as a safety cap.
   useEffect(() => {
-    const hasPending = documents.some((d: any) => d?.preview_status === 'pending');
+    const hasPending = documents.some((d: any) => {
+      const ps = d?.preview_status;
+      const us = d?.upload_status;
+      return us === 'pending_scan' || ps === 'pending' || ps === 'generating';
+    });
     if (!hasPending) return;
     const startedAt = Date.now();
     const interval = window.setInterval(() => {
-      if (Date.now() - startedAt > 90_000) {
+      if (Date.now() - startedAt > 120_000) {
         window.clearInterval(interval);
         return;
       }
       void refetch();
-    }, 3000);
+    }, 2500);
     return () => window.clearInterval(interval);
   }, [documents, refetch]);
 
