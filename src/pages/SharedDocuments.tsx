@@ -109,7 +109,7 @@ const SharedDocuments = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success(`Downloaded ${doc.document_name}`);
+      toast.success('Download started', { description: doc.document_name });
     } catch (err) {
       console.error('Download error:', err);
       toast.error('Failed to download file');
