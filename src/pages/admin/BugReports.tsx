@@ -91,10 +91,14 @@ interface BugReportAdminData {
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'New', color: 'bg-blue-500' },
+  { value: 'reviewing', label: 'Reviewing', color: 'bg-cyan-500' },
   { value: 'in_progress', label: 'In Progress', color: 'bg-yellow-500' },
-  { value: 'fixed', label: 'Fixed', color: 'bg-green-500' },
+  { value: 'sent_to_lovable', label: 'Sent to Lovable', color: 'bg-indigo-500' },
   { value: 'needs_retest', label: 'Needs Retest', color: 'bg-purple-500' },
+  { value: 'fixed', label: 'Fixed', color: 'bg-green-500' },
   { value: 'closed', label: 'Closed', color: 'bg-gray-500' },
+  { value: 'duplicate', label: 'Duplicate', color: 'bg-gray-400' },
+  { value: 'wont_fix', label: "Won't Fix", color: 'bg-stone-500' },
 ];
 
 const SEVERITY_COLORS: Record<string, string> = {
