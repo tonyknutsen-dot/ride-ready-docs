@@ -385,7 +385,10 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
 
   const handleClose = () => {
     setOpen(false);
-    setTimeout(resetForm, 300);
+    setTimeout(() => {
+      resetForm();
+      onAfterClose?.();
+    }, 300);
   };
 
   // Drag handlers for the panel
