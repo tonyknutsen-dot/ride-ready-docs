@@ -463,7 +463,9 @@ const BatchSendDocuments = () => {
     try {
       // Determine which method to use
       const useDownloadLinks = sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit);
-      
+      const sentTo = recipientEmail;
+      const sentToName = recipientName;
+
       if (useDownloadLinks) {
         // Use secure download links
         const { data, error } = await supabase.functions.invoke('create-document-share', {
@@ -478,7 +480,14 @@ const BatchSendDocuments = () => {
 
         if (error) throw error;
 
-        toast.success(`Sent secure download link for ${data.documentsCount} documents to ${recipientEmail}`);
+        toast.success(`Secure download link sent to ${sentTo}`);
+        setSendResult({
+          recipientEmail: sentTo,
+          recipientName: sentToName,
+          documentCount: data?.documentsCount ?? selectedDocuments.length,
+          method: 'link',
+          expiresAt: data?.expiresAt,
+        });
       } else {
         // Use traditional attachments
         const { data, error } = await supabase.functions.invoke('send-batch-documents', {
@@ -492,19 +501,26 @@ const BatchSendDocuments = () => {
 
         if (error) throw error;
 
-        const successMessage = data.wasSplit 
-          ? `Successfully sent ${data.documentsCount} documents to ${recipientEmail} across ${data.emailsSent} separate emails`
-          : `Successfully sent ${data.documentsCount} documents to ${recipientEmail}`;
-          
+        const successMessage = data.wasSplit
+          ? `Sent ${data.documentsCount} documents to ${sentTo} across ${data.emailsSent} emails`
+          : `Sent ${data.documentsCount} documents to ${sentTo}`;
+
         toast.success(successMessage);
+        setSendResult({
+          recipientEmail: sentTo,
+          recipientName: sentToName,
+          documentCount: data?.documentsCount ?? selectedDocuments.length,
+          method: 'attachment',
+        });
       }
-      
+
       // Reset form
       setRecipientEmail('');
       setRecipientName('');
       setMessage('');
       setSelectedDocuments([]);
       setSendMethod('auto');
+      setSelectedRide(null);
       
     } catch (error: any) {
       console.error('Error sending documents:', error);
