@@ -244,8 +244,10 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
               setScreenshotPreview(canvas.toDataURL('image/png'));
               
               toast({
-                title: 'Screenshot captured',
-                description: 'The screenshot has been attached to your bug report.',
+                title: 'Screenshot attached',
+                description: isTester
+                  ? 'The screenshot has been attached to your bug report.'
+                  : 'A screenshot has been added to help us investigate.',
               });
             }
             
@@ -383,12 +385,12 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
     setReferenceId(null);
   };
 
+  const closedRef = useRef(false);
   const handleClose = () => {
+    if (closedRef.current) return;
+    closedRef.current = true;
     setOpen(false);
-    setTimeout(() => {
-      resetForm();
-      onAfterClose?.();
-    }, 300);
+    // Reset + onAfterClose happens via Sheet onOpenChange
   };
 
   // Drag handlers for the panel
@@ -426,7 +428,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setTimeout(() => { resetForm(); onAfterClose?.(); }, 300); }}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (v) { closedRef.current = false; } if (!v) setTimeout(() => { resetForm(); onAfterClose?.(); }, 300); }}>
       <SheetTrigger asChild onClick={(e) => e.stopPropagation()}>
         {trigger || (
           <Button variant="outline" size="sm" className="gap-2">
@@ -452,7 +454,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
             <div>
               <h3 className="text-lg font-semibold">{isTester ? 'Bug Report Submitted' : 'Report sent'}</h3>
               <p className="text-muted-foreground mt-1">
-                {isTester ? 'Thank you for helping improve the app!' : 'Thanks — our team will take a look.'}
+                {isTester ? 'Thank you for helping improve the app!' : "We'll look into this."}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-secondary border">
@@ -462,9 +464,23 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
             <p className="text-sm text-muted-foreground">
               Save this reference number if you need to follow up.
             </p>
-            <Button onClick={handleClose} className="w-full">
-              Close
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={handleClose} className="w-full">
+                Close
+              </Button>
+              {onAfterClose && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    handleClose();
+                    setTimeout(() => { window.location.href = '/overview'; }, 350);
+                  }}
+                >
+                  Back to dashboard
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <>

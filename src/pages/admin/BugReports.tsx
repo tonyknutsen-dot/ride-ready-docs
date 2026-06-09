@@ -91,10 +91,14 @@ interface BugReportAdminData {
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'New', color: 'bg-blue-500' },
+  { value: 'reviewing', label: 'Reviewing', color: 'bg-cyan-500' },
   { value: 'in_progress', label: 'In Progress', color: 'bg-yellow-500' },
-  { value: 'fixed', label: 'Fixed', color: 'bg-green-500' },
+  { value: 'sent_to_lovable', label: 'Sent to Lovable', color: 'bg-indigo-500' },
   { value: 'needs_retest', label: 'Needs Retest', color: 'bg-purple-500' },
+  { value: 'fixed', label: 'Fixed', color: 'bg-green-500' },
   { value: 'closed', label: 'Closed', color: 'bg-gray-500' },
+  { value: 'duplicate', label: 'Duplicate', color: 'bg-gray-400' },
+  { value: 'wont_fix', label: "Won't Fix", color: 'bg-stone-500' },
 ];
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -556,6 +560,85 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
     toast({ title: 'Prompt exported!' });
   };
 
+  // --- Single-report Lovable export helpers ---
+  const buildSingleReportPrompt = (bug: BugReport): string => {
+    const admin = adminDataCache[bug.id];
+    const email = emailCache[bug.user_id];
+    const source = bug.user_role === 'tester' ? 'Tester' : 'Normal user';
+    return `## Bug Fix Request — ${bug.reference_id}
+
+**Reference:** ${bug.reference_id}
+**Source:** ${source}
+**Severity:** ${bug.severity}
+**Issue type:** ${bug.issue_type}
+**Title:** ${bug.title}
+**Reported page/route:** ${bug.current_route || 'Unknown'}
+**Device / Browser:** ${bug.device_type || 'Unknown'} • ${bug.browser_info || 'Unknown'}
+**App version:** ${bug.app_version || 'Unknown'}
+**Reporter (admin-only):** ${email || bug.user_id}
+**Reported at:** ${format(new Date(bug.created_at), 'PPpp')}
+
+### Problem
+${bug.description || '(no description)'}
+
+### Evidence
+- Steps to reproduce:
+${bug.steps_to_reproduce ? bug.steps_to_reproduce.split('\n').map(l => '  ' + l).join('\n') : '  (not provided)'}
+${bug.screenshot_url ? `- Screenshot: ${bug.screenshot_url}` : '- Screenshot: (none)'}
+${admin?.internal_notes ? `- Admin notes: ${admin.internal_notes}` : ''}
+
+### Expected behaviour
+${bug.expected_result || '(not specified)'}
+
+### Actual behaviour
+${bug.actual_result || '(not specified)'}
+
+### Required fix
+- Investigate the route \`${bug.current_route || 'unknown'}\` and resolve the reported issue.
+- Keep wording, layout, and behaviour consistent with the rest of the app.
+
+### Do not change
+- Authentication, billing/Stripe, RLS
+- Document upload/preview/scanning, send-documents/ZIP/email
+- Checks, maintenance, wind log, pressure readings, risk assessments
+- Unrelated UI, data models, or reports
+
+### Regression checks
+- Verify the original repro no longer reproduces.
+- Confirm related flows on the same page still work on desktop and mobile.
+- After fix, mark this report as "Needs Retest".
+`;
+  };
+
+  const buildSingleReportSummary = (bug: BugReport): string => {
+    return `${bug.reference_id} • ${bug.severity.toUpperCase()} • ${bug.user_role === 'tester' ? 'Tester' : 'User'}
+${bug.title}
+Route: ${bug.current_route || 'Unknown'} | Version: ${bug.app_version || 'Unknown'}
+${bug.description || ''}`.trim();
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: `${label} copied` });
+    } catch {
+      toast({ title: 'Copy failed', variant: 'destructive' });
+    }
+  };
+
+  const exportSingleReport = (bug: BugReport) => {
+    const blob = new Blob([buildSingleReportPrompt(bug)], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${bug.reference_id}-lovable-prompt.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Markdown exported' });
+  };
+
   const getSeverityBadge = (severity: string) => (
     <Badge className={`${SEVERITY_COLORS[severity] || 'bg-gray-500'} text-white`}>
       {severity}
@@ -825,8 +908,62 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                       <div className="flex items-center gap-2 mt-2">
                         {getSeverityBadge(selectedReport.severity)}
                         <Badge variant="outline">{selectedReport.issue_type}</Badge>
+                        <Badge variant="outline">{selectedReport.user_role === 'tester' ? 'Tester' : 'User'}</Badge>
                       </div>
                     </div>
+
+                    {/* Admin Actions: Lovable export */}
+                    <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-secondary/30">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => copyText(buildSingleReportPrompt(selectedReport), 'Lovable prompt')}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Copy Lovable Prompt
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => copyText(buildSingleReportSummary(selectedReport), 'Summary')}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy Summary
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => exportSingleReport(selectedReport)}
+                      >
+                        <Download className="h-4 w-4" />
+                        Export Markdown
+                      </Button>
+                      {selectedReport.screenshot_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => copyText(selectedReport.screenshot_url!, 'Screenshot URL')}
+                        >
+                          <Clipboard className="h-4 w-4" />
+                          Copy Screenshot URL
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={selectedReport.status === 'sent_to_lovable' ? 'default' : 'outline'}
+                        className="gap-2 ml-auto"
+                        disabled={updating || selectedReport.status === 'sent_to_lovable'}
+                        onClick={() => updateReport(selectedReport.id, { status: 'sent_to_lovable' })}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        {selectedReport.status === 'sent_to_lovable' ? 'Sent to Lovable' : 'Mark Sent to Lovable'}
+                      </Button>
+                    </div>
+
 
                     {/* Context Info */}
                     <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-secondary/50 border">
