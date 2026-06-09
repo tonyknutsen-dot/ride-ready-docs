@@ -330,12 +330,16 @@ const SharedDocuments = () => {
           <CardContent className="pt-0">
             <Separator className="mb-4" />
             {(() => {
-              const assetNames = Object.keys(documentsByRide).filter(n => n && n !== 'Global');
-              const equipmentLabel = assetNames.length === 0
+              const serverLabel = shareInfo?.equipment?.label && shareInfo.equipment.count > 0
+                ? shareInfo.equipment.label
+                : null;
+              const localAssets = Object.keys(documentsByRide).filter(n => n && n !== 'Global');
+              const fallbackLabel = localAssets.length === 0
                 ? null
-                : assetNames.length === 1
-                  ? assetNames[0]
-                  : `Multiple items (${assetNames.length})`;
+                : localAssets.length === 1
+                  ? localAssets[0]
+                  : `Multiple items (${localAssets.length})`;
+              const equipmentLabel = serverLabel || fallbackLabel;
               return equipmentLabel ? (
                 <div className="mb-4">
                   <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Equipment</dt>
@@ -343,6 +347,7 @@ const SharedDocuments = () => {
                 </div>
               ) : null;
             })()}
+
             <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</dt>
