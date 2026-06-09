@@ -54,6 +54,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { APP_VERSION } from '@/config/appVersion';
+import { resolveBugScreenshotUrl, extractBugAttachmentPath } from '@/utils/bugScreenshot';
 
 interface BugReport {
   id: string;
