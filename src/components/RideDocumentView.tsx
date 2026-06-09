@@ -131,6 +131,43 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     }
   };
 
+  // Silent refetch — used for polling so we don't flash skeletons.
+  const refetchSilent = async () => {
+    try {
+      let query = supabase
+        .from('documents')
+        .select('*')
+        .neq('document_type', 'maintenance')
+        .neq('document_type', 'photo')
+        .or(`ride_id.eq.${rideId},is_global.eq.true`)
+        .order('uploaded_at', { ascending: false });
+      if (!isStaff) query = query.eq('user_id', effectiveUserId);
+      const { data, error } = await query;
+      if (!error && data) setDocuments(data);
+    } catch {
+      /* ignore polling errors */
+    }
+  };
+
+  // Auto-poll while any document is being scanned or its preview is generating.
+  useEffect(() => {
+    const hasPending = documents.some((d: any) => {
+      const ps = d?.preview_status;
+      const us = d?.upload_status;
+      return us === 'pending_scan' || ps === 'pending' || ps === 'generating';
+    });
+    if (!hasPending) return;
+    const startedAt = Date.now();
+    const interval = window.setInterval(() => {
+      if (Date.now() - startedAt > 120_000) {
+        window.clearInterval(interval);
+        return;
+      }
+      void refetchSilent();
+    }, 2500);
+    return () => window.clearInterval(interval);
+  }, [documents, effectiveUserId, isStaff, rideId]);
+
   /* ─── Classify & filter ─── */
   const classified = useMemo(() => {
     let filtered = documents;
@@ -363,6 +400,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         {/* Canonical actions */}
         <DocumentRowActions
           previewable={previewable}
+          previewPending={doc.preview_status === 'pending' || (doc.preview_status as any) === 'generating'}
           onView={() => handleView(doc)}
           onDownload={() => handleDownload(doc)}
           onCopyLink={() => handleCopyLink(doc)}

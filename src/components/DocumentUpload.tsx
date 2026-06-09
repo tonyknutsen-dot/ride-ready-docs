@@ -274,8 +274,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
         </div>
       ) : (
         <div 
-          className="relative rounded-xl p-4 cursor-pointer transition-all border-2 border-success/40 bg-success/5 shadow-sm active:scale-[0.98]"
+          className={`relative rounded-xl p-4 transition-all border-2 border-success/40 bg-success/5 shadow-sm ${uploading ? 'cursor-default' : 'cursor-pointer active:scale-[0.98]'}`}
           onClick={() => {
+            if (uploading) return;
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
             if (cameraInputRef.current) cameraInputRef.current.value = '';
@@ -298,15 +299,21 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
               <p className="text-sm font-bold truncate text-foreground">{selectedFile.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
               <p className="text-xs font-semibold mt-1 text-success">
-                File selected — complete the details below, then press Upload Document.
+                {uploading
+                  ? 'Uploaded successfully — checking file and preparing preview.'
+                  : (!documentType || !documentName)
+                    ? 'File selected — choose the document type and complete the details, then press Upload Document.'
+                    : 'Ready to upload — press Upload Document.'}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Tap this card to choose a different file.</p>
+              {!uploading && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">Tap this card to choose a different file.</p>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {selectedFile && (
+      {selectedFile && !uploading && (
         <p className="text-[11px] text-muted-foreground -mt-2 px-1 leading-snug">
           Your file will be checked before it can be viewed, downloaded, sent, or shared.
         </p>
