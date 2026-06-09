@@ -219,6 +219,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     const safeRecipientName = escapeHtml(recipientName && recipientName !== "Recipient" ? recipientName : "");
 
+    const assetNames = Object.keys(docsByRide).filter(n => n && n !== 'Global');
+    const equipmentLabel = assetNames.length === 0
+      ? 'General documents'
+      : assetNames.length === 1
+        ? assetNames[0]
+        : `Multiple items (${assetNames.length})`;
+
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -250,9 +257,17 @@ const handler = async (req: Request): Promise<Response> => {
         ${safeCompanyName ? `<p style="${emailStyles.value}"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
         ${safeControllerName ? `<p style="${emailStyles.value}"><strong>Contact:</strong> ${safeControllerName}</p>` : ''}
         <p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Contact email:</strong> ${safeUserEmail}</p>
+        <p style="${emailStyles.value}"><strong>Equipment:</strong> ${escapeHtml(equipmentLabel)}</p>
         <p style="${emailStyles.value}"><strong>Documents:</strong> ${documents.length} file${documents.length !== 1 ? 's' : ''}</p>
         <p style="${emailStyles.value}"><strong>Link expires:</strong> ${expiryDateFormatted}</p>
       </div>
+
+      ${safeMessage ? `
+        <div style="margin: 20px 0;">
+          <p style="${emailStyles.label}">MESSAGE FROM SENDER</p>
+          <p style="${emailStyles.value}; line-height: 1.7; white-space: pre-wrap;">${safeMessage}</p>
+        </div>
+      ` : ''}
 
       ${safeMessage ? `
         <div style="margin: 20px 0;">

@@ -305,6 +305,20 @@ const SharedDocuments = () => {
           </CardHeader>
           <CardContent className="pt-0">
             <Separator className="mb-4" />
+            {(() => {
+              const assetNames = Object.keys(documentsByRide).filter(n => n && n !== 'Global');
+              const equipmentLabel = assetNames.length === 0
+                ? null
+                : assetNames.length === 1
+                  ? assetNames[0]
+                  : `Multiple items (${assetNames.length})`;
+              return equipmentLabel ? (
+                <div className="mb-4">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Equipment</dt>
+                  <dd className="font-semibold mt-0.5 break-words">{equipmentLabel}</dd>
+                </div>
+              ) : null;
+            })()}
             <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</dt>
