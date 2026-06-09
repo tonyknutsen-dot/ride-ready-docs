@@ -225,68 +225,84 @@ const SharedDocuments = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
-      {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={appLogo} alt="Ride Ready Docs" className="h-8 w-8 rounded-full" />
-            <div>
-              <h1 className="font-semibold text-sm sm:text-base">Ride Ready Docs</h1>
-              <p className="text-xs text-muted-foreground">Secure Document Download</p>
+      {/* Header — no app navigation; this page is public */}
+      <header className="border-b bg-card/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 max-w-3xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={appLogo} alt="Ride Ready Docs" className="h-9 w-9 rounded-lg shrink-0" />
+            <div className="min-w-0">
+              <p className="font-semibold text-sm sm:text-base truncate">Ride Ready Docs</p>
+              <p className="text-xs text-muted-foreground">Secure document delivery</p>
             </div>
           </div>
-          <Badge variant="outline" className="gap-1">
-            <ShieldCheck className="h-3 w-3" />
-            Secure
+          <Badge className="gap-1 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/10">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Secure link
           </Badge>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight">Secure Document Download</h2>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Secure Document Download</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {documents.length} document{documents.length !== 1 ? 's' : ''}{totalSizeLabel ? ` · ${totalSizeLabel} total` : ''}
-            {expiryLong ? ` · expires ${expiryLong}` : ''}
+            A verified documentation package has been shared with you.
           </p>
         </div>
 
-        {/* Sender Info Card */}
-        <Card className="mb-6 border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
+        {/* Sender / package summary */}
+        <Card className="mb-6 border-2 border-primary/15 bg-gradient-to-b from-card to-primary/[0.02]">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
                   <Building2 className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <CardTitle className="text-lg">
+                <div className="min-w-0">
+                  <CardTitle className="text-lg truncate">
                     {shareInfo?.sender.companyName || shareInfo?.sender.controllerName || 'Document Package'}
                   </CardTitle>
-                  {shareInfo?.sender.companyName && shareInfo?.sender.controllerName && (
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  {shareInfo?.sender.controllerName && shareInfo?.sender.companyName && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                       <User className="h-3 w-3" />
                       {shareInfo.sender.controllerName}
                     </p>
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <Badge variant={daysRemaining <= 2 ? "destructive" : "secondary"} className="gap-1">
-                  <Clock className="h-3 w-3" />
-                  {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
-                </Badge>
-              </div>
+              <Badge variant={daysRemaining <= 2 ? "destructive" : "secondary"} className="gap-1 shrink-0">
+                <Clock className="h-3 w-3" />
+                {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
+              </Badge>
             </div>
           </CardHeader>
-          {shareInfo?.message && (
-            <CardContent className="pt-0">
-              <Separator className="mb-4" />
-              <div className="bg-secondary/30 rounded-lg p-4">
+          <CardContent className="pt-0">
+            <Separator className="mb-4" />
+            <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</dt>
+                <dd className="font-semibold mt-0.5">{documents.length}</dd>
+              </div>
+              {totalSizeLabel && (
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total size</dt>
+                  <dd className="font-semibold mt-0.5">{totalSizeLabel}</dd>
+                </div>
+              )}
+              {expiryLong && (
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Expires</dt>
+                  <dd className="font-semibold mt-0.5">{expiryLong}</dd>
+                </div>
+              )}
+            </dl>
+            {shareInfo?.message && (
+              <div className="mt-4 bg-secondary/30 rounded-lg p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Message</p>
                 <p className="text-sm whitespace-pre-wrap">{shareInfo.message}</p>
               </div>
-            </CardContent>
-          )}
+            )}
+          </CardContent>
         </Card>
 
         {/* Primary action: ZIP download */}
@@ -317,11 +333,10 @@ const SharedDocuments = () => {
               </div>
             )}
             <p className="text-xs text-muted-foreground text-center">
-              Or download files individually from the list below.
+              You can also download individual files below.
             </p>
           </div>
         )}
-
 
         {/* Documents List */}
         <Card>
@@ -335,13 +350,12 @@ const SharedDocuments = () => {
             {Object.entries(documentsByRide).map(([rideName, docs]) => (
               <div key={rideName}>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">🎪</span>
-                  <h3 className="font-medium text-sm">{rideName}</h3>
+                  <h3 className="font-semibold text-sm">{rideName}</h3>
                   <Badge variant="outline" className="text-xs">{docs.length}</Badge>
                 </div>
                 <div className="space-y-2">
                   {docs.map(doc => (
-                    <div 
+                    <div
                       key={doc.id}
                       className="flex items-center justify-between gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
                     >

@@ -236,7 +236,23 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     const senderLabel = profile?.company_name || profile?.controller_name || "Documents";
-    const zipFilename = `RideReadyDocs-${sanitizeZipName(senderLabel)}-Documents.zip`;
+
+    // Determine unique assets in the pack (excluding "Global")
+    const uniqueRides = Array.from(
+      new Set(
+        eligible
+          .map((s) => s.ride_name)
+          .filter((n): n is string => !!n && n !== "Global"),
+      ),
+    );
+
+    const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const parts = [sanitizeZipName(senderLabel)];
+    if (uniqueRides.length === 1) {
+      parts.push(sanitizeZipName(uniqueRides[0]));
+    }
+    parts.push("Documentation-Pack", dateStr);
+    const zipFilename = `${parts.join("-")}.zip`;
 
     console.log(`[zip] token=${tokenPreview} success files=${added} bytes=${zipBytes.byteLength} filename=${zipFilename}`);
 

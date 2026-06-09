@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,6 +105,7 @@ interface EmailTemplate {
 
 const BatchSendDocuments = () => {
   const isMobile = window.innerWidth < 768;
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { effectiveUserId, actualUserId, isStaff } = useEffectiveUserId();
   const { terminology } = useTerminology();
@@ -119,6 +121,16 @@ const BatchSendDocuments = () => {
   
   // Send method state - 'auto', 'attachments', or 'links'
   const [sendMethod, setSendMethod] = useState<'auto' | 'attachments' | 'links'>('auto');
+
+  // Post-send success confirmation
+  const [sendResult, setSendResult] = useState<null | {
+    recipientEmail: string;
+    recipientName: string;
+    documentCount: number;
+    method: 'link' | 'attachment';
+    expiresAt?: string;
+  }>(null);
+
   
   // Saved recipients state
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
@@ -451,7 +463,9 @@ const BatchSendDocuments = () => {
     try {
       // Determine which method to use
       const useDownloadLinks = sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit);
-      
+      const sentTo = recipientEmail;
+      const sentToName = recipientName;
+
       if (useDownloadLinks) {
         // Use secure download links
         const { data, error } = await supabase.functions.invoke('create-document-share', {
@@ -466,7 +480,14 @@ const BatchSendDocuments = () => {
 
         if (error) throw error;
 
-        toast.success(`Sent secure download link for ${data.documentsCount} documents to ${recipientEmail}`);
+        toast.success(`Secure download link sent to ${sentTo}`);
+        setSendResult({
+          recipientEmail: sentTo,
+          recipientName: sentToName,
+          documentCount: data?.documentsCount ?? selectedDocuments.length,
+          method: 'link',
+          expiresAt: data?.expiresAt,
+        });
       } else {
         // Use traditional attachments
         const { data, error } = await supabase.functions.invoke('send-batch-documents', {
@@ -480,19 +501,26 @@ const BatchSendDocuments = () => {
 
         if (error) throw error;
 
-        const successMessage = data.wasSplit 
-          ? `Successfully sent ${data.documentsCount} documents to ${recipientEmail} across ${data.emailsSent} separate emails`
-          : `Successfully sent ${data.documentsCount} documents to ${recipientEmail}`;
-          
+        const successMessage = data.wasSplit
+          ? `Sent ${data.documentsCount} documents to ${sentTo} across ${data.emailsSent} emails`
+          : `Sent ${data.documentsCount} documents to ${sentTo}`;
+
         toast.success(successMessage);
+        setSendResult({
+          recipientEmail: sentTo,
+          recipientName: sentToName,
+          documentCount: data?.documentsCount ?? selectedDocuments.length,
+          method: 'attachment',
+        });
       }
-      
+
       // Reset form
       setRecipientEmail('');
       setRecipientName('');
       setMessage('');
       setSelectedDocuments([]);
       setSendMethod('auto');
+      setSelectedRide(null);
       
     } catch (error: any) {
       console.error('Error sending documents:', error);
@@ -606,8 +634,73 @@ const BatchSendDocuments = () => {
           backTo="/overview"
         />
 
-        {/* Step 1: Ride Selection */}
-        {!selectedRide ? (
+        {/* Success confirmation (logged-in sender) */}
+        {sendResult ? (
+          <div className="rounded-2xl border-2 border-success/30 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden">
+            <div className="px-5 py-6 sm:px-7 sm:py-8">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="flex items-center justify-center w-11 h-11 rounded-full bg-success/15 shrink-0">
+                  <CheckCircle2 className="h-6 w-6 text-success" strokeWidth={2.5} />
+                </span>
+                <div>
+                  <h2 className="text-lg font-extrabold text-foreground tracking-tight">Documents sent</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {sendResult.method === 'link' ? 'Secure download link delivered.' : 'Documents delivered as email attachments.'}
+                  </p>
+                </div>
+              </div>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm border border-foreground/10 rounded-xl p-4 bg-muted/30">
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sent to</dt>
+                  <dd className="font-semibold text-foreground break-all">{sendResult.recipientEmail}</dd>
+                </div>
+                {sendResult.recipientName && (
+                  <div>
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Recipient</dt>
+                    <dd className="font-semibold text-foreground">{sendResult.recipientName}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Documents</dt>
+                  <dd className="font-semibold text-foreground">{sendResult.documentCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Send method</dt>
+                  <dd className="font-semibold text-foreground">
+                    {sendResult.method === 'link' ? 'Secure download link' : 'Email attachment'}
+                  </dd>
+                </div>
+                {sendResult.method === 'link' && sendResult.expiresAt && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Link expires</dt>
+                    <dd className="font-semibold text-foreground">
+                      {format(new Date(sendResult.expiresAt), 'd MMMM yyyy')}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              <div className="flex items-center gap-3 mt-4 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1 font-medium"><Shield className="h-3 w-3 text-success" />Secure download link</span>
+                <span className="inline-flex items-center gap-1 font-medium"><Package className="h-3 w-3 text-success" />ZIP download available</span>
+                <span className="inline-flex items-center gap-1 font-medium"><CheckCircle2 className="h-3 w-3 text-success" />Audit logged</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
+                <Button onClick={() => setSendResult(null)} className="w-full gap-2">
+                  <Send className="h-4 w-4" />
+                  Send another pack
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/documents')} className="w-full gap-2">
+                  <FileText className="h-4 w-4" />
+                  Back to documents
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/overview')} className="w-full gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Dashboard
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : !selectedRide ? (
           <div className="space-y-4">
             {/* KPI summary chips */}
             <div className="flex gap-2 flex-wrap">
@@ -1158,9 +1251,9 @@ const BatchSendDocuments = () => {
                       )}
                     </button>
 
-                    <div className="flex items-center justify-center gap-4 pt-1">
-                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Shield className="h-3 w-3 text-success" />Secure</span>
-                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><FileText className="h-3 w-3 text-success" />PDF bundle</span>
+                    <div className="flex items-center justify-center gap-4 pt-1 flex-wrap">
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Shield className="h-3 w-3 text-success" />Secure download link</span>
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Package className="h-3 w-3 text-success" />ZIP download available</span>
                       <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><CheckCircle2 className="h-3 w-3 text-success" />Audit logged</span>
                     </div>
                   </div>
