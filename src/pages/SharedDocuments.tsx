@@ -194,7 +194,9 @@ const SharedDocuments = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       setZipDownloaded(true);
+      console.log('[SharedDocuments] zip_response_ok=true zip_downloaded_state=true');
       toast.success('Your ZIP download has started');
+
     } catch (err: any) {
       console.error('ZIP download error:', err);
       toast.error('We could not prepare the ZIP download. You can still download the documents individually.');
