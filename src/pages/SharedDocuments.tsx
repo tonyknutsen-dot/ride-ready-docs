@@ -58,6 +58,8 @@ const SharedDocuments = () => {
   const [documents, setDocuments] = useState<SharedDocument[]>([]);
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
   const [zipDownloading, setZipDownloading] = useState(false);
+  const [zipDownloaded, setZipDownloaded] = useState(false);
+  const [closeBlocked, setCloseBlocked] = useState(false);
 
   useEffect(() => {
     if (token) {
