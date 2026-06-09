@@ -37,11 +37,19 @@ interface ShareInfo {
   accessCount: number;
   totalSize?: number;
   documentCount?: number;
+  equipment?: {
+    label: string;
+    count: number;
+    multiple: boolean;
+    names: string[];
+  };
   sender: {
     companyName: string | null;
     controllerName: string | null;
+    email?: string | null;
   };
 }
+
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return '';
@@ -82,6 +90,14 @@ const SharedDocuments = () => {
 
       setShareInfo(data.share);
       setDocuments(data.documents);
+      console.log('[SharedDocuments] loaded', {
+        message_present: !!data?.share?.message,
+        equipment_present: !!data?.share?.equipment && data.share.equipment.count > 0,
+        equipment_label: data?.share?.equipment?.label ?? null,
+        doc_count: data?.documents?.length ?? 0,
+        total_size: data?.share?.totalSize ?? 0,
+      });
+
     } catch (err: any) {
       console.error('Error loading shared documents:', err);
       setError(err.message || 'Failed to load documents');
@@ -178,7 +194,9 @@ const SharedDocuments = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       setZipDownloaded(true);
+      console.log('[SharedDocuments] zip_response_ok=true zip_downloaded_state=true');
       toast.success('Your ZIP download has started');
+
     } catch (err: any) {
       console.error('ZIP download error:', err);
       toast.error('We could not prepare the ZIP download. You can still download the documents individually.');
@@ -295,7 +313,15 @@ const SharedDocuments = () => {
                       {shareInfo.sender.controllerName}
                     </p>
                   )}
+                  {shareInfo?.sender.email && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      <a href={`mailto:${shareInfo.sender.email}`} className="hover:underline">
+                        {shareInfo.sender.email}
+                      </a>
+                    </p>
+                  )}
                 </div>
+
               </div>
               <Badge variant={daysRemaining <= 2 ? "destructive" : "secondary"} className="gap-1 shrink-0">
                 <Clock className="h-3 w-3" />
@@ -306,12 +332,16 @@ const SharedDocuments = () => {
           <CardContent className="pt-0">
             <Separator className="mb-4" />
             {(() => {
-              const assetNames = Object.keys(documentsByRide).filter(n => n && n !== 'Global');
-              const equipmentLabel = assetNames.length === 0
+              const serverLabel = shareInfo?.equipment?.label && shareInfo.equipment.count > 0
+                ? shareInfo.equipment.label
+                : null;
+              const localAssets = Object.keys(documentsByRide).filter(n => n && n !== 'Global');
+              const fallbackLabel = localAssets.length === 0
                 ? null
-                : assetNames.length === 1
-                  ? assetNames[0]
-                  : `Multiple items (${assetNames.length})`;
+                : localAssets.length === 1
+                  ? localAssets[0]
+                  : `Multiple items (${localAssets.length})`;
+              const equipmentLabel = serverLabel || fallbackLabel;
               return equipmentLabel ? (
                 <div className="mb-4">
                   <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Equipment</dt>
@@ -319,6 +349,7 @@ const SharedDocuments = () => {
                 </div>
               ) : null;
             })()}
+
             <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Documents</dt>

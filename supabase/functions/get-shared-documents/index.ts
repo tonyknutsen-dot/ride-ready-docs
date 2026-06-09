@@ -118,6 +118,17 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("user_id", share.user_id)
       .single();
 
+    // Look up sender email via auth admin (for display only)
+    let senderEmail: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(share.user_id);
+      senderEmail = userData?.user?.email ?? null;
+    } catch {
+      console.warn("[get-shared-documents] could not resolve sender email");
+    }
+
+
+
     // Generate signed URLs for each document (valid for 1 hour)
     const documents: any[] = [];
     let totalSize = 0;
@@ -145,6 +156,21 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Build equipment summary from documents
+    const assetNames = Array.from(new Set(
+      documents.map(d => d.ride_name).filter((n: string) => n && n !== 'Global')
+    ));
+    const equipmentSummary = {
+      label: assetNames.length === 0
+        ? 'General documents'
+        : assetNames.length === 1
+          ? assetNames[0]
+          : `Multiple items (${assetNames.length})`,
+      count: assetNames.length,
+      multiple: assetNames.length > 1,
+      names: assetNames,
+    };
+
     // Update access tracking
     const isFirstAccess = !share.accessed_at;
     await supabase
@@ -155,7 +181,7 @@ const handler = async (req: Request): Promise<Response> => {
       })
       .eq("id", share.id);
 
-    console.log(`Share accessed: ${documents.length} documents, access count: ${share.access_count + 1}`);
+    console.log(`[get-shared-documents] token_found=true message_present=${!!share.message} equipment_present=${assetNames.length > 0} doc_count=${documents.length} total_size=${totalSize}`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -166,9 +192,11 @@ const handler = async (req: Request): Promise<Response> => {
         accessCount: share.access_count + 1,
         totalSize,
         documentCount: documents.length,
+        equipment: equipmentSummary,
         sender: {
           companyName: profile?.company_name,
-          controllerName: profile?.controller_name
+          controllerName: profile?.controller_name,
+          email: senderEmail,
         }
       },
       documents
@@ -176,6 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
+
 
   } catch (error: any) {
     console.error("Error in get-shared-documents function:", error);
