@@ -604,7 +604,7 @@ const BatchSendDocuments = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+      <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-8">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -625,7 +625,7 @@ const BatchSendDocuments = () => {
 
   return (
     <div className="t-page min-h-screen overflow-x-hidden">
-      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-4 overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto py-4 md:py-6 px-4 sm:px-6 lg:px-8 pb-24 md:pb-8 space-y-4 overflow-x-hidden">
         <PageHeader
           title="Send Compliance Documents"
           subtitle="Submit compliance documents to councils, insurers, and auditors."

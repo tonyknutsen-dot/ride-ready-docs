@@ -82,7 +82,7 @@ const Maintenance = () => {
 
   if (loading) {
     return (
-      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+      <div className="w-full max-w-7xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-4 md:py-6 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
         <Skeleton className="h-12 w-64" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -92,7 +92,7 @@ const Maintenance = () => {
   // Show MaintenanceManager when a ride is selected
   if (selectedRide) {
     return (
-      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+      <div className="w-full max-w-7xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-4 md:py-6 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
         <StaffAccountBanner />
         <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
 
@@ -123,7 +123,7 @@ const Maintenance = () => {
 
   // Show ride selector when no ride is selected
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+    <div className="w-full max-w-7xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-4 md:py-6 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <StaffAccountBanner />
       <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
 

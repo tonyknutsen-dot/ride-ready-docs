@@ -918,7 +918,7 @@ const WindLog = () => {
   };
 
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+    <div className="w-full max-w-7xl mx-auto space-y-3 px-4 sm:px-6 lg:px-8 py-4 md:py-6 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <PageHeader
         title="Wind Speed Register"
         icon={<Wind className="h-5 w-5 text-primary" />}
