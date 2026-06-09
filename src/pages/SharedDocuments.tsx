@@ -175,6 +175,18 @@ const SharedDocuments = () => {
     }
   };
 
+  const handleClosePage = () => {
+    try {
+      window.close();
+      // If the tab is still here shortly after, the browser blocked it.
+      setTimeout(() => {
+        if (!window.closed) setCloseBlocked(true);
+      }, 300);
+    } catch {
+      setCloseBlocked(true);
+    }
+  };
+
   // Group documents by ride
   const documentsByRide = documents.reduce((acc, doc) => {
     const key = doc.ride_name;
