@@ -76,13 +76,19 @@ const STEPS_PLACEHOLDER = `1) What were you trying to do?
 2) What did you tap/click?
 3) What happened?`;
 
-export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: BugReportDialogProps) => {
+export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose, open: openProp, onOpenChange: onOpenChangeProp, sourceRoute }: BugReportDialogProps) => {
   const { user } = useAuth();
   const { isTester } = useTester();
   const location = useLocation();
   const { toast } = useToast();
 
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChangeProp?.(v);
+  };
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [referenceId, setReferenceId] = useState<string | null>(null);
