@@ -14,7 +14,8 @@ import {
   Clock,
   User,
   CheckCircle2,
-  ShieldCheck
+  ShieldCheck,
+  Package
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -25,6 +26,7 @@ interface SharedDocument {
   document_name: string;
   document_type: string;
   ride_name: string;
+  file_size?: number;
   download_url: string;
 }
 
@@ -33,10 +35,19 @@ interface ShareInfo {
   message: string;
   expiresAt: string;
   accessCount: number;
+  totalSize?: number;
+  documentCount?: number;
   sender: {
     companyName: string | null;
     controllerName: string | null;
   };
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 const SharedDocuments = () => {
@@ -46,12 +57,14 @@ const SharedDocuments = () => {
   const [shareInfo, setShareInfo] = useState<ShareInfo | null>(null);
   const [documents, setDocuments] = useState<SharedDocument[]>([]);
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
+  const [zipDownloading, setZipDownloading] = useState(false);
 
   useEffect(() => {
     if (token) {
       loadSharedDocuments();
     }
   }, [token]);
+
 
   const loadSharedDocuments = async () => {
     setLoading(true);
