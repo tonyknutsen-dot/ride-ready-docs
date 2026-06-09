@@ -402,13 +402,59 @@ const BugReports = () => {
   };
 
   // Handler for selecting a report - also fetches admin data
+  // Signed URL for the currently-selected report's screenshot (resolved on open).
+  const [selectedScreenshotUrl, setSelectedScreenshotUrl] = useState<string | null>(null);
+  const [resolvingScreenshot, setResolvingScreenshot] = useState(false);
+
   const handleSelectReport = (report: BugReport | null) => {
     setSelectedReport(report);
+    setSelectedScreenshotUrl(null);
     if (report) {
       fetchAdminData(report.id);
+      if (report.screenshot_url) {
+        setResolvingScreenshot(true);
+        resolveBugScreenshotUrl(report.screenshot_url)
+          .then((url) => setSelectedScreenshotUrl(url))
+          .finally(() => setResolvingScreenshot(false));
+      }
     } else {
       setSelectedAdminData(null);
     }
+  };
+
+  const openScreenshot = async () => {
+    if (!selectedReport?.screenshot_url) {
+      toast({ title: 'No screenshot was attached to this report.' });
+      return;
+    }
+    let url = selectedScreenshotUrl;
+    if (!url) {
+      url = await resolveBugScreenshotUrl(selectedReport.screenshot_url);
+      setSelectedScreenshotUrl(url);
+    }
+    if (!url) {
+      toast({
+        title: 'Screenshot could not be opened',
+        description: 'Copy the report details and check storage access.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const copyScreenshotUrl = async () => {
+    if (!selectedReport?.screenshot_url) {
+      toast({ title: 'No screenshot was attached to this report.' });
+      return;
+    }
+    const url = selectedScreenshotUrl || (await resolveBugScreenshotUrl(selectedReport.screenshot_url));
+    if (!url) {
+      toast({ title: 'Screenshot URL unavailable', variant: 'destructive' });
+      return;
+    }
+    setSelectedScreenshotUrl(url);
+    copyText(url, 'Screenshot URL');
   };
 
   const selectedReports = reports.filter(r => selectedIds.has(r.id));
