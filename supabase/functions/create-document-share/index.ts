@@ -295,25 +295,36 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     const shareSubject = `Equipment Documentation Package - ${senderName}`;
-    const emailResponse = await auditedResendSend(resend, {
-      from: "Ride Ready Docs <info@ridereadydocs.com>",
-      to: [recipientEmail],
-      subject: shareSubject,
-      html: htmlContent
-    }, {
-      function_name: 'create-document-share',
-      template_name: 'document-share',
-      user_id: user.id,
-      metadata: { doc_count: documents.length, share_token_set: true },
-    });
+    let emailResponse: any;
+    try {
+      emailResponse = await auditedResendSend(resend, {
+        from: "Ride Ready Docs <info@ridereadydocs.com>",
+        to: [recipientEmail],
+        subject: shareSubject,
+        html: htmlContent
+      }, {
+        function_name: 'create-document-share',
+        template_name: 'document-share',
+        user_id: ownerUserId,
+        metadata: { doc_count: documents.length, share_token_set: true, requested_by: user.id },
+      });
+    } catch (mailErr: any) {
+      console.error("[create-document-share] email send failed:", mailErr?.message || mailErr);
+      // Roll back the share so the user can retry cleanly
+      await supabase.from("document_share_items").delete().eq("share_id", share.id);
+      await supabase.from("document_shares").delete().eq("id", share.id);
+      return new Response(
+        JSON.stringify({ error: "The email could not be sent. Please check the recipient email address and try again." }),
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
-    console.log(`Email sent successfully:`, emailResponse);
+    console.log(`[create-document-share] email sent id=${emailResponse?.data?.id ?? 'n/a'} docs=${documents.length}`);
 
-    // Log notification
     await supabase
       .from("notifications")
       .insert({
-        user_id: user.id,
+        user_id: ownerUserId,
         title: "Documents Shared",
         message: `Sent download link for ${documents.length} documents to ${recipientEmail}`,
         type: "info"
@@ -324,6 +335,7 @@ const handler = async (req: Request): Promise<Response> => {
       shareId: share.id,
       shareToken: shareToken,
       documentsCount: documents.length,
+      skippedCount: missingCount,
       expiresAt: expiresAt.toISOString(),
       downloadUrl: downloadPageUrl
     }), {
@@ -332,9 +344,9 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error: any) {
-    console.error("Error in create-document-share function:", error);
+    console.error("[create-document-share] unhandled error:", error?.message || error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to create document share. Please try again later." }),
+      JSON.stringify({ error: "Something went wrong while preparing the download link. Please try again." }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
