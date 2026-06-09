@@ -454,7 +454,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
             <div>
               <h3 className="text-lg font-semibold">{isTester ? 'Bug Report Submitted' : 'Report sent'}</h3>
               <p className="text-muted-foreground mt-1">
-                {isTester ? 'Thank you for helping improve the app!' : 'Thanks — our team will take a look.'}
+                {isTester ? 'Thank you for helping improve the app!' : "We'll look into this."}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-secondary border">
@@ -464,9 +464,23 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
             <p className="text-sm text-muted-foreground">
               Save this reference number if you need to follow up.
             </p>
-            <Button onClick={handleClose} className="w-full">
-              Close
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={handleClose} className="w-full">
+                Close
+              </Button>
+              {onAfterClose && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    handleClose();
+                    setTimeout(() => { window.location.href = '/overview'; }, 350);
+                  }}
+                >
+                  Back to dashboard
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <>
