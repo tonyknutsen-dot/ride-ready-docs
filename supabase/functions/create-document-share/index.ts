@@ -184,10 +184,12 @@ const handler = async (req: Request): Promise<Response> => {
       .insert(shareItems);
 
     if (itemsError) {
-      console.error("Error creating share items:", itemsError);
-      // Clean up the share record
+      console.error("[create-document-share] share items error:", itemsError);
       await supabase.from("document_shares").delete().eq("id", share.id);
-      throw new Error("Failed to create document share items");
+      return new Response(
+        JSON.stringify({ error: "The download link could not be created. Please try again." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Generate the download page URL
