@@ -263,7 +263,7 @@ const handler = async (req: Request): Promise<Response> => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${zipFilename}"`,
+        "Content-Disposition": `attachment; filename="${zipFilename}"; filename*=UTF-8''${encodeURIComponent(zipFilename)}`,
         "Content-Length": String(zipBytes.byteLength),
         "Cache-Control": "no-store",
       },
