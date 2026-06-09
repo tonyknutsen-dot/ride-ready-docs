@@ -383,21 +383,24 @@ const SharedDocuments = () => {
           </CardContent>
         </Card>
 
-        {/* Footer Note */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            This secure link will expire on {expiresAt && format(expiresAt, 'dd MMMM yyyy')}.
-            <br />
-            If you need access after this date, please contact the sender.
-          </p>
+        {/* Security note */}
+        <div className="mt-8">
+          <div className="rounded-lg border bg-card/60 p-4 text-xs text-muted-foreground flex items-start gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <p>
+              This secure link expires on {expiresAt && format(expiresAt, 'd MMMM yyyy')}.
+              Only download documents from people you trust. If you need access after this date, please contact the sender.
+            </p>
+          </div>
           <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
-            Downloaded securely via Ride Ready Docs
+            Delivered securely via Ride Ready Docs
           </div>
         </div>
       </main>
     </div>
   );
 };
+
 
 export default SharedDocuments;
