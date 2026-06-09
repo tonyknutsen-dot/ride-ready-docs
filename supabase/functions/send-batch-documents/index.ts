@@ -88,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
       .select(`*, rides:ride_id (ride_name, manufacturer)`)
       .eq("user_id", user.id)
       .in("id", documentIds)
-      .not("upload_status", "in", "(pending_scan,rejected)");
+      .or("upload_status.is.null,upload_status.not.in.(pending_scan,rejected)");
     if (docsError) throw new Error("Failed to fetch documents");
 
     console.log(`Found ${documents?.length || 0} documents to send`);
