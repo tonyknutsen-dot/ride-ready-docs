@@ -144,7 +144,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose, op
       userRole: isTester ? 'tester' : 'user',
       userId: user?.id || 'anonymous',
       userEmail: user?.email || 'unknown',
-      currentRoute: location.pathname,
+      currentRoute: sourceRoute || location.pathname,
       deviceType: isMobile ? 'mobile' : 'desktop',
       browserInfo,
       capturedAt: new Date().toISOString(),
