@@ -428,7 +428,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
   };
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) setTimeout(() => { resetForm(); onAfterClose?.(); }, 300); }}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (v) { closedRef.current = false; } if (!v) setTimeout(() => { resetForm(); onAfterClose?.(); }, 300); }}>
       <SheetTrigger asChild onClick={(e) => e.stopPropagation()}>
         {trigger || (
           <Button variant="outline" size="sm" className="gap-2">
