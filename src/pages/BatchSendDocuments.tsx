@@ -1251,9 +1251,9 @@ const BatchSendDocuments = () => {
                       )}
                     </button>
 
-                    <div className="flex items-center justify-center gap-4 pt-1">
-                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Shield className="h-3 w-3 text-success" />Secure</span>
-                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><FileText className="h-3 w-3 text-success" />PDF bundle</span>
+                    <div className="flex items-center justify-center gap-4 pt-1 flex-wrap">
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Shield className="h-3 w-3 text-success" />Secure download link</span>
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Package className="h-3 w-3 text-success" />ZIP download available</span>
                       <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><CheckCircle2 className="h-3 w-3 text-success" />Audit logged</span>
                     </div>
                   </div>
