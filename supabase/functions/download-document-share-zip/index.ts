@@ -25,11 +25,12 @@ function sanitizeFilename(name: string): string {
 }
 
 function sanitizeZipName(name: string): string {
-  const cleaned = (name || "Documents")
-    .replace(/[^a-zA-Z0-9\-_ ]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
-  return cleaned.length > 0 ? cleaned.slice(0, 80) : "Documents";
+  // Keep spaces and hyphens readable; strip unsafe filesystem chars.
+  const cleaned = (name || "")
+    .replace(/[\/\\:*?"<>|\x00-\x1f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.slice(0, 80);
 }
 
 function ensureUniqueName(taken: Set<string>, name: string): string {
