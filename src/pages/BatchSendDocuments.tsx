@@ -496,7 +496,20 @@ const BatchSendDocuments = () => {
       
     } catch (error: any) {
       console.error('Error sending documents:', error);
-      toast.error(error.message || 'Failed to send documents');
+      // Try to extract the function's JSON error body for a meaningful message
+      let friendly = error?.message || 'Failed to send documents';
+      try {
+        const resp = error?.context;
+        if (resp && typeof resp.json === 'function') {
+          const body = await resp.json();
+          if (body?.error) friendly = body.error;
+        }
+      } catch { /* ignore parse errors, keep fallback */ }
+      if (/non-2xx/i.test(friendly)) {
+        friendly = 'The documents could not be sent. Please try again, or select fewer documents.';
+      }
+      toast.error(friendly);
+      // Note: selectedDocuments intentionally NOT cleared on failure so the user can retry.
     } finally {
       setSending(false);
     }
