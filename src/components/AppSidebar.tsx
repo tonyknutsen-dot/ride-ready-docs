@@ -23,6 +23,7 @@ import {
   Wind,
   AlertOctagon,
   Gauge,
+  AlertCircle,
 } from 'lucide-react';
 import {
   Sidebar,
