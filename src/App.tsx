@@ -313,6 +313,18 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route
+                path="/report-problem"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <ReportProblem />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/risk-assessments"
                 element={
