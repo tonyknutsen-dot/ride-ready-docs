@@ -1115,18 +1115,47 @@ ${bug.description || ''}`.trim();
                     )}
 
                     {/* Screenshot */}
-                    {selectedReport.screenshot_url && (
+                    {selectedReport.screenshot_url ? (
                       <div className="space-y-2">
                         <h4 className="font-medium">Screenshot</h4>
-                        <a
-                          href={selectedReport.screenshot_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          View Screenshot
-                        </a>
+                        {selectedScreenshotUrl ? (
+                          <button
+                            type="button"
+                            onClick={openScreenshot}
+                            className="block w-full overflow-hidden rounded-lg border bg-secondary/30 hover:border-primary transition-colors text-left"
+                          >
+                            <img
+                              src={selectedScreenshotUrl}
+                              alt="Bug screenshot"
+                              className="max-h-72 w-full object-contain bg-background"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            <div className="flex items-center gap-2 p-2 text-sm text-primary">
+                              <ExternalLink className="h-4 w-4" />
+                              Open full screenshot
+                            </div>
+                          </button>
+                        ) : resolvingScreenshot ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading screenshot…
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              Screenshot could not be opened. Copy the report details and check storage access.
+                            </p>
+                            <Button size="sm" variant="outline" onClick={openScreenshot} className="gap-2">
+                              <ExternalLink className="h-4 w-4" />
+                              Retry View Screenshot
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Screenshot</h4>
+                        <p className="text-sm text-muted-foreground">No screenshot was attached to this report.</p>
                       </div>
                     )}
 
