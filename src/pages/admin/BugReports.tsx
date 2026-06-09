@@ -631,7 +631,7 @@ ${bug.description || '(no description)'}
 ### Evidence
 - Steps to reproduce:
 ${bug.steps_to_reproduce ? bug.steps_to_reproduce.split('\n').map(l => '  ' + l).join('\n') : '  (not provided)'}
-${bug.screenshot_url ? `- Screenshot: ${bug.screenshot_url}` : '- Screenshot: (none)'}
+${bug.screenshot_url ? `- Screenshot: ${screenshotUrl || '(stored privately — open in admin to view)'}` : '- Screenshot: (none)'}
 ${admin?.internal_notes ? `- Admin notes: ${admin.internal_notes}` : ''}
 
 ### Expected behaviour
