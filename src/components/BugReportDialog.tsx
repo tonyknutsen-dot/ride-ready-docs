@@ -352,7 +352,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
       }
 
       toast({
-        title: 'Bug report submitted',
+        title: isTester ? 'Bug report submitted' : 'Report sent',
         description: `Reference: ${refId}`,
       });
     } catch (error: any) {
