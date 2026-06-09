@@ -54,6 +54,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { APP_VERSION } from '@/config/appVersion';
+import { resolveBugScreenshotUrl, extractBugAttachmentPath } from '@/utils/bugScreenshot';
 
 interface BugReport {
   id: string;
@@ -401,13 +402,59 @@ const BugReports = () => {
   };
 
   // Handler for selecting a report - also fetches admin data
+  // Signed URL for the currently-selected report's screenshot (resolved on open).
+  const [selectedScreenshotUrl, setSelectedScreenshotUrl] = useState<string | null>(null);
+  const [resolvingScreenshot, setResolvingScreenshot] = useState(false);
+
   const handleSelectReport = (report: BugReport | null) => {
     setSelectedReport(report);
+    setSelectedScreenshotUrl(null);
     if (report) {
       fetchAdminData(report.id);
+      if (report.screenshot_url) {
+        setResolvingScreenshot(true);
+        resolveBugScreenshotUrl(report.screenshot_url)
+          .then((url) => setSelectedScreenshotUrl(url))
+          .finally(() => setResolvingScreenshot(false));
+      }
     } else {
       setSelectedAdminData(null);
     }
+  };
+
+  const openScreenshot = async () => {
+    if (!selectedReport?.screenshot_url) {
+      toast({ title: 'No screenshot was attached to this report.' });
+      return;
+    }
+    let url = selectedScreenshotUrl;
+    if (!url) {
+      url = await resolveBugScreenshotUrl(selectedReport.screenshot_url);
+      setSelectedScreenshotUrl(url);
+    }
+    if (!url) {
+      toast({
+        title: 'Screenshot could not be opened',
+        description: 'Copy the report details and check storage access.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const copyScreenshotUrl = async () => {
+    if (!selectedReport?.screenshot_url) {
+      toast({ title: 'No screenshot was attached to this report.' });
+      return;
+    }
+    const url = selectedScreenshotUrl || (await resolveBugScreenshotUrl(selectedReport.screenshot_url));
+    if (!url) {
+      toast({ title: 'Screenshot URL unavailable', variant: 'destructive' });
+      return;
+    }
+    setSelectedScreenshotUrl(url);
+    copyText(url, 'Screenshot URL');
   };
 
   const selectedReports = reports.filter(r => selectedIds.has(r.id));
@@ -469,7 +516,8 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
       }
 
       if (bug.screenshot_url) {
-        prompt += `- **Attachment:** ${bug.screenshot_url}
+        const isBucket = !!extractBugAttachmentPath(bug.screenshot_url);
+        prompt += `- **Attachment:** ${isBucket ? '(stored privately — open in admin to view)' : bug.screenshot_url}
 `;
       }
 
@@ -561,7 +609,7 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
   };
 
   // --- Single-report Lovable export helpers ---
-  const buildSingleReportPrompt = (bug: BugReport): string => {
+  const buildSingleReportPrompt = (bug: BugReport, screenshotUrl?: string | null): string => {
     const admin = adminDataCache[bug.id];
     const email = emailCache[bug.user_id];
     const source = bug.user_role === 'tester' ? 'Tester' : 'Normal user';
@@ -584,7 +632,7 @@ ${bug.description || '(no description)'}
 ### Evidence
 - Steps to reproduce:
 ${bug.steps_to_reproduce ? bug.steps_to_reproduce.split('\n').map(l => '  ' + l).join('\n') : '  (not provided)'}
-${bug.screenshot_url ? `- Screenshot: ${bug.screenshot_url}` : '- Screenshot: (none)'}
+${bug.screenshot_url ? `- Screenshot: ${screenshotUrl || '(stored privately — open in admin to view)'}` : '- Screenshot: (none)'}
 ${admin?.internal_notes ? `- Admin notes: ${admin.internal_notes}` : ''}
 
 ### Expected behaviour
@@ -918,7 +966,14 @@ ${bug.description || ''}`.trim();
                         size="sm"
                         variant="outline"
                         className="gap-2"
-                        onClick={() => copyText(buildSingleReportPrompt(selectedReport), 'Lovable prompt')}
+                        onClick={async () => {
+                          let url = selectedScreenshotUrl;
+                          if (!url && selectedReport.screenshot_url) {
+                            url = await resolveBugScreenshotUrl(selectedReport.screenshot_url);
+                            setSelectedScreenshotUrl(url);
+                          }
+                          copyText(buildSingleReportPrompt(selectedReport, url), 'Lovable prompt');
+                        }}
                       >
                         <Sparkles className="h-4 w-4" />
                         Copy Lovable Prompt
@@ -946,7 +1001,7 @@ ${bug.description || ''}`.trim();
                           size="sm"
                           variant="outline"
                           className="gap-2"
-                          onClick={() => copyText(selectedReport.screenshot_url!, 'Screenshot URL')}
+                          onClick={copyScreenshotUrl}
                         >
                           <Clipboard className="h-4 w-4" />
                           Copy Screenshot URL
@@ -1019,7 +1074,7 @@ ${bug.description || ''}`.trim();
                             }}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
-                            Go to Page
+                            Open Reported Page
                           </Button>
                         )}
                       </div>
@@ -1060,18 +1115,47 @@ ${bug.description || ''}`.trim();
                     )}
 
                     {/* Screenshot */}
-                    {selectedReport.screenshot_url && (
+                    {selectedReport.screenshot_url ? (
                       <div className="space-y-2">
                         <h4 className="font-medium">Screenshot</h4>
-                        <a
-                          href={selectedReport.screenshot_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          View Screenshot
-                        </a>
+                        {selectedScreenshotUrl ? (
+                          <button
+                            type="button"
+                            onClick={openScreenshot}
+                            className="block w-full overflow-hidden rounded-lg border bg-secondary/30 hover:border-primary transition-colors text-left"
+                          >
+                            <img
+                              src={selectedScreenshotUrl}
+                              alt="Bug screenshot"
+                              className="max-h-72 w-full object-contain bg-background"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            <div className="flex items-center gap-2 p-2 text-sm text-primary">
+                              <ExternalLink className="h-4 w-4" />
+                              Open full screenshot
+                            </div>
+                          </button>
+                        ) : resolvingScreenshot ? (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading screenshot…
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              Screenshot could not be opened. Copy the report details and check storage access.
+                            </p>
+                            <Button size="sm" variant="outline" onClick={openScreenshot} className="gap-2">
+                              <ExternalLink className="h-4 w-4" />
+                              Retry View Screenshot
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <h4 className="font-medium">Screenshot</h4>
+                        <p className="text-sm text-muted-foreground">No screenshot was attached to this report.</p>
                       </div>
                     )}
 

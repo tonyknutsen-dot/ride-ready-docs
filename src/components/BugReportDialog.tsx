@@ -282,24 +282,21 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose, op
 
   const uploadScreenshot = async (): Promise<string | null> => {
     if (!screenshotFile || !user) return null;
-    
-    const fileExt = screenshotFile.name.split('.').pop();
+
+    const fileExt = (screenshotFile.name.split('.').pop() || 'png').toLowerCase();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-    
+
     const { error } = await supabase.storage
       .from('bug-attachments')
-      .upload(fileName, screenshotFile);
+      .upload(fileName, screenshotFile, { contentType: screenshotFile.type || 'image/png' });
 
     if (error) {
       console.error('Upload error:', error);
       return null;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('bug-attachments')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
+    // Store the storage path (bucket is private; admin generates signed URLs on demand).
+    return fileName;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
