@@ -47,7 +47,7 @@ const RiskAssessments = () => {
         <RiskAssessmentOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         
         <header className="border-b-2 border-warning/30 bg-gradient-to-r from-warning/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
             <PageHeader
               icon={<ShieldCheck className="h-5 w-5 text-warning" />}
               iconBgClass="from-warning/20 to-destructive/10"
@@ -71,7 +71,7 @@ const RiskAssessments = () => {
           </div>
         </header>
 
-        <main className="container mx-auto px-4 py-5">
+        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           {selectedRide && (
             <PageBreadcrumb items={getBreadcrumbItems()} showHome />
           )}
