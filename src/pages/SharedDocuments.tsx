@@ -58,6 +58,8 @@ const SharedDocuments = () => {
   const [documents, setDocuments] = useState<SharedDocument[]>([]);
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
   const [zipDownloading, setZipDownloading] = useState(false);
+  const [zipDownloaded, setZipDownloaded] = useState(false);
+  const [closeBlocked, setCloseBlocked] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -107,7 +109,7 @@ const SharedDocuments = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success(`Downloaded ${doc.document_name}`);
+      toast.success('Download started', { description: doc.document_name });
     } catch (err) {
       console.error('Download error:', err);
       toast.error('Failed to download file');
@@ -163,12 +165,25 @@ const SharedDocuments = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      toast.success('ZIP download started');
+      setZipDownloaded(true);
+      toast.success('Your ZIP download has started');
     } catch (err: any) {
       console.error('ZIP download error:', err);
       toast.error('We could not prepare the ZIP download. You can still download the documents individually.');
     } finally {
       setZipDownloading(false);
+    }
+  };
+
+  const handleClosePage = () => {
+    try {
+      window.close();
+      // If the tab is still here shortly after, the browser blocked it.
+      setTimeout(() => {
+        if (!window.closed) setCloseBlocked(true);
+      }, 300);
+    } catch {
+      setCloseBlocked(true);
     }
   };
 
@@ -320,6 +335,11 @@ const SharedDocuments = () => {
                     <Loader2 className="h-5 w-5 animate-spin" />
                     Preparing ZIP…
                   </>
+                ) : zipDownloaded ? (
+                  <>
+                    <Download className="h-5 w-5" />
+                    Download ZIP again
+                  </>
                 ) : (
                   <>
                     <Package className="h-5 w-5" />
@@ -332,11 +352,50 @@ const SharedDocuments = () => {
                 This package is too large for one ZIP download. Please download the documents individually below.
               </div>
             )}
-            <p className="text-xs text-muted-foreground text-center">
-              You can also download individual files below.
-            </p>
+            {zipDownloaded ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-700 mt-0.5 shrink-0" />
+                  <div className="text-sm text-green-900">
+                    <p className="font-semibold">Your ZIP download has started.</p>
+                    <p className="mt-1">
+                      You can close this page, download the ZIP again, or download individual files below.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadZip}
+                    disabled={zipDownloading}
+                    className="gap-1.5"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download ZIP again
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClosePage}
+                  >
+                    Close page
+                  </Button>
+                </div>
+                {closeBlocked && (
+                  <p className="text-xs text-green-900">
+                    You can safely close this tab or browser window.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center">
+                Download everything as one ZIP, or download individual files from the list below.
+              </p>
+            )}
           </div>
         )}
+
 
         {/* Documents List */}
         <Card>
