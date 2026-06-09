@@ -516,7 +516,8 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
       }
 
       if (bug.screenshot_url) {
-        prompt += `- **Attachment:** ${bug.screenshot_url}
+        const isBucket = !!extractBugAttachmentPath(bug.screenshot_url);
+        prompt += `- **Attachment:** ${isBucket ? '(stored privately — open in admin to view)' : bug.screenshot_url}
 `;
       }
 
