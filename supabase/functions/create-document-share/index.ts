@@ -269,13 +269,6 @@ const handler = async (req: Request): Promise<Response> => {
         </div>
       ` : ''}
 
-      ${safeMessage ? `
-        <div style="margin: 20px 0;">
-          <p style="${emailStyles.label}">MESSAGE FROM SENDER</p>
-          <p style="${emailStyles.value}; line-height: 1.7; white-space: pre-wrap;">${safeMessage}</p>
-        </div>
-      ` : ''}
-
       <div style="margin: 24px 0; text-align: center;">
         <a href="${downloadPageUrl}" style="display: inline-block; padding: 14px 32px; background: ${brandColors.primary}; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
           Download Documents
