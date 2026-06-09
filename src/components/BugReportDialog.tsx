@@ -385,12 +385,12 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
     setReferenceId(null);
   };
 
+  const closedRef = useRef(false);
   const handleClose = () => {
+    if (closedRef.current) return;
+    closedRef.current = true;
     setOpen(false);
-    setTimeout(() => {
-      resetForm();
-      onAfterClose?.();
-    }, 300);
+    // Reset + onAfterClose happens via Sheet onOpenChange
   };
 
   // Drag handlers for the panel
