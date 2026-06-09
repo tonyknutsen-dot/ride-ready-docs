@@ -244,8 +244,10 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
               setScreenshotPreview(canvas.toDataURL('image/png'));
               
               toast({
-                title: 'Screenshot captured',
-                description: 'The screenshot has been attached to your bug report.',
+                title: 'Screenshot attached',
+                description: isTester
+                  ? 'The screenshot has been attached to your bug report.'
+                  : 'A screenshot has been added to help us investigate.',
               });
             }
             
