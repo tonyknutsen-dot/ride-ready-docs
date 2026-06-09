@@ -258,12 +258,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`[zip] token=${tokenPreview} success files=${added} bytes=${zipBytes.byteLength} filename=${zipFilename}`);
 
+    // ASCII-safe fallback for the plain filename= param
+    const asciiFilename = zipFilename.replace(/[^\x20-\x7E]/g, "_");
+
     return new Response(zipBytes, {
       status: 200,
       headers: {
         ...corsHeaders,
+        "Access-Control-Expose-Headers": "Content-Disposition, Content-Length",
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${zipFilename}"; filename*=UTF-8''${encodeURIComponent(zipFilename)}`,
+        "Content-Disposition": `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(zipFilename)}`,
         "Content-Length": String(zipBytes.byteLength),
         "Cache-Control": "no-store",
       },

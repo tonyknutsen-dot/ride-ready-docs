@@ -155,8 +155,20 @@ const SharedDocuments = () => {
 
       const blob = await res.blob();
       const disposition = res.headers.get('content-disposition') || '';
-      const match = /filename="?([^"]+)"?/i.exec(disposition);
-      const filename = match?.[1] || 'RideReadyDocs-Documents.zip';
+      // Prefer RFC 5987 filename* (UTF-8), fall back to filename=
+      let filename = '';
+      const star = /filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i.exec(disposition);
+      if (star?.[1]) {
+        try { filename = decodeURIComponent(star[1].trim().replace(/^"|"$/g, '')); } catch { filename = star[1]; }
+      }
+      if (!filename) {
+        const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(disposition);
+        if (plain?.[1]) filename = plain[1].trim();
+      }
+      if (!filename) {
+        const company = shareInfo?.sender.companyName || shareInfo?.sender.controllerName || 'Documents';
+        filename = `${company} - Documents.zip`;
+      }
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
