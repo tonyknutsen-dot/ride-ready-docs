@@ -33,6 +33,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BugReportDialogProps {
   trigger?: React.ReactNode;
+  defaultOpen?: boolean;
+  onAfterClose?: () => void;
 }
 
 interface AutoCapturedContext {
