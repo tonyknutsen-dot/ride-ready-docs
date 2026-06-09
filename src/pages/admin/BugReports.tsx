@@ -608,7 +608,7 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
   };
 
   // --- Single-report Lovable export helpers ---
-  const buildSingleReportPrompt = (bug: BugReport): string => {
+  const buildSingleReportPrompt = (bug: BugReport, screenshotUrl?: string | null): string => {
     const admin = adminDataCache[bug.id];
     const email = emailCache[bug.user_id];
     const source = bug.user_role === 'tester' ? 'Tester' : 'Normal user';
