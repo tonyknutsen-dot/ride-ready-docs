@@ -120,17 +120,55 @@ const SharedDocuments = () => {
     }
   };
 
-  const handleDownloadAll = async () => {
+  const handleDownloadZip = async () => {
     if (!navigator.onLine) {
       toast.error('Requires connection', { description: 'Downloads are unavailable while offline.' });
       return;
     }
-    toast.info(`Downloading ${documents.length} files...`);
-    
-    for (const doc of documents) {
-      await handleDownload(doc);
-      // Small delay between downloads to prevent browser blocking
-      await new Promise(resolve => setTimeout(resolve, 500));
+    if (!token) return;
+    setZipDownloading(true);
+    try {
+      const projectId = (import.meta as any).env?.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || `https://${projectId}.supabase.co`;
+      const apikey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(`${supabaseUrl}/functions/v1/download-document-share-zip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apikey,
+          'Authorization': `Bearer ${apikey}`,
+        },
+        body: JSON.stringify({ shareToken: token }),
+      });
+
+      if (!res.ok) {
+        let msg = 'We could not prepare the ZIP download. You can still download the documents individually.';
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        toast.error(msg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('content-disposition') || '';
+      const match = /filename="?([^"]+)"?/i.exec(disposition);
+      const filename = match?.[1] || 'RideReadyDocs-Documents.zip';
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success('ZIP download started');
+    } catch (err: any) {
+      console.error('ZIP download error:', err);
+      toast.error('We could not prepare the ZIP download. You can still download the documents individually.');
+    } finally {
+      setZipDownloading(false);
     }
   };
 
@@ -176,6 +214,14 @@ const SharedDocuments = () => {
 
   const expiresAt = shareInfo ? new Date(shareInfo.expiresAt) : null;
   const daysRemaining = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+  const totalSize = shareInfo?.totalSize || documents.reduce((s, d) => s + (d.file_size || 0), 0);
+  const totalSizeLabel = formatBytes(totalSize);
+  const ZIP_MAX_FILES = 50;
+  const ZIP_MAX_BYTES = 100 * 1024 * 1024;
+  const zipEligible = documents.length > 0
+    && documents.length <= ZIP_MAX_FILES
+    && (totalSize === 0 || totalSize <= ZIP_MAX_BYTES);
+  const expiryLong = expiresAt ? format(expiresAt, 'd MMMM yyyy') : '';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -197,6 +243,14 @@ const SharedDocuments = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight">Secure Document Download</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {documents.length} document{documents.length !== 1 ? 's' : ''}{totalSizeLabel ? ` · ${totalSizeLabel} total` : ''}
+            {expiryLong ? ` · expires ${expiryLong}` : ''}
+          </p>
+        </div>
+
         {/* Sender Info Card */}
         <Card className="mb-6 border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
           <CardHeader className="pb-3">
@@ -235,19 +289,39 @@ const SharedDocuments = () => {
           )}
         </Card>
 
-        {/* Download All Button */}
-        {documents.length > 1 && (
-          <div className="mb-6">
-            <Button 
-              onClick={handleDownloadAll} 
-              className="w-full gap-2"
-              size="lg"
-            >
-              <Download className="h-5 w-5" />
-              Download All {documents.length} Documents
-            </Button>
+        {/* Primary action: ZIP download */}
+        {documents.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {zipEligible ? (
+              <Button
+                onClick={handleDownloadZip}
+                disabled={zipDownloading}
+                className="w-full gap-2"
+                size="lg"
+              >
+                {zipDownloading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Preparing ZIP…
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-5 w-5" />
+                    Download all as ZIP{totalSizeLabel ? ` (${totalSizeLabel})` : ''}
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                This package is too large for one ZIP download. Please download the documents individually below.
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground text-center">
+              Or download files individually from the list below.
+            </p>
           </div>
         )}
+
 
         {/* Documents List */}
         <Card>
