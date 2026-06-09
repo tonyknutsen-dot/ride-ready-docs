@@ -311,7 +311,15 @@ const SharedDocuments = () => {
                       {shareInfo.sender.controllerName}
                     </p>
                   )}
+                  {shareInfo?.sender.email && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      <a href={`mailto:${shareInfo.sender.email}`} className="hover:underline">
+                        {shareInfo.sender.email}
+                      </a>
+                    </p>
+                  )}
                 </div>
+
               </div>
               <Badge variant={daysRemaining <= 2 ? "destructive" : "secondary"} className="gap-1 shrink-0">
                 <Clock className="h-3 w-3" />
