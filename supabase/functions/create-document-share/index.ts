@@ -219,6 +219,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     const safeRecipientName = escapeHtml(recipientName && recipientName !== "Recipient" ? recipientName : "");
 
+    const assetNames = Object.keys(docsByRide).filter(n => n && n !== 'Global');
+    const equipmentLabel = assetNames.length === 0
+      ? 'General documents'
+      : assetNames.length === 1
+        ? assetNames[0]
+        : `Multiple items (${assetNames.length})`;
+
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
