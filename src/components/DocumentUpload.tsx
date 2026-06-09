@@ -298,15 +298,21 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
               <p className="text-sm font-bold truncate text-foreground">{selectedFile.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
               <p className="text-xs font-semibold mt-1 text-success">
-                File selected — complete the details below, then press Upload Document.
+                {uploading
+                  ? 'Uploaded successfully — checking file and preparing preview.'
+                  : (!documentType || !documentName)
+                    ? 'File selected — choose the document type and complete the details, then press Upload Document.'
+                    : 'Ready to upload — press Upload Document.'}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Tap this card to choose a different file.</p>
+              {!uploading && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">Tap this card to choose a different file.</p>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {selectedFile && (
+      {selectedFile && !uploading && (
         <p className="text-[11px] text-muted-foreground -mt-2 px-1 leading-snug">
           Your file will be checked before it can be viewed, downloaded, sent, or shared.
         </p>
