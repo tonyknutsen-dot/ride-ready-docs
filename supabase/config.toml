@@ -208,6 +208,12 @@ verify_jwt = false
 [functions.generate-document-preview]
 verify_jwt = false
 
+[functions.download-document-share-zip]
+verify_jwt = false
+
+[functions.get-shared-documents]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
