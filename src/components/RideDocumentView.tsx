@@ -400,6 +400,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         {/* Canonical actions */}
         <DocumentRowActions
           previewable={previewable}
+          previewPending={doc.preview_status === 'pending' || (doc.preview_status as any) === 'generating'}
           onView={() => handleView(doc)}
           onDownload={() => handleDownload(doc)}
           onCopyLink={() => handleCopyLink(doc)}
