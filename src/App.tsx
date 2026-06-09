@@ -95,6 +95,7 @@ const Diagnostics = lazy(() => import("./pages/Diagnostics"));
 const SessionDiagnostics = lazy(() => import("./pages/SessionDiagnostics"));
 const SourceOfTruthAudit = lazy(() => import("./pages/SourceOfTruthAudit"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
+const ReportProblem = lazy(() => import("./pages/ReportProblem"));
 const Install = lazy(() => import("./pages/Install"));
 const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
