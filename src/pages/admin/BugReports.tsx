@@ -966,7 +966,14 @@ ${bug.description || ''}`.trim();
                         size="sm"
                         variant="outline"
                         className="gap-2"
-                        onClick={() => copyText(buildSingleReportPrompt(selectedReport), 'Lovable prompt')}
+                        onClick={async () => {
+                          let url = selectedScreenshotUrl;
+                          if (!url && selectedReport.screenshot_url) {
+                            url = await resolveBugScreenshotUrl(selectedReport.screenshot_url);
+                            setSelectedScreenshotUrl(url);
+                          }
+                          copyText(buildSingleReportPrompt(selectedReport, url), 'Lovable prompt');
+                        }}
                       >
                         <Sparkles className="h-4 w-4" />
                         Copy Lovable Prompt
@@ -994,7 +1001,7 @@ ${bug.description || ''}`.trim();
                           size="sm"
                           variant="outline"
                           className="gap-2"
-                          onClick={() => copyText(selectedReport.screenshot_url!, 'Screenshot URL')}
+                          onClick={copyScreenshotUrl}
                         >
                           <Clipboard className="h-4 w-4" />
                           Copy Screenshot URL
