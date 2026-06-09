@@ -604,7 +604,7 @@ const BatchSendDocuments = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+      <div className="w-full max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 pb-24 md:pb-8">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
