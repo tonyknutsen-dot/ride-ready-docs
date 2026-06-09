@@ -527,8 +527,8 @@ const Settings = () => {
               />
               <BugReportDialog
                 trigger={
-                  <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs h-9 border-destructive/40 text-destructive hover:bg-destructive/10">
-                    <Bug className="h-3.5 w-3.5" />Report Bug
+                  <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs h-9">
+                    <Bug className="h-3.5 w-3.5" />Report a problem
                   </Button>
                 }
               />
