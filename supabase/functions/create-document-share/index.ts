@@ -67,32 +67,79 @@ const handler = async (req: Request): Promise<Response> => {
       expiryDays = 7
     }: CreateDocumentShareRequest = await req.json();
 
-    console.log(`Creating document share for ${documentIds.length} documents to ${recipientEmail}`);
+    console.log(`[create-document-share] mode=download-link requestedCount=${documentIds?.length ?? 0} recipient=${recipientEmail}`);
 
-    // Get user profile for sender information
+    if (!Array.isArray(documentIds) || documentIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Please select at least one document to send." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Resolve effective owner: if the requester is staff, documents are owned by the org owner.
+    let ownerUserId = user.id;
+    const { data: membership } = await supabase
+      .from("organisation_members")
+      .select("organisation_id, is_active, organisations:organisation_id(owner_id)")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    const orgOwnerId = (membership as any)?.organisations?.owner_id;
+    if (orgOwnerId && orgOwnerId !== user.id) {
+      ownerUserId = orgOwnerId;
+      console.log(`[create-document-share] staff requester, using owner ${ownerUserId}`);
+    }
+
+    // Get user profile for sender information (operator's profile)
     const { data: profile } = await supabase
       .from("profiles")
       .select("company_name, controller_name, showmen_name, address, operator_type")
-      .eq("user_id", user.id)
+      .eq("user_id", ownerUserId)
       .single();
 
     const operatorLabel = profile?.operator_type === 'showman' ? 'Showmen' : 'Operator';
 
-    // Get all selected documents with ride info (exclude quarantined/rejected)
+    // Get all selected documents with ride info. Exclude only quarantined/rejected uploads;
+    // legacy rows with upload_status = NULL are treated as clean.
     const { data: documents, error: docsError } = await supabase
       .from("documents")
       .select(`*, rides:ride_id (ride_name, manufacturer)`)
-      .eq("user_id", user.id)
+      .eq("user_id", ownerUserId)
       .in("id", documentIds)
-      .not("upload_status", "in", "(pending_scan,rejected)");
+      .or("upload_status.is.null,upload_status.not.in.(pending_scan,rejected)");
 
     if (docsError) {
-      console.error("Error fetching documents:", docsError);
-      throw new Error("Failed to fetch documents");
+      console.error("[create-document-share] fetch error:", docsError);
+      return new Response(
+        JSON.stringify({ error: "We couldn't load the selected documents. Please refresh and try again." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    if (!documents || documents.length === 0) {
-      throw new Error("No documents found");
+    const foundCount = documents?.length ?? 0;
+    console.log(`[create-document-share] foundDocs=${foundCount}/${documentIds.length}`);
+
+    if (foundCount === 0) {
+      return new Response(
+        JSON.stringify({ error: "The selected documents could not be found. They may have been removed or are still being scanned." }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Warn if some are missing but proceed with what we have
+    const missingCount = documentIds.length - foundCount;
+    if (missingCount > 0) {
+      console.warn(`[create-document-share] ${missingCount} requested document(s) were skipped (not found or quarantined)`);
+    }
+
+    // Validate all have a file_path for the download page
+    const missingPath = documents.filter((d: any) => !d.file_path);
+    if (missingPath.length > 0) {
+      console.error(`[create-document-share] ${missingPath.length} document(s) missing file_path`);
+      return new Response(
+        JSON.stringify({ error: "One or more selected files could not be found in storage. Please remove them and try again." }),
+        { status: 422, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Generate a secure share token
@@ -100,11 +147,11 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
-    // Create the document share record
+    // Create the document share record (owned by operator so they can see it later)
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
       .insert({
-        user_id: user.id,
+        user_id: ownerUserId,
         share_token: shareToken,
         recipient_email: recipientEmail,
         recipient_name: recipientName,
@@ -115,8 +162,11 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (shareError) {
-      console.error("Error creating share:", shareError);
-      throw new Error("Failed to create document share");
+      console.error("[create-document-share] share insert error:", shareError);
+      return new Response(
+        JSON.stringify({ error: "The download link could not be created. Please try again or select fewer documents." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Create share items for each document
@@ -134,10 +184,12 @@ const handler = async (req: Request): Promise<Response> => {
       .insert(shareItems);
 
     if (itemsError) {
-      console.error("Error creating share items:", itemsError);
-      // Clean up the share record
+      console.error("[create-document-share] share items error:", itemsError);
       await supabase.from("document_shares").delete().eq("id", share.id);
-      throw new Error("Failed to create document share items");
+      return new Response(
+        JSON.stringify({ error: "The download link could not be created. Please try again." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Generate the download page URL
@@ -243,25 +295,36 @@ const handler = async (req: Request): Promise<Response> => {
 </html>`;
 
     const shareSubject = `Equipment Documentation Package - ${senderName}`;
-    const emailResponse = await auditedResendSend(resend, {
-      from: "Ride Ready Docs <info@ridereadydocs.com>",
-      to: [recipientEmail],
-      subject: shareSubject,
-      html: htmlContent
-    }, {
-      function_name: 'create-document-share',
-      template_name: 'document-share',
-      user_id: user.id,
-      metadata: { doc_count: documents.length, share_token_set: true },
-    });
+    let emailResponse: any;
+    try {
+      emailResponse = await auditedResendSend(resend, {
+        from: "Ride Ready Docs <info@ridereadydocs.com>",
+        to: [recipientEmail],
+        subject: shareSubject,
+        html: htmlContent
+      }, {
+        function_name: 'create-document-share',
+        template_name: 'document-share',
+        user_id: ownerUserId,
+        metadata: { doc_count: documents.length, share_token_set: true, requested_by: user.id },
+      });
+    } catch (mailErr: any) {
+      console.error("[create-document-share] email send failed:", mailErr?.message || mailErr);
+      // Roll back the share so the user can retry cleanly
+      await supabase.from("document_share_items").delete().eq("share_id", share.id);
+      await supabase.from("document_shares").delete().eq("id", share.id);
+      return new Response(
+        JSON.stringify({ error: "The email could not be sent. Please check the recipient email address and try again." }),
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
-    console.log(`Email sent successfully:`, emailResponse);
+    console.log(`[create-document-share] email sent id=${emailResponse?.data?.id ?? 'n/a'} docs=${documents.length}`);
 
-    // Log notification
     await supabase
       .from("notifications")
       .insert({
-        user_id: user.id,
+        user_id: ownerUserId,
         title: "Documents Shared",
         message: `Sent download link for ${documents.length} documents to ${recipientEmail}`,
         type: "info"
@@ -272,6 +335,7 @@ const handler = async (req: Request): Promise<Response> => {
       shareId: share.id,
       shareToken: shareToken,
       documentsCount: documents.length,
+      skippedCount: missingCount,
       expiresAt: expiresAt.toISOString(),
       downloadUrl: downloadPageUrl
     }), {
@@ -280,9 +344,9 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error: any) {
-    console.error("Error in create-document-share function:", error);
+    console.error("[create-document-share] unhandled error:", error?.message || error);
     return new Response(
-      JSON.stringify({ error: error.message || "Failed to create document share. Please try again later." }),
+      JSON.stringify({ error: "Something went wrong while preparing the download link. Please try again." }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
