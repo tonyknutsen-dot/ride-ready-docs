@@ -1074,7 +1074,7 @@ ${bug.description || ''}`.trim();
                             }}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
-                            Go to Page
+                            Open Reported Page
                           </Button>
                         )}
                       </div>
