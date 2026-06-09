@@ -147,11 +147,11 @@ const handler = async (req: Request): Promise<Response> => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
-    // Create the document share record
+    // Create the document share record (owned by operator so they can see it later)
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
       .insert({
-        user_id: user.id,
+        user_id: ownerUserId,
         share_token: shareToken,
         recipient_email: recipientEmail,
         recipient_name: recipientName,
@@ -162,8 +162,11 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (shareError) {
-      console.error("Error creating share:", shareError);
-      throw new Error("Failed to create document share");
+      console.error("[create-document-share] share insert error:", shareError);
+      return new Response(
+        JSON.stringify({ error: "The download link could not be created. Please try again or select fewer documents." }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     // Create share items for each document
