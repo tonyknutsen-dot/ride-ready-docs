@@ -37,11 +37,19 @@ interface ShareInfo {
   accessCount: number;
   totalSize?: number;
   documentCount?: number;
+  equipment?: {
+    label: string;
+    count: number;
+    multiple: boolean;
+    names: string[];
+  };
   sender: {
     companyName: string | null;
     controllerName: string | null;
+    email?: string | null;
   };
 }
+
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return '';
