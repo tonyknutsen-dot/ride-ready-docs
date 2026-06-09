@@ -8,6 +8,7 @@ const InstallPromptBanner = lazy(() => import('./InstallPromptBanner').then(m =>
 const TestModeBanner = lazy(() => import('./TestModeBanner'));
 const TesterSessionTracker = lazy(() => import('./TesterSessionTracker'));
 const GlobalEventBridge = lazy(() => import('./GlobalEventBridge'));
+const GlobalBugReportHost = lazy(() => import('./GlobalBugReportHost'));
 
 class ShellChunkBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
