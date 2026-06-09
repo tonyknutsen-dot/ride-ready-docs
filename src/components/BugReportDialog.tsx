@@ -35,6 +35,11 @@ interface BugReportDialogProps {
   trigger?: React.ReactNode;
   defaultOpen?: boolean;
   onAfterClose?: () => void;
+  /** Controlled open state (overrides internal state when provided) */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Override the captured route — use when the dialog is opened from somewhere other than the affected page */
+  sourceRoute?: string;
 }
 
 interface AutoCapturedContext {
@@ -71,13 +76,19 @@ const STEPS_PLACEHOLDER = `1) What were you trying to do?
 2) What did you tap/click?
 3) What happened?`;
 
-export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: BugReportDialogProps) => {
+export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose, open: openProp, onOpenChange: onOpenChangeProp, sourceRoute }: BugReportDialogProps) => {
   const { user } = useAuth();
   const { isTester } = useTester();
   const location = useLocation();
   const { toast } = useToast();
 
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChangeProp?.(v);
+  };
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [referenceId, setReferenceId] = useState<string | null>(null);
@@ -133,7 +144,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
       userRole: isTester ? 'tester' : 'user',
       userId: user?.id || 'anonymous',
       userEmail: user?.email || 'unknown',
-      currentRoute: location.pathname,
+      currentRoute: sourceRoute || location.pathname,
       deviceType: isMobile ? 'mobile' : 'desktop',
       browserInfo,
       capturedAt: new Date().toISOString(),

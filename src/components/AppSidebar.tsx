@@ -81,7 +81,6 @@ const accountNavItems: NavItemDef[] = [
   { title: 'Notifications', url: '/notifications', icon: Bell, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
   { title: 'Settings', url: '/settings', icon: Settings, ownerOnly: true },
-  { title: 'Report a problem', url: '/report-problem', icon: AlertCircle },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];
 
@@ -257,6 +256,22 @@ export function AppSidebar() {
                 {filteredAccountNav.map(item => (
                   <NavItem key={item.url} item={item} secondary />
                 ))}
+                {/* Contextual Report a problem — opens overlay without leaving current page */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      window.dispatchEvent(
+                        new CustomEvent('open-bug-report', {
+                          detail: { route: location.pathname },
+                        }),
+                      );
+                    }}
+                    className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+                  >
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && <span className="flex-1">Report a problem</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 {canManageStaff && (
                   <NavItem item={{ title: 'Staff', url: '/staff', icon: Users }} secondary />
                 )}
