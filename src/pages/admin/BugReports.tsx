@@ -884,14 +884,22 @@ ${bug.description || ''}`.trim();
 
         {/* Detail Dialog */}
         <Dialog open={!!selectedReport} onOpenChange={() => handleSelectReport(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+          <DialogContent className="max-w-5xl max-h-[92vh] p-0">
             {selectedReport && (
               <>
-                <DialogHeader className="p-6 pb-0">
-                  <DialogTitle className="flex items-center gap-2">
+                <DialogHeader className="px-6 pt-6 pb-3 border-b">
+                  <DialogTitle className="flex items-center flex-wrap gap-2">
                     <code className="text-sm font-mono bg-secondary px-2 py-1 rounded">
                       {selectedReport.reference_id}
                     </code>
+                    <span className="text-base font-semibold">{selectedReport.title}</span>
+                    {getSeverityBadge(selectedReport.severity)}
+                    {getStatusBadge(selectedReport.status)}
+                    <Badge variant="outline">{selectedReport.issue_type}</Badge>
+                    <Badge variant="outline">{selectedReport.user_role === 'tester' ? 'Tester' : 'User'}</Badge>
+                    {selectedAdminData?.assigned_to && (
+                      <Badge variant="secondary">Assigned: {selectedAdminData.assigned_to}</Badge>
+                    )}
                     {selectedReport.is_after_recent_changes && (
                       <Badge variant="outline" className="text-warning border-warning">
                         After Recent Changes
@@ -900,302 +908,357 @@ ${bug.description || ''}`.trim();
                   </DialogTitle>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-[calc(90vh-80px)]">
-                  <div className="p-6 pt-4 space-y-6">
-                    {/* Quick Actions */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Status</label>
+                <ScrollArea className="max-h-[calc(92vh-90px)]">
+                  <div className="p-6 space-y-5">
+                    {/* Status + Assign */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</label>
                         <Select
                           value={selectedReport.status}
-                          onValueChange={(v) =>
-                            updateReport(selectedReport.id, { status: v })
-                          }
+                          onValueChange={(v) => updateReport(selectedReport.id, { status: v })}
                           disabled={updating}
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {STATUS_OPTIONS.map((s) => (
-                              <SelectItem key={s.value} value={s.value}>
-                                {s.label}
-                              </SelectItem>
+                              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Assign To</label>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Assign To</label>
                         <Select
                           value={selectedAdminData?.assigned_to || 'unassigned'}
                           onValueChange={(v) =>
-                            updateAdminData(selectedReport.id, {
-                              assigned_to: v === 'unassigned' ? null : v,
-                            })
+                            updateAdminData(selectedReport.id, { assigned_to: v === 'unassigned' ? null : v })
                           }
                           disabled={updating}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Unassigned" />
-                          </SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="unassigned">Unassigned</SelectItem>
                             {ASSIGNEE_OPTIONS.map((a) => (
-                              <SelectItem key={a} value={a}>
-                                {a}
-                              </SelectItem>
+                              <SelectItem key={a} value={a}>{a}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
-                    {/* Title & Badges */}
-                    <div>
-                      <h3 className="text-lg font-semibold">{selectedReport.title}</h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        {getSeverityBadge(selectedReport.severity)}
-                        <Badge variant="outline">{selectedReport.issue_type}</Badge>
-                        <Badge variant="outline">{selectedReport.user_role === 'tester' ? 'Tester' : 'User'}</Badge>
-                      </div>
-                    </div>
+                    {/* Summary grid */}
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Reporter</span>
+                            <div className="flex items-center gap-2">
+                              {fetchingEmail === selectedReport.user_id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : emailCache[selectedReport.user_id] ? (
+                                <span className="truncate">{emailCache[selectedReport.user_id]}</span>
+                              ) : (
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="h-auto p-0 text-primary"
+                                  onClick={() => fetchUserEmail(selectedReport.user_id)}
+                                >
+                                  Show email
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Role</span>
+                            <span>{selectedReport.user_role === 'tester' ? 'Tester' : 'User'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Reported</span>
+                            <span>{format(new Date(selectedReport.created_at), 'PPp')}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">App Version</span>
+                            <code className="font-mono text-xs">{selectedReport.app_version || '—'}</code>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Device</span>
+                            <span className="truncate">{selectedReport.device_type || '—'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs text-muted-foreground">Browser</span>
+                            <span className="truncate">{selectedReport.browser_info || '—'}</span>
+                          </div>
+                          <div className="flex flex-col sm:col-span-2 lg:col-span-3">
+                            <span className="text-xs text-muted-foreground">Reported Route</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <code className="font-mono text-xs bg-secondary px-2 py-0.5 rounded">
+                                {selectedReport.current_route || 'Unknown'}
+                              </code>
+                              {selectedReport.current_route && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7"
+                                  title="Opens the reported route. User-specific data/state may differ."
+                                  onClick={() => {
+                                    const route = selectedReport.current_route!;
+                                    handleSelectReport(null);
+                                    window.location.href = route;
+                                  }}
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Open Reported Page
+                                </Button>
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                Opens the reported route. User-specific data/state may differ.
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                    {/* Admin Actions: Lovable export */}
-                    <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-secondary/30">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-2"
-                        onClick={async () => {
-                          let url = selectedScreenshotUrl;
-                          if (!url && selectedReport.screenshot_url) {
-                            url = await resolveBugScreenshotUrl(selectedReport.screenshot_url);
-                            setSelectedScreenshotUrl(url);
-                          }
-                          copyText(buildSingleReportPrompt(selectedReport, url), 'Lovable prompt');
-                        }}
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Copy Lovable Prompt
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => copyText(buildSingleReportSummary(selectedReport), 'Summary')}
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copy Summary
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => exportSingleReport(selectedReport)}
-                      >
-                        <Download className="h-4 w-4" />
-                        Export Markdown
-                      </Button>
-                      {selectedReport.screenshot_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-2"
-                          onClick={copyScreenshotUrl}
-                        >
-                          <Clipboard className="h-4 w-4" />
-                          Copy Screenshot URL
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant={selectedReport.status === 'sent_to_lovable' ? 'default' : 'outline'}
-                        className="gap-2 ml-auto"
-                        disabled={updating || selectedReport.status === 'sent_to_lovable'}
-                        onClick={() => updateReport(selectedReport.id, { status: 'sent_to_lovable' })}
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        {selectedReport.status === 'sent_to_lovable' ? 'Sent to Lovable' : 'Mark Sent to Lovable'}
-                      </Button>
-                    </div>
-
-
-                    {/* Context Info */}
-                    <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-secondary/50 border">
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Reporter:</span>
-                        {fetchingEmail === selectedReport.user_id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : emailCache[selectedReport.user_id] ? (
-                          <span>{emailCache[selectedReport.user_id]}</span>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-auto p-0 text-primary hover:underline"
-                            onClick={() => fetchUserEmail(selectedReport.user_id)}
-                          >
-                            Show email
-                          </Button>
-                        )}
-                        {selectedReport.user_role === 'tester' && (
-                          <Badge variant="outline" className="text-xs">Tester</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Reported:</span>
-                        <span>{format(new Date(selectedReport.created_at), 'PPp')}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Monitor className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Device:</span>
-                        <span>{selectedReport.device_type} • {selectedReport.browser_info}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <CircleDot className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Version:</span>
-                        <code className="font-mono">{selectedReport.app_version}</code>
-                      </div>
-                      <div className="col-span-2 flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">Route:</span>
-                        <code className="font-mono text-xs bg-background px-2 py-0.5 rounded">
-                          {selectedReport.current_route || 'Unknown'}
-                        </code>
-                        {selectedReport.current_route && (
+                    {/* Action bar */}
+                    <div className="rounded-lg border bg-secondary/30 p-3 space-y-3">
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Copy / Export</div>
+                        <div className="flex flex-wrap gap-2">
                           <Button
-                            variant="outline"
                             size="sm"
-                            className="h-7 ml-auto"
-                            onClick={() => {
-                              handleSelectReport(null);
-                              window.location.href = selectedReport.current_route!;
+                            variant="outline"
+                            className="gap-2"
+                            onClick={async () => {
+                              let url = selectedScreenshotUrl;
+                              if (!url && selectedReport.screenshot_url) {
+                                url = await resolveBugScreenshotUrl(selectedReport.screenshot_url);
+                                setSelectedScreenshotUrl(url);
+                              }
+                              copyText(buildSingleReportPrompt(selectedReport, url), 'Lovable prompt');
                             }}
                           >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            Open Reported Page
+                            <Sparkles className="h-4 w-4" />
+                            Copy Lovable Prompt
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => copyText(buildSingleReportSummary(selectedReport), 'Summary')}
+                          >
+                            <Copy className="h-4 w-4" />
+                            Copy Summary
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => exportSingleReport(selectedReport)}
+                          >
+                            <Download className="h-4 w-4" />
+                            Export Markdown
+                          </Button>
+                          {selectedReport.screenshot_url && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                              onClick={copyScreenshotUrl}
+                            >
+                              <Clipboard className="h-4 w-4" />
+                              Copy Screenshot Link
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Workflow</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant={selectedReport.status === 'sent_to_lovable' ? 'default' : 'outline'}
+                            className="gap-2"
+                            disabled={updating || selectedReport.status === 'sent_to_lovable'}
+                            onClick={() => updateReport(selectedReport.id, { status: 'sent_to_lovable' })}
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            {selectedReport.status === 'sent_to_lovable' ? 'Sent to Lovable ✓' : 'Mark Sent to Lovable'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={selectedReport.status === 'needs_retest' ? 'default' : 'outline'}
+                            className="gap-2"
+                            disabled={updating || selectedReport.status === 'needs_retest'}
+                            onClick={() => updateReport(selectedReport.id, { status: 'needs_retest' })}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            {selectedReport.status === 'needs_retest' ? 'Needs Retest ✓' : 'Needs Retest'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={selectedReport.status === 'fixed' ? 'success' : 'outline'}
+                            className="gap-2"
+                            disabled={updating || selectedReport.status === 'fixed'}
+                            onClick={() => updateReport(selectedReport.id, { status: 'fixed' })}
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            {selectedReport.status === 'fixed' ? 'Fixed ✓' : 'Mark Fixed'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={selectedReport.status === 'closed' ? 'default' : 'outline'}
+                            className="gap-2"
+                            disabled={updating || selectedReport.status === 'closed'}
+                            onClick={() => updateReport(selectedReport.id, { status: 'closed' })}
+                          >
+                            {selectedReport.status === 'closed' ? 'Closed ✓' : 'Close Report'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Issue details */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Issue Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Description</h4>
+                          <p className="text-sm whitespace-pre-wrap">{selectedReport.description || '—'}</p>
+                        </div>
+                        {selectedReport.steps_to_reproduce && (
+                          <div>
+                            <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Steps to Reproduce</h4>
+                            <pre className="text-sm whitespace-pre-wrap p-3 rounded-md bg-secondary/50 border font-mono">
+                              {selectedReport.steps_to_reproduce}
+                            </pre>
+                          </div>
+                        )}
+                        {(selectedReport.expected_result || selectedReport.actual_result) && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {selectedReport.expected_result && (
+                              <div>
+                                <h4 className="text-xs font-medium uppercase tracking-wide text-success mb-1">Expected Result</h4>
+                                <p className="text-sm whitespace-pre-wrap">{selectedReport.expected_result}</p>
+                              </div>
+                            )}
+                            {selectedReport.actual_result && (
+                              <div>
+                                <h4 className="text-xs font-medium uppercase tracking-wide text-destructive mb-1">Actual Result</h4>
+                                <p className="text-sm whitespace-pre-wrap">{selectedReport.actual_result}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Screenshot evidence */}
+                    <Card>
+                      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                        <CardTitle className="text-base">Screenshot Evidence</CardTitle>
+                        {selectedScreenshotUrl && (
+                          <Button size="sm" variant="outline" className="gap-2" onClick={openScreenshot}>
+                            <ExternalLink className="h-4 w-4" />
+                            Open full screenshot
                           </Button>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Description</h4>
-                      <p className="text-sm whitespace-pre-wrap">{selectedReport.description}</p>
-                    </div>
-
-                    {/* Steps to Reproduce */}
-                    {selectedReport.steps_to_reproduce && (
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Steps to Reproduce</h4>
-                        <pre className="text-sm whitespace-pre-wrap p-3 rounded-lg bg-secondary/50 border font-mono">
-                          {selectedReport.steps_to_reproduce}
-                        </pre>
-                      </div>
-                    )}
-
-                    {/* Expected vs Actual */}
-                    {(selectedReport.expected_result || selectedReport.actual_result) && (
-                      <div className="grid grid-cols-2 gap-4">
-                        {selectedReport.expected_result && (
-                          <div className="space-y-2">
-                            <h4 className="font-medium text-success">Expected Result</h4>
-                            <p className="text-sm">{selectedReport.expected_result}</p>
-                          </div>
-                        )}
-                        {selectedReport.actual_result && (
-                          <div className="space-y-2">
-                            <h4 className="font-medium text-destructive">Actual Result</h4>
-                            <p className="text-sm">{selectedReport.actual_result}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Screenshot */}
-                    {selectedReport.screenshot_url ? (
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Screenshot</h4>
-                        {selectedScreenshotUrl ? (
-                          <button
-                            type="button"
-                            onClick={openScreenshot}
-                            className="block w-full overflow-hidden rounded-lg border bg-secondary/30 hover:border-primary transition-colors text-left"
-                          >
-                            <img
-                              src={selectedScreenshotUrl}
-                              alt="Bug screenshot"
-                              className="max-h-72 w-full object-contain bg-background"
-                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                            />
-                            <div className="flex items-center gap-2 p-2 text-sm text-primary">
-                              <ExternalLink className="h-4 w-4" />
-                              Open full screenshot
+                      </CardHeader>
+                      <CardContent>
+                        {selectedReport.screenshot_url ? (
+                          selectedScreenshotUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setLightboxOpen(true)}
+                              className="block w-full overflow-hidden rounded-lg border bg-muted/40 hover:border-primary transition-colors"
+                            >
+                              <img
+                                src={selectedScreenshotUrl}
+                                alt="Bug screenshot"
+                                className="w-full max-h-[60vh] object-contain bg-background"
+                              />
+                              <div className="text-xs text-muted-foreground py-2 text-center">
+                                Click image to enlarge
+                              </div>
+                            </button>
+                          ) : resolvingScreenshot ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-6 justify-center">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading screenshot…
                             </div>
-                          </button>
-                        ) : resolvingScreenshot ? (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Loading screenshot…
-                          </div>
+                          ) : (
+                            <div className="rounded-lg border bg-muted/30 p-6 text-center space-y-3">
+                              <p className="text-sm text-muted-foreground">
+                                Screenshot unavailable or expired. Try refreshing the report.
+                              </p>
+                              <Button size="sm" variant="outline" onClick={openScreenshot} className="gap-2">
+                                <RefreshCw className="h-4 w-4" />
+                                Retry
+                              </Button>
+                            </div>
+                          )
                         ) : (
-                          <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                              Screenshot could not be opened. Copy the report details and check storage access.
-                            </p>
-                            <Button size="sm" variant="outline" onClick={openScreenshot} className="gap-2">
-                              <ExternalLink className="h-4 w-4" />
-                              Retry View Screenshot
-                            </Button>
-                          </div>
+                          <p className="text-sm text-muted-foreground">No screenshot was attached to this report.</p>
                         )}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <h4 className="font-medium">Screenshot</h4>
-                        <p className="text-sm text-muted-foreground">No screenshot was attached to this report.</p>
-                      </div>
-                    )}
+                      </CardContent>
+                    </Card>
 
-                    {/* Internal Notes (Admin Only) */}
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Internal Notes (Admin Only)</h4>
-                      <Textarea
-                        placeholder="Add internal notes for the team..."
-                        value={selectedAdminData?.internal_notes || ''}
-                        onChange={(e) =>
-                          setSelectedAdminData(prev => prev ? {
-                            ...prev,
-                            internal_notes: e.target.value,
-                          } : null)
-                        }
-                        rows={3}
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          updateAdminData(selectedReport.id, {
-                            internal_notes: selectedAdminData?.internal_notes,
-                          })
-                        }
-                        disabled={updating}
-                      >
-                        {updating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          'Save Notes'
-                        )}
-                      </Button>
-                    </div>
+                    {/* Internal Notes */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Internal Notes (Admin Only)</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <Textarea
+                          placeholder="Add internal notes for the team..."
+                          value={selectedAdminData?.internal_notes || ''}
+                          onChange={(e) =>
+                            setSelectedAdminData(prev => prev ? { ...prev, internal_notes: e.target.value } : null)
+                          }
+                          rows={4}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            updateAdminData(selectedReport.id, { internal_notes: selectedAdminData?.internal_notes })
+                          }
+                          disabled={updating}
+                        >
+                          {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Notes'}
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </div>
                 </ScrollArea>
               </>
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Screenshot lightbox */}
+        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-2 bg-background">
+            {selectedScreenshotUrl && (
+              <div className="flex flex-col gap-2">
+                <img
+                  src={selectedScreenshotUrl}
+                  alt="Bug screenshot full view"
+                  className="w-full max-h-[85vh] object-contain"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={openScreenshot} className="gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    Open in new tab
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
 
         {/* Fix Prompt Dialog */}
         <Dialog open={showPromptDialog} onOpenChange={setShowPromptDialog}>
