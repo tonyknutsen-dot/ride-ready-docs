@@ -93,6 +93,24 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to fetch documents");
     }
 
+    // Look up file sizes + upload_status from documents to filter and report totals
+    const docIds = (shareItems || []).map((i: any) => i.document_id).filter(Boolean);
+    const sizeMap = new Map<string, number>();
+    const allowedIds = new Set<string>();
+    if (docIds.length > 0) {
+      const { data: docRows } = await supabase
+        .from("documents")
+        .select("id, file_size, upload_status")
+        .in("id", docIds);
+      for (const d of docRows || []) {
+        sizeMap.set((d as any).id, (d as any).file_size || 0);
+        const us = (d as any).upload_status;
+        if (us === null || !["pending_scan", "rejected"].includes(us)) {
+          allowedIds.add((d as any).id);
+        }
+      }
+    }
+
     // Get sender info for display
     const { data: profile } = await supabase
       .from("profiles")
@@ -101,8 +119,10 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     // Generate signed URLs for each document (valid for 1 hour)
-    const documents: SharedDocument[] = [];
+    const documents: any[] = [];
+    let totalSize = 0;
     for (const item of shareItems || []) {
+      if (item.document_id && !allowedIds.has(item.document_id)) continue;
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from("ride-documents")
         .createSignedUrl(item.file_path, 3600); // 1 hour expiry
@@ -112,11 +132,15 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
+      const size = sizeMap.get(item.document_id) || 0;
+      totalSize += size;
+
       documents.push({
         id: item.id,
         document_name: item.document_name,
         document_type: item.document_type,
         ride_name: item.ride_name || 'Global',
+        file_size: size,
         download_url: signedUrlData.signedUrl
       });
     }
@@ -140,6 +164,8 @@ const handler = async (req: Request): Promise<Response> => {
         message: share.message,
         expiresAt: share.expires_at,
         accessCount: share.access_count + 1,
+        totalSize,
+        documentCount: documents.length,
         sender: {
           companyName: profile?.company_name,
           controllerName: profile?.controller_name

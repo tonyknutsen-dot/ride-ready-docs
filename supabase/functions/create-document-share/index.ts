@@ -252,29 +252,39 @@ const handler = async (req: Request): Promise<Response> => {
 
       <div style="margin: 24px 0; text-align: center;">
         <a href="${downloadPageUrl}" style="display: inline-block; padding: 14px 32px; background: ${brandColors.primary}; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-          📥 Download ${documents.length} Document${documents.length !== 1 ? 's' : ''}
+          Download Documents
         </a>
+        <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 13px;">
+          ${documents.length} document${documents.length !== 1 ? 's' : ''} · Includes "Download all as ZIP" option
+        </p>
       </div>
 
       <div style="${emailStyles.warningBox}">
-        <p style="margin: 0; font-weight: 600; color: ${brandColors.text};">⏰ Link expires: ${expiryDateFormatted}</p>
-        <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 14px;">This secure link will expire in ${expiryDays} days. Please download the documents before then.</p>
+        <p style="margin: 0; font-weight: 600; color: ${brandColors.text};">This secure link expires on ${expiryDateFormatted}.</p>
+        <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 14px;">Please download the documents before then. Only download files from people you trust.</p>
       </div>
 
       <div style="margin: 24px 0;">
         <p style="${emailStyles.label}">INCLUDED DOCUMENTS</p>
-        ${Object.entries(docsByRide).map(([rideName, docs]) => `
+        ${Object.entries(docsByRide).map(([rideName, docs]) => {
+          const list = docs as any[];
+          const shown = list.slice(0, 8);
+          const remaining = list.length - shown.length;
+          return `
           <div style="margin-top: 16px;">
-            <p style="font-weight: 600; color: ${brandColors.primary}; margin: 0 0 8px 0;">🎪 ${escapeHtml(rideName)}</p>
-            ${(docs as any[]).map(doc => `
-              <div style="padding: 12px; margin: 4px 0; background: ${brandColors.background}; border-radius: 6px; border-left: 3px solid ${brandColors.primary};">
-                <span style="font-weight: 500;">📄 ${escapeHtml(doc.document_name)}</span>
-                <span style="color: ${brandColors.textLight}; font-size: 13px;"> (${escapeHtml(doc.document_type)})</span>
+            <p style="font-weight: 600; color: ${brandColors.primary}; margin: 0 0 8px 0;">${escapeHtml(rideName)} <span style="color: ${brandColors.textLight}; font-weight: 400;">(${list.length} document${list.length !== 1 ? 's' : ''})</span></p>
+            ${shown.map(doc => `
+              <div style="padding: 10px 12px; margin: 4px 0; background: ${brandColors.background}; border-radius: 6px; border-left: 3px solid ${brandColors.primary};">
+                <span style="font-weight: 500;">${escapeHtml(doc.document_name)}</span>
+                <span style="color: ${brandColors.textLight}; font-size: 13px;"> · ${escapeHtml(doc.document_type)}</span>
               </div>
             `).join('')}
+            ${remaining > 0 ? `<p style="margin: 6px 0 0 0; color: ${brandColors.textLight}; font-size: 13px; font-style: italic;">…and ${remaining} more</p>` : ''}
           </div>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
+
 
       <hr style="${emailStyles.divider}">
       <p style="color: ${brandColors.textLight}; font-size: 14px;">
