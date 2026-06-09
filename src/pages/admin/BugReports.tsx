@@ -405,6 +405,7 @@ const BugReports = () => {
   // Signed URL for the currently-selected report's screenshot (resolved on open).
   const [selectedScreenshotUrl, setSelectedScreenshotUrl] = useState<string | null>(null);
   const [resolvingScreenshot, setResolvingScreenshot] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const handleSelectReport = (report: BugReport | null) => {
     setSelectedReport(report);
