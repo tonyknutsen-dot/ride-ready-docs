@@ -908,8 +908,62 @@ ${bug.description || ''}`.trim();
                       <div className="flex items-center gap-2 mt-2">
                         {getSeverityBadge(selectedReport.severity)}
                         <Badge variant="outline">{selectedReport.issue_type}</Badge>
+                        <Badge variant="outline">{selectedReport.user_role === 'tester' ? 'Tester' : 'User'}</Badge>
                       </div>
                     </div>
+
+                    {/* Admin Actions: Lovable export */}
+                    <div className="flex flex-wrap gap-2 p-3 rounded-lg border bg-secondary/30">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => copyText(buildSingleReportPrompt(selectedReport), 'Lovable prompt')}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Copy Lovable Prompt
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => copyText(buildSingleReportSummary(selectedReport), 'Summary')}
+                      >
+                        <Copy className="h-4 w-4" />
+                        Copy Summary
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => exportSingleReport(selectedReport)}
+                      >
+                        <Download className="h-4 w-4" />
+                        Export Markdown
+                      </Button>
+                      {selectedReport.screenshot_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => copyText(selectedReport.screenshot_url!, 'Screenshot URL')}
+                        >
+                          <Clipboard className="h-4 w-4" />
+                          Copy Screenshot URL
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant={selectedReport.status === 'sent_to_lovable' ? 'default' : 'outline'}
+                        className="gap-2 ml-auto"
+                        disabled={updating || selectedReport.status === 'sent_to_lovable'}
+                        onClick={() => updateReport(selectedReport.id, { status: 'sent_to_lovable' })}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        {selectedReport.status === 'sent_to_lovable' ? 'Sent to Lovable' : 'Mark Sent to Lovable'}
+                      </Button>
+                    </div>
+
 
                     {/* Context Info */}
                     <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-secondary/50 border">
