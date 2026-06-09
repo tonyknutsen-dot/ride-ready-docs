@@ -1,15 +1,17 @@
 import { Component, Suspense, type ReactNode } from 'react';
-import { Loader2, FileText } from 'lucide-react';
 import { OfflineFallback } from '@/components/OfflineFallback';
 
-// Re-use existing page loader
+/**
+ * Subtle route-transition fallback. Renders a full-height surface in the
+ * app background colour with no logo or spinner so navigation between
+ * already-loaded routes does not produce a visible flash. For chunks
+ * that take longer to load, a faint shimmer hints that work is in flight.
+ */
 const PageLoader = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="text-center space-y-4">
-      <FileText className="mx-auto h-12 w-12 text-primary" />
-      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-    </div>
-  </div>
+  <div
+    aria-hidden="true"
+    className="min-h-screen w-full bg-background animate-fade-in"
+  />
 );
 
 interface Props {
