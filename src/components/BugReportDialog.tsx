@@ -701,7 +701,7 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose }: 
                   ) : (
                     <>
                       <Bug className="h-4 w-4" />
-                      Submit Bug Report
+                      {isTester ? 'Submit Bug Report' : 'Send report'}
                     </>
                   )}
                 </Button>
