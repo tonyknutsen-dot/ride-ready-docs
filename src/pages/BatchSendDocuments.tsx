@@ -121,6 +121,16 @@ const BatchSendDocuments = () => {
   
   // Send method state - 'auto', 'attachments', or 'links'
   const [sendMethod, setSendMethod] = useState<'auto' | 'attachments' | 'links'>('auto');
+
+  // Post-send success confirmation
+  const [sendResult, setSendResult] = useState<null | {
+    recipientEmail: string;
+    recipientName: string;
+    documentCount: number;
+    method: 'link' | 'attachment';
+    expiresAt?: string;
+  }>(null);
+
   
   // Saved recipients state
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
