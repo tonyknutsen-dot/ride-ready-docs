@@ -35,6 +35,11 @@ interface BugReportDialogProps {
   trigger?: React.ReactNode;
   defaultOpen?: boolean;
   onAfterClose?: () => void;
+  /** Controlled open state (overrides internal state when provided) */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Override the captured route — use when the dialog is opened from somewhere other than the affected page */
+  sourceRoute?: string;
 }
 
 interface AutoCapturedContext {
