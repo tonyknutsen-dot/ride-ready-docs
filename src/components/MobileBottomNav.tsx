@@ -14,8 +14,10 @@ import {
   Shield,
   Users,
   Download,
+  Bug,
   type LucideIcon,
 } from "lucide-react";
+import { openBugReport } from "@/components/GlobalBugReportHost";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { OfflineSyncIndicator } from "@/components/OfflineSyncIndicator";
 import { useAuth } from "@/contexts/AuthContext";
