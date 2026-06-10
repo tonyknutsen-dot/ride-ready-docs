@@ -163,11 +163,12 @@ const ComingSoon = () => {
               Coming Soon
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-              Ride Ready Docs
+              Ride Ready Docs — Compliance documents for ride operators
             </h1>
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              The complete documentation management platform for amusement ride operators. 
-              We're putting the finishing touches on something special.
+              Manage daily checks, defects, maintenance, risk assessments,
+              wind and pressure logs and compliance document sharing from one
+              mobile-friendly system.
             </p>
           </div>
 
@@ -175,17 +176,17 @@ const ComingSoon = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
             <div className="p-4 rounded-xl bg-card border border-border">
               <Shield className="w-6 h-6 text-primary mb-2" />
-              <h3 className="font-semibold text-foreground">Secure</h3>
+              <h2 className="text-base font-semibold text-foreground">Secure</h2>
               <p className="text-sm text-muted-foreground">Enterprise-grade security for your documents</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border">
               <FileText className="w-6 h-6 text-primary mb-2" />
-              <h3 className="font-semibold text-foreground">Organized</h3>
+              <h2 className="text-base font-semibold text-foreground">Organized</h2>
               <p className="text-sm text-muted-foreground">Keep all compliance docs in one place</p>
             </div>
             <div className="p-4 rounded-xl bg-card border border-border">
               <Clock className="w-6 h-6 text-primary mb-2" />
-              <h3 className="font-semibold text-foreground">Automated</h3>
+              <h2 className="text-base font-semibold text-foreground">Automated</h2>
               <p className="text-sm text-muted-foreground">Never miss an expiry or inspection date</p>
             </div>
           </div>

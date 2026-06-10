@@ -113,7 +113,7 @@ const Install = () => {
                     <benefit.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">{benefit.title}</h3>
+                    <h2 className="text-base font-semibold text-foreground mb-1">{benefit.title}</h2>
                     <p className="text-sm text-muted-foreground">{benefit.description}</p>
                   </div>
                 </CardContent>

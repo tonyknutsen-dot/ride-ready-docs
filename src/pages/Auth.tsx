@@ -525,7 +525,7 @@ const Auth = () => {
           <Link to="/" className="inline-block mx-auto hover:opacity-90 transition-smooth">
             <img src={appLogo} alt="Ride Ready Docs home" className="h-24 w-24 rounded-full shadow-elegant" width={96} height={96} loading="lazy" />
           </Link>
-          <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
+          <h1 className="text-2xl font-bold">Ride Ready Docs — Sign in or create your account</h1>
           <p className="text-muted-foreground text-sm">
             Access your ride operations system
           </p>
