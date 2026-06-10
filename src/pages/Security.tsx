@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageMeta from "@/components/PageMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, Database, Eye, CheckCircle, Server, UserX, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
