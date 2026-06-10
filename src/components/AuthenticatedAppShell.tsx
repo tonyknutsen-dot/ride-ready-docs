@@ -52,6 +52,7 @@ export const AuthenticatedAppShell = memo(function AuthenticatedAppShell() {
         <MobileBottomNav />
         <FloatingBugButton />
         <GlobalBugReportHost />
+        <AppUpdateChecker />
         <InstallPromptBanner />
       </Suspense>
     </ShellChunkBoundary>
