@@ -89,7 +89,13 @@ const HowItWorks = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="How Ride Ready Docs works | Ride compliance workflow"
+        description="See how Ride Ready Docs helps you add equipment, upload documents, schedule inspections, log checks and share compliance records with inspectors and operators."
+        path="/how-it-works"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         {/* Hero Section */}
