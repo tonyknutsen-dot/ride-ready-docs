@@ -579,15 +579,18 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               {errors.category_id && (
                 <p className="text-sm text-destructive">{errors.category_id}</p>
               )}
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
+              <p className="text-xs text-muted-foreground">
+                Can't see the equipment you need? Tap <span className="font-medium">+ Request new type</span> and we'll add it.
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setOpenRequest(true)}
                 className="h-auto py-1 px-2 text-xs w-fit"
               >
                 <Plus className="w-3 h-3 mr-1" />
-                Request type
+                Request new type
               </Button>
             </div>
           </div>

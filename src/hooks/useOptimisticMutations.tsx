@@ -154,35 +154,38 @@ export function useOptimisticDocumentUpload() {
       return data;
     },
     onMutate: async (params) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['overview'] });
-      await queryClient.cancelQueries({ queryKey: ['documents'] });
+      // Defensive: never allow optimistic updates to throw — the upload itself must still run.
+      try {
+        await queryClient.cancelQueries({ queryKey: ['overview'] });
+        await queryClient.cancelQueries({ queryKey: ['documents'] });
 
-      // Snapshot previous values
-      const previousOverview = queryClient.getQueryData(['overview', user?.id]);
+        const previousOverview = queryClient.getQueryData(['overview', user?.id]);
 
-      // Optimistically update overview stats
-      queryClient.setQueryData(['overview', user?.id], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          stats: {
-            ...old.stats,
-            totalDocuments: old.stats.totalDocuments + 1
-          },
-          recentDocs: [
-            {
-              name: params.documentName,
-              date: new Date().toLocaleDateString('en-GB'),
-              type: params.documentType,
-              _optimistic: true
-            },
-            ...old.recentDocs.slice(0, 3)
-          ]
-        };
-      });
+        queryClient.setQueryData(['overview', user?.id], (old: any) => {
+          if (!old || typeof old !== 'object') return old;
+          const prevStats = (old.stats && typeof old.stats === 'object') ? old.stats : {};
+          const prevTotal = typeof prevStats.totalDocuments === 'number' ? prevStats.totalDocuments : 0;
+          const prevRecent = Array.isArray(old.recentDocs) ? old.recentDocs : [];
+          return {
+            ...old,
+            stats: { ...prevStats, totalDocuments: prevTotal + 1 },
+            recentDocs: [
+              {
+                name: params.documentName,
+                date: new Date().toLocaleDateString('en-GB'),
+                type: params.documentType,
+                _optimistic: true,
+              },
+              ...prevRecent.slice(0, 3),
+            ],
+          };
+        });
 
-      return { previousOverview };
+        return { previousOverview };
+      } catch (e) {
+        console.warn('optimistic overview update skipped:', e);
+        return { previousOverview: undefined };
+      }
     },
     onError: (err, params, context) => {
       // Rollback on error

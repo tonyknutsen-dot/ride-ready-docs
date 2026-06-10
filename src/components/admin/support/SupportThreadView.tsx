@@ -71,16 +71,32 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
             responded_by: user.id,
           })
           .eq('id', message.id);
+
+        // Insert in-app notification so the user can see the reply even if no email is sent
+        try {
+          await (supabase.from('notifications') as any).insert({
+            user_id: message.user_id,
+            title: 'Support reply received',
+            message: `Re: ${message.subject}`,
+            type: 'info',
+            related_table: 'support_messages',
+            related_id: message.id,
+          });
+        } catch (notifErr) {
+          console.warn('support notification insert failed:', notifErr);
+        }
       }
 
-      // Send email notification if requested
+      // Send email notification if requested (and not internal)
       if (sendEmail && !isInternal) {
+        let emailSent = false;
+        let emailErrorMsg = '';
         try {
           const { data: emailData } = await supabase.functions.invoke('get-user-email', {
             body: { userId: message.user_id },
           });
           if (emailData?.email) {
-            await supabase.functions.invoke('send-support-response', {
+            const { error: sendErr } = await supabase.functions.invoke('send-support-response', {
               body: {
                 messageId: message.id,
                 adminResponse: replyText.trim(),
@@ -88,15 +104,28 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
                 subject: message.subject,
               },
             });
-            toast.success('Reply sent and user notified via email');
+            if (sendErr) {
+              emailErrorMsg = sendErr.message || 'send failed';
+            } else {
+              emailSent = true;
+            }
           } else {
-            toast.warning('Reply saved but could not fetch user email');
+            emailErrorMsg = 'no email address on file';
           }
-        } catch {
-          toast.warning('Reply saved but email notification failed');
+        } catch (e: any) {
+          emailErrorMsg = e?.message || 'invoke threw';
         }
+
+        if (emailSent) {
+          toast.success('Reply saved and emailed to user.');
+        } else {
+          console.error('[support-reply] email failed:', emailErrorMsg);
+          toast.error(`Reply saved, but email failed to send (${emailErrorMsg}). The user may not see this unless they open the app.`);
+        }
+      } else if (isInternal) {
+        toast.success('Internal note added.');
       } else {
-        toast.success(isInternal ? 'Internal note added' : 'Reply saved');
+        toast.warning('Reply saved in app only. No email was sent.');
       }
 
       setReplyText('');
@@ -303,7 +332,7 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
                     variant="outline"
                   >
                     {sending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
-                    Save Only
+                    Save in App Only
                   </Button>
                   <Button
                     onClick={() => handleSendReply(true)}
@@ -311,12 +340,18 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
                     size="sm"
                   >
                     {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
-                    Send & Email User
+                    Send & Email User (default)
                   </Button>
                 </>
               )}
             </div>
           </div>
+
+          {!isInternal && (
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              If email is not sent, the user will only see this reply when they open the support thread in the app. An in-app notification will still be added.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
