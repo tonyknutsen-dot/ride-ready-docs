@@ -69,8 +69,9 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
       if (error) throw error;
 
       // Update status if it's a visible reply (not internal note)
+      let statusUpdateFailed = false;
       if (!isInternal) {
-        await (supabase.from('support_messages') as any)
+        const { error: statusErr } = await (supabase.from('support_messages') as any)
           .update({
             status: 'waiting_on_user',
             admin_response: replyText.trim(),
@@ -78,6 +79,10 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
             responded_by: user.id,
           })
           .eq('id', message.id);
+        if (statusErr) {
+          console.error('support status update failed:', statusErr);
+          statusUpdateFailed = true;
+        }
 
         // Insert in-app notification so the user can see the reply even if no email is sent
         try {
@@ -93,6 +98,7 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
           console.warn('support notification insert failed:', notifErr);
         }
       }
+      (window as any).__supportStatusFailed = statusUpdateFailed;
 
       // Send email notification if requested (and not internal)
       if (sendEmail && !isInternal) {
