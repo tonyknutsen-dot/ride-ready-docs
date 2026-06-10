@@ -165,6 +165,7 @@ serve(async (req) => {
             role,
             plan: profile?.subscription_plan || null,
             status: profile?.subscription_status || null,
+            source: source || "client",
           },
         },
       );
