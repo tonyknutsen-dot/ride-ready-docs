@@ -59,6 +59,16 @@ const refreshInstalledApp = async () => {
   }
 };
 
+const updateExistingServiceWorkers = async () => {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.allSettled(registrations.map((registration) => registration.update()));
+  } catch {
+    // Non-blocking: bundle comparison still works when service worker inspection is unavailable.
+  }
+};
+
 const getLoadedSignature = (): string | null => {
   const scripts = Array.from(document.querySelectorAll<HTMLScriptElement>('script[src*="/assets/"]'))
     .map((s) => {
@@ -87,6 +97,7 @@ export default function AppUpdateChecker() {
 
     const check = async () => {
       if (notifiedRef.current || cancelled) return;
+      await updateExistingServiceWorkers();
       const current = await fetchCurrentSignature();
       if (!current) return;
       if (!baselineRef.current) {
