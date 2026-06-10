@@ -77,12 +77,12 @@ export default function AppUpdateChecker() {
           description: 'A new version of Ride Ready Docs is ready.',
           duration: 1000 * 60 * 10,
           action: (
-            <Button
-              size="sm"
+            <ToastAction
+              altText="Update now"
               onClick={() => {
-                // Best-effort cache clear before reload
                 if ('caches' in window) {
-                  caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+                  caches.keys()
+                    .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
                     .finally(() => window.location.reload());
                 } else {
                   window.location.reload();
@@ -90,8 +90,8 @@ export default function AppUpdateChecker() {
               }}
             >
               Update
-            </Button>
-          ) as unknown as React.ReactElement,
+            </ToastAction>
+          ),
         });
       }
     };
