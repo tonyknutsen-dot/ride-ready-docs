@@ -44,14 +44,31 @@ export default function SupportMessages() {
       setMessages(msgs);
 
       // Fetch sender profiles
-      const userIds = [...new Set(msgs.map((m) => m.user_id))];
+      const userIds = [...new Set(msgs.map((m) => m.user_id).filter(Boolean))];
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profErr } = await supabase
           .from('profiles')
-          .select('user_id, full_name, company_name')
+          .select('user_id, controller_name, showmen_name, company_name')
           .in('user_id', userIds);
+        if (profErr) console.warn('support profiles lookup failed:', profErr);
         const map: Record<string, SenderProfile> = {};
         (profiles || []).forEach((p: any) => { map[p.user_id] = p; });
+
+        // For any user without a resolvable display name, fall back to auth email
+        const needEmail = userIds.filter((uid) => {
+          const p = map[uid];
+          return !p || (!p.company_name && !p.controller_name && !p.showmen_name);
+        });
+        await Promise.all(needEmail.map(async (uid) => {
+          try {
+            const { data } = await supabase.functions.invoke('get-user-email', { body: { userId: uid } });
+            if (data?.email) {
+              map[uid] = { ...(map[uid] || { user_id: uid, controller_name: null, showmen_name: null, company_name: null }), email: data.email };
+            }
+          } catch (e) {
+            console.warn('get-user-email failed for', uid, e);
+          }
+        }));
         setSenders(map);
       }
 

@@ -448,15 +448,17 @@ export default function UserManagement() {
         ...(orgMembers || []).map(m => m.user_id),
       ]));
 
-      // Fetch ride counts per user
-      const { data: rideCounts } = await supabase
-        .from('rides')
-        .select('user_id')
-        .in('user_id', userIds);
-      
+      // Fetch equipment counts per user via admin RPC (bypasses per-row RLS safely)
       const rideCountMap = new Map<string, number>();
-      for (const r of rideCounts || []) {
-        rideCountMap.set(r.user_id, (rideCountMap.get(r.user_id) || 0) + 1);
+      if (userIds.length > 0) {
+        const { data: equipCounts, error: equipErr } = await (supabase as any)
+          .rpc('admin_get_equipment_counts', { _user_ids: userIds });
+        if (equipErr) {
+          console.warn('admin_get_equipment_counts failed:', equipErr);
+        }
+        for (const r of (equipCounts || []) as Array<{ user_id: string; equipment_count: number }>) {
+          rideCountMap.set(r.user_id, Number(r.equipment_count) || 0);
+        }
       }
 
       const adminUserIds = new Set(userRoles?.filter(r => r.role === 'admin').map(r => r.user_id) || []);
