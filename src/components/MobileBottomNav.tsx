@@ -34,10 +34,11 @@ const HIDDEN_ROUTE_PATTERNS = ["/execute"];
 type DrawerItem = {
   icon: LucideIcon;
   label: string;
-  path: string;
+  path?: string;
   matchPaths?: string[];
   visible?: boolean;
   badgeCount?: number;
+  onSelect?: () => void;
 };
 
 export default function MobileBottomNav() {
@@ -80,6 +81,13 @@ export default function MobileBottomNav() {
   const isActive = (paths: string[]) =>
     paths.some((p) => loc.pathname === p || loc.pathname.startsWith(`${p}/`));
 
+  const handleReportProblem = () => {
+    const route = `${loc.pathname}${loc.search}${loc.hash}` || "/";
+    setOpen(false);
+    // Wait for the sheet to close so the screenshot captures the underlying page.
+    window.setTimeout(() => openBugReport(route), 300);
+  };
+
   const primaryItems: DrawerItem[] = [
     { icon: Home, label: "Dashboard", path: "/overview", matchPaths: ["/overview"], badgeCount: overdueCount },
     { icon: FolderOpen, label: "Equipment", path: "/rides", matchPaths: ["/rides"] },
@@ -95,6 +103,7 @@ export default function MobileBottomNav() {
     { icon: Users, label: "Staff Management", path: "/staff", matchPaths: ["/staff"], visible: canManageStaff },
     { icon: HelpCircle, label: "Help & Support", path: "/help", matchPaths: ["/help"] },
     { icon: Download, label: "Install App", path: "/install", matchPaths: ["/install"] },
+    { icon: Bug, label: "Report a problem", onSelect: handleReportProblem },
   ].filter((item) => item.visible !== false);
 
   const adminItems: DrawerItem[] = [
@@ -122,7 +131,7 @@ export default function MobileBottomNav() {
 
     return (
       <button
-        onClick={() => go(item.path)}
+        onClick={() => item.onSelect ? item.onSelect() : item.path && go(item.path)}
         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${
           active
             ? "bg-primary text-primary-foreground"
@@ -216,20 +225,6 @@ export default function MobileBottomNav() {
             <div className="space-y-3">
               <MenuSection title="Main" items={primaryItems} />
               <MenuSection title="Account" items={accountItems} />
-              <div className="space-y-0.5">
-                <button
-                  onClick={() => {
-                    const route = loc.pathname;
-                    setOpen(false);
-                    // Wait for sheet close so screenshot captures underlying page
-                    setTimeout(() => openBugReport(route), 250);
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-[0.98]"
-                >
-                  <Bug className="h-[18px] w-[18px] flex-shrink-0" />
-                  <span>Report a problem</span>
-                </button>
-              </div>
               <MenuSection title="Admin" items={adminItems} />
 
               <div className="space-y-0.5 mt-3 pt-3 border-t border-border/30">
