@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
+import { ToastAction } from '@/components/ui/toast';
 
 /**
  * Detects when a new app build has been deployed by comparing the main entry
