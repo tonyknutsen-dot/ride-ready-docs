@@ -19,6 +19,11 @@ const SectionLoader = memo(() => (
 const Index = memo(() => {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Ride Ready Docs | Ride Compliance Software"
+        description="Manage ride checks, risk assessments, defect reports, maintenance records, wind and pressure logs, and share compliance documents in one platform."
+        path="/"
+      />
       <Header />
       <main>
         <Hero />
