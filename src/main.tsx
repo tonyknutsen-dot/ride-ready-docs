@@ -28,5 +28,9 @@ if ('caches' in window) {
 
 const root = createRoot(document.getElementById("root")!);
 if (!redirectedToCanonicalOrigin) {
-  root.render(<App />);
+  root.render(
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  );
 }
