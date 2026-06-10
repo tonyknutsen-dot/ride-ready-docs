@@ -46,7 +46,13 @@ const CookiePolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Cookie Policy | Ride Ready Docs"
+        description="Which cookies Ride Ready Docs uses, why we use them, how long they last and how to control essential, functional and analytics cookies."
+        path="/cookies"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6 max-w-4xl">
