@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageMeta from "@/components/PageMeta";
 import { Card, CardContent } from "@/components/ui/card";
 import { Cookie, Shield, Settings, BarChart3 } from "lucide-react";
 
@@ -45,7 +46,13 @@ const CookiePolicy = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Cookie Policy | Ride Ready Docs"
+        description="Which cookies Ride Ready Docs uses, why we use them, how long they last and how to control essential, functional and analytics cookies."
+        path="/cookies"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6 max-w-4xl">

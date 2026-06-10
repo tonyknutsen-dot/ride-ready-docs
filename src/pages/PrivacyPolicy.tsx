@@ -1,11 +1,18 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageMeta from "@/components/PageMeta";
 import { Card, CardContent } from "@/components/ui/card";
 
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Privacy Policy | Ride Ready Docs"
+        description="How Ride Ready Docs collects, uses and protects personal information for ride operators and their staff, including data retention and your rights under UK GDPR."
+        path="/privacy"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6 max-w-4xl">

@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageMeta from "@/components/PageMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, UserX, Server, CheckCircle, Eye, FileText, Building2, Key } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -41,7 +42,13 @@ const DataIndependence = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Data Independence | Ride Ready Docs"
+        description="Ride Ready Docs is a document platform, not an inspector or regulator. Your records stay private, isolated by account and never shared with third parties."
+        path="/data-independence"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         {/* Hero Section */}

@@ -14,9 +14,9 @@ const EquipmentShowcase = () => {
   return (
     <section className="py-16 bg-gradient-to-r from-secondary via-primary/5 to-accent/5">
       <div className="container mx-auto px-4">
-        <h3 className="text-center text-lg font-medium text-muted-foreground mb-8">
+        <h2 className="text-center text-lg font-medium text-muted-foreground mb-8">
           Perfect for All Your Equipment
-        </h3>
+        </h2>
         <div className="flex flex-wrap justify-center gap-6 md:gap-10">
           {equipmentTypes.map((item) => (
             <div

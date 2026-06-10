@@ -24,6 +24,7 @@ import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageMeta from '@/components/PageMeta';
 
 const Install = () => {
   const { user } = useAuth();
@@ -61,7 +62,13 @@ const Install = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Install Ride Ready Docs on your phone or tablet"
+        description="Add Ride Ready Docs to your iPhone, iPad, Android or desktop home screen for fast offline access to daily checks, defects, wind logs and compliance documents."
+        path="/install"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4 max-w-4xl">

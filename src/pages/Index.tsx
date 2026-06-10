@@ -1,6 +1,7 @@
 import { lazy, Suspense, memo } from "react";
 import Hero from "../components/Hero";
 import Header from "../components/Header";
+import PageMeta from "../components/PageMeta";
 
 // Lazy load below-fold components for better performance
 const EquipmentShowcase = lazy(() => import("../components/EquipmentShowcase"));
@@ -18,6 +19,11 @@ const SectionLoader = memo(() => (
 const Index = memo(() => {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Ride Ready Docs | Ride Compliance Software"
+        description="Manage ride checks, risk assessments, defect reports, maintenance records, wind and pressure logs, and share compliance documents in one platform."
+        path="/"
+      />
       <Header />
       <main>
         <Hero />

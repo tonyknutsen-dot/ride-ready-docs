@@ -1,6 +1,7 @@
 import "./utils/resetPasswordRouteFallback";
 import React from "react"; // refreshed
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 import { redirectToCanonicalOriginIfNeeded } from "./config/canonicalOrigin";
@@ -27,5 +28,9 @@ if ('caches' in window) {
 
 const root = createRoot(document.getElementById("root")!);
 if (!redirectedToCanonicalOrigin) {
-  root.render(<App />);
+  root.render(
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+  );
 }
