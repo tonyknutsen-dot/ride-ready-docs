@@ -107,7 +107,7 @@ const Hero = () => {
           </p>
 
           {/* Trust indicators */}
-          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70 animate-fade-up animate-delay-500">
+          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/95 animate-fade-up animate-delay-500" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.7)' }}>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
               <span>No credit card required</span>
