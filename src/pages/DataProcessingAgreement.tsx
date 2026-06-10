@@ -6,7 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 const DataProcessingAgreement = () => {
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Data Processing Agreement | Ride Ready Docs"
+        description="The UK GDPR Data Processing Agreement covering how Ride Ready Docs acts as processor for ride operators' personal and compliance data."
+        path="/dpa"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6 max-w-4xl">
