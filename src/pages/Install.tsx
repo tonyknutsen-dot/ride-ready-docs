@@ -24,6 +24,7 @@ import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import PageMeta from '@/components/PageMeta';
 
 const Install = () => {
   const { user } = useAuth();
