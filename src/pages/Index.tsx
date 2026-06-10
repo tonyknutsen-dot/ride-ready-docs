@@ -1,6 +1,7 @@
 import { lazy, Suspense, memo } from "react";
 import Hero from "../components/Hero";
 import Header from "../components/Header";
+import PageMeta from "../components/PageMeta";
 
 // Lazy load below-fold components for better performance
 const EquipmentShowcase = lazy(() => import("../components/EquipmentShowcase"));
