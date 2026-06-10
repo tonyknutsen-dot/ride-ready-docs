@@ -127,7 +127,7 @@ export default function MobileBottomNav() {
 
   const MenuItem = ({ item }: { item: DrawerItem }) => {
     const Icon = item.icon;
-    const active = isActive(item.matchPaths ?? [item.path]);
+    const active = item.path ? isActive(item.matchPaths ?? [item.path]) : false;
 
     return (
       <button
