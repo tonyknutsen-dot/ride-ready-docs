@@ -80,12 +80,14 @@ export default function AppUpdateChecker() {
             <ToastAction
               altText="Update now"
               onClick={() => {
-                if ('caches' in window) {
-                  caches.keys()
-                    .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-                    .finally(() => window.location.reload());
+                const reload = () => window.location.reload();
+                const cachesApi = (window as unknown as { caches?: CacheStorage }).caches;
+                if (cachesApi) {
+                  cachesApi.keys()
+                    .then((keys) => Promise.all(keys.map((k) => cachesApi.delete(k))))
+                    .finally(reload);
                 } else {
-                  window.location.reload();
+                  reload();
                 }
               }}
             >
