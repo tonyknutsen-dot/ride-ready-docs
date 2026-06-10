@@ -14,8 +14,15 @@ interface Props {
 export function SupportMessageRow({ msg, sender, replyCount, onClick }: Props) {
   const status = STATUS_CONFIG[msg.status] || STATUS_CONFIG.pending;
   const priority = PRIORITY_CONFIG[msg.priority || 'normal'] || PRIORITY_CONFIG.normal;
-  const senderName = sender?.full_name || 'Unknown user';
-  const orgName = sender?.company_name;
+  const senderName =
+    sender?.company_name ||
+    sender?.controller_name ||
+    sender?.showmen_name ||
+    sender?.email ||
+    'Unknown user';
+  const orgName = sender?.company_name && (sender?.controller_name || sender?.showmen_name)
+    ? sender.company_name
+    : null;
   const activityDate = msg.last_activity_at || msg.updated_at;
 
   return (

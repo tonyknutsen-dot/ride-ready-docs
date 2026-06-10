@@ -25,8 +25,10 @@ export interface SupportReply {
 
 export interface SenderProfile {
   user_id: string;
-  full_name: string | null;
+  controller_name: string | null;
+  showmen_name: string | null;
   company_name: string | null;
+  email?: string | null;
 }
 
 export type SupportStatus = 'pending' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'archived';

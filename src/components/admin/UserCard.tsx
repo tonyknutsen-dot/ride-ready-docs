@@ -224,7 +224,7 @@ export function UserCard({
             <Calendar className="h-3 w-3" />
             {format(new Date(user.created_at), 'MMM d, yyyy')}
           </span>
-          <span>{user.rideCount} ride{user.rideCount !== 1 ? 's' : ''}</span>
+          <span>{user.rideCount} {user.rideCount === 1 ? 'equipment item' : user.rideCount === 0 ? 'equipment' : 'equipment items'}</span>
           {user.isTester && user.testerExpiresAt && (
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />

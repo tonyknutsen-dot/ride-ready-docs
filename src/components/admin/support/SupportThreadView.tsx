@@ -40,8 +40,15 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
   const [sending, setSending] = useState(false);
   const [updatingField, setUpdatingField] = useState<string | null>(null);
 
-  const senderName = sender?.full_name || 'Unknown user';
-  const orgName = sender?.company_name;
+  const senderName =
+    sender?.company_name ||
+    sender?.controller_name ||
+    sender?.showmen_name ||
+    sender?.email ||
+    'Unknown user';
+  const orgName = sender?.company_name && (sender?.controller_name || sender?.showmen_name)
+    ? sender.company_name
+    : null;
   const status = STATUS_CONFIG[message.status] || STATUS_CONFIG.pending;
   const priority = PRIORITY_CONFIG[message.priority || 'normal'] || PRIORITY_CONFIG.normal;
 
@@ -62,8 +69,9 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
       if (error) throw error;
 
       // Update status if it's a visible reply (not internal note)
+      let statusUpdateFailed = false;
       if (!isInternal) {
-        await (supabase.from('support_messages') as any)
+        const { error: statusErr } = await (supabase.from('support_messages') as any)
           .update({
             status: 'waiting_on_user',
             admin_response: replyText.trim(),
@@ -71,6 +79,10 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
             responded_by: user.id,
           })
           .eq('id', message.id);
+        if (statusErr) {
+          console.error('support status update failed:', statusErr);
+          statusUpdateFailed = true;
+        }
 
         // Insert in-app notification so the user can see the reply even if no email is sent
         try {
@@ -116,17 +128,24 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
           emailErrorMsg = e?.message || 'invoke threw';
         }
 
-        if (emailSent) {
-          toast.success('Reply saved and emailed to user.');
+        if (emailSent && !statusUpdateFailed) {
+          toast.success('Reply saved, status updated, and emailed to user.');
+        } else if (emailSent && statusUpdateFailed) {
+          toast.warning('Reply emailed, but status update failed.');
+        } else if (statusUpdateFailed) {
+          toast.error(`Reply saved, but status update and email failed (${emailErrorMsg}).`);
         } else {
           console.error('[support-reply] email failed:', emailErrorMsg);
-          toast.error(`Reply saved, but email failed to send (${emailErrorMsg}). The user may not see this unless they open the app.`);
+          toast.error(`Reply saved, but email failed to send (${emailErrorMsg}).`);
         }
       } else if (isInternal) {
         toast.success('Internal note added.');
+      } else if (statusUpdateFailed) {
+        toast.warning('Reply saved, but status update failed.');
       } else {
         toast.warning('Reply saved in app only. No email was sent.');
       }
+
 
       setReplyText('');
       setIsInternal(false);
@@ -148,8 +167,9 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
       if (error) throw error;
       toast.success(`${field === 'status' ? 'Status' : 'Priority'} updated`);
       onRefresh();
-    } catch {
-      toast.error('Failed to update');
+    } catch (e: any) {
+      console.error('support field update failed:', e);
+      toast.error(`Failed to update ${field}: ${e?.message || 'unknown error'}`);
     } finally {
       setUpdatingField(null);
     }
