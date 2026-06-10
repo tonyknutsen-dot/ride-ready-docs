@@ -56,7 +56,24 @@ serve(async (req) => {
       );
     }
 
-    // Look up auth user + profile + organisation
+    // Dedup: skip if we already successfully sent this alert for this email.
+    const { data: priorSent } = await supabase
+      .from("email_send_log")
+      .select("id")
+      .eq("template_name", "internal-new-signup-alert")
+      .eq("status", "sent")
+      .contains("metadata", { new_user_email: lowerEmail })
+      .limit(1)
+      .maybeSingle();
+
+    if (priorSent) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "already_sent" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Look up auth user + profile + organisation + role
     let userId: string | null = null;
     let fullName: string | null = null;
     let country: string | null = null;
@@ -74,6 +91,7 @@ serve(async (req) => {
 
     let profile: any = null;
     let organisation: any = null;
+    let role: string | null = null;
     if (userId) {
       const { data: prof } = await supabase
         .from("profiles")
@@ -82,7 +100,6 @@ serve(async (req) => {
         .maybeSingle();
       profile = prof;
       if (prof) {
-        fullName = fullName || null;
         country = country || prof.country || null;
       }
       const { data: org } = await supabase
@@ -91,10 +108,22 @@ serve(async (req) => {
         .eq("owner_id", userId)
         .maybeSingle();
       organisation = org;
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      if (roles && roles.length > 0) {
+        role = roles.map((r: any) => r.role).join(", ");
+      } else {
+        role = organisation ? "controller" : "user";
+      }
     }
 
+    const adminBase = "https://ridereadydocs.com/admin/users";
+    const adminLink = userId ? `${adminBase}?user=${encodeURIComponent(userId)}` : adminBase;
     const now = new Date().toISOString();
-    const subject = "New Ride Ready Docs signup";
+    const subject = `New Ride Ready Docs signup: ${email}`;
     const html = `
       <div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
         <h2 style="margin: 0 0 16px;">New Ride Ready Docs signup</h2>
@@ -103,6 +132,7 @@ serve(async (req) => {
             <tr><td style="padding: 6px 8px; color: #555;">Name</td><td style="padding: 6px 8px;"><strong>${esc(fullName)}</strong></td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Email</td><td style="padding: 6px 8px;"><strong>${esc(email)}</strong></td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Organisation</td><td style="padding: 6px 8px;">${esc(organisation?.name || profile?.company_name)}</td></tr>
+            <tr><td style="padding: 6px 8px; color: #555;">Role</td><td style="padding: 6px 8px;">${esc(role)}</td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Country</td><td style="padding: 6px 8px;">${esc(country)}</td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Signup time</td><td style="padding: 6px 8px;">${esc(now)}</td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Trial start</td><td style="padding: 6px 8px;">${esc(profile?.trial_started_at)}</td></tr>
@@ -111,9 +141,11 @@ serve(async (req) => {
             <tr><td style="padding: 6px 8px; color: #555;">Status</td><td style="padding: 6px 8px;">${esc(profile?.subscription_status)}</td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Profile ID</td><td style="padding: 6px 8px;"><code>${esc(userId)}</code></td></tr>
             <tr><td style="padding: 6px 8px; color: #555;">Organisation ID</td><td style="padding: 6px 8px;"><code>${esc(organisation?.id)}</code></td></tr>
-            <tr><td style="padding: 6px 8px; color: #555;">Source</td><td style="padding: 6px 8px;">Ride Ready Docs signup</td></tr>
           </tbody>
         </table>
+        <p style="margin: 20px 0 0;">
+          <a href="${adminLink}" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;font-size:14px;">View in admin</a>
+        </p>
       </div>
     `;
 
@@ -125,7 +157,13 @@ serve(async (req) => {
           function_name: "internal-new-signup-alert",
           template_name: "internal-new-signup-alert",
           user_id: userId || undefined,
-          metadata: { new_user_email: email, organisation_id: organisation?.id || null },
+          metadata: {
+            new_user_email: lowerEmail,
+            organisation_id: organisation?.id || null,
+            role,
+            plan: profile?.subscription_plan || null,
+            status: profile?.subscription_status || null,
+          },
         },
       );
       return new Response(JSON.stringify({ ok: true }), {
@@ -141,7 +179,7 @@ serve(async (req) => {
         status: "failed",
         error_message: sendErr?.message || String(sendErr),
         user_id: userId || undefined,
-        metadata: { new_user_email: email },
+        metadata: { new_user_email: lowerEmail, phase: "exception_outer" },
       }).catch(() => {});
       // Non-blocking: still return 200 so signup flow is never affected
       return new Response(JSON.stringify({ ok: false, error: "send_failed" }), {
