@@ -1,0 +1,22 @@
+# Ride Ready Docs
+
+> Operations management platform for amusement ride operators: store documents, manage maintenance, run daily checks, and track inspection compliance.
+
+Ride Ready Docs helps showmen and amusement professionals keep equipment compliant and ready to open. The app centralises documents (insurance, inspections, risk assessments), routine and pre-opening checks, maintenance and defect logs, wind and pressure readings, and statutory inspection due dates.
+
+## Pages
+
+- [Home](/): Product overview, features, and pricing.
+- [How it works](/how-it-works): Walkthrough of the workflow for operators and staff.
+- [Install](/install): Install Ride Ready Docs as a PWA on mobile or desktop.
+- [Help Center](/help): Frequently asked questions and usage guidance.
+- [Security](/security): Security model, data handling, and access controls.
+- [Data independence](/data-independence): How operators retain ownership of their records.
+- [Sign in](/auth): Sign in or create an account.
+
+## Optional
+
+- [Privacy policy](/privacy)
+- [Terms of service](/terms)
+- [Cookie policy](/cookies)
+- [Data processing agreement](/dpa)
