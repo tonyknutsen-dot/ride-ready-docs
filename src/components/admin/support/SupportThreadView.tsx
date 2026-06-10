@@ -98,7 +98,6 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
           console.warn('support notification insert failed:', notifErr);
         }
       }
-      (window as any).__supportStatusFailed = statusUpdateFailed;
 
       // Send email notification if requested (and not internal)
       if (sendEmail && !isInternal) {
@@ -129,17 +128,24 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
           emailErrorMsg = e?.message || 'invoke threw';
         }
 
-        if (emailSent) {
-          toast.success('Reply saved and emailed to user.');
+        if (emailSent && !statusUpdateFailed) {
+          toast.success('Reply saved, status updated, and emailed to user.');
+        } else if (emailSent && statusUpdateFailed) {
+          toast.warning('Reply emailed, but status update failed.');
+        } else if (statusUpdateFailed) {
+          toast.error(`Reply saved, but status update and email failed (${emailErrorMsg}).`);
         } else {
           console.error('[support-reply] email failed:', emailErrorMsg);
-          toast.error(`Reply saved, but email failed to send (${emailErrorMsg}). The user may not see this unless they open the app.`);
+          toast.error(`Reply saved, but email failed to send (${emailErrorMsg}).`);
         }
       } else if (isInternal) {
         toast.success('Internal note added.');
+      } else if (statusUpdateFailed) {
+        toast.warning('Reply saved, but status update failed.');
       } else {
         toast.warning('Reply saved in app only. No email was sent.');
       }
+
 
       setReplyText('');
       setIsInternal(false);
