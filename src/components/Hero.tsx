@@ -56,17 +56,19 @@ const Hero = () => {
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] tracking-tight animate-fade-up animate-delay-100" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.5)' }}>
-            Complete Operations{' '}
-            <span className="text-[hsl(210_55%_82%)]">Management</span>
+            Ride compliance documents,{' '}
+            <span className="text-[hsl(210_55%_82%)]">checks and logs</span>{' '}
+            in one place
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-white mb-6 max-w-2xl mx-auto" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.7)' }}>
-            for ride, amusement and event operators
+            for amusement ride and inflatable operators
           </p>
 
           {/* Subheadline - LCP element */}
           <p className="text-base md:text-lg text-white/95 mb-10 max-w-2xl mx-auto leading-relaxed" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.7)' }}>
-            Manage equipment records, documents, safety checks, defects, maintenance,
-            wind and pressure logs, and compliance records in one secure system.
+            Ride Ready Docs helps amusement ride and inflatable operators manage daily checks,
+            defect reports, maintenance records, risk assessments, wind logs, pressure readings
+            and compliance document sharing from one mobile-friendly system.
           </p>
 
           {/* CTA Buttons — single primary + secondary */}
