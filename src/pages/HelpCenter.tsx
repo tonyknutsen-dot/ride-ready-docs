@@ -209,7 +209,13 @@ const HelpCenter = () => {
   // ── render ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <PageMeta
+        title="Help Centre | Ride Ready Docs"
+        description="Guides, FAQs and step-by-step help for managing equipment, daily checks, defects, inspections and compliance documents in Ride Ready Docs."
+        path="/help"
+      />
       <Header />
+
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4" style={{ maxWidth: 900 }}>
