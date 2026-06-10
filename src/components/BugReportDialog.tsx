@@ -345,20 +345,26 @@ export const BugReportDialog = ({ trigger, defaultOpen = false, onAfterClose, op
       setReferenceId(refId);
       setSubmitted(true);
 
-      // Send notification to admin
+      // Send notification to admin (non-blocking — report is already saved)
       try {
         await supabase.functions.invoke('send-bug-report-notification', {
           body: {
             referenceId: refId,
             title,
             severity,
+            issueType,
             appVersion: context.appVersion,
             currentRoute: context.currentRoute,
             description,
+            reporterEmail: context.userEmail,
+            reporterRole: isTester ? 'tester' : (context.userRole || 'user'),
+            deviceType: context.deviceType,
+            browserInfo: context.browserInfo,
+            hasScreenshot: Boolean(uploadedUrl),
           },
         });
       } catch (notifyError) {
-        console.error('Failed to send notification:', notifyError);
+        console.error('Failed to send notification (report still saved):', notifyError);
       }
 
       toast({
