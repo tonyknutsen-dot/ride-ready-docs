@@ -24,13 +24,15 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
 
   try {
-    const { email } = await req.json();
+    const body = await req.json();
+    const { email, source } = body ?? {};
     if (!email || typeof email !== "string") {
       return new Response(JSON.stringify({ error: "email required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    console.log("[internal-new-signup-alert] invoked", { email, source: source || "client" });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
