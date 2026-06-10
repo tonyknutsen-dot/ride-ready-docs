@@ -81,6 +81,28 @@ export const RequestRideTypeDialog = ({ open, onOpenChange }: RequestRideTypeDia
 
       if (error) throw error;
 
+      // Fire-and-forget admin email notification. Never block the save on email failure.
+      try {
+        const userName = (user.user_metadata?.full_name as string | undefined)
+          || (user.email ? user.email.split('@')[0] : 'Unknown user');
+        const { error: emailErr } = await supabase.functions.invoke('send-ride-type-request', {
+          body: {
+            name: validatedData.name,
+            type: categoryGroup,
+            description: validatedData.description,
+            manufacturer: validatedData.manufacturer || undefined,
+            additionalInfo: validatedData.additionalInfo || undefined,
+            userEmail: user.email || 'unknown@unknown',
+            userName,
+          },
+        });
+        if (emailErr) {
+          console.error('[request-new-type] admin email failed:', emailErr);
+        }
+      } catch (emailEx) {
+        console.error('[request-new-type] admin email invoke threw:', emailEx);
+      }
+
       toast({
         title: "Request submitted for review",
         description: `Your request for "${validatedData.name}" has been sent for review.`,

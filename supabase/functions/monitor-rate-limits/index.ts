@@ -6,15 +6,19 @@ import { logEmailSend } from "../_shared/email-logger.ts";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 // Alert thresholds
+// Tuned for a normal authenticated PWA where a single session can produce
+// dozens of edge-function calls within an hour (Overview, Documents, Calendar,
+// retries, refreshes, etc.). Old warning threshold of 20/hr fired on normal use.
 const THRESHOLDS = {
-  // Alert if single IP has more than this many rate limit entries in the check window
-  entriesPerIp: 20,
-  // Alert if total entries exceed this count
-  totalEntries: 100,
-  // Alert if any IP has been rate limited (hit the limit) more than this many times
-  rateLimitHits: 5,
-  // Auto-block threshold - block IPs exceeding this many requests in an hour
-  autoBlockThreshold: 50,
+  // Warn when a single source exceeds this many rate-limit entries in an hour.
+  entriesPerIp: 100,
+  // Warn when total hourly entries exceed this count.
+  totalEntries: 500,
+  // Warn when this many sources keep hitting limits.
+  rateLimitHits: 10,
+  // Auto-block threshold — only blocks anonymous/IP-only traffic at this level.
+  // Authenticated users (keys prefixed `:user:`) are excluded from auto-block.
+  autoBlockThreshold: 250,
 };
 
 // Block duration in hours based on severity
