@@ -40,8 +40,15 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
   const [sending, setSending] = useState(false);
   const [updatingField, setUpdatingField] = useState<string | null>(null);
 
-  const senderName = sender?.full_name || 'Unknown user';
-  const orgName = sender?.company_name;
+  const senderName =
+    sender?.company_name ||
+    sender?.controller_name ||
+    sender?.showmen_name ||
+    sender?.email ||
+    'Unknown user';
+  const orgName = sender?.company_name && (sender?.controller_name || sender?.showmen_name)
+    ? sender.company_name
+    : null;
   const status = STATUS_CONFIG[message.status] || STATUS_CONFIG.pending;
   const priority = PRIORITY_CONFIG[message.priority || 'normal'] || PRIORITY_CONFIG.normal;
 

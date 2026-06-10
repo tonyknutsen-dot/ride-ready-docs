@@ -135,7 +135,7 @@ export default function SupportMessages() {
         return (
           m.subject.toLowerCase().includes(q) ||
           m.message.toLowerCase().includes(q) ||
-          (sender?.full_name || '').toLowerCase().includes(q) ||
+          (sender?.company_name || sender?.controller_name || sender?.showmen_name || sender?.email || '').toLowerCase().includes(q) ||
           (sender?.company_name || '').toLowerCase().includes(q)
         );
       });
