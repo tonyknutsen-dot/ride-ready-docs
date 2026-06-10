@@ -3902,6 +3902,13 @@ export type Database = {
       }
     }
     Functions: {
+      admin_get_equipment_counts: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          equipment_count: number
+          user_id: string
+        }[]
+      }
       admin_has_support_access: {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean
