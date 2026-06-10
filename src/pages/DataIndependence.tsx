@@ -42,7 +42,13 @@ const DataIndependence = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Data Independence | Ride Ready Docs"
+        description="Ride Ready Docs is a document platform, not an inspector or regulator. Your records stay private, isolated by account and never shared with third parties."
+        path="/data-independence"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         {/* Hero Section */}
