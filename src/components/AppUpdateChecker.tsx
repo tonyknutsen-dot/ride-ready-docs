@@ -36,6 +36,29 @@ const fetchCurrentSignature = async (): Promise<string | null> => {
   }
 };
 
+const refreshInstalledApp = async () => {
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.allSettled(
+        registrations.map((registration) => {
+          registration.active?.postMessage({ type: 'SKIP_WAITING' });
+          registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          return registration.unregister();
+        }),
+      );
+    }
+
+    const cachesApi = (window as unknown as { caches?: CacheStorage }).caches;
+    if (cachesApi) {
+      const keys = await cachesApi.keys();
+      await Promise.allSettled(keys.map((key) => cachesApi.delete(key)));
+    }
+  } finally {
+    window.location.reload();
+  }
+};
+
 const getLoadedSignature = (): string | null => {
   const scripts = Array.from(document.querySelectorAll<HTMLScriptElement>('script[src*="/assets/"]'))
     .map((s) => {
@@ -74,24 +97,14 @@ export default function AppUpdateChecker() {
         notifiedRef.current = true;
         toast({
           title: 'Update available',
-          description: 'A new version of Ride Ready Docs is ready.',
+          description: 'Refresh the installed app to load the latest menu and fixes.',
           duration: 1000 * 60 * 10,
           action: (
             <ToastAction
-              altText="Update now"
-              onClick={() => {
-                const reload = () => window.location.reload();
-                const cachesApi = (window as unknown as { caches?: CacheStorage }).caches;
-                if (cachesApi) {
-                  cachesApi.keys()
-                    .then((keys) => Promise.all(keys.map((k) => cachesApi.delete(k))))
-                    .finally(reload);
-                } else {
-                  reload();
-                }
-              }}
+              altText="Refresh app"
+              onClick={() => void refreshInstalledApp()}
             >
-              Update
+              Refresh app
             </ToastAction>
           ),
         });
