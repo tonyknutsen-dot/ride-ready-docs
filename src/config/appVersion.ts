@@ -25,6 +25,11 @@ export interface ChangeLogEntry {
 
 export const CHANGE_LOG: ChangeLogEntry[] = [
   {
+    version: "v1.0.1",
+    date: "2026-06-10",
+    description: "PWA update reliability: installed app now detects new builds and shows an 'Update available' prompt without needing reinstall. Confirmed mobile menu (including 'Report a problem') is identical in browser and installed PWA."
+  },
+  {
     version: "v0.13",
     date: "2026-02-03",
     description: "Bug fixes: Timeline Report now works correctly for testers/staff by using effectiveUserId. Ride list now shows newly added rides for testers/staff. Fixed data visibility issues across RideManagement and EquipmentTimelineReport components."
