@@ -98,7 +98,7 @@ const Hero = () => {
           </div>
 
           {/* Device suitability note */}
-          <p className="mt-6 text-xs sm:text-sm text-white/70 max-w-2xl mx-auto flex items-start sm:items-center justify-center gap-2 px-2">
+          <p className="mt-6 text-xs sm:text-sm text-white/95 max-w-2xl mx-auto flex items-start sm:items-center justify-center gap-2 px-2" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.7)' }}>
             <Smartphone className="h-4 w-4 text-accent shrink-0 mt-0.5 sm:mt-0" />
             <span>
               Works on mobile, tablet and laptop. Daily checks, defects, wind logs and pressure readings
