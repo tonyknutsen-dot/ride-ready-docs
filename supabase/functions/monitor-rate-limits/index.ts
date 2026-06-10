@@ -196,48 +196,65 @@ serve(async (req: Request) => {
       new Date(e.window_start).getTime() >= new Date(oneHourAgo).getTime()
     );
 
-    // 1. Check for high-volume IPs (potential attackers) - use 1 hour window
+    // 1. Check for high-volume sources (potential attackers) - use 1 hour window
+    //    Track whether the source is IP-only (anonymous) or user-bound (authenticated).
+    //    Authenticated traffic must NEVER auto-block based on raw count alone.
     const ipCounts: Record<string, number> = {};
+    const sourceKind: Record<string, 'ip' | 'user' | 'unknown'> = {};
+    const sourceEndpoints: Record<string, Record<string, number>> = {};
     for (const entry of recentEntries) {
-      const ip = entry.key.split(":ip:")[1] || entry.key.split(":user:")[1] || "unknown";
-      if (ip !== "unknown") {
-        ipCounts[ip] = (ipCounts[ip] || 0) + entry.count;
+      let id: string | undefined;
+      let kind: 'ip' | 'user' | 'unknown' = 'unknown';
+      const userPart = entry.key.split(':user:')[1];
+      const ipPart = entry.key.split(':ip:')[1];
+      if (userPart) { id = userPart; kind = 'user'; }
+      else if (ipPart) { id = ipPart; kind = 'ip'; }
+      if (id) {
+        ipCounts[id] = (ipCounts[id] || 0) + entry.count;
+        sourceKind[id] = kind;
+        // Endpoint is the portion before `:ip:` / `:user:` (e.g. "send-ride-type-request")
+        const endpoint = entry.key.split(/:(?:ip|user):/)[0] || 'unknown';
+        sourceEndpoints[id] = sourceEndpoints[id] || {};
+        sourceEndpoints[id][endpoint] = (sourceEndpoints[id][endpoint] || 0) + entry.count;
       }
     }
 
-    // Find high-volume IPs and auto-block if threshold exceeded
-    for (const [ip, count] of Object.entries(ipCounts)) {
-      const severity = count >= THRESHOLDS.entriesPerIp * 2 ? "critical" : "warning";
-      
+    // Find high-volume sources and auto-block only anonymous IP traffic
+    for (const [id, count] of Object.entries(ipCounts)) {
+      const kind = sourceKind[id] || 'unknown';
+      const severity = count >= THRESHOLDS.entriesPerIp * 2 ? 'critical' : 'warning';
+
       if (count >= THRESHOLDS.entriesPerIp) {
+        const topEndpoints = Object.entries(sourceEndpoints[id] || {})
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([k, v]) => `${k} (${v})`)
+          .join(', ');
         patterns.push({
-          type: "high_volume_ip",
+          type: 'high_volume_ip',
           severity,
-          details: `IP ${ip} made ${count} requests in the last hour`,
-          data: { ip, count, threshold: THRESHOLDS.entriesPerIp },
+          details: `${kind === 'user' ? 'Authenticated user' : 'IP'} ${id} made ${count} requests in the last hour. Top: ${topEndpoints}. ${kind === 'user' ? 'Likely repeated UI retries — review before blocking.' : ''}`.trim(),
+          data: { id, kind, count, threshold: THRESHOLDS.entriesPerIp, topEndpoints: sourceEndpoints[id] || {} },
         });
       }
-      
-      // Auto-block IPs exceeding the auto-block threshold
-      if (count >= THRESHOLDS.autoBlockThreshold) {
+
+      // Auto-block ONLY anonymous IP sources, never authenticated users.
+      if (kind === 'ip' && count >= THRESHOLDS.autoBlockThreshold) {
+        const ip = id;
         const alreadyBlocked = blockedIpsData?.some((b: any) => b.ip_address === ip);
         if (!alreadyBlocked) {
           const blockDuration = BLOCK_DURATIONS[severity];
           const expiresAt = new Date(Date.now() + blockDuration * 60 * 60 * 1000).toISOString();
-          
-          // Generate a secure unblock token
-          const unblockToken = crypto.randomUUID() + "-" + crypto.randomUUID();
-          
-          // Fetch geographic information for the IP
+          const unblockToken = crypto.randomUUID() + '-' + crypto.randomUUID();
           const geoInfo = await fetchGeoInfo(ip);
-          
+
           const { error: blockError } = await supabase
-            .from("blocked_ips")
+            .from('blocked_ips')
             .insert({
               ip_address: ip,
               reason: `Auto-blocked: ${count} requests in 1 hour (threshold: ${THRESHOLDS.autoBlockThreshold})`,
               expires_at: expiresAt,
-              blocked_by: "auto-monitor",
+              blocked_by: 'auto-monitor',
               request_count: count,
               unblock_token: unblockToken,
               country_code: geoInfo?.countryCode || null,
@@ -246,7 +263,7 @@ serve(async (req: Request) => {
               region: geoInfo?.region || null,
               isp: geoInfo?.isp || null,
             });
-          
+
           if (!blockError) {
             blockedIpsWithTokens.push({
               ip,
@@ -260,6 +277,8 @@ serve(async (req: Request) => {
             console.error(`[MONITOR] Failed to block IP ${ip}:`, blockError);
           }
         }
+      } else if (kind === 'user' && count >= THRESHOLDS.autoBlockThreshold) {
+        console.log(`[MONITOR] Authenticated user ${id} hit ${count} requests/hr — NOT auto-blocking (authenticated traffic).`);
       }
     }
 
