@@ -167,8 +167,9 @@ export function SupportThreadView({ message, replies, sender, onBack, onRefresh 
       if (error) throw error;
       toast.success(`${field === 'status' ? 'Status' : 'Priority'} updated`);
       onRefresh();
-    } catch {
-      toast.error('Failed to update');
+    } catch (e: any) {
+      console.error('support field update failed:', e);
+      toast.error(`Failed to update ${field}: ${e?.message || 'unknown error'}`);
     } finally {
       setUpdatingField(null);
     }
