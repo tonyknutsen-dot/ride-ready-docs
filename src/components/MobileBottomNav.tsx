@@ -216,6 +216,20 @@ export default function MobileBottomNav() {
             <div className="space-y-3">
               <MenuSection title="Main" items={primaryItems} />
               <MenuSection title="Account" items={accountItems} />
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => {
+                    const route = loc.pathname;
+                    setOpen(false);
+                    // Wait for sheet close so screenshot captures underlying page
+                    setTimeout(() => openBugReport(route), 250);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-[0.98]"
+                >
+                  <Bug className="h-[18px] w-[18px] flex-shrink-0" />
+                  <span>Report a problem</span>
+                </button>
+              </div>
               <MenuSection title="Admin" items={adminItems} />
 
               <div className="space-y-0.5 mt-3 pt-3 border-t border-border/30">
