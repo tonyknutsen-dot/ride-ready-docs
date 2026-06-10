@@ -7,7 +7,7 @@
  * This is the SINGLE source of truth for the app version.
  */
 
-export const APP_VERSION = "v1.0 beta";
+export const APP_VERSION = "v1.0.1 beta";
 
 export const APP_NAME = "Ride Ready Docs";
 
@@ -24,6 +24,11 @@ export interface ChangeLogEntry {
 }
 
 export const CHANGE_LOG: ChangeLogEntry[] = [
+  {
+    version: "v1.0.1",
+    date: "2026-06-10",
+    description: "PWA update reliability: installed app now detects new builds and shows an 'Update available' prompt without needing reinstall. Confirmed mobile menu (including 'Report a problem') is identical in browser and installed PWA."
+  },
   {
     version: "v0.13",
     date: "2026-02-03",
