@@ -95,7 +95,13 @@ const Security = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageMeta
+        title="Security | Ride Ready Docs"
+        description="How Ride Ready Docs protects your compliance data: HTTPS encryption in transit, at-rest storage encryption, row-level security and secure authentication."
+        path="/security"
+      />
       <Header />
+      
       
       <main className="pt-24 pb-16">
         {/* Hero Section */}
