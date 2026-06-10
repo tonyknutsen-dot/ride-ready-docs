@@ -7,7 +7,7 @@
  * This is the SINGLE source of truth for the app version.
  */
 
-export const APP_VERSION = "v1.0 beta";
+export const APP_VERSION = "v1.0.1 beta";
 
 export const APP_NAME = "Ride Ready Docs";
 
