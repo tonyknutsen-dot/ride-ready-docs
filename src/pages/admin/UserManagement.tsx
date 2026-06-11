@@ -142,6 +142,18 @@ export default function UserManagement() {
   const [timeViewMode, setTimeViewMode] = useState<'monthly' | 'alltime'>('alltime');
   const [managedUser, setManagedUser] = useState<UserCardData | null>(null);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
+  const [pendingInvites, setPendingInvites] = useState<Array<{
+    id: string;
+    email: string;
+    status: string;
+    created_at: string;
+    expires_at: string | null;
+    invited_by: string | null;
+    organisation_id: string | null;
+    organisation_name: string | null;
+    inviter_name: string | null;
+    isExpired: boolean;
+  }>>([]);
   const isMobile = useIsMobile();
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
@@ -815,14 +827,53 @@ export default function UserManagement() {
     }
   };
 
-  // Fetch pending invite count
+  // Fetch pending invites (active = pending AND not expired)
   useEffect(() => {
     const fetchPendingInvites = async () => {
-      const { count } = await supabase
+      const { data, error } = await supabase
         .from('staff_invites')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      setPendingInviteCount(count || 0);
+        .select('id, email, status, created_at, expires_at, invited_by, organisation_id, organisations(name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error || !data) {
+        setPendingInviteCount(0);
+        setPendingInvites([]);
+        return;
+      }
+
+      const now = Date.now();
+      const inviterIds = Array.from(new Set(data.map((i: any) => i.invited_by).filter(Boolean)));
+      let inviterMap: Record<string, string> = {};
+      if (inviterIds.length) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('user_id, controller_name, showmen_name, company_name')
+          .in('user_id', inviterIds);
+        (profs || []).forEach((p: any) => {
+          inviterMap[p.user_id] = p.controller_name || p.showmen_name || p.company_name || '';
+        });
+      }
+
+      const enriched = data.map((i: any) => {
+        const isExpired = i.expires_at ? new Date(i.expires_at).getTime() < now : false;
+        return {
+          id: i.id,
+          email: i.email,
+          status: i.status,
+          created_at: i.created_at,
+          expires_at: i.expires_at,
+          invited_by: i.invited_by,
+          organisation_id: i.organisation_id,
+          organisation_name: i.organisations?.name ?? null,
+          inviter_name: i.invited_by ? (inviterMap[i.invited_by] || null) : null,
+          isExpired,
+        };
+      });
+
+      setPendingInvites(enriched);
+      // KPI counts only active (non-expired) pending invites
+      setPendingInviteCount(enriched.filter(i => !i.isExpired).length);
     };
     fetchPendingInvites();
   }, [users]);
@@ -895,9 +946,40 @@ export default function UserManagement() {
           </CardHeader>
           <CardContent className="p-0 md:p-0">
             {filters.kpi === 'pending_invites' ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Pending invites are managed on the Staff page of each organisation.
-              </div>
+              pendingInvites.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No pending staff invites.
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {pendingInvites.map(inv => (
+                    <div key={inv.id} className="p-4 flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm truncate">{inv.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {inv.organisation_name || 'Unknown organisation'}
+                          {inv.inviter_name ? ` · invited by ${inv.inviter_name}` : ''}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <Badge variant="outline" className={inv.isExpired
+                          ? 'border-destructive/30 bg-destructive/10 text-destructive'
+                          : 'border-warning/30 bg-warning/10 text-warning'}>
+                          {inv.isExpired ? 'Expired' : 'Pending'}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          Sent {format(new Date(inv.created_at), 'dd/MM/yyyy')}
+                        </span>
+                        {inv.expires_at && (
+                          <span className="text-muted-foreground">
+                            · Expires {format(new Date(inv.expires_at), 'dd/MM/yyyy')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             ) : isMobile ? (
               <div className="grid grid-cols-1 gap-2 p-4">
                 {paginatedUsers.map((user) => (
