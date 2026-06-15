@@ -18,9 +18,21 @@ const Footer = () => {
               equipment records, documents, checks, maintenance, defects and operational logs
               in one secure system.
             </p>
-            <div className="flex items-center gap-2 text-background/60 text-sm">
+            <div className="flex items-center gap-2 text-background/60 text-sm mb-6">
               <MapPin className="h-4 w-4" />
               <span>Serving operators worldwide</span>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-background/50">
+                Solutions
+              </h4>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                <li><Link to="/fairground-ride-software" className="text-background/70 hover:text-accent transition-colors">Fairground Ride Software</Link></li>
+                <li><Link to="/showmen-digital-records" className="text-background/70 hover:text-accent transition-colors">Digital Records for Showmen</Link></li>
+                <li><Link to="/ride-checks-defect-maintenance" className="text-background/70 hover:text-accent transition-colors">Checks, Defects & Maintenance</Link></li>
+                <li><Link to="/inflatable-operator-records" className="text-background/70 hover:text-accent transition-colors">Inflatable Operator Records</Link></li>
+                <li><Link to="/ride-document-management" className="text-background/70 hover:text-accent transition-colors">Ride Document Management</Link></li>
+              </ul>
             </div>
           </div>
 

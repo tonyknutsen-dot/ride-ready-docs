@@ -51,6 +51,11 @@ const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const FairgroundRideSoftware = lazy(() => import("./pages/seo/FairgroundRideSoftware"));
+const ShowmenDigitalRecords = lazy(() => import("./pages/seo/ShowmenDigitalRecords"));
+const RideChecksDefectMaintenance = lazy(() => import("./pages/seo/RideChecksDefectMaintenance"));
+const InflatableOperatorRecords = lazy(() => import("./pages/seo/InflatableOperatorRecords"));
+const RideDocumentManagement = lazy(() => import("./pages/seo/RideDocumentManagement"));
 const Security = lazy(() => import("./pages/Security"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
@@ -198,6 +203,11 @@ const App = () => (
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/data-independence" element={<DataIndependence />} />
               <Route path="/dpa" element={<DataProcessingAgreement />} />
+              <Route path="/fairground-ride-software" element={<FairgroundRideSoftware />} />
+              <Route path="/showmen-digital-records" element={<ShowmenDigitalRecords />} />
+              <Route path="/ride-checks-defect-maintenance" element={<RideChecksDefectMaintenance />} />
+              <Route path="/inflatable-operator-records" element={<InflatableOperatorRecords />} />
+              <Route path="/ride-document-management" element={<RideDocumentManagement />} />
               <Route 
                 path="/support-requests" 
                 element={
