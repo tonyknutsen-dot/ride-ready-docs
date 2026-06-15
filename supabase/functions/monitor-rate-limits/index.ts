@@ -217,7 +217,7 @@ serve(async (req: Request) => {
     if (fetchOnly) {
       return new Response(
         JSON.stringify({ success: true, stats }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: jsonHeaders }
       );
     }
 
@@ -345,7 +345,7 @@ serve(async (req: Request) => {
       console.log("[MONITOR] No abuse patterns detected");
       return new Response(
         JSON.stringify({ success: true, patternsDetected: 0, alertSent: false, blockedIps: [], stats }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: jsonHeaders }
       );
     }
 
@@ -379,14 +379,14 @@ serve(async (req: Request) => {
         alertSent: !emailError,
         stats,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: jsonHeaders }
     );
 
   } catch (error: any) {
     console.error("[MONITOR] Unexpected error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders }
     );
   }
 });
@@ -432,7 +432,7 @@ async function handleStatsRequest(supabase: any) {
 
   return new Response(
     JSON.stringify({ success: true, stats }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: jsonHeaders }
   );
 }
 
@@ -440,7 +440,7 @@ async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: 
   if (!ipAddress) {
     return new Response(
       JSON.stringify({ success: false, error: "IP address required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: jsonHeaders }
     );
   }
 
@@ -457,7 +457,7 @@ async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: 
   if (error) {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders }
     );
   }
 
@@ -465,7 +465,7 @@ async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: 
 
   return new Response(
     JSON.stringify({ success: true, message: `IP ${ipAddress} has been unblocked` }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: jsonHeaders }
   );
 }
 
@@ -479,7 +479,7 @@ async function handleManualBlockRequest(
   if (!ipAddress) {
     return new Response(
       JSON.stringify({ success: false, error: "IP address required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: jsonHeaders }
     );
   }
 
@@ -497,7 +497,7 @@ async function handleManualBlockRequest(
   if (error) {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders }
     );
   }
 
@@ -505,7 +505,7 @@ async function handleManualBlockRequest(
 
   return new Response(
     JSON.stringify({ success: true, message: `IP ${ipAddress} blocked for ${durationHours} hours` }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: jsonHeaders }
   );
 }
 
