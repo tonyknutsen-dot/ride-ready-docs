@@ -16,7 +16,7 @@ const Hero = () => {
 
   const handlePrimary = () => {
     if (!user) trackFunnelEvent("cta_click", { metadata: { source: "hero_primary" } });
-    navigate(user ? '/overview' : '/auth');
+    navigate(user ? '/overview' : '/auth?mode=signup');
   };
 
   const handleSecondary = () => {
