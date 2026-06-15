@@ -68,7 +68,7 @@ const SeoLandingPage = ({
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
             <Button asChild size="lg">
-              <Link to="/auth">
+              <Link to="/auth?mode=signup">
                 Start Free Trial
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -124,7 +124,7 @@ const SeoLandingPage = ({
             )}
             <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
               <Button asChild size="lg">
-                <Link to="/auth">
+                <Link to="/auth?mode=signup">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>

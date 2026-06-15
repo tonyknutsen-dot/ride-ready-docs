@@ -102,7 +102,7 @@ const Header = () => {
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/auth" onClick={() => trackFunnelEvent("cta_click", { metadata: { source: "header_desktop" } })}>
+                <Link to="/auth?mode=signup" onClick={() => trackFunnelEvent("cta_click", { metadata: { source: "header_desktop" } })}>
                   <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
                     Start Free Trial
                   </Button>
@@ -184,7 +184,7 @@ const Header = () => {
                     Contact
                   </button>
                   <div className="border-t border-border/40 pt-3 mt-2">
-                    <Link to="/auth" onClick={() => { setIsMenuOpen(false); trackFunnelEvent("cta_click", { metadata: { source: "header_mobile" } }); }}>
+                    <Link to="/auth?mode=signup" onClick={() => { setIsMenuOpen(false); trackFunnelEvent("cta_click", { metadata: { source: "header_mobile" } }); }}>
                       <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                         Start Free Trial
                       </Button>

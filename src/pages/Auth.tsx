@@ -98,6 +98,13 @@ const Auth = () => {
     if (params.get('reset') === 'true') {
       setActiveTab('signin');
       setShowResetForm(true);
+      return;
+    }
+    const mode = params.get('mode');
+    if (mode === 'signup') {
+      setActiveTab('signup');
+    } else if (mode === 'signin') {
+      setActiveTab('signin');
     }
   }, [location.search]);
 
