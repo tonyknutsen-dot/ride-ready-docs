@@ -403,10 +403,25 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      // Fetch profiles (some staff/tester users may not have one yet)
+      // Fetch profiles (some staff/tester users may not have one yet).
+      // Explicit column list — Stage 5 revoked table-level SELECT on profiles
+      // and re-granted only non-Stripe columns to `authenticated`. `select('*')`
+      // therefore fails with "permission denied for table profiles". Stripe IDs
+      // are intentionally not requested here; admin Stripe diagnostics use the
+      // service-role `admin-stripe-data` edge function.
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(
+          'id, user_id, company_name, controller_name, address, showmen_name, ' +
+          'created_at, updated_at, trial_started_at, trial_ends_at, ' +
+          'subscription_status, subscription_plan, enable_document_versioning, ' +
+          'app_mode, country, is_suspended, suspended_at, suspended_reason, ' +
+          'operator_type, custom_terminology, billing_cycle, extra_items_count, ' +
+          'current_period_end, company_logo_path, date_format, timezone, ' +
+          'risk_settings, requires_operational_checks, cancel_at_period_end, ' +
+          'cancel_at, pending_subscription_plan, pending_change_effective_date, ' +
+          'last_billing_sync_at'
+        )
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
