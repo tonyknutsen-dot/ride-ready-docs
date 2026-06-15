@@ -305,6 +305,8 @@ const Auth = () => {
         }
         
         if (activeTab === 'signup') {
+          trackFunnelEvent('signup_success', { email: formData.email });
+          trackFunnelEvent('onboarding_completed', { email: formData.email });
           setFormNotice({
             type: 'success',
             title: 'Account created!',
