@@ -13,6 +13,19 @@ const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-2">
             <h3 className="text-xl font-bold mb-4">Ride Ready Docs</h3>
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-background/50">
+                Solutions
+              </h4>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                <li><Link to="/fairground-ride-software" className="text-background/70 hover:text-accent transition-colors">Fairground Ride Software</Link></li>
+                <li><Link to="/showmen-digital-records" className="text-background/70 hover:text-accent transition-colors">Digital Records for Showmen</Link></li>
+                <li><Link to="/ride-checks-defect-maintenance" className="text-background/70 hover:text-accent transition-colors">Checks, Defects & Maintenance</Link></li>
+                <li><Link to="/inflatable-operator-records" className="text-background/70 hover:text-accent transition-colors">Inflatable Operator Records</Link></li>
+                <li><Link to="/ride-document-management" className="text-background/70 hover:text-accent transition-colors">Ride Document Management</Link></li>
+              </ul>
+            </div>
+          </div>
             <p className="text-background/70 mb-6 max-w-md text-sm leading-relaxed">
               Ride Ready Docs helps operators, controllers and event professionals organise
               equipment records, documents, checks, maintenance, defects and operational logs
