@@ -13,7 +13,16 @@ const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-2">
             <h3 className="text-xl font-bold mb-4">Ride Ready Docs</h3>
-            <div className="mt-6">
+            <p className="text-background/70 mb-6 max-w-md text-sm leading-relaxed">
+              Ride Ready Docs helps operators, controllers and event professionals organise
+              equipment records, documents, checks, maintenance, defects and operational logs
+              in one secure system.
+            </p>
+            <div className="flex items-center gap-2 text-background/60 text-sm mb-6">
+              <MapPin className="h-4 w-4" />
+              <span>Serving operators worldwide</span>
+            </div>
+            <div>
               <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-background/50">
                 Solutions
               </h4>
@@ -24,16 +33,6 @@ const Footer = () => {
                 <li><Link to="/inflatable-operator-records" className="text-background/70 hover:text-accent transition-colors">Inflatable Operator Records</Link></li>
                 <li><Link to="/ride-document-management" className="text-background/70 hover:text-accent transition-colors">Ride Document Management</Link></li>
               </ul>
-            </div>
-          </div>
-            <p className="text-background/70 mb-6 max-w-md text-sm leading-relaxed">
-              Ride Ready Docs helps operators, controllers and event professionals organise
-              equipment records, documents, checks, maintenance, defects and operational logs
-              in one secure system.
-            </p>
-            <div className="flex items-center gap-2 text-background/60 text-sm">
-              <MapPin className="h-4 w-4" />
-              <span>Serving operators worldwide</span>
             </div>
           </div>
 
