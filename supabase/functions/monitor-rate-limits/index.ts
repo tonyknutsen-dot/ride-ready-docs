@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "npm:resend@2.0.0";
 import { logEmailSend } from "../_shared/email-logger.ts";
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -103,13 +104,45 @@ async function fetchGeoInfo(ip: string): Promise<GeoInfo | null> {
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+  const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
+  const preflight = handleCorsPreflightRequest(req);
+  if (preflight) return preflight;
+
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Admin-only: validate caller JWT and has_role(admin)
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), { status: 401, headers: jsonHeaders });
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), { status: 401, headers: jsonHeaders });
+    }
+    const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "admin",
+    });
+    if (roleErr || !isAdmin) {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), { status: 403, headers: jsonHeaders });
+    }
+  } catch (e: any) {
+    return new Response(JSON.stringify({ success: false, error: "Admin permission check failed" }), { status: 403, headers: jsonHeaders });
+  }
+
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -126,7 +159,7 @@ serve(async (req: Request) => {
     }
     
     if (action === "block") {
-      return await handleManualBlockRequest(supabase, body.ipAddress, body.reason, body.durationHours, body.adminId);
+      return await handleManualBlockRequest(supabase, body.ipAddress, body.reason, body.durationHours, body.adminId, jsonHeaders);
     }
     
     console.log("[MONITOR] Starting rate limit abuse detection...", { fetchOnly });
@@ -184,7 +217,7 @@ serve(async (req: Request) => {
     if (fetchOnly) {
       return new Response(
         JSON.stringify({ success: true, stats }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: jsonHeaders }
       );
     }
 
@@ -312,7 +345,7 @@ serve(async (req: Request) => {
       console.log("[MONITOR] No abuse patterns detected");
       return new Response(
         JSON.stringify({ success: true, patternsDetected: 0, alertSent: false, blockedIps: [], stats }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        { status: 200, headers: jsonHeaders }
       );
     }
 
@@ -346,14 +379,14 @@ serve(async (req: Request) => {
         alertSent: !emailError,
         stats,
       }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
+      { status: 200, headers: jsonHeaders }
     );
 
   } catch (error: any) {
     console.error("[MONITOR] Unexpected error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders }
     );
   }
 });
@@ -399,7 +432,7 @@ async function handleStatsRequest(supabase: any) {
 
   return new Response(
     JSON.stringify({ success: true, stats }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: jsonHeaders }
   );
 }
 
@@ -407,7 +440,7 @@ async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: 
   if (!ipAddress) {
     return new Response(
       JSON.stringify({ success: false, error: "IP address required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: jsonHeaders }
     );
   }
 
@@ -424,7 +457,7 @@ async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: 
   if (error) {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders }
     );
   }
 
@@ -432,7 +465,7 @@ async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: 
 
   return new Response(
     JSON.stringify({ success: true, message: `IP ${ipAddress} has been unblocked` }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: jsonHeaders }
   );
 }
 
@@ -441,12 +474,13 @@ async function handleManualBlockRequest(
   ipAddress: string, 
   reason: string, 
   durationHours: number = 24,
-  adminId?: string
+  adminId: string | undefined,
+  jsonHeaders: Record<string, string>,
 ) {
   if (!ipAddress) {
     return new Response(
       JSON.stringify({ success: false, error: "IP address required" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: jsonHeaders }
     );
   }
 
@@ -464,7 +498,7 @@ async function handleManualBlockRequest(
   if (error) {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: jsonHeaders }
     );
   }
 
@@ -472,7 +506,7 @@ async function handleManualBlockRequest(
 
   return new Response(
     JSON.stringify({ success: true, message: `IP ${ipAddress} blocked for ${durationHours} hours` }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    { status: 200, headers: jsonHeaders }
   );
 }
 
