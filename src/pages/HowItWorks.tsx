@@ -164,7 +164,7 @@ const HowItWorks = () => {
           </p>
           <Button 
             size="lg"
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/auth?mode=signup')}
             className="bg-primary hover:bg-primary/90"
           >
             Get Full Access Free for 14 Days

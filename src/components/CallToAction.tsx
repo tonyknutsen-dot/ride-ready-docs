@@ -16,7 +16,7 @@ const CallToAction = () => {
   const handleStartTrial = () => {
     if (loading) return;
     if (!user) trackFunnelEvent("cta_click", { metadata: { source: "footer_cta" } });
-    navigate(user ? '/overview' : '/auth');
+    navigate(user ? '/overview' : '/auth?mode=signup');
   };
 
   return (
