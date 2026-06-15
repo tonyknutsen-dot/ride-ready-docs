@@ -465,6 +465,18 @@ export default function AdminDashboard() {
                   </div>
                 </Link>
                 )}
+                <Link to="/admin/signup-funnel" className="group">
+                  <div className="flex items-center justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="h-4 w-4 text-primary/60" />
+                      <div>
+                        <span className="text-sm font-medium">Signup Funnel</span>
+                        <p className="text-xs text-muted-foreground">Landing → CTA → signup conversion</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                </Link>
               </div>
             </section>
 
