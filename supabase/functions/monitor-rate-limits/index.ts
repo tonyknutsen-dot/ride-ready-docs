@@ -104,13 +104,45 @@ async function fetchGeoInfo(ip: string): Promise<GeoInfo | null> {
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+  const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
+  const preflight = handleCorsPreflightRequest(req);
+  if (preflight) return preflight;
+
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Admin-only: validate caller JWT and has_role(admin)
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), { status: 401, headers: jsonHeaders });
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), { status: 401, headers: jsonHeaders });
+    }
+    const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
+      _user_id: userData.user.id,
+      _role: "admin",
+    });
+    if (roleErr || !isAdmin) {
+      return new Response(JSON.stringify({ success: false, error: "Admin access required" }), { status: 403, headers: jsonHeaders });
+    }
+  } catch (e: any) {
+    return new Response(JSON.stringify({ success: false, error: "Admin permission check failed" }), { status: 403, headers: jsonHeaders });
+  }
+
 
   try {
     const body = await req.json().catch(() => ({}));
