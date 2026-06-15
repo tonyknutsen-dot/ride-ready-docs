@@ -109,6 +109,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Security Dashboard', href: '/admin/security', icon: Activity, count: 0 },
         { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
+        { name: 'Signup Funnel', href: '/admin/signup-funnel', icon: TrendingUp, count: 0 },
       ],
     },
     {
