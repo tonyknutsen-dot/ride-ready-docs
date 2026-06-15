@@ -23,7 +23,7 @@ export default function SupportMessages() {
 
   // Initialise filter from URL param: ?status=pending
   const urlStatus = searchParams.get('status') || '';
-  const initialFilter = urlStatus && ['pending', 'in_progress', 'waiting_on_user', 'resolved', 'archived', 'open', 'all'].includes(urlStatus) ? urlStatus : 'open';
+  const initialFilter = urlStatus && ['pending', 'in_progress', 'waiting_on_user', 'resolved', 'archived', 'open', 'all'].includes(urlStatus) ? urlStatus : 'all';
 
   const [filterStatus, setFilterStatus] = useState(initialFilter);
   const [sortBy, setSortBy] = useState<SortOption>('newest');

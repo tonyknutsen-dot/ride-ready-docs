@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library, Layers, Package, AlertTriangle, Wrench, Settings2, Eye } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key, Sparkles, CreditCard, Lightbulb, Library, Layers, Package, AlertTriangle, Wrench, Settings2, Eye, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -109,6 +109,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       items: [
         { name: 'Security Dashboard', href: '/admin/security', icon: Activity, count: 0 },
         { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
+        { name: 'Signup Funnel', href: '/admin/signup-funnel', icon: TrendingUp, count: 0 },
       ],
     },
     {
