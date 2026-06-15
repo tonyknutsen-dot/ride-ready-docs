@@ -88,7 +88,7 @@ export function trackFunnelEvent(
     const user_agent =
       typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null;
 
-    void supabase
+    void (supabase as any)
       .from("signup_funnel_events")
       .insert({
         event_name,
