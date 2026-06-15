@@ -159,7 +159,7 @@ serve(async (req: Request) => {
     }
     
     if (action === "block") {
-      return await handleManualBlockRequest(supabase, body.ipAddress, body.reason, body.durationHours, body.adminId);
+      return await handleManualBlockRequest(supabase, body.ipAddress, body.reason, body.durationHours, body.adminId, jsonHeaders);
     }
     
     console.log("[MONITOR] Starting rate limit abuse detection...", { fetchOnly });
@@ -474,7 +474,8 @@ async function handleManualBlockRequest(
   ipAddress: string, 
   reason: string, 
   durationHours: number = 24,
-  adminId?: string
+  adminId: string | undefined,
+  jsonHeaders: Record<string, string>,
 ) {
   if (!ipAddress) {
     return new Response(
