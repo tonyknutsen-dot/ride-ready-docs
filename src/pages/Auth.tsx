@@ -19,6 +19,7 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 import { getEmailSuggestion, validatePasswordStrength, type EmailSuggestion } from '@/utils/emailSuggestion';
 import { inspectAuthPersistence, saveAuthPersistenceSnapshot } from '@/utils/authPersistenceDiagnostics';
+import { trackFunnelEvent } from '@/lib/funnelTracking';
 
 const MFAVerifyScreen = lazy(() => import('@/components/MFAVerifyScreen'));
 
