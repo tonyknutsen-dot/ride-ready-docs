@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { lazy, Suspense } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
 import { ArrowRight, Check, Globe, Smartphone } from "lucide-react";
+import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 // Lazy load non-critical components to improve LCP
 const DeviceHintBanner = lazy(() => import("./DeviceHintBanner"));
@@ -14,6 +15,7 @@ const Hero = () => {
   const { user } = useAuth();
 
   const handlePrimary = () => {
+    if (!user) trackFunnelEvent("cta_click", { metadata: { source: "hero_primary" } });
     navigate(user ? '/overview' : '/auth');
   };
 

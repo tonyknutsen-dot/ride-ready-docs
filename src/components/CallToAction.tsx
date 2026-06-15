@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowRight, Sparkles, MessageCircle } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
 import { PublicContactDialog } from "@/components/PublicContactDialog";
+import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 const CallToAction = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const CallToAction = () => {
 
   const handleStartTrial = () => {
     if (loading) return;
+    if (!user) trackFunnelEvent("cta_click", { metadata: { source: "footer_cta" } });
     navigate(user ? '/overview' : '/auth');
   };
 

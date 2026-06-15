@@ -19,6 +19,7 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 import { getEmailSuggestion, validatePasswordStrength, type EmailSuggestion } from '@/utils/emailSuggestion';
 import { inspectAuthPersistence, saveAuthPersistenceSnapshot } from '@/utils/authPersistenceDiagnostics';
+import { trackFunnelEvent } from '@/lib/funnelTracking';
 
 const MFAVerifyScreen = lazy(() => import('@/components/MFAVerifyScreen'));
 
@@ -84,6 +85,13 @@ const Auth = () => {
       setRememberEmail(true);
     }
   }, []);
+
+  // Track signup_page_view when user is on the signup tab
+  useEffect(() => {
+    if (activeTab === 'signup') {
+      trackFunnelEvent('signup_page_view');
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -237,12 +245,19 @@ const Auth = () => {
 
     setIsLoading(true);
 
+    if (activeTab === 'signup') {
+      trackFunnelEvent('signup_submit_attempt', { email: formData.email });
+    }
+
     try {
       const { error } = activeTab === 'signin' 
         ? await signIn(formData.email, formData.password)
         : await signUp(formData.email, formData.password, formData.country);
 
       if (error) {
+        if (activeTab === 'signup') {
+          trackFunnelEvent('signup_failure', { email: formData.email, errorMessage: error.message });
+        }
         // Record failed attempt for rate limiting (only for signin to prevent brute force)
         if (activeTab === 'signin') {
           recordAttempt(false);
@@ -290,6 +305,8 @@ const Auth = () => {
         }
         
         if (activeTab === 'signup') {
+          trackFunnelEvent('signup_success', { email: formData.email });
+          trackFunnelEvent('onboarding_completed', { email: formData.email });
           setFormNotice({
             type: 'success',
             title: 'Account created!',

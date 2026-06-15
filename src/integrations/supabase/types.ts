@@ -3203,6 +3203,57 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_funnel_events: {
+        Row: {
+          anonymous_session_id: string | null
+          created_at: string
+          email: string | null
+          error_message: string | null
+          event_name: string
+          id: string
+          metadata: Json | null
+          page_path: string | null
+          referrer: string | null
+          user_agent: string | null
+          user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          anonymous_session_id?: string | null
+          created_at?: string
+          email?: string | null
+          error_message?: string | null
+          event_name: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          anonymous_session_id?: string | null
+          created_at?: string
+          email?: string | null
+          error_message?: string | null
+          event_name?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       staff_equipment_assignments: {
         Row: {
           assigned_at: string

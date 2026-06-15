@@ -80,6 +80,7 @@ const RiskLibrary = lazy(() => import("./pages/admin/RiskLibrary"));
 const EarlyAccessSignups = lazy(() => import("./pages/admin/EarlyAccessSignups"));
 const PaymentsDashboard = lazy(() => import("./pages/admin/PaymentsDashboard"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
+const SignupFunnel = lazy(() => import("./pages/admin/SignupFunnel"));
 const EmailLogPage = lazy(() => import("./pages/admin/EmailLog"));
 const JobsQueues = lazy(() => import("./pages/admin/JobsQueuesPage"));
 const PlatformSettings = lazy(() => import("./pages/admin/PlatformSettings"));
@@ -485,6 +486,18 @@ const App = () => (
                 } 
               />
               {/* Admin routes - separate from main app */}
+              <Route 
+                path="/admin/signup-funnel" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <SignupFunnel />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/admin" 
                 element={

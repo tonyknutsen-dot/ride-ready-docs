@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { PublicContactDialog } from "@/components/PublicContactDialog";
+import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 const allFeatures = [
   "Document storage & organisation",
@@ -122,7 +123,10 @@ const Pricing = () => {
           <Button
             size="lg"
             className="px-8 py-5 text-base font-semibold shadow-elegant"
-            onClick={() => navigate(user ? "/overview" : "/auth")}
+            onClick={() => {
+              if (!user) trackFunnelEvent("pricing_click", { metadata: { source: "pricing_cta" } });
+              navigate(user ? "/overview" : "/auth");
+            }}
           >
             {user ? "Go to Dashboard" : "Get Full Access Free for 14 Days"}
           </Button>

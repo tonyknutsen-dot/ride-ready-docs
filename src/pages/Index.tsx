@@ -1,7 +1,8 @@
-import { lazy, Suspense, memo } from "react";
+import { lazy, Suspense, memo, useEffect } from "react";
 import Hero from "../components/Hero";
 import Header from "../components/Header";
 import PageMeta from "../components/PageMeta";
+import { trackFunnelEvent } from "@/lib/funnelTracking";
 
 // Lazy load below-fold components for better performance
 const EquipmentShowcase = lazy(() => import("../components/EquipmentShowcase"));
@@ -17,6 +18,9 @@ const SectionLoader = memo(() => (
 ));
 
 const Index = memo(() => {
+  useEffect(() => {
+    trackFunnelEvent("landing_page_view");
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       <PageMeta
