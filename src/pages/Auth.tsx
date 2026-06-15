@@ -86,6 +86,13 @@ const Auth = () => {
     }
   }, []);
 
+  // Track signup_page_view when user is on the signup tab
+  useEffect(() => {
+    if (activeTab === 'signup') {
+      trackFunnelEvent('signup_page_view');
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('reset') === 'true') {
@@ -238,12 +245,19 @@ const Auth = () => {
 
     setIsLoading(true);
 
+    if (activeTab === 'signup') {
+      trackFunnelEvent('signup_submit_attempt', { email: formData.email });
+    }
+
     try {
       const { error } = activeTab === 'signin' 
         ? await signIn(formData.email, formData.password)
         : await signUp(formData.email, formData.password, formData.country);
 
       if (error) {
+        if (activeTab === 'signup') {
+          trackFunnelEvent('signup_failure', { email: formData.email, errorMessage: error.message });
+        }
         // Record failed attempt for rate limiting (only for signin to prevent brute force)
         if (activeTab === 'signin') {
           recordAttempt(false);
